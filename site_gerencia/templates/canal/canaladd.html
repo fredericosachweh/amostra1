@@ -1,0 +1,21 @@
+{% extends "canal/base.html" %}
+{% load i18n %}
+
+
+{% block principal %}
+Criando um novo canal:
+<form action="{% url canal_add %}" method="post" enctype="multipart/form-data" >{% csrf_token %}
+	{% for field in form %}
+	<p>
+	{{ field.label_tag }} : {{ field }}
+	{% if field.errors %}
+		<span class="fielderror"> {% for error in field.errors %} {{ error }} &nbsp; {% endfor %} </span>
+	{% endif %}
+	</p>
+	{% endfor %}
+	<p>
+		<input type="submit" value="Cria" />
+		<input type="button" value="Cancela" onclick="javascript: window.location.href='{% url canal_index %}';" />
+	</p>
+</form>
+{% endblock principal %}

@@ -1,0 +1,18 @@
+
+.canais {
+    padding: 3px;
+}
+
+.canal {
+    border: 1px solid gray;
+    height: auto;
+    padding: 10px;
+}
+.canal div {
+    width: auto;
+    border: 1px solid red;
+}
+
+.logo {
+}
+

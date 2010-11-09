@@ -1,0 +1,18 @@
+{% extends "canal/base.html" %}
+{% load i18n %}
+
+{% block principal %}
+Lista de canais:
+<div class="lista canais">
+{% for canal in canais %}
+    <div class="canal">
+        <img class="logo" src="{{ MEDIA_URL }}{{ canal.logo }}" />
+        <div class="nome">Nome: {{ canal.nome }}</div>
+        <div class="numero">Número: {{ canal.numero }}</div>
+        <div class="controles" ><a href="{% url canal_edit canal.id %}">Edita</a></div>
+    </div>
+{% endfor %}
+Adiciona: <a href="{% url canal_add %}">{% trans "Novo Canal" %} </a>
+</div>
+
+{% endblock principal %}
