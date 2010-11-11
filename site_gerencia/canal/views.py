@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+# -*- encoding:utf8 -*-
 from base import *
-from django.utils.translation import ugettext as _
+#from django.utils.translation import ugettext as _
 from canal import models, forms
 
 def index(request):
@@ -25,9 +27,9 @@ def add(request):
         # Adiciona novo canal
         form = forms.CanalForm(request.POST,request.FILES)
         if form.is_valid():
-            newnode = models.Canal()
-            fnode = forms.CanalForm(request.POST,request.FILES,instance=newnode)
-            fnode.save()
+            novocanal = models.Canal()
+            fcanal = forms.CanalForm(request.POST,request.FILES,instance=novocanal)
+            fcanal.save()
             #request.user.message_set.create(message=_("Canal registrado com sucesso"))
             return HttpResponseRedirect(reverse('canal_get'))
         else:

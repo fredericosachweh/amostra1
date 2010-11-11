@@ -6,7 +6,7 @@ Lista de canais:
 <div class="lista canais">
 {% for canal in canais %}
     <div class="canal">
-        <img class="logo" src="{{ MEDIA_URL }}{{ canal.logo }}" />
+        <img class="logo" src="{{ canal.thumb.url }}" />
         <div class="nome">Nome: {{ canal.nome }}</div>
         <div class="numero">Número: {{ canal.numero }}</div>
         <div class="controles" ><a href="{% url canal_edit canal.id %}">Edita</a></div>
