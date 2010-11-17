@@ -1,22 +1,17 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 from base import *
-#from django.utils.translation import ugettext as _
 from canal import models, forms
+from django.core import serializers
+from django.conf import settings
 
 def index(request):
     lista =  models.Canal.objects.all()
-    paginator = Paginator(lista, 2)
-    try:
-        page = int(request.GET.get('page', '1'))
-    except ValueError:
-        page = 1
-    try:
-        canallist_ = paginator.page(page)
-    except (EmptyPage, InvalidPage):
-        canallist_ = paginator.page(paginator.num_pages)
-    return render_to_response('canal/canais.html', { 'canais': lista , 'lista':canallist_},
-                                context_instance=RequestContext(request))
+    return render_to_response(
+                              'canal/canais.html',
+                              { 'canais': lista },
+                              context_instance=RequestContext(request)
+                              )
 
 
 def add(request):
@@ -42,11 +37,36 @@ def add(request):
 
 def edit(request,id):
     """
-    Edita um canal.
+    Editação dos dados do canal.
     """
     canal = get_object_or_404(models.Canal,pk=id)
-    form = forms.CanalForm(instance=canal)
-    return render_to_response('canal/canaladd.html', {'form': form},
+    if request.method == 'POST':
+        form = forms.CanalForm(request.POST,request.FILES,instance=canal)
+        #print '\n'.join(sorted(dir(request)))
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('canal_get'))
+    else:
+        form = forms.CanalForm(instance=canal)
+    return render_to_response('canal/canaledit.html', {'form': form , 'canal':canal},
                                         context_instance=RequestContext(request))
+
+def delete(request,id):
+    """
+    Remove o canal
+    """
+    canal = get_object_or_404(models.Canal,pk=id)
+    canal.delete()
+    return HttpResponseRedirect(reverse('canal_get'))
+
+
+
+def ajaxlist(request):
+    #print ('\n'.join(request))
+    canais = models.Canal.objects.all()
+    MEDIA_URL=getattr(settings, 'MEDIA_URL')
+    # Chama o canal e pega a listagem do aplicativo canal
+    js = serializers.serialize('json',canais,indent=2, use_natural_keys=True)
+    return HttpResponse('{"media_url":"%s",data:%s}'%(MEDIA_URL,js))
 
 

@@ -87,13 +87,16 @@ TEMPLATE_DIRS = (
     '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/templates',
 )
 
+#FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'
+
 INSTALLED_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.messages',
-    'django.contrib.admin',
+    #'django.contrib.auth',
+    #'django.contrib.contenttypes',
+    #'django.contrib.sessions',
+    #'django.contrib.sites',
+    #'django.contrib.messages',
+    #'django.contrib.admin',
     # Gestao de canal
     'canal',
+    'box',
 )

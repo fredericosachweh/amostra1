@@ -5,14 +5,20 @@
 
 .canal {
     border: 1px solid gray;
-    height: auto;
-    padding: 10px;
+    padding: 5px;
+    margin-bottom: 5px;
+    height: 120px;
 }
-.canal div {
-    width: auto;
-    border: 1px solid red;
+.canal .infos {
+	position: absolute;
+	left: 130px;
+	right: 20px;
+}
+.canal .infos div {
+    border-bottom: 1px solid gray;
 }
 
 .logo {
+	float: left;
 }
 
