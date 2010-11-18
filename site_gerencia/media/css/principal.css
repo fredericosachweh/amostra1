@@ -22,3 +22,11 @@
 	float: left;
 }
 
+.error {
+	font-weight: bolder;
+	color: red;
+}
+.fielderror {
+	font-weight: bolder;
+	color: red;
+}

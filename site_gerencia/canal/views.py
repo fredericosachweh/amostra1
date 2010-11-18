@@ -25,7 +25,6 @@ def add(request):
             novocanal = models.Canal()
             fcanal = forms.CanalForm(request.POST,request.FILES,instance=novocanal)
             fcanal.save()
-            #request.user.message_set.create(message=_("Canal registrado com sucesso"))
             return HttpResponseRedirect(reverse('canal_get'))
         else:
             return render_to_response('canal/canaladd.html', {'form': form},
@@ -42,7 +41,6 @@ def edit(request,id):
     canal = get_object_or_404(models.Canal,pk=id)
     if request.method == 'POST':
         form = forms.CanalForm(request.POST,request.FILES,instance=canal)
-        #print '\n'.join(sorted(dir(request)))
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse('canal_get'))
@@ -62,7 +60,9 @@ def delete(request,id):
 
 
 def ajaxlist(request):
-    #print ('\n'.join(request))
+    """
+    Usado pelo setupbox para pegar a lista de canais
+    """
     canais = models.Canal.objects.all()
     MEDIA_URL=getattr(settings, 'MEDIA_URL')
     # Chama o canal e pega a listagem do aplicativo canal

@@ -15,6 +15,7 @@ class CanalForm(forms.ModelForm):
     def save(self,*args,**kwargs):
         """Cria o thumbnail do logo"""
         canal = super(CanalForm,self).save(*args,**kwargs)
+        print ('\n'.join(self.errors))
         if 'logo' in self.changed_data:
             ## Carrega biblioteca de manipulação de imagem
             try:
@@ -40,7 +41,7 @@ class CanalForm(forms.ModelForm):
             original = 'imgs/canal/logo/original/%d.%s' %(canal.id,extensao)
             shutil.copyfile(canal.logo.path,MEDIA_ROOT+'/'+original)
             # Remove arquivo temporário
-            print('Caminho:%s'%canal.logo.path)
+            #print('Caminho:%s'%canal.logo.path)
             os.unlink(canal.logo.path)
             canal.thumb.file
             canal.logo.name = original

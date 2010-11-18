@@ -14,6 +14,7 @@ class Canal(models.Model):
     """
     class Meta:
         ordering = ('nome',)
+        unique_together = ( ('ip','porta'), )
     numero = models.PositiveSmallIntegerField(_('Numero'),unique=True)
     nome = models.CharField(_('Nome'), max_length=100, unique=True)
     def __unicode__(self):

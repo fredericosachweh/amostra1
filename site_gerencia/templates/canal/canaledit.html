@@ -4,11 +4,11 @@
 
 {% block principal %}
 Criando um novo canal:
-<form action="{% url canal_add %}" method="post" enctype="multipart/form-data" >{% csrf_token %}
+<form action="{% url canal_edit canal.id %}" method="post" enctype="multipart/form-data" >{% csrf_token %}
 	{% for field in form %}
 	<p>
 	{{ field.label_tag }} : {{ field }}
-	{% if field.name == 'logo' and form.instance.pk %}<img alt="Thumb" src="{{canal.thumb.url}}" /> {% endif %}
+	{% if field.name == 'logo' and form.instance.thumb %}<img alt="Thumb" src="{{canal.thumb.url}}" /> {% endif %}
 	{% if field.errors %}
 		<span class="fielderror"> {% for error in field.errors %} {{ error }} &nbsp; {% endfor %} </span>
 	{% endif %}
@@ -18,7 +18,7 @@ Criando um novo canal:
 		<div class="error">{{ err }}</div>
 	{% endfor %}
 	<p>
-		<input type="submit" value="Cria" />
+		<input type="submit" value="Salva" />
 		<input type="button" value="Cancela" onclick="javascript: window.location.href='{% url canal_index %}';" />
 	</p>
 </form>
