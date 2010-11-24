@@ -6,8 +6,8 @@ Cianet.ux.movies.filter = function(number){
 	l.each(function(){
 		//debug('--->',this);
 		if (this.id == number) {
-			debug('Ocultando',this.id);
-			//Ext.get(this).hide();
+			//debug('Ocultando',this.id);
+			Ext.get(this).hide();
 			//this.hide();
 		}
 	});
@@ -124,37 +124,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		return this;
 	},
 	init : function() {
-		/*
-Anterior:
-{
-"id":0,
-"name":"TV - Canal 1",
-"url":"udp:\/\/224.0.0.10:11000",
-"img":"pctv.png",
-"mtype":"mcast",
-"proto":"udp",
-"host":"224.0.0.10",
-"stype":"stream",
-"port":"11000"
-}
-Novo:
-{
-"pk": 1,
-"model": "canal.canal",
-"fields":
-	{
-	"thumb": "imgs/canal/logo/thumb/1.png",
-	"nome": "Rede Record",
-	"ip": "224.0.0.10",
-	"numero": 7,
-	"porta": 10000,
-	"logo": "imgs/canal/logo/original/emblem-money.png",
-	"descricao": "Este \u00e9 o canal do bispo.",
-	"sigla": "R$"
-	}
-}
-		 */
-		this.id = this.pk;
+		this.id = this.pk+Math.random();
 		this.url = 'udp://'+this.fields.ip+':'+this.fields.porta;
 		this.stype = 'mcast';
 		this.name = this.fields.nome;
@@ -166,10 +136,10 @@ Novo:
 			[
 				'<div id="movie_{id}" class="movie">',
 				'<div class="stype">{stype}</div>',
-				'<a href="{url}" >',
+				//'<a href="{url}" >',
 				'<div class="name">{name}</div>',
 				'<img class="photo" src="{img}" />',
-				'</a>',
+				//'</a>',
 				'</div>'
 			]);
 		this.el = Ext.get(this.movieTemplate.append('movies',{id:this.id,url:this.url,name:this.name,img:this.img,stype:this.stype}));
@@ -245,7 +215,7 @@ Novo:
 });//END: Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 
 var anim = {
-	duration : 0.5,
+	duration : 4,
 	easing : 'easeIn',
 	scope : anim
 };
@@ -257,90 +227,21 @@ function anime() {
 	var a = Ext.get('an');
 	Ext.fly('msg').update('Animation box....');
 	if (a.getX() == 0)
-		a.moveTo(450, 350, anim);
+		a.moveTo(830, 700, anim);
 	else
 		a.moveTo(0,0, anim);
 };//END: function anime() {
 
-Ext.onReady(function() {
-	var DOC = Ext.get(document);
-	var movies = Ext.get('movies');
-	Cianet.ux.mediainfo.setEl(Ext.get('mediainfo'));
-	showAnim = {
-		duration : 4
-	};
 
-	try {
-		var vod_playlist = list;
-	} catch(e){
-		var vod_playlist = null;
-	}
-
-	// Call WebService JSON to get Media list
-	if (vod_playlist != null)
-	{
-		for ( var i = 0; i < vod_playlist.length; i++) {
-			var movie = new Cianet.ux.Movie(vod_playlist[i]);
-
-			// Evento de play
-			movie.on('play',function(){
-				Ext.fly('msg').update('Rodando '+this.name);
-				Ext.get('movies').hide();
-				Cianet.ux.mediainfo.hide();
-			},movie);
-
-			// Evento de play
-			movie.on('stop',function(){
-				Ext.fly('msg').update('Parado '+this.name);
-				Ext.get('movies').show();
-				Cianet.ux.mediainfo.hide();
-			},movie);
-
-			// Evento de select
-			movie.on('select',function(){
-				// Ajusta o scroll da pagina
-				var scroll = movies.getScroll();
-				var y = this.el.getY();
-				movies.scrollTo('top',(y+scroll.top-100));
-			},movie);
-
-			// Event [info]
-			movie.on('info',function(){
-				Cianet.ux.mediainfo.setMovieName(this.name);
-				Cianet.ux.mediainfo.setMovieHost(this.ip);
-				Cianet.ux.mediainfo.setMoviePort(this.porta);
-				Cianet.ux.mediainfo.setMovieId(this.id);
-				Cianet.ux.mediainfo.toogle();
-				return;
-				/*
-				if (Cianet.ux.PlayerState.fullscreen == true){
-					Cianet.ux.mediainfo.hide();
-				}else {
-					Cianet.ux.mediainfo.show();
-				}
-				*/
-			},movie);
-
-			movie.on('fullscreen',function(){
-				if (Cianet.ux.PlayerState.fullscreen == true){
-					Cianet.ux.mediainfo.hide();
-				}else {
-					Cianet.ux.mediainfo.show();
-				}
-			},movie);
-
-			Cianet.ux.movies.push(movie);
-		}
-		Cianet.ux.movies[2].select();
-	}
-	else
+function loadMedia(){
 	Ext.Ajax.request({
-		url : '/canal/ajaxlist/',
+		url : '/canal/canallist/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
 		},
 		success : function(resp, obj) {
 			resObject = Ext.util.JSON.decode(resp.responseText);
+			var movies = Ext.get('movies');
 			vod_playlist = resObject.data;
 			for ( var i = 0; i < vod_playlist.length; i++) {
 				var movie = new Cianet.ux.Movie(vod_playlist[i]);
@@ -374,14 +275,6 @@ Ext.onReady(function() {
 					Cianet.ux.mediainfo.setMoviePort(this.porta);
 					Cianet.ux.mediainfo.setMovieId(this.id);
 					Cianet.ux.mediainfo.toogle();
-					return;
-					/*
-					if (Cianet.ux.PlayerState.fullscreen == true){
-						Cianet.ux.mediainfo.hide();
-					}else {
-						Cianet.ux.mediainfo.show();
-					}
-					*/
 				},movie);
 
 				movie.on('fullscreen',function(){
@@ -398,15 +291,28 @@ Ext.onReady(function() {
 		}
 	});//END: Ext.Ajax.request({
 
+}//END: function loadMedia(){
+
+
+
+Ext.onReady(function() {
+	var DOC = Ext.get(document);
+	Cianet.ux.mediainfo.setEl(Ext.get('mediainfo'));
+	showAnim = {
+		duration : 4
+	};
+	// Carrega a lista de midias via webservice
+	//for (var i =0; i<10;i++)
+	loadMedia();
 	//
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();
 		Ext.fly('an').update('KEY:'+key);
-		debug('KEY',key);
+		debug('KEY= '+key+' ');
 
 		if ( (Browser.KEY.N_0) <= key && Browser.KEY.N_9 >= key){
 			debug('Numeric');
-			Cianet.ux.movies.filter(5);
+			//Cianet.ux.movies.filter(5);
 		}
 
 		switch (key) {
@@ -414,6 +320,9 @@ Ext.onReady(function() {
 			anime();
 			break;
 		case Browser.KEY.i:
+			Cianet.ux.movies.getSelected().info();
+			break;
+		case Browser.KEY.INFO:
 			Cianet.ux.movies.getSelected().info();
 			break;
 		case Browser.KEY.r:
@@ -432,6 +341,10 @@ Ext.onReady(function() {
 			selected.play();
 			break;
 		case Browser.KEY.s:
+			var selected = Cianet.ux.movies.getSelected();
+			selected.stop();
+			break;
+		case Browser.KEY.RETURN:
 			var selected = Cianet.ux.movies.getSelected();
 			selected.stop();
 			break;
@@ -454,10 +367,12 @@ Ext.onReady(function() {
 			movie.play();
 			break;
 		case Browser.KEY.HOME:
-			window.location.href = '../placa/';
+			loadMedia();
+			//window.location.href = '../placa/';
 			break;
 		}
 		return false;
 	}, this);
+});//END: Ext.onReady(function() {
 
-});
+

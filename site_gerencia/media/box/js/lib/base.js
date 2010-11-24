@@ -20,9 +20,10 @@ function debug(){
 	//return;
 	// Cameo console
 	try {
-		caFileBrowseObj.Sayhello("DEBUG:T:"+new Date());
+		//caFileBrowseObj.Sayhello("DEBUG:T:"+new Date());
 		for (var i=0;i<arguments.length;i++)
-			caFileBrowseObj.Sayhello("DEBUG:"+Ext.util.JSON.encode(arguments[i]));
+			caFileBrowseObj.Sayhello("DEBUG: "+Ext.util.JSON.encode(arguments[i]));
+			//caFileBrowseObj.Sayhello("DEBUG: "+arguments[i].toString());
 	} catch(e){}
 };
 // Debug inicial

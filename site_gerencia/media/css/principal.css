@@ -1,21 +1,22 @@
-
 .canais {
-    padding: 3px;
+	padding: 3px;
 }
 
 .canal {
-    border: 1px solid gray;
-    padding: 5px;
-    margin-bottom: 5px;
-    height: 120px;
+	border: 1px solid gray;
+	padding: 5px;
+	margin-bottom: 5px;
+	height: 120px;
 }
+
 .canal .infos {
 	position: absolute;
 	left: 130px;
 	right: 20px;
 }
+
 .canal .infos div {
-    border-bottom: 1px solid gray;
+	border-bottom: 1px solid gray;
 }
 
 .logo {
@@ -26,6 +27,7 @@
 	font-weight: bolder;
 	color: red;
 }
+
 .fielderror {
 	font-weight: bolder;
 	color: red;

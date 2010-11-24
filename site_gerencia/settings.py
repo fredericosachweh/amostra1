@@ -58,7 +58,8 @@ MEDIA_URL = '/media/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/adm_media/'
+#ADMIN_MEDIA_PREFIX = '/adm_media/'
+ADMIN_MEDIA_PREFIX = '/media/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
@@ -90,13 +91,14 @@ TEMPLATE_DIRS = (
 #FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'
 
 INSTALLED_APPS = (
-    #'django.contrib.auth',
-    #'django.contrib.contenttypes',
-    #'django.contrib.sessions',
-    #'django.contrib.sites',
-    #'django.contrib.messages',
-    #'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.admin',
     # Gestao de canal
     'canal',
+    # Interface dos setup-box
     'box',
 )

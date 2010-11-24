@@ -21,16 +21,17 @@ a:HOVER {
 }
 #msg {
 	position: absolute;
-	top: 0px;
-	left: 0px;
-	width: 100%;
+	top: 24px;
+	left: 10px;
+	right: 30px;
 	height: 30px;
 	overflow: hidden;
 	font-weight: bolder;
 	color: yellow;
 	text-align: center;
-	background-color: black;
+	background-color: green;
 	z-index: 20;
+	border: 0px solid red;
 }
 #an {
 	position: absolute;
@@ -47,7 +48,7 @@ a:HOVER {
 	width: 0px;
 	height: 400px;
 	top: 30px;
-	left: 0px;
+	left: 300px;
 	background-color: white;
 	z-index: 200;
 	border: 0px solid red;
@@ -62,10 +63,10 @@ a:HOVER {
 
 #movies {
 	position: absolute;
-	top: 40px;
-	left: 0px;
-	height: 385px;
-	width: 640px;
+	top: 60px;
+	left: 30px;
+	bottom: 10px;
+	right: 30px;
 	overflow: scroll;
 	background-color: black;
 }

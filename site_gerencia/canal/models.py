@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
-from base import *
+#from base import *
+
 from django.db import models
 
 from django.utils.translation import ugettext as _
@@ -27,6 +28,8 @@ class Canal(models.Model):
     porta = models.PositiveSmallIntegerField(_('Porta'),blank=False)
 
 class Genero(models.Model):
+    def __unicode__(self):
+        return self.nome
     nome = models.CharField(_('Nome'),max_length=100)
 
 class Programa(models.Model):
@@ -41,11 +44,11 @@ class Programa(models.Model):
     hora_final = models.DateTimeField()
 
 
-def canal_post_save(signal,instance,sender,**kwargs):
-    """
-    Manipulador de evento post-save do Canal
-    """
-    pass
+#def canal_post_save(signal,instance,sender,**kwargs):
+#    """
+#    Manipulador de evento post-save do Canal
+#    """
+#    pass
 
 
 #signals.post_save.connect(canal_post_save, sender=Canal)

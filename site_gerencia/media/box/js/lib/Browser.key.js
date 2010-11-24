@@ -56,19 +56,15 @@ Browser.ARORA = {
 	,DOWN: 61443
 	,LEFT: 61440
 	,ENTER:14
-	//p:67206
+	,RETURN:13
+	,REPEAT:61537
+	,INFO:61460
 };
 
 
 Ext.onReady(function(){
 	if (Ext.isWebKit)
 		Ext.apply(Browser.KEY,Browser.ARORA);
-	//else
-	//	Ext.apply(Browser.KEY,Browser.TESTE);
-	//debug('Browser.KEY',Browser.KEY);
-	//debug('Browser.ARORA',Browser.ARORA);
-	//debug('Browser.TESTE',Browser.TESTE);
-
 });
 
 
