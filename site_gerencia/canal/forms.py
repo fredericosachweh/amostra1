@@ -15,7 +15,6 @@ class CanalForm(forms.ModelForm):
     def save(self,*args,**kwargs):
         """Cria o thumbnail do logo"""
         canal = super(CanalForm,self).save(*args,**kwargs)
-        print ('\n'.join(self.errors))
         if 'logo' in self.changed_data:
             ## Carrega biblioteca de manipulação de imagem
             try:
