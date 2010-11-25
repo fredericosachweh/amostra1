@@ -6,9 +6,34 @@
 <meta name="keywords" content="IPTV" />
 <meta name="author" content="Helber Maciel Guerra" />
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/principal.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% load adminmedia %}{% admin_media_prefix %}css/base.css{% endblock %}" />
 </head>
 <body>
-<div class="top">Gestão de canais CiaNet.</div>
+<div class="top">Gestão de canais CiaNet.
+{% load i18n %}
+{% if user.is_active and user.is_staff %}
+<div id="user-tools">
+    {% trans 'Welcome,' %}
+    <strong>{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</strong>.
+    {% block userlinks %}
+        {% url admin:password_change as password_change_url %}
+        {% if password_change_url %}
+            <a href="{{ password_change_url }}">
+        {% else %}
+            <a href="{{ root_path }}password_change/">
+        {% endif %}
+        {% trans 'Change password' %}</a> /
+        {% url sys_logout as logout_url %}
+        {% if logout_url %}
+            <a href="{{ logout_url }}">
+        {% else %}
+            <a href="{{ root_path }}logout/">
+        {% endif %}
+        {% trans 'Log out' %}</a>
+    {% endblock %}
+</div>
+{% endif %}
+</div>
 {% block principal %}
 Bloco principal.
 {% endblock principal %}

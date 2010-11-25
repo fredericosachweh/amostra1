@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import patterns,include
+from django.conf.urls.defaults import patterns,include,url
 from settings import MEDIA_ROOT
 
 
@@ -15,6 +15,8 @@ urlpatterns = patterns('',
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
+    (r'^accounts/login/$', 'django.contrib.auth.views.login'),
+    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', name='sys_logout'),
 
     # Uncomment the next line to enable the admin:
     (r'^admin/', include(admin.site.urls)),

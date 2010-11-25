@@ -80,6 +80,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'lib.middleware.login.RequireLoginMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -105,3 +106,14 @@ INSTALLED_APPS = (
     # Interface dos setup-box
     'box',
 )
+
+LOGIN_URL = '/accounts/login'
+
+LOGIN_REDIRECT_URL = '/canal/'
+
+
+LOGIN_REQUIRED_URLS = (
+    r'^/canal/(add|remove|edit|delete)/(.*)$',
+    r'^/admin/(.*)$',
+)
+
