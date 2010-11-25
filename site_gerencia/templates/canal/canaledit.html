@@ -1,7 +1,6 @@
 {% extends "canal/base.html" %}
 {% load i18n %}
 
-
 {% block principal %}
 Criando um novo canal:
 <form action="{% url canal_edit canal.id %}" method="post" enctype="multipart/form-data" >{% csrf_token %}

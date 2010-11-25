@@ -4,7 +4,6 @@ from base import *
 from canal import models, forms
 from django.core import serializers
 from django.conf import settings
-from django.contrib.auth import logout
 
 def index(request):
     lista =  models.Canal.objects.all()
@@ -13,9 +12,6 @@ def index(request):
                               { 'canais': lista },
                               context_instance=RequestContext(request)
                               )
-def logout_view(request):
-    logout(request)
-    return HttpResponseRedirect(reverse('canal_index'))
 
 
 def add(request):

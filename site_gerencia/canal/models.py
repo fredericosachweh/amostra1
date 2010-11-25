@@ -22,7 +22,7 @@ class Canal(models.Model):
     def __unicode__(self):
         return u"[%s]%s" %(self.numero,self.nome);
     def imagem_thum(self):
-        return u'<img alt="Thum não existe" src="%s" />'%(self.thumb.url)
+        return u'<img width="40" alt="Thum não existe" src="%s" />'%(self.thumb.url)
     imagem_thum.short_description = 'Miniatura'
     imagem_thum.allow_tags = True
     descricao = models.TextField(_('Descricao'))
@@ -41,12 +41,17 @@ class Programa(models.Model):
     """
     Elemento de um programa na grade
     """
+    class Meta:
+        ordering = ('hora_inicial',)
     nome = models.CharField(_('Nome'),max_length=100)
     sinopse = models.TextField(_('Sinopse'))
     genero = models.ForeignKey(Genero)
     canal = models.ForeignKey(Canal)
     hora_inicial = models.DateTimeField()
     hora_final = models.DateTimeField()
+    def __unicode__(self):
+        return self.nome
+        #return "%s - %s [%s - %s]" %(self.canal,self.nome,self.hora_inicial,self.hora_final)
 
 
 def canal_post_save(signal,instance,sender,**kwargs):

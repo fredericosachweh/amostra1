@@ -111,9 +111,9 @@ LOGIN_URL = '/accounts/login'
 
 LOGIN_REDIRECT_URL = '/canal/'
 
-
+#^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
-    r'^/canal/(add|remove|edit|delete)/(.*)$',
+    r'^/canal/((?!canallist$))$',
     r'^/admin/(.*)$',
 )
 
