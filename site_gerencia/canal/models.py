@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import ugettext as _
 
 #SIGNALS
-#from django.db.models import signals
+from django.db.models import signals
 
 class Canal(models.Model):
     """
@@ -44,12 +44,15 @@ class Programa(models.Model):
     hora_final = models.DateTimeField()
 
 
-#def canal_post_save(signal,instance,sender,**kwargs):
-#    """
-#    Manipulador de evento post-save do Canal
-#    """
-#    pass
+def canal_post_save(signal,instance,sender,**kwargs):
+    """
+    Manipulador de evento post-save do Canal
+    """
+    pass
+    #print('No canal_post_save')
+    #print(signal)
+    #print(instance)
 
 
-#signals.post_save.connect(canal_post_save, sender=Canal)
+signals.post_save.connect(canal_post_save, sender=Canal)
 

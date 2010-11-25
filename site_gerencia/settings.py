@@ -1,7 +1,10 @@
 # Django settings for site_gerencia project.
 
-#import os,sys
-#os.path()
+import sys,os
+
+ROOT_DIR = os.path.dirname(__file__)
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -15,7 +18,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/sqlite.db',                      # Or path to database file if using sqlite3.
+        'NAME': ROOT_DIR+'/sqlite.db',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -48,7 +51,7 @@ USE_L10N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/media'
+MEDIA_ROOT = ROOT_DIR+'/media'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -79,13 +82,13 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'site_gerencia.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/templates',
+    ROOT_DIR+'/templates',
 )
 
 #FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'

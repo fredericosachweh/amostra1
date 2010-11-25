@@ -21,7 +21,7 @@ urlpatterns = patterns('',
     # Midias estaticas
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
     # Configuração de canais
-    (r'^canal/',include('site_gerencia.canal.urls')),
+    (r'^canal/',include('canal.urls')),
     # Interface dos setupbox
-    (r'^box/',include('site_gerencia.box.urls')),
+    (r'^box/',include('box.urls')),
 )
