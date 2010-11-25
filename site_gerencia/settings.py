@@ -109,7 +109,7 @@ INSTALLED_APPS = (
 
 LOGIN_URL = '/accounts/login'
 
-LOGIN_REDIRECT_URL = '/canal/'
+LOGIN_REDIRECT_URL = '/administracao/'
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
