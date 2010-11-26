@@ -4,12 +4,19 @@
 from django.test import TestCase,Client
 from django.conf import settings
 
+#import pdb
+#pdb.set_trace()
+
+
 class CanalTest(TestCase):
     """
     Testes dos canais de televisão
     """
     def setUp(self):
         c = Client()
+        ## Autenticação
+        #c.post('/accounts/login/',{'username':'helber','password':'1deitu1'})
+        #c.login(username='helber', password='1deitu1')
         i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
         ## Cria primeiro canal
         c.post('/canal/add/',
@@ -57,7 +64,7 @@ class CanalTest(TestCase):
               'logo':l1,
               'nome':'Rede BOBO de Televisão',
               'numero':13,
-              'descricao':'Só para otários',
+              'descricao':'Só para',
               'sigla':'BOBO',
               'ip':'224.0.0.10',
               'porta':11002
@@ -84,7 +91,7 @@ class CanalTest(TestCase):
 
     def test_canal_service(self):
         c = Client()
-        response = c.get('/canal/canallist/')
+        response = c.get('/box/canal_list/')
         self.failUnlessEqual(response.status_code,200,'Status da lista de canais')
         import simplejson as json
         # Objeto JSON

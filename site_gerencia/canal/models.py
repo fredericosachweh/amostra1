@@ -20,7 +20,7 @@ class Canal(models.Model):
     numero = models.PositiveSmallIntegerField(_('Numero'),unique=True)
     nome = models.CharField(_('Nome'), max_length=100, unique=True)
     def __unicode__(self):
-        return u"[%s]%s" %(self.numero,self.nome);
+        return u"[%s] %s" %(self.numero,self.nome);
     def imagem_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />'%(self.thumb.url)
     imagem_thum.short_description = 'Miniatura'

@@ -235,7 +235,7 @@ function anime() {
 
 function loadMedia(){
 	Ext.Ajax.request({
-		url : '/canal/canallist/',
+		url : '/box/canal_list/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
 		},
@@ -294,6 +294,66 @@ function loadMedia(){
 }//END: function loadMedia(){
 
 
+/*
+ *
+object name: caNetConfigObj
+1. caNetConfigObj.Sayhello -> the same as other object; an easy way to verify this object could work well with Java Script
+2. caNetConfigObj.Getversion -> return the version string
+3. caNetConfigObj.GetNetPropertyToCache -> In java script, we can't use structure as we do everyday in c/c++, so we have to set/get one property each time. This doesn't make sense for our library to do this, so we have a cache in our design. To get properties back, call this function first. This function will save all the network information at cache.
+Note: we may improve this part in the near future. This means you can set/get value by our object's fields independently.
+4. caNetConfigObj.GetNetProperty -> Calling this function with type parameter gets property back.
+Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5.
+5. caNetConfigObj.CleanValid -> As the get property, we have the cache design inside also. To set network property, first call this function before doing any setting.
+6. caNetConfigObj.SetNetProperty -> Calling this function with type and value sets property to network. However, this won't set to system until calling the function below.
+7. caNetConfigObj.SetNetPropertyToNetwork -> Calling this function sets the network property to network.
+8. caNetConfigObj.SetNetDHCP -> This function is for dhcp usage only. When want to set network by dhcp, just call this fuction with time out parameter.
+ */
+
+function getIP()
+{
+	// You will see the message in your console
+	caFileBrowseObj.Sayhello("JS check file browser object");
+	var ver=caFileBrowseObj.Getversion();
+	alert(ver);
+	// try our netconfig object
+	ver=caNetConfigObj.Getversion();
+	alert(ver);
+	caNetConfigObj.GetNetPropertyToCache();
+	var property=caNetConfigObj.GetNetProperty(1);
+	alert("MAC= "+property);
+	property=caNetConfigObj.GetNetProperty(2);
+	alert("IP= "+property);
+	property=caNetConfigObj.GetNetProperty(3);
+	alert("NETMASK= "+property);
+	property=caNetConfigObj.GetNetProperty(4);
+	alert("GATEWAY= "+property);
+	property=caNetConfigObj.GetNetProperty(5);
+	alert("LOCAL= "+property);
+	//alert("==============Set Static IP==============");
+	//caNetConfigObj.CleanValid();
+	//caNetConfigObj.SetNetProperty(2, "192.168.0.77");
+	//caNetConfigObj.SetNetProperty(3, "255.255.255.0");
+	//caNetConfigObj.SetNetProperty(4, "192.168.0.1");
+	//caNetConfigObj.SetNetProperty(5, "189.77.236.2");
+	//caNetConfigObj.SetNetPropertyToNetwork();
+	alert("==============Set DHCP ==============");
+	caNetConfigObj.CleanValid();
+	CaNetConfigObj.SetNetDHCP(2);
+	alert('Setado DHCP');
+	//caNetConfigObj.SetNetPropertyToNetwork();
+	//caNetConfigObj.GetNetPropertyToCache();
+	var property=caNetConfigObj.GetNetProperty(1);
+	alert("MAC= "+property);
+	property=caNetConfigObj.GetNetProperty(2);
+	alert("IP= "+property);
+	property=caNetConfigObj.GetNetProperty(3);
+	alert("NETMASK= "+property);
+	property=caNetConfigObj.GetNetProperty(4);
+	alert("GATEWAY= "+property);
+	property=caNetConfigObj.GetNetProperty(5);
+	alert("LOCAL= "+property);
+}
+
 
 Ext.onReady(function() {
 	var DOC = Ext.get(document);
@@ -318,6 +378,9 @@ Ext.onReady(function() {
 		switch (key) {
 		case Browser.KEY.a:
 			anime();
+			break;
+		case Browser.KEY.n:
+			getIP();
 			break;
 		case Browser.KEY.i:
 			Cianet.ux.movies.getSelected().info();

@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
-from base import *
+
+
+#from base import *
+from django.template import RequestContext
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.shortcuts import render_to_response, get_object_or_404
+
 from canal import models, forms
-from django.core import serializers
-from django.conf import settings
 
 def index(request):
     lista =  models.Canal.objects.all()
@@ -59,15 +64,15 @@ def delete(request,id):
 
 
 
-def canallist(request):
-    """
-    Usado pelo setupbox para pegar a lista de canais
-    """
-    canais = models.Canal.objects.all()
-    MEDIA_URL=getattr(settings, 'MEDIA_URL')
-    # Chama o canal e pega a listagem do aplicativo canal
-    js = serializers.serialize('json',canais,indent=2, use_natural_keys=True)
-    return HttpResponse('{"media_url":"%s","data":%s}'%(MEDIA_URL,js))
+#def canal_list(request):
+#    """
+#    Usado pelo setupbox para pegar a lista de canais
+#    """
+#    canais = models.Canal.objects.all()
+#    MEDIA_URL=getattr(settings, 'MEDIA_URL')
+#    # Chama o canal e pega a listagem do aplicativo canal
+#    js = serializers.serialize('json',canais,indent=2, use_natural_keys=True)
+#    return HttpResponse('{"media_url":"%s","data":%s}'%(MEDIA_URL,js))
 
 
 

@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import patterns,include,url
-from settings import MEDIA_ROOT
+from django.conf.urls.defaults import patterns,include,url,handler404,handler500
+#from django.conf.urls.defaults import *
 
+from settings import MEDIA_ROOT
+#import canal,box
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Example:
-    # (r'^site_gerencia/', include('site_gerencia.foo.urls')),
-
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
+
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', name='sys_login'),
     url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', name='sys_logout'),
 
