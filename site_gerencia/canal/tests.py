@@ -19,7 +19,7 @@ class CanalTest(TestCase):
         #c.login(username='helber', password='1deitu1')
         i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
         ## Cria primeiro canal
-        c.post('/canal/add/',
+        c.post('/canal/addA/',
                {
               'logo':i1,
               'nome':'Rede SBT',

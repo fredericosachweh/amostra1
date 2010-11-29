@@ -15,8 +15,9 @@ class Canal(models.Model):
     Classe de manipulação de Canal de TV
     """
     class Meta:
-        ordering = ('nome',)
+        ordering = ('numero',)
         unique_together = ( ('ip','porta'), )
+        verbose_name_plural = _('Canais')
     numero = models.PositiveSmallIntegerField(_('Numero'),unique=True)
     nome = models.CharField(_('Nome'), max_length=100, unique=True)
     def __unicode__(self):

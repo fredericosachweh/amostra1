@@ -130,7 +130,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.name = this.fields.nome;
 		this.ip = this.fields.ip;
 		this.porta = this.fields.porta;
-		this.img = '/media/'+this.fields.thumb;
+		this.img = '/media/'+this.fields.thumb+'?'+Math.random();
 
 		this.movieTemplate = new Ext.Template(
 			[
@@ -309,49 +309,46 @@ Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5.
 8. caNetConfigObj.SetNetDHCP -> This function is for dhcp usage only. When want to set network by dhcp, just call this fuction with time out parameter.
  */
 
+function netInfo()
+{
+	var ret = '';
+	ret += 'Versão= '+caNetConfigObj.Getversion()+'\n';
+	caNetConfigObj.GetNetPropertyToCache();
+	var property=caNetConfigObj.GetNetProperty(1);
+	ret += "MAC= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(2);
+	ret += "IP= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(3);
+	ret += "NETMASK= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(4);
+	ret += "GATEWAY= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(5);
+	ret += "LOCAL= "+property+'\n';
+	return ret;
+}
+
 function getIP()
 {
 	// You will see the message in your console
 	caFileBrowseObj.Sayhello("JS check file browser object");
-	var ver=caFileBrowseObj.Getversion();
-	alert(ver);
+	//var ver=caFileBrowseObj.Getversion();
+	alert(netInfo());
 	// try our netconfig object
-	ver=caNetConfigObj.Getversion();
-	alert(ver);
-	caNetConfigObj.GetNetPropertyToCache();
-	var property=caNetConfigObj.GetNetProperty(1);
-	alert("MAC= "+property);
-	property=caNetConfigObj.GetNetProperty(2);
-	alert("IP= "+property);
-	property=caNetConfigObj.GetNetProperty(3);
-	alert("NETMASK= "+property);
-	property=caNetConfigObj.GetNetProperty(4);
-	alert("GATEWAY= "+property);
-	property=caNetConfigObj.GetNetProperty(5);
-	alert("LOCAL= "+property);
-	//alert("==============Set Static IP==============");
-	//caNetConfigObj.CleanValid();
-	//caNetConfigObj.SetNetProperty(2, "192.168.0.77");
-	//caNetConfigObj.SetNetProperty(3, "255.255.255.0");
-	//caNetConfigObj.SetNetProperty(4, "192.168.0.1");
-	//caNetConfigObj.SetNetProperty(5, "189.77.236.2");
-	//caNetConfigObj.SetNetPropertyToNetwork();
-	alert("==============Set DHCP ==============");
+	alert("============== Set Static IP ==============");
+	caNetConfigObj.CleanValid();
+	caNetConfigObj.SetNetProperty(2, "192.168.0.77");
+	caNetConfigObj.SetNetProperty(3, "255.255.255.0");
+	caNetConfigObj.SetNetProperty(4, "192.168.0.1");
+	caNetConfigObj.SetNetProperty(5, "189.77.236.2");
+	caNetConfigObj.SetNetPropertyToNetwork();
+	alert(netInfo());
+	alert("============== Set DHCP ==============");
 	caNetConfigObj.CleanValid();
 	CaNetConfigObj.SetNetDHCP(2);
 	alert('Setado DHCP');
+	alert(netInfo());
 	//caNetConfigObj.SetNetPropertyToNetwork();
 	//caNetConfigObj.GetNetPropertyToCache();
-	var property=caNetConfigObj.GetNetProperty(1);
-	alert("MAC= "+property);
-	property=caNetConfigObj.GetNetProperty(2);
-	alert("IP= "+property);
-	property=caNetConfigObj.GetNetProperty(3);
-	alert("NETMASK= "+property);
-	property=caNetConfigObj.GetNetProperty(4);
-	alert("GATEWAY= "+property);
-	property=caNetConfigObj.GetNetProperty(5);
-	alert("LOCAL= "+property);
 }
 
 
@@ -421,6 +418,7 @@ Ext.onReady(function() {
 			var running = Cianet.ux.movies.getSelected();
 			running.stop();
 			var movie = Cianet.ux.movies.selectNext();
+			movie.play();
 			movie.play();
 			break;
 		case Browser.KEY.UP:
