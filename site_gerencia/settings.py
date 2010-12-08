@@ -105,7 +105,11 @@ INSTALLED_APPS = (
     'canal',
     # Interface dos setup-box
     'box',
+    # Pagina de home
+    'home',
 )
+
+USE_TERMINAL_COLORS=True
 
 LOGIN_URL = '/accounts/login'
 

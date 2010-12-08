@@ -2,15 +2,29 @@ Ext.ns('Cianet.ux');
 
 Cianet.ux.movies = new Array();
 Cianet.ux.movies.filter = function(number){
-	var l = Ext.get(this);
-	l.each(function(){
-		//debug('--->',this);
-		if (this.id == number) {
-			//debug('Ocultando',this.id);
-			Ext.get(this).hide();
-			//this.hide();
+	for (var i=0;i<this.length;i++)
+	{
+		var chrN = ''+this[i].numero;
+		//debug(''+chrN+'.indexOf('+number+')');
+		if (chrN.indexOf(''+number) == -1)
+		{
+			Cianet.ux.movies.selectNext();
+			this[i].hide();
 		}
-	});
+	}
+}
+Cianet.ux.movies.showAll = function(){
+	for (var i=0;i<this.length;i++)
+	{
+		this[i].show();
+	}
+}
+Cianet.ux.movies.removeAll = function(){
+	for (var i=0;i<this.length;i++)
+	{
+		this[i].destroy();
+		this.remove(this[i]);
+	}
 }
 Cianet.ux.movies.getSelected = function(){
 	for (var i=0;i<this.length;i++){
@@ -25,6 +39,8 @@ Cianet.ux.movies.selectNext = function(){
 		if (this[i].selected){
 			// Verifica se tem proximo
 			if (this.length > (i+1)){
+				if (!this[i+1].isVisible)
+					i++;
 				this[i].leave();
 				el = this[i+1];
 				el.select();
@@ -39,6 +55,8 @@ Cianet.ux.movies.selectPrevius = function(){
 		if (this[i].selected){
 			// Verifica se tem proximo
 			if (i > 0){
+				if (!this[i-1].isVisible)
+					i--;
 				this[i].leave();
 				el = this[i-1];
 				el.select();
@@ -83,7 +101,7 @@ Cianet.ux.mediainfo = {
 		debug('Ocultando');
 		this.el.setWidth(0,true);
 	}
-}
+}//END: Cianet.ux.mediainfo = {
 
 // Player status
 Cianet.ux.PlayerState = {
@@ -106,6 +124,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 	y:0,
 	fullScreen:false,
 	selected:false,
+	isVisible:true,
 	constructor : function(config) {
 		config = config || {};
 		Ext.apply(this, config);
@@ -130,19 +149,31 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.name = this.fields.nome;
 		this.ip = this.fields.ip;
 		this.porta = this.fields.porta;
-		this.img = '/media/'+this.fields.thumb+'?'+Math.random();
+		this.numero = this.fields.numero;
+		//this.img = '/media/'+this.fields.thumb+'?'+Math.random();
+		this.img = '/media/'+this.fields.thumb
 
 		this.movieTemplate = new Ext.Template(
 			[
 				'<div id="movie_{id}" class="movie">',
 				'<div class="stype">{stype}</div>',
 				//'<a href="{url}" >',
-				'<div class="name">{name}</div>',
+				'<div class="name">{numero} - {name}</div>',
 				'<img class="photo" src="{img}" />',
+				'<div class="descricao">{descricao}</div>',
 				//'</a>',
 				'</div>'
 			]);
-		this.el = Ext.get(this.movieTemplate.append('movies',{id:this.id,url:this.url,name:this.name,img:this.img,stype:this.stype}));
+		this.el = Ext.get(this.movieTemplate.append('movies',{
+			id:this.id,
+			url:this.url,
+			name:this.fields.nome,
+			numero:this.fields.numero,
+			descricao:this.fields.descricao,
+			img:this.img,
+			stype:this.stype
+			}));
+		this.el.setVisibilityMode(Ext.Element.DISPLAY);
 	},
 	play : function() {
 		try {
@@ -211,6 +242,19 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			debug('info',info);
 		} catch (e){}
 		this.fireEvent('info');
+	},
+	hide : function(){
+		//debug('movie.hide');
+		this.el.setVisible(false);
+		this.isVisible = false;
+	},
+	show : function(){
+		//debug('movie.show');
+		this.el.setVisible(true);
+		this.isVisible = true;
+	},
+	destroy : function(){
+		this.el.remove();
 	}
 });//END: Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 
@@ -238,37 +282,40 @@ function loadMedia(){
 		url : '/box/canal_list/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
+			alert('Erro na comunicação com o servidor');
 		},
+		// Handler[success]
 		success : function(resp, obj) {
+			Cianet.ux.movies.removeAll();
 			resObject = Ext.util.JSON.decode(resp.responseText);
 			var movies = Ext.get('movies');
 			vod_playlist = resObject.data;
 			for ( var i = 0; i < vod_playlist.length; i++) {
 				var movie = new Cianet.ux.Movie(vod_playlist[i]);
 
-				// Evento de play
+				// Event[play]
 				movie.on('play',function(){
 					Ext.fly('msg').update('Rodando '+this.name);
 					Ext.get('movies').hide();
 					Cianet.ux.mediainfo.hide();
 				},movie);
 
-				// Evento de play
+				// Event[stop]
 				movie.on('stop',function(){
 					Ext.fly('msg').update('Parado '+this.name);
 					Ext.get('movies').show();
 					Cianet.ux.mediainfo.hide();
 				},movie);
 
-				// Evento de select
+				// Event[select]
 				movie.on('select',function(){
 					// Ajusta o scroll da pagina
 					var scroll = movies.getScroll();
 					var y = this.el.getY();
-					movies.scrollTo('top',(y+scroll.top-100));
+					movies.scrollTo('top',(y+scroll.top-300));
 				},movie);
 
-				// Event [info]
+				// Event[info]
 				movie.on('info',function(){
 					Cianet.ux.mediainfo.setMovieName(this.name);
 					Cianet.ux.mediainfo.setMovieHost(this.ip);
@@ -277,6 +324,7 @@ function loadMedia(){
 					Cianet.ux.mediainfo.toogle();
 				},movie);
 
+				// Event[fullscreen]
 				movie.on('fullscreen',function(){
 					if (Cianet.ux.PlayerState.fullscreen == true){
 						Cianet.ux.mediainfo.hide();
@@ -312,10 +360,10 @@ Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5.
 function netInfo()
 {
 	var ret = '';
-	ret += 'Versão= '+caNetConfigObj.Getversion()+'\n';
+	ret += 'Version= '+caNetConfigObj.Getversion()+'\n';
 	caNetConfigObj.GetNetPropertyToCache();
 	var property=caNetConfigObj.GetNetProperty(1);
-	ret += "MAC= "+property+'\n';
+	ret += "MACADDR= "+property+'\n';
 	property=caNetConfigObj.GetNetProperty(2);
 	ret += "IP= "+property+'\n';
 	property=caNetConfigObj.GetNetProperty(3);
@@ -324,6 +372,7 @@ function netInfo()
 	ret += "GATEWAY= "+property+'\n';
 	property=caNetConfigObj.GetNetProperty(5);
 	ret += "LOCAL= "+property+'\n';
+	debug(ret);
 	return ret;
 }
 
@@ -334,21 +383,34 @@ function getIP()
 	//var ver=caFileBrowseObj.Getversion();
 	alert(netInfo());
 	// try our netconfig object
-	alert("============== Set Static IP ==============");
-	caNetConfigObj.CleanValid();
-	caNetConfigObj.SetNetProperty(2, "192.168.0.77");
-	caNetConfigObj.SetNetProperty(3, "255.255.255.0");
-	caNetConfigObj.SetNetProperty(4, "192.168.0.1");
-	caNetConfigObj.SetNetProperty(5, "189.77.236.2");
-	caNetConfigObj.SetNetPropertyToNetwork();
-	alert(netInfo());
+	//alert("============== Set Static IP ==============");
+	//caNetConfigObj.CleanValid();
+	//caNetConfigObj.SetNetProperty(2, "192.168.0.77");
+	//caNetConfigObj.SetNetProperty(3, "255.255.255.0");
+	//caNetConfigObj.SetNetProperty(4, "192.168.0.1");
+	//caNetConfigObj.SetNetProperty(5, "127.0.0.1");
+	//caNetConfigObj.SetNetPropertyToNetwork();
+	//caNetConfigObj.GetNetPropertyToCache();
+	//alert(netInfo());
 	alert("============== Set DHCP ==============");
 	caNetConfigObj.CleanValid();
-	CaNetConfigObj.SetNetDHCP(2);
+	//caNetConfigObj.GetNetPropertyToCache();
+	CaNetConfigObj.SetNetDHCP();
 	alert('Setado DHCP');
 	alert(netInfo());
 	//caNetConfigObj.SetNetPropertyToNetwork();
 	//caNetConfigObj.GetNetPropertyToCache();
+}
+
+
+function osd()
+{
+	//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
+	//toDelHole( int idx );	// to delete hole
+	alert('Criando hole ----------------------------------');
+	//errr.eee();
+	caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 100 , 100 );
+	alert('Criado');
 }
 
 
@@ -358,26 +420,28 @@ Ext.onReady(function() {
 	showAnim = {
 		duration : 4
 	};
-	// Carrega a lista de midias via webservice
-	//for (var i =0; i<10;i++)
+	// Call load media list from webservice
 	loadMedia();
-	//
+	// Handler[keypress]
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();
-		Ext.fly('an').update('KEY:'+key);
-		debug('KEY= '+key+' ');
+		//Ext.fly('an').update('KEY:'+key);
+		//debug('KEY= '+key+' ');
 
 		if ( (Browser.KEY.N_0) <= key && Browser.KEY.N_9 >= key){
-			debug('Numeric');
-			//Cianet.ux.movies.filter(5);
+			debug('Numeric',event,opt);
 		}
 
 		switch (key) {
 		case Browser.KEY.a:
 			anime();
+			//Cianet.ux.movies.showAll();
 			break;
 		case Browser.KEY.n:
 			getIP();
+			break;
+		case Browser.KEY.o:
+			osd();
 			break;
 		case Browser.KEY.i:
 			Cianet.ux.movies.getSelected().info();
@@ -408,23 +472,24 @@ Ext.onReady(function() {
 			var selected = Cianet.ux.movies.getSelected();
 			selected.stop();
 			break;
-		case Browser.KEY.RIGHT:
+		case Browser.KEY.DOWN:
 			Cianet.ux.movies.selectNext();
 			break;
-		case Browser.KEY.LEFT:
+		case Browser.KEY.UP:
 			Cianet.ux.movies.selectPrevius();
 			break;
-		case Browser.KEY.DOWN:
+		case Browser.KEY.RIGHT:
 			var running = Cianet.ux.movies.getSelected();
 			running.stop();
 			var movie = Cianet.ux.movies.selectNext();
 			movie.play();
 			movie.play();
 			break;
-		case Browser.KEY.UP:
+		case Browser.KEY.LEFT:
 			var running = Cianet.ux.movies.getSelected();
 			running.stop();
 			var movie = Cianet.ux.movies.selectPrevius();
+			movie.play();
 			movie.play();
 			break;
 		case Browser.KEY.HOME:

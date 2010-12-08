@@ -38,11 +38,11 @@ class CanalAdmin(admin.ModelAdmin):
     save_as = True
     list_per_page = 10
     search_fields = ['nome']
-    #formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
+    formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'logo':
-            #request = kwargs.pop("request", None)
+            request = kwargs.pop("request", None)
             kwargs['widget'] = AdminImageWidget
             return db_field.formfield(**kwargs)
         return super(CanalAdmin,self).formfield_for_dbfield(db_field, **kwargs)

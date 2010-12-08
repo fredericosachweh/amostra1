@@ -2,6 +2,7 @@
 # -*- encoding:utf8 -*-
 
 from django.conf.urls.defaults import patterns,include,url,handler404,handler500
+from django.views.generic.simple import direct_to_template
 #from django.conf.urls.defaults import *
 
 from settings import MEDIA_ROOT
@@ -26,4 +27,6 @@ urlpatterns = patterns('',
     (r'^canal/',include('canal.urls')),
     # Interface dos setupbox
     (r'^box/',include('box.urls')),
+    # Página inicial
+    (r'^$',direct_to_template,{'template':'index.html'} ),
 )

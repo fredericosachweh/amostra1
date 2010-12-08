@@ -72,44 +72,48 @@ a:HOVER {
 }
 
 	#movies .movie {
-		width: 115px;
-		height: 200px;
-		float: left;
+		position: relative;
+		height: 120px;
 		border: 0px solid gray;
 		background-color: white;
-		margin: 3px;
+		margin: 5px;
 		overflow: hidden;
-		text-align: center;
+		text-align: left;
 		font-size: 9px;
 		border-radius: 10px;
 		-webkit-border-radius: 10px;
-	}
-
-	#movies .movie a {
-
+		vertical-align: middle;
 	}
 
 	#movies .movie .photo {
-		position: relative;
-		width: 90px;
-		top: 0px;
+		position: absolute;
+		top: 10px;
+		left: 30px;
 	}
 	#movies .movie .stype {
-		position: relative;
+		display: none;
 		top: 5px;
 		font-weight: bolder;
 		font-size: 12px;
 	}
 	#movies .movie .name {
-		position: relative;
-		top: 155px;
+		position: absolute;
+		left: 150px;
+		top: 10px;
+		font-size: 20px;
+		font-weight: bolder;
+	}
+	#movies .movie .descricao {
+		position: absolute;
+		left: 150px;
+		right: 30px;
+		top: 40px;
+		font-size: 14px;
 	}
 
 	#movies .selected {
 		border: 0px solid blue;
 		background-color: gray;
-		box-shadow: 5px 3px 5px yellow;
-		-webkit-box-shadow: 5px 3px 5px yellow;
 	}
 
 

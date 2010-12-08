@@ -10,11 +10,29 @@ from django.conf import settings
 from django.core import serializers
 
 def index(request):
+    #print(request.COOKIES)
+    #print(dir(request.META))
+    #print(' | '.join(request.META))
+    print('IP=%s',request.META['REMOTE_ADDR'])
+    #print('IP: %s %s' %(request.REMOTE_ADDR,request.REMOTE_HOST))
     return render_to_response(
                               'box/index.html',
                               { 'info':'info' },
                               context_instance=RequestContext(request)
                               )
+
+
+def auth(request,mac=None):
+    #print('MAC=%s'%mac)
+    return HttpResponse('{"MAC":"%s"}'%mac)
+
+def remote_log(request):
+    #print(dir(request))
+    print('message',request.POST['body'])
+    print('stack',request.POST['stack'])
+    #print('POST',request.POST)
+    #print('GET',' | '.join(request.GET))
+    return HttpResponse('{"success":"true"}')
 
 def canal_list(request):
     """
