@@ -1,0 +1,95 @@
+
+
+About broser screen size:
+The broser screen size don't fit framebuffer size. Is greater than TV size (on previus version is lower). ~30 pixels
+
+
+
+
+
+About create hole have any effect and don't pass to next function:
+## For example calling this function, noting happens.
+<code>
+caMediaPlayer.toSetHolePositionAndSize( 1 , 10 , 10 , 100 , 100 );
+alert('here!!');
+</code>
+## "here!!" not called
+
+
+
+
+
+About network property:
+
+<code>
+function netInfo()
+{
+	var ret = '';
+	ret += 'Version= '+caNetConfigObj.Getversion()+'\n';
+	caNetConfigObj.GetNetPropertyToCache();
+	var property=caNetConfigObj.GetNetProperty(1);
+	ret += "MACADDR= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(2);
+	ret += "IP= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(3);
+	ret += "NETMASK= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(4);
+	ret += "GATEWAY= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(5);
+	ret += "LOCAL= "+property+'\n';
+	return ret;
+}
+// Try to get and set some network information
+function getIP()
+{
+	caFileBrowseObj.Sayhello("JS check file browser object");
+	alert(netInfo());
+	// try our netconfig object
+	alert("============== Set Static IP ==============");
+	caNetConfigObj.CleanValid();
+	caNetConfigObj.SetNetProperty(2, "192.168.0.77");
+	caNetConfigObj.SetNetProperty(3, "255.255.255.0");
+	caNetConfigObj.SetNetProperty(4, "192.168.0.1");
+	caNetConfigObj.SetNetProperty(5, "127.0.0.1");
+	caNetConfigObj.SetNetPropertyToNetwork();
+	caNetConfigObj.GetNetPropertyToCache();
+	alert(netInfo());
+	alert("============== Set DHCP ==============");
+	caNetConfigObj.CleanValid();
+	caNetConfigObj.SetNetPropertyToNetwork();
+	caNetConfigObj.GetNetPropertyToCache();
+	CaNetConfigObj.SetNetDHCP(5);
+	alert('DHCP done');
+	alert(netInfo());
+	//caNetConfigObj.SetNetPropertyToNetwork();
+	//caNetConfigObj.GetNetPropertyToCache();
+}
+</code>
+
+The return in all called is:
+<shell>
+Version= 0.0.2
+MACADDR= 00:16:E8:05:9D:F0
+IP= 192.168.0.81
+NETMASK= 255.255.255.0
+GATEWAY= 192.168.0.1
+LOCAL= 127.0.0.1
+</shell>
+
+I try to set network config but this error is reported on static IP:
+#Error netconfig_apply:type not set (netconfig.cpp 232)
+
+On dhcp function stop on call with 5, none or any other parameter:
+CaNetConfigObj.SetNetDHCP(5);
+Calling this function is stop here and don't display alert.
+
+
+
+
+
+About player:
+On this version on multicast play the cpu consumed by arora jump to 99% of use.
+
+
+
+

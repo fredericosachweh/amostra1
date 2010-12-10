@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Site de gerencia de canais - SetUpBox.</title>
+</head>
+<body>
+<h1>Bem Vindo.</h1>
+Para acessar a administração clique <a href="{% if user.is_active and user.is_staff %}{% url admin:index %}{% else %}{% url sys_login %}{% endif %}">aqui.</a>
+</body>
+</html>

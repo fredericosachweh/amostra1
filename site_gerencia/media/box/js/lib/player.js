@@ -20,10 +20,11 @@ Cianet.ux.movies.showAll = function(){
 	}
 }
 Cianet.ux.movies.removeAll = function(){
-	for (var i=0;i<this.length;i++)
+	var l = this.length;
+	for (var i=0;i<l;i++)
 	{
-		this[i].destroy();
-		this.remove(this[i]);
+		var d = this.pop();
+		d.destroy();
 	}
 }
 Cianet.ux.movies.getSelected = function(){
@@ -143,7 +144,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		return this;
 	},
 	init : function() {
-		this.id = this.pk+Math.random();
+		this.id = this.fields.numero;//+Math.random();
 		this.url = 'udp://'+this.fields.ip+':'+this.fields.porta;
 		this.stype = 'mcast';
 		this.name = this.fields.nome;
@@ -279,7 +280,7 @@ function anime() {
 
 function loadMedia(){
 	Ext.Ajax.request({
-		url : '/box/canal_list/',
+		url : 'canal_list/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
 			alert('Erro na comunicação com o servidor');
@@ -287,6 +288,7 @@ function loadMedia(){
 		// Handler[success]
 		success : function(resp, obj) {
 			Cianet.ux.movies.removeAll();
+			//debug('Canais',Cianet.ux.movies);
 			resObject = Ext.util.JSON.decode(resp.responseText);
 			var movies = Ext.get('movies');
 			vod_playlist = resObject.data;
@@ -408,11 +410,35 @@ function osd()
 	//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
 	//toDelHole( int idx );	// to delete hole
 	alert('Criando hole ----------------------------------');
-	//errr.eee();
 	caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 100 , 100 );
 	alert('Criado');
 }
 
+var atualizador_canal = {
+	run:function(){
+		Ext.Ajax.request({
+			url : 'canal_update/',
+			// Handler[failure]
+			failure: function(resp,obj) {
+				debug('Falhou',resp);
+				alert('Erro na comunicação com o servidor');
+			},
+			// Handler[success]
+			success : function(resp, obj) {
+				resObject = Ext.util.JSON.decode(resp.responseText);
+				var atualizado = new Date(resObject.atualizado);
+				if (atualizado > this.ultimo)
+				{
+					this.ultimo = atualizado;
+					loadMedia();
+				}
+			},
+			scope:this
+		});
+	},
+	ultimo:new Date('Wed, 18 Oct 2000 13:00:00 EST'),
+	interval:10*1000
+};
 
 Ext.onReady(function() {
 	var DOC = Ext.get(document);
@@ -421,7 +447,8 @@ Ext.onReady(function() {
 		duration : 4
 	};
 	// Call load media list from webservice
-	loadMedia();
+	Ext.TaskMgr.start(atualizador_canal);
+	//loadMedia();
 	// Handler[keypress]
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();

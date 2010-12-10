@@ -1,0 +1,19 @@
+2010/11/24
+Purpose:
+	This release note describes how to use our netconfig library through java script object. Please also reference
+corresponding html example.
+
+object name: caNetConfigObj
+1. caNetConfigObj.Sayhello -> the same as other object; an easy way to verify this object could work well with Java Script
+2. caNetConfigObj.Getversion -> return the version string 
+3. caNetConfigObj.GetNetPropertyToCache -> In java script, we can't use structure as we do everyday in c/c++, so we have to set/get one property each time. This doesn't make sense for our library to do this, so we have a cache in our design. To get properties back, call this function first. This function will save all the network information at cache.
+Note: we may improve this part in the near future. This means you can set/get value by our object's fields independently.
+4. caNetConfigObj.GetNetProperty -> Calling this function with type parameter gets property back. 
+Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5. 
+5. caNetConfigObj.CleanValid -> As the get property, we have the cache design inside also. To set network property, first call this function before doing any setting. 
+6. caNetConfigObj.SetNetProperty -> Calling this function with type and value sets property to network. However, this won't set to system until calling the function below.
+7. caNetConfigObj.SetNetPropertyToNetwork -> Calling this function sets the network property to network. 
+8. caNetConfigObj.SetNetDHCP -> This function is for dhcp usage only. When want to set network by dhcp, just call this fuction with time out parameter.
+
+
+

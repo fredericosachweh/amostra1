@@ -31,13 +31,13 @@ class CanalAdmin(admin.ModelAdmin):
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
     #fields = ('numero','nome','descricao','logo','sigla','ip','porta', )
-    list_display = ('imagem_thum','numero','nome',)
+    list_display = ('imagem_thum','numero','nome','ip','porta',)
     list_display_links = ('numero','nome',)
     #list_editable = ('numero','nome',)
     #inline = (Programa,)
     save_as = True
     list_per_page = 10
-    search_fields = ['nome']
+    search_fields = ['nome','ip','porta']
     formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):

@@ -1,0 +1,74 @@
+Regarding to the codec support, below is the list copied from Sigma Design document.
+Supported container formats:
+    * ASF
+    * MP4/MOV
+    * MKV
+    * M2T, M2P, VOB
+    * RIFF (AVI and WAVE)
+    * FLV
+    * JPEG (HW and SW decoder)
+    * PNG
+    * GIF
+    * BMP
+Supported Streaming/Feed:
+    * SPI (M2T only)
+    * Multicast (M2T only)
+    * RTSP: ASF Streaming only
+Supported audio codecs:
+    * AC3
+    * ADIF
+    * ADTS
+    * BDLPCM
+    * DTS
+    * LPCM
+    * PCM
+    * ADPCM uLaw
+    * MPEG Audio
+    * Vorbis
+    * WMA
+    * WMAPro
+    * WMATS
+Supported video codecs:
+    * MPEG1/2 Video
+    * DiVX3
+    * MPEG4 (DiVX4/5, XViD)
+    * WMV9
+    * VC1
+    * H264
+    * AVS
+Supported subtitles formats:
+    * (VOB)SUB/IDX : External. Internal (MKV only)
+    * ASS/SSA : External. Internal (MKV only)
+    * SRT : External. Internal (MKV only)
+    * SUB (microdvd) : External
+    * NeroSPU : Internal (MP4 only)
+    * TeletextSubs : Internal (M2T only)
+    * DVBSubs : Internal (M2T only)
+Supported codecs by container format:
+    * ASF
+          o Video: MPEG2, DiVX3, WMV9, VC1
+          o Audio: MPEG, WMA, WMAPro
+          o Subtitles: All external types
+    * MP4/MOV
+          o Video: MPEG4, H264
+          o Audio: ADTS, AC3 (Nero only), ADPCM uLaw, MPEG-II audio layer 3 (mp3)
+          o Subtitles: All external types plus NeroSPU
+    * MKV
+          o Video: MPEG2, MPEG4, H264, DiVX3, WMV9, VC1
+          o Audio: AC3, DTS, LPCM, ADTS
+          o Subtitles: All compatible types external and embedded.
+    * M2T, M2P, VOB
+          o Video: MPEG2, MPEG4, H264, VC1
+          o Audio: ADTS, AC3, DTS, BDLPCM, MPEG, WMATS
+          o Subtitles: All external types plus TeletextSubs and DVBSubs
+    * RIFF
+          o Video (AVI only): MPEG2, MPEG4, DiVX3, H264, VC1, WMV9, MJPEG
+          o Audio (AVI and WAVE): ADTS, AC3, DTS, MPEG, PCM, WMA
+          o Subtitles: All external types
+    * FLV
+          o Video : H264
+          o Audio : MPEG1, ADTS
+    * Elementary
+          o Video: MPEG1/2, MPEG4, H264, VC1, MJPEG
+          o Audio: AC3, ADTS, ADIF, DTS, PCM, LPCM, MPEG Audio, Vorbis
+As we know, the DFB system is based on other libraries which support these formats above, and DFB system should support also. However, this may be not true.

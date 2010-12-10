@@ -32,6 +32,7 @@ class Canal(models.Model):
     sigla = models.CharField(_('Sigla'),blank=False,max_length=5)
     ip = models.IPAddressField(_('IP'),blank=False)
     porta = models.PositiveSmallIntegerField(_('Porta'),blank=False)
+    atualizado = models.DateTimeField(auto_now=True)
 
 class Genero(models.Model):
     def __unicode__(self):
