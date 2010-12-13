@@ -21,9 +21,9 @@ a:HOVER {
 }
 #msg {
 	position: absolute;
-	top: 24px;
-	left: 10px;
-	right: 30px;
+	top: 5px;
+	left: 5px;
+	right: 5px;
 	height: 30px;
 	overflow: hidden;
 	font-weight: bolder;
@@ -35,6 +35,7 @@ a:HOVER {
 }
 #an {
 	position: absolute;
+	display: none;
 	top:0px;
 	left: 0px;
 	width: 150px;
@@ -45,28 +46,58 @@ a:HOVER {
 
 #mediainfo {
 	position: absolute;
-	width: 0px;
-	height: 400px;
 	top: 30px;
-	left: 300px;
-	background-color: white;
+	left: 30px;
+	right: 30px;
+	bottom: 30px;
+	background-color: black;
+	color: yellow;
 	z-index: 200;
 	border: 0px solid red;
 	overflow: hidden;
 }
-#mediainfo .label {
-	font-weight: bolder;
-	border-bottom: 1px solid grey;
-	margin-top: 10px;
-}
+	#mediainfo .logo {
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		border: 1px solid gray;
+		padding: 10px;
+	}
+	#mediainfo .numero {
+		position: absolute;
+		left: 150px;
+		top: 10px;
+		background-color: red;
+		font-size: 80px;
+		font-weight: bolder;
+	}
+	#mediainfo .nome {
+		position: absolute;
+		left: 150px;
+		top: 130px;
+		font-size: 30px;
+		font-weight: bolder;
+	}
+	#mediainfo .descricao {
+		position: absolute;
+		left: 30px;
+		top: 270px;
+		right: 30px;
+		bottom: 30px;
+	}
+	#mediainfo .ip {
+		position: absolute;
+		right: 30px;
+		top: 240px;
+	}
 
 
 #movies {
 	position: absolute;
-	top: 60px;
-	left: 30px;
+	top: 50px;
+	left: 10px;
 	bottom: 10px;
-	right: 30px;
+	right: 10px;
 	overflow: scroll;
 	background-color: black;
 }
@@ -110,9 +141,15 @@ a:HOVER {
 		top: 40px;
 		font-size: 14px;
 	}
+	#movies .movie .ip {
+		position: absolute;
+		right: 10px;
+		bottom: 10px;
+		font-size: 14px;
+	}
+
 
 	#movies .selected {
-		border: 0px solid blue;
 		background-color: gray;
 	}
 

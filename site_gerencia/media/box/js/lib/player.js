@@ -5,7 +5,6 @@ Cianet.ux.movies.filter = function(number){
 	for (var i=0;i<this.length;i++)
 	{
 		var chrN = ''+this[i].numero;
-		//debug(''+chrN+'.indexOf('+number+')');
 		if (chrN.indexOf(''+number) == -1)
 		{
 			Cianet.ux.movies.selectNext();
@@ -68,41 +67,84 @@ Cianet.ux.movies.selectPrevius = function(){
 }
 
 
+
+
+
+
+
+
+
 Cianet.ux.mediainfo = {
-	el:null,
 	setEl : function(el){
+		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
 	},
-	setMovieName : function(name){
-		Ext.fly('moviename').update(name);
-	},
-	setMovieHost : function(host){
-		Ext.fly('moviehost').update(host);
-	},
-	setMoviePort : function(port){
-		Ext.fly('movieport').update(port);
-	},
-	setMovieId : function(id){
-		Ext.fly('movieid').update(id);
+	setMovie : function(movie){
+		this.template = new Ext.Template(
+			[
+				'<img class="logo" src="{img}" />',
+				'<div class="numero">{numero}</div>',
+				'<div class="nome">{nome}</div>',
+				'<div class="descricao"><pre>{descricao}</pre></div>',
+				'<div class="ip">{ip}:{porta}</div>',
+			]);
+		this.template.overwrite(this.el,{
+			id:movie.id,
+			url:movie.url,
+			nome:movie.fields.nome,
+			numero:movie.fields.numero,
+			descricao:movie.fields.descricao,
+			img:movie.img,
+			ip:movie.ip,
+			porta:movie.porta,
+			stype:movie.stype
+		});
 	},
 	toogle : function(){
-		var w = this.el.getWidth(true);
-		debug('W='+w);
-		if (w != 0){
+		var visible = this.el.isVisible();
+		if (visible){
 			this.hide();
 		} else {
 			this.show();
 		}
 	},
 	show : function(){
-		debug('Exibindo');
-		this.el.setWidth(200,true);
+		this.el.setVisible(true);
+		Ext.get('msg').setVisible(false);
+		try {
+			caMediaPlayer.toSetPositionAndSize(650,70,300,200);
+			caMediaPlayer.toPlayerInfo( 1 );
+		}catch(e){}
 	},
 	hide : function(){
-		debug('Ocultando');
-		this.el.setWidth(0,true);
+		this.el.setVisible(false);
+		Ext.get('msg').setVisible(true);
+		try {
+			caMediaPlayer.toSetFullScreen();
+			Cianet.ux.PlayerState.fullscreen = true;
+			caMediaPlayer.toPlayerInfo( 0 );
+		}catch(e){}
 	}
 }//END: Cianet.ux.mediainfo = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Player status
 Cianet.ux.PlayerState = {
@@ -147,36 +189,36 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.id = this.fields.numero;//+Math.random();
 		this.url = 'udp://'+this.fields.ip+':'+this.fields.porta;
 		this.stype = 'mcast';
-		this.name = this.fields.nome;
+		this.nome = this.fields.nome;
 		this.ip = this.fields.ip;
 		this.porta = this.fields.porta;
 		this.numero = this.fields.numero;
 		//this.img = '/media/'+this.fields.thumb+'?'+Math.random();
-		this.img = '/media/'+this.fields.thumb
+		this.img = MEDIA_URL+''+this.fields.thumb
 
 		this.movieTemplate = new Ext.Template(
 			[
 				'<div id="movie_{id}" class="movie">',
 				'<div class="stype">{stype}</div>',
-				//'<a href="{url}" >',
-				'<div class="name">{numero} - {name}</div>',
+				'<div class="name">{numero} - {nome}</div>',
 				'<img class="photo" src="{img}" />',
-				'<div class="descricao">{descricao}</div>',
-				//'</a>',
+				'<div class="ip">{ip}:{porta}</div>',
 				'</div>'
 			]);
 		this.el = Ext.get(this.movieTemplate.append('movies',{
 			id:this.id,
 			url:this.url,
-			name:this.fields.nome,
+			nome:this.fields.nome,
 			numero:this.fields.numero,
-			descricao:this.fields.descricao,
 			img:this.img,
+			ip:this.ip,
+			porta:this.porta,
 			stype:this.stype
 			}));
 		this.el.setVisibilityMode(Ext.Element.DISPLAY);
 	},
 	play : function() {
+		debug('movie.play');
 		try {
 			if (Cianet.ux.PlayerState.plaing){
 				caMediaPlayer.toPause();
@@ -197,6 +239,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.fireEvent('play');
 	},
 	stop : function() {
+		debug('movie.stop');
 		try {
 			caMediaPlayer.toStop();
 			caMediaPlayer.toExit();
@@ -204,16 +247,19 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.fireEvent('stop');
 	},
 	select : function() {
+		debug('movie.select');
 		this.el.addClass('selected');
 		this.selected = true;
 		this.fireEvent('select');
 	},
 	leave : function() {
+		debug('movie.leave');
 		this.el.removeClass('selected');
 		this.selected = false;
 		this.fireEvent('leave');
 	},
 	fullScreen : function(){
+		debug('movie.fullScreen');
 		try {
 			if (Cianet.ux.PlayerState.fullscreen){
 				caMediaPlayer.toSetPositionAndSize(50,50,600,400);
@@ -226,6 +272,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.fireEvent('fullscreen');
 	},
 	repeat : function(){
+		debug('movie.repeat');
 		try {
 			if( caMediaPlayer.toGetRepeatMode() )
 				caMediaPlayer.toSetRepeatMode( false );
@@ -235,26 +282,25 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.fireEvent('repeat');
 	},
 	info : function(){
-		debug('Info');
+		debug('movie.info');
 		try {
-			caMediaPlayer.toSetPositionAndSize(300,60,300,200);
-			caMediaPlayer.toPlayerInfo( 1 );
 			var info = caMediaPlayer.toGetStreamInfo();
 			debug('info',info);
 		} catch (e){}
 		this.fireEvent('info');
 	},
 	hide : function(){
-		//debug('movie.hide');
+		debug('movie.hide');
 		this.el.setVisible(false);
 		this.isVisible = false;
 	},
 	show : function(){
-		//debug('movie.show');
+		debug('movie.show');
 		this.el.setVisible(true);
 		this.isVisible = true;
 	},
 	destroy : function(){
+		debug('movie.destroy');
 		this.el.remove();
 	}
 });//END: Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
@@ -272,18 +318,23 @@ function anime() {
 	var a = Ext.get('an');
 	Ext.fly('msg').update('Animation box....');
 	if (a.getX() == 0)
-		a.moveTo(830, 700, anim);
+		a.moveTo(800, 650, anim);
 	else
 		a.moveTo(0,0, anim);
 };//END: function anime() {
 
 
 function loadMedia(){
+	var selected = Cianet.ux.movies.getSelected();
+	if (selected != undefined)
+		var numero = selected.numero;
+	else
+		var numero = -1;
 	Ext.Ajax.request({
 		url : 'canal_list/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
-			alert('Erro na comunicação com o servidor');
+			//alert('Erro na comunicação com o servidor');
 		},
 		// Handler[success]
 		success : function(resp, obj) {
@@ -297,14 +348,14 @@ function loadMedia(){
 
 				// Event[play]
 				movie.on('play',function(){
-					Ext.fly('msg').update('Rodando '+this.name);
+					Ext.fly('msg').update('Rodando '+this.nome);
 					Ext.get('movies').hide();
 					Cianet.ux.mediainfo.hide();
 				},movie);
 
 				// Event[stop]
 				movie.on('stop',function(){
-					Ext.fly('msg').update('Parado '+this.name);
+					Ext.fly('msg').update('Parado '+this.nome);
 					Ext.get('movies').show();
 					Cianet.ux.mediainfo.hide();
 				},movie);
@@ -315,14 +366,17 @@ function loadMedia(){
 					var scroll = movies.getScroll();
 					var y = this.el.getY();
 					movies.scrollTo('top',(y+scroll.top-300));
+					Cianet.ux.mediainfo.setMovie(this);
 				},movie);
 
 				// Event[info]
 				movie.on('info',function(){
-					Cianet.ux.mediainfo.setMovieName(this.name);
-					Cianet.ux.mediainfo.setMovieHost(this.ip);
-					Cianet.ux.mediainfo.setMoviePort(this.porta);
-					Cianet.ux.mediainfo.setMovieId(this.id);
+					Cianet.ux.mediainfo.setMovie(this);
+					//Cianet.ux.mediainfo.setMovieName(this.name);
+					//Cianet.ux.mediainfo.setMovieName(this.name);
+					//Cianet.ux.mediainfo.setMovieHost(this.ip);
+					//Cianet.ux.mediainfo.setMoviePort(this.porta);
+					//Cianet.ux.mediainfo.setMovieId(this.id);
 					Cianet.ux.mediainfo.toogle();
 				},movie);
 
@@ -336,8 +390,14 @@ function loadMedia(){
 				},movie);
 
 				Cianet.ux.movies.push(movie);
+				if (numero == movie.numero)
+					movie.select();
 			}
-			Cianet.ux.movies[0].select();
+			if (numero == -1)
+				Cianet.ux.movies[0].select();
+			//Cianet.ux.mediainfo.setMovie(Cianet.ux.movies[0]);
+			//Cianet.ux.mediainfo.toogle();
+			//Cianet.ux.mediainfo.toogle();
 		}
 	});//END: Ext.Ajax.request({
 
@@ -410,7 +470,8 @@ function osd()
 	//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
 	//toDelHole( int idx );	// to delete hole
 	alert('Criando hole ----------------------------------');
-	caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 100 , 100 );
+	var o = caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
+	alert(o);
 	alert('Criado');
 }
 
@@ -421,7 +482,7 @@ var atualizador_canal = {
 			// Handler[failure]
 			failure: function(resp,obj) {
 				debug('Falhou',resp);
-				alert('Erro na comunicação com o servidor');
+				//alert('Erro na comunicação com o servidor');
 			},
 			// Handler[success]
 			success : function(resp, obj) {
@@ -443,6 +504,7 @@ var atualizador_canal = {
 Ext.onReady(function() {
 	var DOC = Ext.get(document);
 	Cianet.ux.mediainfo.setEl(Ext.get('mediainfo'));
+	Cianet.ux.mediainfo.hide();
 	showAnim = {
 		duration : 4
 	};
