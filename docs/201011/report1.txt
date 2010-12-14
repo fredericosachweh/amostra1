@@ -1,0 +1,9 @@
+
+
+About OSD:
+previus send to me:
+caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
+But scanning binary for string i see (function name is wrong):
+caMediaPlayer.toSetHolePostionAndSize( 0 , 10 , 10 , 800 , 600 );
+-------------------------^^
+

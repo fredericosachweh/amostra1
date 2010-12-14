@@ -1,0 +1,5 @@
+caFileBrowse
+caMediaPlayerbooltoInit()fileName,bufferMode,playTimetoPlay(QString,int,int)toPlay()toStop()toExit()toPause()speedtoFastForward(int)toBackForward(int)toSlowForward(int)ontoSetRepeatMode(bool)toGetRepeatMode()toSetExitMode(bool)toGetExitMode()toSetScreenMode(bool)toGetScreenMode()toPlayerInfo(bool)toSwapVideo()player_notoSetActivePlayer(int)inttoGetActivePlayer()QStringGetversion()toGetStreamInfo()x,y,w,htoSetPositionAndSize(int,int,int,int)toSetFullScreen()idx,x,y,w,htoSetHolePostionAndSize(int,int,int,int,int)idxtoDelHole(int)
+install/arora/bin/arora-placesimport:
+caFileBrowse
+caMediaPlayerbooltoInit()fileName,bufferMode,playTimetoPlay(QString,int,int)toPlay()toStop()toExit()toPause()speedtoFastForward(int)toBackForward(int)toSlowForward(int)ontoSetRepeatMode(bool)toGetRepeatMode()toSetExitMode(bool)toGetExitMode()toSetScreenMode(bool)toGetScreenMode()toPlayerInfo(bool)toSwapVideo()player_notoSetActivePlayer(int)inttoGetActivePlayer()QStringGetversion()toGetStreamInfo()x,y,w,htoSetPositionAndSize(int,int,int,int)toSetFullScreen()idx,x,y,w,htoSetHolePostionAndSize(int,int,int,int,int)idxtoDelHole(int)

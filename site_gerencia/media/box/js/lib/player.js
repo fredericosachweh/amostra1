@@ -37,7 +37,7 @@ Cianet.ux.movies.selectNext = function(){
 	var el = null;
 	for (var i=0;i<this.length;i++){
 		if (this[i].selected){
-			// Verifica se tem proximo
+			// Verifica se existe o proximo
 			if (this.length > (i+1)){
 				if (!this[i+1].isVisible)
 					i++;
@@ -53,7 +53,7 @@ Cianet.ux.movies.selectPrevius = function(){
 	var el = null;
 	for (var i=0;i<this.length;i++){
 		if (this[i].selected){
-			// Verifica se tem proximo
+			// Verifica se existe o anterior
 			if (i > 0){
 				if (!this[i-1].isVisible)
 					i--;
@@ -151,7 +151,8 @@ Cianet.ux.PlayerState = {
 	fullscreen:true,
 	plaing:false,
 	info:false,
-	filtering:false
+	filtering:false,
+	osd:false
 };
 
 
@@ -440,39 +441,54 @@ function netInfo()
 
 function getIP()
 {
-	// You will see the message in your console
-	caFileBrowseObj.Sayhello("JS check file browser object");
-	//var ver=caFileBrowseObj.Getversion();
-	alert(netInfo());
-	// try our netconfig object
-	//alert("============== Set Static IP ==============");
-	//caNetConfigObj.CleanValid();
-	//caNetConfigObj.SetNetProperty(2, "192.168.0.77");
-	//caNetConfigObj.SetNetProperty(3, "255.255.255.0");
-	//caNetConfigObj.SetNetProperty(4, "192.168.0.1");
-	//caNetConfigObj.SetNetProperty(5, "127.0.0.1");
-	//caNetConfigObj.SetNetPropertyToNetwork();
-	//caNetConfigObj.GetNetPropertyToCache();
-	//alert(netInfo());
-	alert("============== Set DHCP ==============");
-	caNetConfigObj.CleanValid();
-	//caNetConfigObj.GetNetPropertyToCache();
-	CaNetConfigObj.SetNetDHCP();
-	alert('Setado DHCP');
-	alert(netInfo());
-	//caNetConfigObj.SetNetPropertyToNetwork();
-	//caNetConfigObj.GetNetPropertyToCache();
+	try {
+		// You will see the message in your console
+		caFileBrowseObj.Sayhello("JS check file browser object");
+		//var ver=caFileBrowseObj.Getversion();
+		alert(netInfo());
+		// try our netconfig object
+		//alert("============== Set Static IP ==============");
+		//caNetConfigObj.CleanValid();
+		//caNetConfigObj.SetNetProperty(2, "192.168.0.77");
+		//caNetConfigObj.SetNetProperty(3, "255.255.255.0");
+		//caNetConfigObj.SetNetProperty(4, "192.168.0.1");
+		//caNetConfigObj.SetNetProperty(5, "127.0.0.1");
+		//caNetConfigObj.SetNetPropertyToNetwork();
+		//caNetConfigObj.GetNetPropertyToCache();
+		//alert(netInfo());
+		alert("============== Set DHCP ==============");
+		caNetConfigObj.CleanValid();
+		//caNetConfigObj.GetNetPropertyToCache();
+		caNetConfigObj.SetNetDHCP(10);
+		alert('Setado DHCP');
+		alert(netInfo());
+		//caNetConfigObj.SetNetPropertyToNetwork();
+		//caNetConfigObj.GetNetPropertyToCache();
+	}catch(e){
+		alert(e);
+	}
 }
 
 
 function osd()
 {
-	//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
-	//toDelHole( int idx );	// to delete hole
-	alert('Criando hole ----------------------------------');
-	var o = caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
-	alert(o);
-	alert('Criado');
+	try {
+		//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
+		//toDelHole( int idx );	// to delete hole
+		//alert('Criando hole ----------------------------------');
+		//caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
+		//toSetHolePostionAndSize
+		//toSetHolePositionAndSize
+		if (Cianet.ux.PlayerState.osd){
+			Cianet.ux.PlayerState.osd = false;
+			var o = caMediaPlayer.toSetHolePostionAndSize( 0 , 100 , 100 , 300 , 300 );
+		}else {
+			Cianet.ux.PlayerState.osd = true;
+			var o = caMediaPlayer.toDelHole( 0 );
+		}
+	}catch(e){
+		alert(e);
+	}
 }
 
 var atualizador_canal = {
