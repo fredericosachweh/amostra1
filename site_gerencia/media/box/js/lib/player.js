@@ -111,14 +111,16 @@ Cianet.ux.mediainfo = {
 	show : function(){
 		this.el.setVisible(true);
 		Ext.get('msg').setVisible(false);
+		Ext.get('movies').hide();
 		try {
-			caMediaPlayer.toSetPositionAndSize(650,70,300,200);
+			caMediaPlayer.toSetPositionAndSize(1000,70,800,400);
 			caMediaPlayer.toPlayerInfo( 1 );
 		}catch(e){}
 	},
 	hide : function(){
 		this.el.setVisible(false);
 		Ext.get('msg').setVisible(true);
+		Ext.get('movies').show();
 		try {
 			caMediaPlayer.toSetFullScreen();
 			Cianet.ux.PlayerState.fullscreen = true;
@@ -419,7 +421,6 @@ Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5.
 7. caNetConfigObj.SetNetPropertyToNetwork -> Calling this function sets the network property to network.
 8. caNetConfigObj.SetNetDHCP -> This function is for dhcp usage only. When want to set network by dhcp, just call this fuction with time out parameter.
  */
-
 function netInfo()
 {
 	var ret = '';
@@ -539,7 +540,7 @@ Ext.onReady(function() {
 
 		switch (key) {
 		case Browser.KEY.a:
-			anime();
+			//anime();
 			//Cianet.ux.movies.showAll();
 			break;
 		case Browser.KEY.n:
@@ -564,9 +565,11 @@ Ext.onReady(function() {
 		case Browser.KEY.p:
 			var selected = Cianet.ux.movies.getSelected();
 			selected.play();
+			selected.play();
 			break;
 		case Browser.KEY.ENTER:
 			var selected = Cianet.ux.movies.getSelected();
+			selected.play();
 			selected.play();
 			break;
 		case Browser.KEY.s:

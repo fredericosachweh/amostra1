@@ -48,6 +48,9 @@ def canal_list(request):
 
 def canal_update(request):
     """Retorna a data de atualização mais recente da lista de canais"""
+    print('IP: %s' %request.META['REMOTE_ADDR'])
+    #print(request.REMOTE_ADDR)
+    #print('META',' | '.join(request.META))
     atual = Canal.objects.all().order_by('-atualizado')[0]
     #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.strftime('%Y-%m-%dT%H:%M:%S')))
     #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.isoformat()))

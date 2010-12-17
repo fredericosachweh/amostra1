@@ -32,8 +32,8 @@ class CanalAdmin(admin.ModelAdmin):
     #filter_horizontal = ('programa',)
     #fields = ('numero','nome','descricao','logo','sigla','ip','porta', )
     list_display = ('imagem_thum','numero','nome','ip','porta',)
-    list_display_links = ('numero','nome',)
-    #list_editable = ('numero','nome',)
+    list_display_links = ('numero','imagem_thum',)
+    list_editable = ('ip','porta','nome',)
     #inline = (Programa,)
     save_as = True
     list_per_page = 10
