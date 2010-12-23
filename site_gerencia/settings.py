@@ -101,6 +101,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.admin',
+    # Testes com nose
+    #'django_nose',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
@@ -109,7 +111,9 @@ INSTALLED_APPS = (
     'home',
 )
 
-USE_TERMINAL_COLORS=True
+#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+#USE_TERMINAL_COLORS=True
 
 LOGIN_URL = '/accounts/login'
 

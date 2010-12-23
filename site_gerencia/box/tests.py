@@ -14,7 +14,7 @@ from fields import MACAddressFormField
 from django.forms import ValidationError
 
 class SetUpBoxTest(TestCase):
-
+    ##@skipIfDBFeature('supports_transactions')
     def testSetupBox(self):
         """Teste do objeto SetupBox."""
         b = SetupBox()
@@ -24,7 +24,7 @@ class SetUpBoxTest(TestCase):
         b.save()
         self.assertTrue(b.id, 'SetupBox não pode ser salvo')
         self.assertEquals(b.mac,'invalid mac')
-
+    ##@skipIfDBFeature('supports_transactions')
     def testFormSetupBox(self):
         """Teste do campo MAC do SetupBox."""
         form = MACAddressFormField()

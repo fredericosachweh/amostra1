@@ -11,13 +11,13 @@ Cianet.ux.movies.filter = function(number){
 			this[i].hide();
 		}
 	}
-}
+};
 Cianet.ux.movies.showAll = function(){
 	for (var i=0;i<this.length;i++)
 	{
 		this[i].show();
 	}
-}
+};
 Cianet.ux.movies.removeAll = function(){
 	var l = this.length;
 	for (var i=0;i<l;i++)
@@ -25,14 +25,14 @@ Cianet.ux.movies.removeAll = function(){
 		var d = this.pop();
 		d.destroy();
 	}
-}
+};
 Cianet.ux.movies.getSelected = function(){
 	for (var i=0;i<this.length;i++){
 		if (this[i].selected){
 			return this[i];
 		}
 	}
-}
+};
 Cianet.ux.movies.selectNext = function(){
 	var el = null;
 	for (var i=0;i<this.length;i++){
@@ -46,9 +46,12 @@ Cianet.ux.movies.selectNext = function(){
 				el.select();
 				return el;
 			}
+			else {
+				return this[i];
+			}
 		}
 	}
-}
+};
 Cianet.ux.movies.selectPrevius = function(){
 	var el = null;
 	for (var i=0;i<this.length;i++){
@@ -62,9 +65,12 @@ Cianet.ux.movies.selectPrevius = function(){
 				el.select();
 				return el;
 			}
+			else {
+				return this[i];
+			}
 		}
 	}
-}
+};
 
 
 
@@ -74,21 +80,114 @@ Cianet.ux.movies.selectPrevius = function(){
 
 
 
-Cianet.ux.mediainfo = {
+
+//Player status
+Cianet.ux.PlayerState = {
+	fullscreen:true,
+	plaing:false,
+	info:false,
+	filtering:false,
+	osd:false
+};
+
+
+
+
+
+
+Cianet.ux.osd = {
+	el:null,
+	tlp:null,
 	setEl : function(el){
 		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
 	},
 	setMovie : function(movie){
-		this.template = new Ext.Template(
+		this.tpl = new Ext.Template(
+			[
+				'<img class="logo" src="{img}" />',
+				'<div class="numero">{numero}</div>',
+			]);
+		this.tpl.overwrite(this.el,{
+			img:movie.img,
+			numero:movie.numero
+		});
+	},
+	show : function(){
+		debug('osd.show');
+		this.el.setVisible(true);
+		Cianet.ux.PlayerState.osd = true;
+		try {
+			caMediaPlayer.toSetHolePostionAndSize( 0 , 145 , 130 , 240 , 280 );
+		}catch(e){
+			debug(e);
+		}
+	},
+	hide : function(){
+		debug('osd.hide');
+		this.el.setVisible(false);
+		Cianet.ux.PlayerState.osd = false;
+		try {
+			if (Cianet.ux.PlayerState.plaing == true){
+				caMediaPlayer.toDelHole( 0 );
+			}
+		}catch(e){
+			debug(e);
+		}
+	},
+	toogle : function (){
+		if (Cianet.ux.PlayerState.osd == true){
+			this.hide();
+		} else {
+			this.show();
+		}
+	}
+};//END: Cianet.ux.osd = {
+
+
+Cianet.ux.medialist = {
+	el:null,
+	setEl : function(el){
+		el.setVisibilityMode(Ext.Element.DISPLAY);
+		this.el = el;
+	},
+	toogle : function(){
+		var visible = this.el.isVisible();
+		if (visible){
+			this.hide();
+		} else {
+			this.show();
+		}
+	},
+	show : function(){
+		debug('list.show');
+		this.el.setVisible(true);
+	},
+	hide : function(){
+		debug('list.hide');
+		this.el.setVisible(false);
+	}
+};//END: Cianet.ux.medialist = {
+
+
+
+
+Cianet.ux.mediainfo = {
+	el:null,
+	setEl : function(el){
+		el.setVisibilityMode(Ext.Element.DISPLAY);
+		this.el = el;
+	},
+	setMovie : function(movie){
+		this.tpl = new Ext.Template(
 			[
 				'<img class="logo" src="{img}" />',
 				'<div class="numero">{numero}</div>',
 				'<div class="nome">{nome}</div>',
 				'<div class="descricao"><pre>{descricao}</pre></div>',
-				'<div class="ip">{ip}:{porta}</div>',
+				'<div class="ip">{ip}:{porta}</div>'
 			]);
-		this.template.overwrite(this.el,{
+		this.tpl.overwrite(this.el,{
 			id:movie.id,
 			url:movie.url,
 			nome:movie.fields.nome,
@@ -110,22 +209,30 @@ Cianet.ux.mediainfo = {
 	},
 	show : function(){
 		this.el.setVisible(true);
-		Ext.get('msg').setVisible(false);
-		Ext.get('movies').hide();
+		//Ext.get('msg').setVisible(false);
+		//Ext.get('movies').hide();
 		try {
 			caMediaPlayer.toSetPositionAndSize(1000,70,800,400);
 			caMediaPlayer.toPlayerInfo( 1 );
-		}catch(e){}
+		}catch(e){
+			debug(e);
+		}
 	},
 	hide : function(){
 		this.el.setVisible(false);
-		Ext.get('msg').setVisible(true);
-		Ext.get('movies').show();
+		//Ext.get('msg').setVisible(true);
+		//Ext.get('movies').show();
 		try {
+			if (Cianet.ux.PlayerState.plaing == false){
+				//Ext.get('movies').show();
+				Cianet.ux.medialist.show();
+			}
 			caMediaPlayer.toSetFullScreen();
 			Cianet.ux.PlayerState.fullscreen = true;
 			caMediaPlayer.toPlayerInfo( 0 );
-		}catch(e){}
+		}catch(e){
+			debug(e);
+		}
 	}
 }//END: Cianet.ux.mediainfo = {
 
@@ -143,19 +250,6 @@ Cianet.ux.mediainfo = {
 
 
 
-
-
-
-
-
-// Player status
-Cianet.ux.PlayerState = {
-	fullscreen:true,
-	plaing:false,
-	info:false,
-	filtering:false,
-	osd:false
-};
 
 
 
@@ -223,30 +317,30 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 	play : function() {
 		debug('movie.play');
 		try {
-			if (Cianet.ux.PlayerState.plaing){
-				caMediaPlayer.toPause();
-				Cianet.ux.PlayerState.plaing = false;
-			} else {
-				if (this.mtype == 'vod'){
-					debug('VOD',this.url);
-					var plaing = caMediaPlayer.toPlay(this.url,1,0);
-				}
-				else{
-					debug('MULTICAST','udp://'+this.ip+':'+this.porta);
-					var plaing = caMediaPlayer.toPlay('udp://'+this.ip+':'+this.porta,2,0);
-				}
-				//var plaing = caMediaPlayer.toPlay(this.url,1,0);
-				Cianet.ux.PlayerState.plaing = plaing;
+			if (this.mtype == 'vod'){
+				debug('VOD',this.url);
+				var plaing = caMediaPlayer.toPlay(this.url,1,0);
 			}
-		} catch (e) {}
+			else{
+				debug('MULTICAST','udp://'+this.ip+':'+this.porta);
+				var plaing = caMediaPlayer.toPlay('udp://'+this.ip+':'+this.porta,2,0);
+			}
+			//var plaing = caMediaPlayer.toPlay(this.url,1,0);
+			Cianet.ux.PlayerState.plaing = true;
+		} catch (e) {
+			debug(e);
+		}
 		this.fireEvent('play');
 	},
 	stop : function() {
 		debug('movie.stop');
 		try {
+			Cianet.ux.PlayerState.plaing = false;
 			caMediaPlayer.toStop();
 			caMediaPlayer.toExit();
-		} catch (e) {}
+		} catch (e) {
+			debug(e);
+		}
 		this.fireEvent('stop');
 	},
 	select : function() {
@@ -264,14 +358,16 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 	fullScreen : function(){
 		debug('movie.fullScreen');
 		try {
-			if (Cianet.ux.PlayerState.fullscreen){
+			if (Cianet.ux.PlayerState.fullscreen == true){
 				caMediaPlayer.toSetPositionAndSize(50,50,600,400);
 				Cianet.ux.PlayerState.fullscreen = false;
 			}else {
 				caMediaPlayer.toSetFullScreen();
 				Cianet.ux.PlayerState.fullscreen = true;
 			}
-		} catch (e){}
+		} catch (e){
+			debug(e);
+		}
 		this.fireEvent('fullscreen');
 	},
 	repeat : function(){
@@ -281,7 +377,9 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 				caMediaPlayer.toSetRepeatMode( false );
 			else
 				caMediaPlayer.toSetRepeatMode( true );
-		} catch (e){}
+		} catch (e){
+			debug(e);
+		}
 		this.fireEvent('repeat');
 	},
 	info : function(){
@@ -289,7 +387,9 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		try {
 			var info = caMediaPlayer.toGetStreamInfo();
 			debug('info',info);
-		} catch (e){}
+		} catch (e){
+			debug(e);
+		}
 		this.fireEvent('info');
 	},
 	hide : function(){
@@ -326,6 +426,9 @@ function anime() {
 		a.moveTo(0,0, anim);
 };//END: function anime() {
 
+var task = new Ext.util.DelayedTask(function(){
+	Cianet.ux.osd.hide();
+});
 
 function loadMedia(){
 	var selected = Cianet.ux.movies.getSelected();
@@ -344,52 +447,49 @@ function loadMedia(){
 			Cianet.ux.movies.removeAll();
 			//debug('Canais',Cianet.ux.movies);
 			resObject = Ext.util.JSON.decode(resp.responseText);
-			var movies = Ext.get('movies');
+			//var movies = Ext.get('movies');
 			vod_playlist = resObject.data;
 			for ( var i = 0; i < vod_playlist.length; i++) {
 				var movie = new Cianet.ux.Movie(vod_playlist[i]);
 
 				// Event[play]
 				movie.on('play',function(){
-					Ext.fly('msg').update('Rodando '+this.nome);
-					Ext.get('movies').hide();
+					Cianet.ux.mediainfo.setMovie(this);
+					Cianet.ux.medialist.hide();
+					Cianet.ux.osd.setMovie(this);
+					Cianet.ux.osd.show();
 					Cianet.ux.mediainfo.hide();
+					task.delay(7000);
 				},movie);
 
 				// Event[stop]
 				movie.on('stop',function(){
-					Ext.fly('msg').update('Parado '+this.nome);
-					Ext.get('movies').show();
 					Cianet.ux.mediainfo.hide();
+					Cianet.ux.osd.hide();
+					Cianet.ux.medialist.show();
 				},movie);
 
 				// Event[select]
 				movie.on('select',function(){
 					// Ajusta o scroll da pagina
-					var scroll = movies.getScroll();
+					var scroll = Cianet.ux.medialist.el.getScroll();
 					var y = this.el.getY();
-					movies.scrollTo('top',(y+scroll.top-300));
-					Cianet.ux.mediainfo.setMovie(this);
+					Cianet.ux.medialist.el.scrollTo('top',(y+scroll.top-500));
+					//Cianet.ux.mediainfo.setMovie(this);
+					Cianet.ux.osd.setMovie(this);
 				},movie);
 
 				// Event[info]
 				movie.on('info',function(){
 					Cianet.ux.mediainfo.setMovie(this);
-					//Cianet.ux.mediainfo.setMovieName(this.name);
-					//Cianet.ux.mediainfo.setMovieName(this.name);
-					//Cianet.ux.mediainfo.setMovieHost(this.ip);
-					//Cianet.ux.mediainfo.setMoviePort(this.porta);
-					//Cianet.ux.mediainfo.setMovieId(this.id);
+					Cianet.ux.medialist.hide();
+					Cianet.ux.osd.hide();
 					Cianet.ux.mediainfo.toogle();
 				},movie);
 
 				// Event[fullscreen]
 				movie.on('fullscreen',function(){
-					if (Cianet.ux.PlayerState.fullscreen == true){
-						Cianet.ux.mediainfo.hide();
-					}else {
-						Cianet.ux.mediainfo.show();
-					}
+					//Cianet.ux.mediainfo.toogle();
 				},movie);
 
 				Cianet.ux.movies.push(movie);
@@ -398,9 +498,6 @@ function loadMedia(){
 			}
 			if (numero == -1)
 				Cianet.ux.movies[0].select();
-			//Cianet.ux.mediainfo.setMovie(Cianet.ux.movies[0]);
-			//Cianet.ux.mediainfo.toogle();
-			//Cianet.ux.mediainfo.toogle();
 		}
 	});//END: Ext.Ajax.request({
 
@@ -466,12 +563,12 @@ function getIP()
 		//caNetConfigObj.SetNetPropertyToNetwork();
 		//caNetConfigObj.GetNetPropertyToCache();
 	}catch(e){
-		alert(e);
+		debug(e);
 	}
 }
 
 
-function osd()
+function TestOSD()
 {
 	try {
 		//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
@@ -482,13 +579,13 @@ function osd()
 		//toSetHolePositionAndSize
 		if (Cianet.ux.PlayerState.osd){
 			Cianet.ux.PlayerState.osd = false;
-			var o = caMediaPlayer.toSetHolePostionAndSize( 0 , 100 , 100 , 300 , 300 );
+			var o = caMediaPlayer.toSetHolePostionAndSize( 0 , 145 , 130 , 240 , 240 );
 		}else {
 			Cianet.ux.PlayerState.osd = true;
 			var o = caMediaPlayer.toDelHole( 0 );
 		}
 	}catch(e){
-		alert(e);
+		debug(e);
 	}
 }
 
@@ -519,15 +616,21 @@ var atualizador_canal = {
 };
 
 Ext.onReady(function() {
+	// Estados iniciais
+	Cianet.ux.PlayerState.plaing = false;
+	Cianet.ux.PlayerState.osd = false;
 	var DOC = Ext.get(document);
+	// Informações da midia
 	Cianet.ux.mediainfo.setEl(Ext.get('mediainfo'));
 	Cianet.ux.mediainfo.hide();
-	showAnim = {
-		duration : 4
-	};
+	// OSD
+	Cianet.ux.osd.setEl(Ext.get('osd'));
+	Cianet.ux.osd.hide();
+	// Listagem de midias
+	Cianet.ux.medialist.setEl(Ext.get('movies'));
+	Cianet.ux.medialist.show();
 	// Call load media list from webservice
 	Ext.TaskMgr.start(atualizador_canal);
-	//loadMedia();
 	// Handler[keypress]
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();
@@ -535,19 +638,17 @@ Ext.onReady(function() {
 		//debug('KEY= '+key+' ');
 
 		if ( (Browser.KEY.N_0) <= key && Browser.KEY.N_9 >= key){
-			debug('Numeric',event,opt);
+			//debug('Numeric',event,opt);
 		}
 
 		switch (key) {
-		case Browser.KEY.a:
-			//anime();
-			//Cianet.ux.movies.showAll();
-			break;
 		case Browser.KEY.n:
 			getIP();
 			break;
 		case Browser.KEY.o:
-			osd();
+			var selected = Cianet.ux.movies.getSelected();
+			Cianet.ux.osd.setMovie(selected);
+			Cianet.ux.osd.toogle();
 			break;
 		case Browser.KEY.i:
 			Cianet.ux.movies.getSelected().info();
@@ -565,11 +666,9 @@ Ext.onReady(function() {
 		case Browser.KEY.p:
 			var selected = Cianet.ux.movies.getSelected();
 			selected.play();
-			selected.play();
 			break;
 		case Browser.KEY.ENTER:
 			var selected = Cianet.ux.movies.getSelected();
-			selected.play();
 			selected.play();
 			break;
 		case Browser.KEY.s:
@@ -589,8 +688,8 @@ Ext.onReady(function() {
 		case Browser.KEY.RIGHT:
 			var running = Cianet.ux.movies.getSelected();
 			running.stop();
+			Cianet.ux.mediainfo.hide();
 			var movie = Cianet.ux.movies.selectNext();
-			movie.play();
 			movie.play();
 			break;
 		case Browser.KEY.LEFT:
@@ -598,11 +697,9 @@ Ext.onReady(function() {
 			running.stop();
 			var movie = Cianet.ux.movies.selectPrevius();
 			movie.play();
-			movie.play();
 			break;
 		case Browser.KEY.HOME:
 			loadMedia();
-			//window.location.href = '../placa/';
 			break;
 		}
 		return false;
