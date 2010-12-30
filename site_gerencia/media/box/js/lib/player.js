@@ -96,8 +96,6 @@ Cianet.ux.PlayerState = {
 
 
 Cianet.ux.osd = {
-	el:null,
-	tlp:null,
 	setEl : function(el){
 		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
@@ -146,7 +144,6 @@ Cianet.ux.osd = {
 
 
 Cianet.ux.medialist = {
-	el:null,
 	setEl : function(el){
 		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
@@ -173,7 +170,6 @@ Cianet.ux.medialist = {
 
 
 Cianet.ux.mediainfo = {
-	el:null,
 	setEl : function(el){
 		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
@@ -235,7 +231,6 @@ Cianet.ux.mediainfo = {
 		}
 	}
 }//END: Cianet.ux.mediainfo = {
-
 
 
 
@@ -477,6 +472,7 @@ function loadMedia(){
 					Cianet.ux.medialist.el.scrollTo('top',(y+scroll.top-500));
 					//Cianet.ux.mediainfo.setMovie(this);
 					Cianet.ux.osd.setMovie(this);
+					Cianet.ux.mediainfo.setMovie(this);
 				},movie);
 
 				// Event[info]
@@ -634,7 +630,6 @@ Ext.onReady(function() {
 	// Handler[keypress]
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();
-		//Ext.fly('an').update('KEY:'+key);
 		//debug('KEY= '+key+' ');
 
 		if ( (Browser.KEY.N_0) <= key && Browser.KEY.N_9 >= key){

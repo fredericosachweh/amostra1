@@ -58,6 +58,10 @@ MEDIA_ROOT = ROOT_DIR+'/media'
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 MEDIA_URL = '/media/'
 
+# URL raiz
+ROOT_URL = '/'
+
+
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
@@ -115,9 +119,9 @@ INSTALLED_APPS = (
 
 #USE_TERMINAL_COLORS=True
 
-LOGIN_URL = '/accounts/login'
+LOGIN_URL = ROOT_URL+'accounts/login'
 
-LOGIN_REDIRECT_URL = '/administracao/'
+LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (

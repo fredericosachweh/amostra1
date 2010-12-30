@@ -1,21 +1,65 @@
 
+About igmp, whe solved issue. The query isn't pass on vlan on cianet environment (we don't know why, but we solve with a bridge). Thank for reply and sory by mistake.
 
-About OSD:
-previus send to me:
-caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
-But scanning binary for string i see (function name is wrong):
-caMediaPlayer.toSetHolePostionAndSize( 0 , 10 , 10 , 800 , 600 );
--------------------------^^
+Please send 10 more STB to cianet (with remote control and if exists a case).
+
+When we play video for long time happens:
+<shell>
+(*) --------------------  STARTING MEMORY DEFRAGMENTATION !!!  -------------------
+(!) SMP8634: *** Out of video memory ! ***
+</shell>
+
+Killing arora and try run happens:
+<shell>
+(!) Driver getting globals=0x543750
+(!) DirectFB/Core: Could not initialize 'gfxcard' core!
+    --> Out of video memory!
+(!) System is going down !!
+(!) System is down!!
+(#) DirectFBError [QDirectFBScreen: error creating DirectFB interface]: Out of video memory!
+directfb: driver cannot connect
+Aborted
+</shell>
+
+
+There are some instability on STB yet:
+	Some times, the stb stop to respond.
+
+	The system go slow, we try to reset and stb back still slow. We cut energy (full shutdown ;) ) stb back good. Looks hardware issue.
+
+
+
+Some big changes (jumping to next level):
+
+Buffer control (Priority):
+	We are developing a multicast cache server with a protocol to recover lost udp packets.
+	Then we need a way to control stb buffer, to re-inject lost packets inside the buffer.
+	In addiction we need a way to control buffer size, cache sbt control, cache reset, ...
+
+Subtitles:
+	We need a way to attach subtitle on media (download srt or sub file from server) and control system time (sync, ntpdate) on stb.
+	hwclock on stb returns (maybe kernel module rtc):
+		hwclock: can't open '/dev/misc/rtc': No such file or directory
+
+Volume control:
+	We need a way to control volume level on stb using arora.
+
+Stand by and wake up:
+	We need a way to fake power down (sleep), using remote and wake up.
+
+Start up screen:
+	Who to enable a startup screen, like fedora plymouth, ubuntu upstart or something like?
 
 
 
 
+Our next steps are:
+	1 - Test 10 more stb on laboratory and try to solve problems, and put all systems on stability (network, encoders, stb,...).
+	2 - When this is done, we are start a out of laboratory tests (covering some end user home). Then we planning 100 to 200 stb.
+	3 - Near July or August we preview a request of 100.000 to 150.000 stb from cameo.
 
 
+Regards,
+Helber Maciel Guerra
 
 
-
-
-
-
-('META', 'SSH_ASKPASS | JAVA_FONTS | wsgi.multiprocess | KDE_IS_PRELINKED | RUN_MAIN | HTTP_REFERER | GNOME_DESKTOP_SESSION_ID | SERVER_PROTOCOL | SERVER_SOFTWARE | WINDOWPATH | LESSOPEN | QT_IM_MODULE | LOGNAME | USER | PATH | QUERY_STRING | QTDIR | wsgi.url_scheme | DISPLAY | GNOME_KEYRING_CONTROL | QTLIB | TERM | SHELL | TZ | XDG_SESSION_COOKIE | SERVER_NAME | SESSION_MANAGER | QTINC | G_BROKEN_FILENAMES | HISTSIZE | REQUEST_METHOD | WINDOWID | _ | SERVER_PORT | CONTENT_LENGTH | IMSETTINGS_INTEGRATE_DESKTOP | GPG_AGENT_INFO | HOME | USERNAME | IMSETTINGS_MODULE | CONTENT_TYPE | HTTP_X_REQUESTED_WITH | wsgi.file_wrapper | SSH_AUTH_SOCK | CLASSPATH | CSRF_COOKIE | GDMSESSION | XMODIFIERS | REMOTE_ADDR | HTTP_USER_AGENT | HTTP_HOST | SCRIPT_NAME | wsgi.multithread | HTTP_CONNECTION | DBUS_SESSION_BUS_ADDRESS | ORBIT_SOCKETDIR | LANG | wsgi.input | KDEDIRS | DESKTOP_SESSION | JAVA_HOME | wsgi.version | GNOME_KEYRING_PID | GATEWAY_INTERFACE | wsgi.run_once | REMOTE_HOST | OLDPWD | HOSTNAME | GDM_LANG | wsgi.errors | XAUTHORITY | HISTCONTROL | SHLVL | PWD | CVS_RSH | DJANGO_SETTINGS_MODULE | COLORTERM | MAIL | LS_COLORS | GDM_KEYBOARD_LAYOUT | HTTP_ACCEPT_ENCODING | PATH_INFO')
