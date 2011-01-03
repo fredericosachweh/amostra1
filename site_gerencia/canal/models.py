@@ -79,7 +79,7 @@ def canal_post_save(signal,instance,sender,**kwargs):
         # Criação da miniatura
         instance.thumb.name = 'imgs/canal/logo/thumb/%d.%s' %(instance.id,extensao)
         thumb = Image.open(instance.logo.path)
-        thumb.thumbnail((100,100),Image.ANTIALIAS)
+        thumb.thumbnail((200,200),Image.ANTIALIAS)
         thumb.save(instance.thumb.path)
         # Imagem original
         original = 'imgs/canal/logo/original/%d.%s' %(instance.id,extensao)

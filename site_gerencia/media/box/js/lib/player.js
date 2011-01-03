@@ -285,8 +285,8 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		this.ip = this.fields.ip;
 		this.porta = this.fields.porta;
 		this.numero = this.fields.numero;
-		//this.img = '/media/'+this.fields.thumb+'?'+Math.random();
-		this.img = MEDIA_URL+''+this.fields.thumb
+		this.img = MEDIA_URL+''+this.fields.thumb+'?'+Math.random();
+		//this.img = MEDIA_URL+''+this.fields.thumb
 
 		this.movieTemplate = new Ext.Template(
 			[
@@ -462,6 +462,7 @@ function loadMedia(){
 					Cianet.ux.mediainfo.hide();
 					Cianet.ux.osd.hide();
 					Cianet.ux.medialist.show();
+					this.select();
 				},movie);
 
 				// Event[select]
@@ -470,7 +471,6 @@ function loadMedia(){
 					var scroll = Cianet.ux.medialist.el.getScroll();
 					var y = this.el.getY();
 					Cianet.ux.medialist.el.scrollTo('top',(y+scroll.top-500));
-					//Cianet.ux.mediainfo.setMovie(this);
 					Cianet.ux.osd.setMovie(this);
 					Cianet.ux.mediainfo.setMovie(this);
 				},movie);

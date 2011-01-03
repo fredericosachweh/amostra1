@@ -103,7 +103,7 @@ a:HOVER {
 	}
 	#mediainfo .nome {
 		position: absolute;
-		left: 150px;
+		left: 300px;
 		top: 230px;
 		font-size: 40px;
 		font-weight: bolder;
@@ -114,8 +114,9 @@ a:HOVER {
 		top: 570px;
 		right: 30px;
 		bottom: 30px;
-		font-size: 20px;
+		font-size: 25px;
 		color: white;
+		background-color: gray;
 	}
 	#mediainfo .ip {
 		position: absolute;
