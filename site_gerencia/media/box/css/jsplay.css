@@ -110,13 +110,13 @@ a:HOVER {
 	}
 	#mediainfo .descricao {
 		position: absolute;
-		left: 30px;
-		top: 570px;
-		right: 30px;
-		bottom: 30px;
+		left: 0px;
+		top: 530px;
+		right: 0px;
+		bottom: 0px;
 		font-size: 25px;
 		color: white;
-		background-color: gray;
+		padding: 5px;
 	}
 	#mediainfo .ip {
 		position: absolute;

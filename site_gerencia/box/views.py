@@ -22,6 +22,14 @@ def index(request):
                               context_instance=RequestContext(request)
                               )
 
+def setup(request):
+    """Ambiente base de setup"""
+    return render_to_response(
+                              'box/setup.html',
+                              {},
+                              context_instance=RequestContext(request)
+                              )
+
 
 def auth(request,mac=None):
     """Realiza a autenticação do setupbox atravéz de seu endereço MAC"""

@@ -94,7 +94,9 @@ Cianet.ux.PlayerState = {
 
 
 
-
+/**
+ * Interface OSD
+ */
 Cianet.ux.osd = {
 	setEl : function(el){
 		el.setVisibilityMode(Ext.Element.DISPLAY);
@@ -118,7 +120,7 @@ Cianet.ux.osd = {
 		try {
 			caMediaPlayer.toSetHolePostionAndSize( 0 , 145 , 130 , 240 , 280 );
 		}catch(e){
-			debug(e);
+			debugError(e);
 		}
 	},
 	hide : function(){
@@ -130,7 +132,7 @@ Cianet.ux.osd = {
 				caMediaPlayer.toDelHole( 0 );
 			}
 		}catch(e){
-			debug(e);
+			debugError(e);
 		}
 	},
 	toogle : function (){
@@ -143,10 +145,13 @@ Cianet.ux.osd = {
 };//END: Cianet.ux.osd = {
 
 
+/**
+ * Lista de midias
+ */
 Cianet.ux.medialist = {
 	setEl : function(el){
-		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
+		this.el.setVisibilityMode(Ext.Element.DISPLAY);
 	},
 	toogle : function(){
 		var visible = this.el.isVisible();
@@ -168,11 +173,13 @@ Cianet.ux.medialist = {
 
 
 
-
+/**
+ * Informações da midia
+ */
 Cianet.ux.mediainfo = {
 	setEl : function(el){
-		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
+		this.el.setVisibilityMode(Ext.Element.DISPLAY);
 	},
 	setMovie : function(movie){
 		this.tpl = new Ext.Template(
@@ -205,29 +212,24 @@ Cianet.ux.mediainfo = {
 	},
 	show : function(){
 		this.el.setVisible(true);
-		//Ext.get('msg').setVisible(false);
-		//Ext.get('movies').hide();
 		try {
 			caMediaPlayer.toSetPositionAndSize(1000,70,800,400);
 			caMediaPlayer.toPlayerInfo( 1 );
 		}catch(e){
-			debug(e);
+			debugError(e);
 		}
 	},
 	hide : function(){
 		this.el.setVisible(false);
-		//Ext.get('msg').setVisible(true);
-		//Ext.get('movies').show();
 		try {
 			if (Cianet.ux.PlayerState.plaing == false){
-				//Ext.get('movies').show();
-				Cianet.ux.medialist.show();
+				//Cianet.ux.medialist.show();
 			}
-			caMediaPlayer.toSetFullScreen();
 			Cianet.ux.PlayerState.fullscreen = true;
+			caMediaPlayer.toSetFullScreen();
 			caMediaPlayer.toPlayerInfo( 0 );
 		}catch(e){
-			debug(e);
+			debugError(e);
 		}
 	}
 }//END: Cianet.ux.mediainfo = {
@@ -278,15 +280,15 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		return this;
 	},
 	init : function() {
-		this.id = this.fields.numero;//+Math.random();
+		this.id = this.fields.numero;
 		this.url = 'udp://'+this.fields.ip+':'+this.fields.porta;
 		this.stype = 'mcast';
 		this.nome = this.fields.nome;
 		this.ip = this.fields.ip;
 		this.porta = this.fields.porta;
 		this.numero = this.fields.numero;
-		this.img = MEDIA_URL+''+this.fields.thumb+'?'+Math.random();
-		//this.img = MEDIA_URL+''+this.fields.thumb
+		//this.img = MEDIA_URL+''+this.fields.thumb+'?'+Math.random();
+		this.img = MEDIA_URL+''+this.fields.thumb
 
 		this.movieTemplate = new Ext.Template(
 			[
@@ -323,7 +325,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			//var plaing = caMediaPlayer.toPlay(this.url,1,0);
 			Cianet.ux.PlayerState.plaing = true;
 		} catch (e) {
-			debug(e);
+			debugError(e);
 		}
 		this.fireEvent('play');
 	},
@@ -334,7 +336,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			caMediaPlayer.toStop();
 			caMediaPlayer.toExit();
 		} catch (e) {
-			debug(e);
+			debugError(e);
 		}
 		this.fireEvent('stop');
 	},
@@ -361,7 +363,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 				Cianet.ux.PlayerState.fullscreen = true;
 			}
 		} catch (e){
-			debug(e);
+			debugError(e);
 		}
 		this.fireEvent('fullscreen');
 	},
@@ -373,7 +375,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			else
 				caMediaPlayer.toSetRepeatMode( true );
 		} catch (e){
-			debug(e);
+			debugError(e);
 		}
 		this.fireEvent('repeat');
 	},
@@ -383,7 +385,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			var info = caMediaPlayer.toGetStreamInfo();
 			debug('info',info);
 		} catch (e){
-			debug(e);
+			debugError(e);
 		}
 		this.fireEvent('info');
 	},
@@ -403,23 +405,6 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 	}
 });//END: Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 
-var anim = {
-	duration : 4,
-	easing : 'easeIn',
-	scope : anim
-};
-
-/**
- * Test function to animate html element
- */
-function anime() {
-	var a = Ext.get('an');
-	Ext.fly('msg').update('Animation box....');
-	if (a.getX() == 0)
-		a.moveTo(800, 650, anim);
-	else
-		a.moveTo(0,0, anim);
-};//END: function anime() {
 
 var task = new Ext.util.DelayedTask(function(){
 	Cianet.ux.osd.hide();
@@ -435,14 +420,11 @@ function loadMedia(){
 		url : 'canal_list/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
-			//alert('Erro na comunicação com o servidor');
 		},
 		// Handler[success]
 		success : function(resp, obj) {
 			Cianet.ux.movies.removeAll();
-			//debug('Canais',Cianet.ux.movies);
 			resObject = Ext.util.JSON.decode(resp.responseText);
-			//var movies = Ext.get('movies');
 			vod_playlist = resObject.data;
 			for ( var i = 0; i < vod_playlist.length; i++) {
 				var movie = new Cianet.ux.Movie(vod_playlist[i]);
@@ -516,19 +498,14 @@ Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5.
  */
 function netInfo()
 {
-	var ret = '';
-	ret += 'Version= '+caNetConfigObj.Getversion()+'\n';
+	var ret = {};
+	ret['VERSION']=caNetConfigObj.Getversion();
 	caNetConfigObj.GetNetPropertyToCache();
-	var property=caNetConfigObj.GetNetProperty(1);
-	ret += "MACADDR= "+property+'\n';
-	property=caNetConfigObj.GetNetProperty(2);
-	ret += "IP= "+property+'\n';
-	property=caNetConfigObj.GetNetProperty(3);
-	ret += "NETMASK= "+property+'\n';
-	property=caNetConfigObj.GetNetProperty(4);
-	ret += "GATEWAY= "+property+'\n';
-	property=caNetConfigObj.GetNetProperty(5);
-	ret += "LOCAL= "+property+'\n';
+	ret['MACADDR']=caNetConfigObj.GetNetProperty(1);
+	ret['IP']=caNetConfigObj.GetNetProperty(2);
+	ret['NETMASK']=caNetConfigObj.GetNetProperty(3);
+	ret['GATEWAY']=caNetConfigObj.GetNetProperty(4);
+	ret['DNS']=caNetConfigObj.GetNetProperty(5);
 	debug(ret);
 	return ret;
 }
@@ -537,9 +514,9 @@ function getIP()
 {
 	try {
 		// You will see the message in your console
-		caFileBrowseObj.Sayhello("JS check file browser object");
+		caFileBrowseObj.Sayhello("player-> getIP()");
 		//var ver=caFileBrowseObj.Getversion();
-		alert(netInfo());
+		alert(netInfo()['IP']);
 		// try our netconfig object
 		//alert("============== Set Static IP ==============");
 		//caNetConfigObj.CleanValid();
@@ -551,39 +528,18 @@ function getIP()
 		//caNetConfigObj.GetNetPropertyToCache();
 		//alert(netInfo());
 		alert("============== Set DHCP ==============");
-		caNetConfigObj.CleanValid();
+		//caNetConfigObj.CleanValid();
 		//caNetConfigObj.GetNetPropertyToCache();
 		caNetConfigObj.SetNetDHCP(10);
 		alert('Setado DHCP');
-		alert(netInfo());
+		alert(netInfo()['IP']);
 		//caNetConfigObj.SetNetPropertyToNetwork();
 		//caNetConfigObj.GetNetPropertyToCache();
 	}catch(e){
-		debug(e);
+		debugError(e);
 	}
 }
 
-
-function TestOSD()
-{
-	try {
-		//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
-		//toDelHole( int idx );	// to delete hole
-		//alert('Criando hole ----------------------------------');
-		//caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
-		//toSetHolePostionAndSize
-		//toSetHolePositionAndSize
-		if (Cianet.ux.PlayerState.osd){
-			Cianet.ux.PlayerState.osd = false;
-			var o = caMediaPlayer.toSetHolePostionAndSize( 0 , 145 , 130 , 240 , 240 );
-		}else {
-			Cianet.ux.PlayerState.osd = true;
-			var o = caMediaPlayer.toDelHole( 0 );
-		}
-	}catch(e){
-		debug(e);
-	}
-}
 
 var atualizador_canal = {
 	run:function(){
@@ -592,7 +548,6 @@ var atualizador_canal = {
 			// Handler[failure]
 			failure: function(resp,obj) {
 				debug('Falhou',resp);
-				//alert('Erro na comunicação com o servidor');
 			},
 			// Handler[success]
 			success : function(resp, obj) {
@@ -608,7 +563,7 @@ var atualizador_canal = {
 		});
 	},
 	ultimo:new Date('Wed, 18 Oct 2000 13:00:00 EST'),
-	interval:10*1000
+	interval:60*1000
 };
 
 Ext.onReady(function() {
@@ -627,6 +582,7 @@ Ext.onReady(function() {
 	Cianet.ux.medialist.show();
 	// Call load media list from webservice
 	Ext.TaskMgr.start(atualizador_canal);
+
 	// Handler[keypress]
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();
