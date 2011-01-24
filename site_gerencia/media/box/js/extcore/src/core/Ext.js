@@ -2,12 +2,12 @@
  * Ext Core Library 3.0
  * http://extjs.com/
  * Copyright(c) 2006-2009, Ext JS, LLC.
- *
+ * 
  * MIT Licensed - http://extjs.com/license/mit.txt
  */
 
 // for old browsers
-//window.undefined = window.undefined;
+window.undefined = window.undefined;
 
 /**
  * @class Ext

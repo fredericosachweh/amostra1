@@ -10,10 +10,20 @@
 <script type="text/javascript">
 var MEDIA_URL = '{{ MEDIA_URL }}';
 </script>
+{% if stress %}
+<script type="text/javascript" src="{{ MEDIA_URL }}box/js/lib/firebug-lite.js"></script>
+<script type="text/javascript">
+var stressJS = true;
+</script>
+{% else %}
+<script type="text/javascript">
+var stressJS = false;
+</script>
+{% endif %}
 </head>
 <body id="body">
 <div id="msg">Iniciado - Buscando midias</div>
-<div id="osd">KAKAKAKA</div>
+<div id="osd"></div>
 <div id="an"></div>
 <div id="mediainfo"></div>
 <div id="movies"></div>

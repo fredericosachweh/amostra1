@@ -94,9 +94,7 @@ Cianet.ux.PlayerState = {
 
 
 
-/**
- * Interface OSD
- */
+
 Cianet.ux.osd = {
 	setEl : function(el){
 		el.setVisibilityMode(Ext.Element.DISPLAY);
@@ -118,9 +116,9 @@ Cianet.ux.osd = {
 		this.el.setVisible(true);
 		Cianet.ux.PlayerState.osd = true;
 		try {
-			caMediaPlayer.toSetHolePostionAndSize( 0 , 145 , 130 , 240 , 280 );
+			caMediaPlayer.toSetHolePositionAndSize( 0 , 145 , 40 , 240 , 355 );
 		}catch(e){
-			debugError(e);
+			debug(e);
 		}
 	},
 	hide : function(){
@@ -132,7 +130,7 @@ Cianet.ux.osd = {
 				caMediaPlayer.toDelHole( 0 );
 			}
 		}catch(e){
-			debugError(e);
+			debug(e);
 		}
 	},
 	toogle : function (){
@@ -145,13 +143,11 @@ Cianet.ux.osd = {
 };//END: Cianet.ux.osd = {
 
 
-/**
- * Lista de midias
- */
 Cianet.ux.medialist = {
+	el:{setVisible:function(){}},
 	setEl : function(el){
+		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
-		this.el.setVisibilityMode(Ext.Element.DISPLAY);
 	},
 	toogle : function(){
 		var visible = this.el.isVisible();
@@ -173,13 +169,11 @@ Cianet.ux.medialist = {
 
 
 
-/**
- * Informações da midia
- */
+
 Cianet.ux.mediainfo = {
 	setEl : function(el){
+		el.setVisibilityMode(Ext.Element.DISPLAY);
 		this.el = el;
-		this.el.setVisibilityMode(Ext.Element.DISPLAY);
 	},
 	setMovie : function(movie){
 		this.tpl = new Ext.Template(
@@ -212,24 +206,29 @@ Cianet.ux.mediainfo = {
 	},
 	show : function(){
 		this.el.setVisible(true);
+		//Ext.get('msg').setVisible(false);
+		//Ext.get('movies').hide();
 		try {
 			caMediaPlayer.toSetPositionAndSize(1000,70,800,400);
 			caMediaPlayer.toPlayerInfo( 1 );
 		}catch(e){
-			debugError(e);
+			debug(e);
 		}
 	},
 	hide : function(){
 		this.el.setVisible(false);
+		//Ext.get('msg').setVisible(true);
+		//Ext.get('movies').show();
 		try {
 			if (Cianet.ux.PlayerState.plaing == false){
-				//Cianet.ux.medialist.show();
+				//Ext.get('movies').show();
+				Cianet.ux.medialist.show();
 			}
-			Cianet.ux.PlayerState.fullscreen = true;
 			caMediaPlayer.toSetFullScreen();
+			Cianet.ux.PlayerState.fullscreen = true;
 			caMediaPlayer.toPlayerInfo( 0 );
 		}catch(e){
-			debugError(e);
+			debug(e);
 		}
 	}
 }//END: Cianet.ux.mediainfo = {
@@ -280,14 +279,14 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 		return this;
 	},
 	init : function() {
-		this.id = this.fields.numero;
+		this.id = this.fields.numero;//+Math.random();
 		this.url = 'udp://'+this.fields.ip+':'+this.fields.porta;
 		this.stype = 'mcast';
 		this.nome = this.fields.nome;
 		this.ip = this.fields.ip;
 		this.porta = this.fields.porta;
 		this.numero = this.fields.numero;
-		//this.img = MEDIA_URL+''+this.fields.thumb+'?'+Math.random();
+		//this.img = '/media/'+this.fields.thumb+'?'+Math.random();
 		this.img = MEDIA_URL+''+this.fields.thumb
 
 		this.movieTemplate = new Ext.Template(
@@ -325,7 +324,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			//var plaing = caMediaPlayer.toPlay(this.url,1,0);
 			Cianet.ux.PlayerState.plaing = true;
 		} catch (e) {
-			debugError(e);
+			debug(e);
 		}
 		this.fireEvent('play');
 	},
@@ -336,7 +335,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			caMediaPlayer.toStop();
 			caMediaPlayer.toExit();
 		} catch (e) {
-			debugError(e);
+			debug(e);
 		}
 		this.fireEvent('stop');
 	},
@@ -363,7 +362,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 				Cianet.ux.PlayerState.fullscreen = true;
 			}
 		} catch (e){
-			debugError(e);
+			debug(e);
 		}
 		this.fireEvent('fullscreen');
 	},
@@ -375,7 +374,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			else
 				caMediaPlayer.toSetRepeatMode( true );
 		} catch (e){
-			debugError(e);
+			debug(e);
 		}
 		this.fireEvent('repeat');
 	},
@@ -385,7 +384,7 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 			var info = caMediaPlayer.toGetStreamInfo();
 			debug('info',info);
 		} catch (e){
-			debugError(e);
+			debug(e);
 		}
 		this.fireEvent('info');
 	},
@@ -405,6 +404,23 @@ Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 	}
 });//END: Cianet.ux.Movie = Ext.extend(Ext.util.Observable, {
 
+var anim = {
+	duration : 4,
+	easing : 'easeIn',
+	scope : anim
+};
+
+/**
+ * Test function to animate html element
+ */
+function anime() {
+	var a = Ext.get('an');
+	Ext.fly('msg').update('Animation box....');
+	if (a.getX() == 0)
+		a.moveTo(800, 650, anim);
+	else
+		a.moveTo(0,0, anim);
+};//END: function anime() {
 
 var task = new Ext.util.DelayedTask(function(){
 	Cianet.ux.osd.hide();
@@ -420,11 +436,14 @@ function loadMedia(){
 		url : 'canal_list/',
 		failure: function(resp,obj) {
 			debug('Falhou',resp);
+			//alert('Erro na comunicação com o servidor');
 		},
 		// Handler[success]
 		success : function(resp, obj) {
 			Cianet.ux.movies.removeAll();
+			//debug('Canais',Cianet.ux.movies);
 			resObject = Ext.util.JSON.decode(resp.responseText);
+			//var movies = Ext.get('movies');
 			vod_playlist = resObject.data;
 			for ( var i = 0; i < vod_playlist.length; i++) {
 				var movie = new Cianet.ux.Movie(vod_playlist[i]);
@@ -444,7 +463,6 @@ function loadMedia(){
 					Cianet.ux.mediainfo.hide();
 					Cianet.ux.osd.hide();
 					Cianet.ux.medialist.show();
-					this.select();
 				},movie);
 
 				// Event[select]
@@ -453,6 +471,7 @@ function loadMedia(){
 					var scroll = Cianet.ux.medialist.el.getScroll();
 					var y = this.el.getY();
 					Cianet.ux.medialist.el.scrollTo('top',(y+scroll.top-500));
+					//Cianet.ux.mediainfo.setMovie(this);
 					Cianet.ux.osd.setMovie(this);
 					Cianet.ux.mediainfo.setMovie(this);
 				},movie);
@@ -498,14 +517,19 @@ Get mac = 1, get ip = 2, get netmask = 3, get gateway = 4, get dns = 5.
  */
 function netInfo()
 {
-	var ret = {};
-	ret['VERSION']=caNetConfigObj.Getversion();
+	var ret = '';
+	ret += 'Version= '+caNetConfigObj.Getversion()+'\n';
 	caNetConfigObj.GetNetPropertyToCache();
-	ret['MACADDR']=caNetConfigObj.GetNetProperty(1);
-	ret['IP']=caNetConfigObj.GetNetProperty(2);
-	ret['NETMASK']=caNetConfigObj.GetNetProperty(3);
-	ret['GATEWAY']=caNetConfigObj.GetNetProperty(4);
-	ret['DNS']=caNetConfigObj.GetNetProperty(5);
+	var property=caNetConfigObj.GetNetProperty(1);
+	ret += "MACADDR= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(2);
+	ret += "IP= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(3);
+	ret += "NETMASK= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(4);
+	ret += "GATEWAY= "+property+'\n';
+	property=caNetConfigObj.GetNetProperty(5);
+	ret += "LOCAL= "+property+'\n';
 	debug(ret);
 	return ret;
 }
@@ -514,9 +538,9 @@ function getIP()
 {
 	try {
 		// You will see the message in your console
-		caFileBrowseObj.Sayhello("player-> getIP()");
+		caFileBrowseObj.Sayhello("JS check file browser object");
 		//var ver=caFileBrowseObj.Getversion();
-		alert(netInfo()['IP']);
+		alert(netInfo());
 		// try our netconfig object
 		//alert("============== Set Static IP ==============");
 		//caNetConfigObj.CleanValid();
@@ -528,31 +552,59 @@ function getIP()
 		//caNetConfigObj.GetNetPropertyToCache();
 		//alert(netInfo());
 		alert("============== Set DHCP ==============");
-		//caNetConfigObj.CleanValid();
+		caNetConfigObj.CleanValid();
 		//caNetConfigObj.GetNetPropertyToCache();
 		caNetConfigObj.SetNetDHCP(10);
 		alert('Setado DHCP');
-		alert(netInfo()['IP']);
+		alert(netInfo());
 		//caNetConfigObj.SetNetPropertyToNetwork();
 		//caNetConfigObj.GetNetPropertyToCache();
 	}catch(e){
-		debugError(e);
+		debug(e);
 	}
 }
 
 
+function TestOSD()
+{
+	try {
+		//toSetHolePositionAndSize( int idx, int x, int y, int w, int h );	// to create hole
+		//toDelHole( int idx );	// to delete hole
+		//alert('Criando hole ----------------------------------');
+		//caMediaPlayer.toSetHolePositionAndSize( 0 , 10 , 10 , 800 , 600 );
+		//toSetHolePostionAndSize
+		//toSetHolePositionAndSize
+		if (Cianet.ux.PlayerState.osd){
+			Cianet.ux.PlayerState.osd = false;
+			var o = caMediaPlayer.toSetHolePostionAndSize( 0 , 145 , 130 , 240 , 240 );
+		}else {
+			Cianet.ux.PlayerState.osd = true;
+			var o = caMediaPlayer.toDelHole( 0 );
+		}
+	}catch(e){
+		debug(e);
+	}
+}
+
 var atualizador_canal = {
+	stress:false,
 	run:function(){
 		Ext.Ajax.request({
 			url : 'canal_update/',
 			// Handler[failure]
 			failure: function(resp,obj) {
 				debug('Falhou',resp);
+				//alert('Erro na comunicação com o servidor');
 			},
 			// Handler[success]
 			success : function(resp, obj) {
 				resObject = Ext.util.JSON.decode(resp.responseText);
 				var atualizado = new Date(resObject.atualizado);
+				if (this.stress == true)
+				{
+					loadMedia();
+					return;
+				}
 				if (atualizado > this.ultimo)
 				{
 					this.ultimo = atualizado;
@@ -563,10 +615,21 @@ var atualizador_canal = {
 		});
 	},
 	ultimo:new Date('Wed, 18 Oct 2000 13:00:00 EST'),
-	interval:60*1000
+	interval:300*1000
 };
 
 Ext.onReady(function() {
+	if (stressJS)
+	{
+		atualizador_canal.interval = 1*1000;
+		atualizador_canal.stress = true;
+	}
+	else
+	{
+		atualizador_canal.interval = 300*1000;
+		atualizador_canal.stress = false;
+	}
+
 	// Estados iniciais
 	Cianet.ux.PlayerState.plaing = false;
 	Cianet.ux.PlayerState.osd = false;
@@ -582,7 +645,6 @@ Ext.onReady(function() {
 	Cianet.ux.medialist.show();
 	// Call load media list from webservice
 	Ext.TaskMgr.start(atualizador_canal);
-
 	// Handler[keypress]
 	DOC.on('keypress', function(event, opt) {
 		var key = event.getKey();
