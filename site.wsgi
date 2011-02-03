@@ -6,7 +6,7 @@ path = os.path.dirname(__file__)+'/site_gerencia/'
 if path not in sys.path:
     sys.path.append(path)
 
-print(sys.path)
+#print(sys.path)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import django.core.handlers.wsgi

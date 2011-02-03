@@ -1,5 +1,0 @@
-
-
-TODO: Seleção de canais via teclado numérico.
-TODO: Setup STB Network
-TODO: Configuração do STB pelo técnico.
