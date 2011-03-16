@@ -30,7 +30,7 @@ class Canal(models.Model):
     logo = models.ImageField(_('Logo'),upload_to='imgs/canal/logo/tmp' ,help_text='Imagem do canal')
     thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb' ,help_text='Imagem do canal')
     sigla = models.CharField(_('Sigla'),blank=False,max_length=5)
-    ip = models.IPAddressField(_('IP'),blank=False)
+    ip = models.IPAddressField(_('IP'),blank=False,unique=True)
     porta = models.PositiveSmallIntegerField(_('Porta'),blank=False)
     atualizado = models.DateTimeField(auto_now=True)
 
