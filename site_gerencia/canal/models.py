@@ -60,6 +60,11 @@ def canal_post_save(signal,instance,sender,**kwargs):
     """
     Manipulador de evento post-save do Canal
     """
+    #print('canal_post_save:%s'%instance)
+    #print('signal:%s'%signal)
+    #print('sender:%s'%sender)
+    #if instance.logo.name is None:
+    #    return
     if instance.logo.name.startswith('imgs/canal/logo/tmp'):
         ## Carrega biblioteca de manipulação de imagem
         try:
@@ -91,5 +96,14 @@ def canal_post_save(signal,instance,sender,**kwargs):
         instance.save()
 
 
+def canal_post_delete(signal,instance,sender,**kwargs):
+    # Delete img files
+    print("removendo:%s"%instance.thumb)
+    instance.thumb.delete()
+    print("removendo:%s"%instance.logo)
+    instance.logo.delete()
+
 signals.post_save.connect(canal_post_save, sender=Canal)
+
+#signals.post_delete.connect(canal_post_delete, sender=Canal)
 

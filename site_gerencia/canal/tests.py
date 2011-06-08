@@ -12,37 +12,6 @@ class CanalTest(TestCase):
     """
     Testes dos canais de televisão
     """
-    def setUp(self):
-        c = Client()
-        ## Autenticação
-        #c.post('/accounts/login/',{'username':'helber','password':'1deitu1'})
-        #c.login(username='helber', password='1deitu1')
-        i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
-        ## Cria primeiro canal
-        c.post('/canal/add/',
-               {
-              'logo':i1,
-              'nome':'Rede SBT',
-              'numero':10,
-              'descricao':'Silvio Faliu',
-              'sigla':'SBT',
-              'ip':'224.0.0.10',
-              'porta':11000
-              })
-        i2 = open(settings.MEDIA_ROOT+'/test_files/c.png')
-        ## Cria primeiro canal
-        c.post('/canal/add/',
-               {
-              'logo':i2,
-              'nome':'Rede SBT 1',
-              'numero':11,
-              'descricao':'Rede do banco',
-              'sigla':'SBT1',
-              'ip':'224.0.0.10',
-              'porta':11001
-              })
-        i1.close()
-        i2.close()
 
     def test_required_components(self):
         Image = None
@@ -66,7 +35,7 @@ class CanalTest(TestCase):
               'numero':13,
               'descricao':'Só para',
               'sigla':'BOBO',
-              'ip':'224.0.0.10',
+              'ip':'224.0.0.12',
               'porta':11002
               })
         from models import Canal
@@ -83,7 +52,8 @@ class CanalTest(TestCase):
         self.failIf( (existsLogo is False) ,'Logo não foi criado')
         l1.close()
         ## Limpeza
-        c.get('/canal/delete/%d'%c1.id)
+        response = c.get('/canal/delete/%d'%c1.id)
+        self.failUnlessEqual(response.status_code,302,'Deveria redirecionar após remoção')
         existsThum = os.path.exists(thumb)
         existsLogo = os.path.exists(logo)
         self.failIf( (existsThum is True) ,'Thumbnail deveria ser removido')
@@ -91,6 +61,33 @@ class CanalTest(TestCase):
 
     def test_canal_service(self):
         c = Client()
+        ## Autenticação
+        i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
+        ## Cria primeiro canal
+        c.post('/canal/add/',
+               {
+              'logo':i1,
+              'nome':'Rede SBT',
+              'numero':10,
+              'descricao':'Silvio Faliu',
+              'sigla':'SBT',
+              'ip':'224.0.0.10',
+              'porta':11000
+              })
+        i2 = open(settings.MEDIA_ROOT+'/test_files/c.png')
+        ## Cria primeiro canal
+        c.post('/canal/add/',
+               {
+              'logo':i2,
+              'nome':'Rede SBT 1',
+              'numero':11,
+              'descricao':'Rede do banco',
+              'sigla':'SBT1',
+              'ip':'224.0.0.11',
+              'porta':11001
+              })
+        i1.close()
+        i2.close()
         response = c.get('/box/canal_list/')
         self.failUnlessEqual(response.status_code,200,'Status da lista de canais')
         import simplejson as json
@@ -98,6 +95,12 @@ class CanalTest(TestCase):
         decoder = json.JSONDecoder()
         jcanal = decoder.decode(response.content)
         self.failUnlessEqual(len(jcanal['data']),2,'Deveria haver 2 canais')
+        for canal in jcanal['data']:
+            #print(canal)
+            response = c.get('/canal/delete/%d'%canal['pk'])
+            self.failUnlessEqual(response.status_code,302,'Deveria redirecionar após remoção')
+
+
 
 
 class ProgramTest(TestCase):

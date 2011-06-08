@@ -30,7 +30,7 @@ def add(request):
             novocanal = models.Canal()
             fcanal = forms.CanalForm(request.POST,request.FILES,instance=novocanal)
             fcanal.save()
-            return HttpResponseRedirect(reverse('canal_get'))
+            return HttpResponseRedirect(reverse('canal_index'))
         else:
             return render_to_response('canal/canaladd.html', {'form': form},
                                         context_instance=RequestContext(request))
@@ -48,7 +48,7 @@ def edit(request,id):
         form = forms.CanalForm(request.POST,request.FILES,instance=canal)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(reverse('canal_get'))
+            return HttpResponseRedirect(reverse('canal_index'))
     else:
         form = forms.CanalForm(instance=canal)
     return render_to_response('canal/canaledit.html', {'form': form , 'canal':canal},
@@ -60,7 +60,7 @@ def delete(request,id):
     """
     canal = get_object_or_404(models.Canal,pk=id)
     canal.delete()
-    return HttpResponseRedirect(reverse('canal_get'))
+    return HttpResponseRedirect(reverse('canal_index'))
 
 
 
