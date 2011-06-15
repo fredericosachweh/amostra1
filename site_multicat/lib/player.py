@@ -69,8 +69,16 @@ class Player(object):
         return proc
 
     def list_running(self):
-        for proc in self._running:
-            print("PID:%d",proc.pid)
+        import psutil
+        for proc in psutil.process_iter():
+            if proc.name == 'multicat':
+                print(proc)
+                print(proc.pid)
+                print(proc.name)
+                #proc.kill()
+
+        #for proc in self._running:
+        #    print("PID:%d",proc.pid)
 
     def kill_all(self):
         for proc in self._running:
