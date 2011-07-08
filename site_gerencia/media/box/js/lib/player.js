@@ -120,7 +120,7 @@ Cianet.ux.osd = {
 		this.el.setVisible(true);
 		Cianet.ux.PlayerState.osd = true;
 		try {
-			caMediaPlayer.toSetHolePositionAndSize( 0 , 145 , 40 , 240 , 355 );
+			caMediaPlayer.toSetOsdOpacity(220);
 		}catch(e){
 			debug(e);
 		}
@@ -130,9 +130,7 @@ Cianet.ux.osd = {
 		this.el.setVisible(false);
 		Cianet.ux.PlayerState.osd = false;
 		try {
-			if (Cianet.ux.PlayerState.plaing == true){
-				caMediaPlayer.toDelHole( 0 );
-			}
+			caMediaPlayer.toSetOsdOpacity(0);
 		}catch(e){
 			debug(e);
 		}

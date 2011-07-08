@@ -1,6 +1,6 @@
 #body {
 /* opacity: 0.4; */
-	background-color: black;
+ 	background-color: transparent;
 }
 
 a {
@@ -21,10 +21,10 @@ a:HOVER {
 }
 #msg {
 	position: absolute;
-	display:none;
-	top: 5px;
-	left: 5px;
-	right: 5px;
+	display:block;
+	top: 50px;
+	left: 50px;
+	right: 50px;
 	padding: 5px;
 	overflow: hidden;
 	font-weight: bolder;
@@ -46,28 +46,31 @@ a:HOVER {
 }
 #osd {
 	position: absolute;
-	top: 120px;
-	left:120px;
-	width: 200px;
-	height: 250px;
+	top: 100px;
+	left:100px;
+	rigth: 100px;
+	bottom: 100px;
 	z-index: 300;
 	text-align: center;
-	background-color: black;
 }
 #osd .logo {
 	position: absolute;
+	top: 0px;
+	left: 0px;
 	width: 200px;
 	vertical-align: middle;
 	bottom: 50px;
-	left: 0px;
+	opacity: 1.0;
 }
 #osd .numero {
 	position: absolute;
+	top: 400px;
 	font-size: 40px;
 	color: yellow;
 	font-weight: bolder;
 	bottom: 1px;
 	right: 2px;
+	opacity: 1.0;
 }
 
 
