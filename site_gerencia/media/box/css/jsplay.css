@@ -1,7 +1,8 @@
 #body {
 /* opacity: 0.4; */
 /*	background-color: transparent; */
-	background-color: gray;
+	background-color: black;
+	opacity: 0.2;
 }
 
 a {
@@ -22,7 +23,7 @@ a:HOVER {
 }
 #msg {
 	position: absolute;
-	display:block;
+	display: none;
 	bottom: 50px;
 	left: 50px;
 	right: 50px;
