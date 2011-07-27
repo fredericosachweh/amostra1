@@ -1,0 +1,28 @@
+[
+    {
+        "pk": 1, 
+        "model": "box.setupbox", 
+        "fields": {
+            "status": 1, 
+            "mac": "04:f2:5d:84:00:32", 
+            "enabled": true
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "box.setupbox", 
+        "fields": {
+            "status": 2, 
+            "mac": "56:86:E6:5A:F5:40", 
+            "enabled": true
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "box.setupbox_log", 
+        "fields": {
+            "setupbox": 1, 
+            "created": "2011-07-27 11:15:35"
+        }
+    }
+]
