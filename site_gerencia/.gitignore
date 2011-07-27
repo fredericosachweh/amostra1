@@ -1,3 +1,4 @@
 /sqlite.db
 *.pyc
 *.pyo
+*.e4p
