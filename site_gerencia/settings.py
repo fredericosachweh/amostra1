@@ -105,6 +105,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.admin',
+    # South http://south.aeracode.org/docs/
+    'south',
     # Testes com nose
     #'django_nose',
     # Gestao de canal
