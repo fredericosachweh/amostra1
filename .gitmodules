@@ -1,0 +1,3 @@
+[submodule "site_gerencia/media/frontend"]
+	path = site_gerencia/media/frontend
+	url = git@10.1.1.200:iptv/iptv-frontend.git
