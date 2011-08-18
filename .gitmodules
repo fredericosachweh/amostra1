@@ -1,6 +1,6 @@
 [submodule "site_gerencia/media/frontend"]
 	path = site_gerencia/media/frontend
-	url = git@10.1.1.200:iptv/iptv-frontend.git
+	url = git@10.1.1.200:iptv/iptv-middleware/iptv-frontend.git
 [submodule "nginx"]
 	path = nginx
 	url = git@10.1.1.200:iptv/iptv-middleware/iptv-middleware-nginx.git
