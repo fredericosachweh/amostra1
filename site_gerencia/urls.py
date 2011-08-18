@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import patterns,include,url,handler404,handler500
+from django.conf.urls.defaults import patterns, include, url, handler404, handler500
 from django.views.generic.simple import direct_to_template
 #from django.conf.urls.defaults import *
 
