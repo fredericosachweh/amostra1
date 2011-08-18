@@ -2,7 +2,7 @@
 import os
 import sys
 
-path = os.path.dirname(__file__)+'/site_gerencia/'
+path = os.path.dirname(os.path.dirname(__file__))+'/site_gerencia/'
 if path not in sys.path:
     sys.path.append(path)
 
