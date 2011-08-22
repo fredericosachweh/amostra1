@@ -8,7 +8,7 @@ class AdminSetupBox(admin.ModelAdmin):
     """
     Classe para manipular modelo do SetupBox na administração
     """
-    list_display = ['mac', 'status_name', 'enabled']
+    list_display = ['mac', 'connected', 'enabled']
 
 
 admin.site.register(SetupBox, AdminSetupBox)
