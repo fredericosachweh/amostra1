@@ -4,3 +4,9 @@
 [submodule "nginx"]
 	path = nginx
 	url = git@10.1.1.200:iptv/iptv-middleware/iptv-middleware-nginx.git
+[submodule "django"]
+	path = django
+	url = git://github.com/django/django.git
+[submodule "modules/django-debug-toolbar"]
+	path = modules/django-debug-toolbar
+	url = git://github.com/robhudson/django-debug-toolbar.git

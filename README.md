@@ -19,7 +19,7 @@ Para iniciar FastCGI para uso integrado com nginx, existem duas maneiras.
 
 Desenvolvedor:
 
-    ./manage.py runfcgi daemonize=false socket=/tmp/site_gerencia.sock maxrequests=1
+   ./manage.py runfcgi daemonize=false socket=/tmp/site_gerencia.sock maxrequests=1 debug=true --verbosity=2 --traceback 
 
 Esta maneira ele vai iniciar, porém vai ficar atrelado ao bash, de forma que fica mais fácil depurar, o limite de request faz com que ele execute apenas página por vez, pra vc sempre saber o que está requisitando ou depurar a execução.
 
