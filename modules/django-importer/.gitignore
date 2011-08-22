@@ -1,5 +1,0 @@
-build
-dist
-pip-log.txt
-*.egg-info
-*.pyc

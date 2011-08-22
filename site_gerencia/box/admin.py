@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from models import SetupBox, Pessoa
+from models import SetupBox, Pessoa, PushServer
 from django.contrib import admin
 
 class AdminSetupBox(admin.ModelAdmin):
@@ -12,5 +12,6 @@ class AdminSetupBox(admin.ModelAdmin):
 
 
 admin.site.register(SetupBox, AdminSetupBox)
+admin.site.register(PushServer)
 admin.site.register(Pessoa)
 
