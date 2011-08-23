@@ -10,8 +10,21 @@ class AdminSetupBox(admin.ModelAdmin):
     """
     list_display = ['mac', 'connected', 'enabled']
 
+class AdminPushServer(admin.ModelAdmin):
+    """
+    Classe para manipular modelo do PushServer na administração
+    """
+    list_display = [
+        'hostname', 
+        'port', 
+        'channels', 
+        'broadcast_channels', 
+        'published_messages',
+        'subscribers',
+    ]
+
 
 admin.site.register(SetupBox, AdminSetupBox)
-admin.site.register(PushServer)
+admin.site.register(PushServer, AdminPushServer)
 admin.site.register(Pessoa)
 
