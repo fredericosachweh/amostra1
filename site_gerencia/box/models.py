@@ -6,7 +6,6 @@ from fields                   import MACAddressField
 from django.utils.translation import ugettext as _
 
 from lib.pushstream.pushstream import PushStream
-from dbus.decorators import signal
 
 class Pessoa(models.Model):
     """
