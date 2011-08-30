@@ -61,7 +61,12 @@ class PushServer(models.Model):
             instance.online = True
             for channel in pushserver.data.channels_list:
                 try:
-                    instance.setupbox_set.create(mac = channel)
+                    #instance.setupbox_set.create(mac = channel)
+                    setupbox = SetupBox(
+                        pushserver = instance,
+                        mac = channel)
+                    setupbox.clean_fields()
+                    setupbox.save()
                 except: print "Falhou ao criar (provavelmente já existe): "+channel
         except: 
             instance.online = False
@@ -97,10 +102,13 @@ class SetupBox(models.Model):
         pushserver = PushStream()
         try:
             pushserver.connect(port=8080) # TODO puxar dados do model pai
-            instance.connected = bool(pushserver.data.channels_list[instance.mac])
+            instance.connected = bool(pushserver.data.channels_list[instance.mac].subscribers)
         except:
             instance.connected = False
-        instance.save()
+        try:
+            instance.clean_fields()
+            instance.save()
+        except: pass
         
         print "SetupBox post_init signal executed."
 models.signals.post_init.connect(SetupBox._post_init, 
