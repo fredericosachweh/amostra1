@@ -14,8 +14,6 @@ from canal.models     import Canal
 from django.conf      import settings
 from django.core      import serializers
 
-from time             import sleep
-
 def index(request):
     """
     Imprime informações no console e exibe requsição do box pro setupbox

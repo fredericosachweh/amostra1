@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from models import SetupBox, Pessoa, PushServer
+from models         import SetupBox, Pessoa, PushServer
 from django.contrib import admin
+
+from django.utils.translation import ugettext as _
 
 class AdminSetupBox(admin.ModelAdmin):
     """
@@ -10,7 +12,20 @@ class AdminSetupBox(admin.ModelAdmin):
     """
     list_display = ['mac', 
                     'connected', 
-                    'enabled']
+                    'enabled',
+                    'pushserver']
+    
+    fieldsets = [
+        (None,                             {'fields': ['pushserver']}),
+        (_('Status'),                      {'fields': ['connected']}),
+        (_('Caracteristicas do SetupBox'), {'fields': ['mac', 'enabled']}),
+        
+    ]
+    
+    readonly_fields = ['connected']
+    
+    class Media():
+        js = ('admin/js/pushserver/console.js',)
 
 class AdminPushServer(admin.ModelAdmin):
     """
