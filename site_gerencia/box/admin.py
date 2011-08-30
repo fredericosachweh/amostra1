@@ -8,19 +8,25 @@ class AdminSetupBox(admin.ModelAdmin):
     """
     Classe para manipular modelo do SetupBox na administração
     """
-    list_display = ['mac', 'connected', 'enabled']
+    list_display = ['mac', 
+                    'connected', 
+                    'enabled']
 
 class AdminPushServer(admin.ModelAdmin):
     """
     Classe para manipular modelo do PushServer na administração
     """
     list_display = [
-        'hostname', 
+        'address', 
         'port', 
+        'online',
+        'hostname', 
+        'setupboxes',
         'channels', 
         'broadcast_channels', 
-        'published_messages',
         'subscribers',
+        'created',
+        'updated',
     ]
 
 

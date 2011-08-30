@@ -1,29 +1,3 @@
 [
-    {
-        "pk": 1, 
-        "model": "box.setupbox", 
-        "fields": {
-            "connected": false, 
-            "mac": "00:00:00:00:00:00", 
-            "enabled": true
-        }
-    }, 
-    {
-        "pk": 2, 
-        "model": "box.setupbox", 
-        "fields": {
-            "connected": false,
-            "mac": "00:16:E8:5B:75:8A", 
-            "enabled": true
-        }
-    }, 
-    {
-        "pk": 3, 
-        "model": "box.setupbox", 
-        "fields": {
-            "connected": false,
-            "mac": "AA:BB:CC:DD:EE:FF", 
-            "enabled": false
-        }
-    }
+
 ]
