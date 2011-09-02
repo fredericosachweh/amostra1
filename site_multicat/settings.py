@@ -1,5 +1,14 @@
 # Django settings for site_multicat project.
 
+import sys,os
+
+PROJECT_ROOT_PATH = os.path.dirname(__file__)
+#PROJECT_ROOT_PATH = '/mnt/projetos/ativos/cianet/site_multicat/site_multicat'
+if PROJECT_ROOT_PATH not in sys.path:
+    sys.path.append(PROJECT_ROOT_PATH)
+
+#print(PROJECT_ROOT_PATH)
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -43,35 +52,30 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-# Absolute filesystem path to the directory that will hold user-uploaded files.
-# Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = 'media/'
 
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash.
-# Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
-MEDIA_URL = 'media/'
 
-# Absolute path to the directory static files should be collected to.
-# Don't put anything in this directory yourself; store your static files
-# in apps' "static/" subdirectories and in STATICFILES_DIRS.
-# Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = ''
+if 'runserver' in sys.argv:
+    MEDIA_URL = 'http://127.0.0.1:8000/media/'
+    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media/')
+    #ADMIN_MEDIA_PREFIX = '/static_admin/admin/'
+    ADMIN_MEDIA_PREFIX = '/static/'
+    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
+    STATIC_URL = '/static/'
+else:
+    MEDIA_URL = '/site_multicat/static/'
+    MEDIA_ROOT = '/var/www/html/site_munticat/static/'
+    ADMIN_MEDIA_PREFIX = '/site_multicat/static/admin/'
+    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
+    STATIC_URL = '/static/'
 
-# URL prefix for static files.
-# Example: "http://media.lawrence.com/static/"
-STATIC_URL = '/static/'
-
-# URL prefix for admin static files -- CSS, JavaScript and images.
-# Make sure to use a trailing slash.
-# Examples: "http://foo.com/static/admin/", "/static/admin/".
-ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
+    #os.path.join(PROJECT_ROOT_PATH,'static/'),
+    os.path.join(PROJECT_ROOT_PATH,'static/admin/'),
 )
 
 # List of finder classes that know how to find static files in
@@ -100,12 +104,13 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'site_multicat.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
+    os.path.join(PROJECT_ROOT_PATH,'templates/')
 )
 
 INSTALLED_APPS = (
@@ -116,9 +121,10 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
+    'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+    'process',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -143,3 +149,10 @@ LOGGING = {
         },
     }
 }
+
+MULTICAST = {
+    'APP':'multicat'
+}
+
+
+

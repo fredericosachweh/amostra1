@@ -1,8 +1,12 @@
 from django.conf.urls.defaults import patterns, include, url
 
 # Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
+from django.contrib import admin
+admin.autodiscover()
+
+#from django.conf import settings
+#from django.conf.urls.static import static
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = patterns('',
     # Examples:
@@ -13,6 +17,11 @@ urlpatterns = patterns('',
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    # url(r'^admin/', include(admin.site.urls)),
-    url(r'^$',include('process.urls'))
+    url(r'^admin/', include(admin.site.urls)),
+    #url(r'^static/extra/(.*)$', 'django.views.static.serve',{'document_root': settings.STATIC_ROOT,'show_indexes':True}),
+    #url(r'^static_admin/(.*)$', 'django.views.static.serve',{'document_root': settings.STATIC_ROOT,'show_indexes':True}),
+    url(r'^$','process.views.home'),
+    url(r'^process/',include('process.urls')),
+    #static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
 )
+urlpatterns += staticfiles_urlpatterns()

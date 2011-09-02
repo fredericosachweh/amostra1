@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-#import subprocess
-from subprocess import Popen
-
+import psutil
 
 ## Pacote: python-psutil.x86_64
 #import psutil
@@ -32,14 +30,10 @@ Usage: multicat [-i <RT priority>] [-t <ttl>] [-p <PCR PID>] [-s <chunks>] [-n <
     -P: Port number to server recovery packets
 """
 
-
-
-
 class Player(object):
     '''
     Player para controle dos servidores de canais
     '''
-    _running = []
 
     def __init__(self):
         '''
@@ -50,11 +44,13 @@ class Player(object):
     def play(self,origem_ip=None,origem_porta=None,destino_ip=None,destino_porta=None,porta_recuperacao=None):
         '''
         Executa o servidor de canal:
-        multicat -P porta_recuperacao @origem_ip:origem_porta destino_ip:destino_porta@ip_interface_destino
+        multicat -P porta_recuperacao -u -U @origem_ip:origem_porta destino_ip:destino_porta@ip_bind:port_bind
         multicat -P 10003 -U -u @224.0.1.1:10000 224.0.0.13:11003
-        multicat -P 10003 -U -u @224.0.1.1:10000 224.0.0.13:11003@192.168.0.1
+        multicat -P 10003 -U -u @224.0.1.1:10000@172.16.0.1 224.0.0.13:11003@192.168.0.1
         '''
-        cmd = ['multicat']
+        cmd = []
+        from django.conf import settings
+        cmd.append(settings.MULTICAST.get('APP'))
         if porta_recuperacao is not None:
             rec = '-P %d' %porta_recuperacao
             cmd.append(rec)
@@ -64,23 +60,59 @@ class Player(object):
         destino = '%s:%s' %(destino_ip,destino_porta)
         cmd.append(origem)
         cmd.append(destino)
-        proc = Popen(cmd)
-        self._running.append(proc)
+        proc = psutil.Popen(cmd)
+        #proc = Popen(cmd)
         return proc
+    
+    def play_stream(self, stream):
+        """
+        Inicia um processo de multicat com o fluxo informado
+        """
+        cmd = []
+        from django.conf import settings
+        cmd.append(settings.MULTICAST.get('APP'))
+        if stream.source.is_rtp is False:
+            cmd.append('-u')
+        if stream.destination.is_rtp is False:
+            cmd.append('-U')
+        origem = '@%s:%s' %(stream.source.ip,stream.source.port)
+        destino = '%s:%s' %(stream.destination.ip,stream.destination.port)
+        cmd.append(origem)
+        cmd.append(destino)
+        proc = psutil.Popen(cmd)
+        #print('On:Player.play_stream=%s | %s'%(stream,' '.join(cmd)))
+        if proc.is_running():
+            stream.pid = proc.pid
+            stream.save()
+            return True
+        return False
+    
+    def stop_stream(self,stream):
+        if stream.pid:
+            proc = psutil.Process(stream.pid)
+            proc.kill()
+            proc.wait(1)
+        return True
+        
+    
+    def is_playing(self,stream):
+        if stream.pid:
+            return psutil.pid_exists(stream.pid)
+        return False
 
     def list_running(self):
-        import psutil
+        from django.conf import settings
+        lista = []
         for proc in psutil.process_iter():
-            if proc.name == 'multicat':
-                print(proc)
-                print(proc.pid)
-                print(proc.name)
-                #proc.kill()
-
-        #for proc in self._running:
-        #    print("PID:%d",proc.pid)
+            if proc.name == settings.MULTICAST.get('APP'):
+                lista.append(proc)
+        return lista
 
     def kill_all(self):
-        for proc in self._running:
-            print("KILL PID:%d",proc.pid)
-            proc.kill()
+        from django.conf import settings
+        #print('APP:%s'%settings.MULTICAST['APP'])
+        for proc in psutil.process_iter():
+            if proc.name == settings.MULTICAST['APP']:
+                #print("Proc: %s" %proc)
+                #print("Matando: Nome:%s PID: %s" %(proc.name,proc.pid))
+                proc.kill()
