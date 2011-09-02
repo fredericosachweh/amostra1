@@ -1,6 +1,6 @@
+#!/usr/bin/env python
 # -*- encoding: UTF-8 -*-
 
-from django.utils.translation import ugettext as _
 # Requisições de JSON para atualizar estatisticas do Push-server
 import simplejson
 import urllib2
@@ -85,7 +85,8 @@ class PushStream(object):
         if self.loaded: 
             return self
         # TODO: implementar cache
-        request     = urllib2.Request("%s%s?id=ALL" % (self.server_url(), self.config.stats))
+        request     = urllib2.Request("%s%s?id=ALL" % 
+                                      (self.server_url(), self.config.stats))
         opener      = urllib2.build_opener()
         file_stream = opener.open(request)
         json        = simplejson.load(file_stream)
