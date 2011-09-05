@@ -9,6 +9,67 @@ from lib.pushstream.pushstream import PushStream
 
 import urllib2
 
+################################################################################
+# Utils                                                                        #
+################################################################################
+
+class ToggleSignal():
+    """ Singleton pra gerenciar toggle entre signals, para livrar um pouco as
+    execuções desnecessárias no acesso de instancias filho que contenham um signal
+    connectado a ela.
+    
+    !CUIDADO!
+    Não vai desconectar e após o processo esquecer de reconectar, senão ele perde
+    o sinal apartir do momento que sai do processo. """
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        """ Singleton """
+        if not cls._instance:
+            cls._instance = super(ToggleSignal, cls).__new__(cls, *args, **kwargs)
+        cls._instance.connect = None
+        cls._instance.receiver = None
+        cls._instance.sender = None
+        cls._instance.weak = True
+        cls._instance.dispatch_uid = None
+        return cls._instance
+    
+    def _toggler(self, last_state):
+        """ Toggler de signal interno """
+        if last_state:
+            models.signals.post_init.connect(self.connect, 
+                                             sender = self.sender,
+                                             weak = self.weak,
+                                             dispatch_uid = self.dispatch_uid)
+            return False
+        else:
+            models.signals.post_init.disconnect(self.receiver, 
+                                                self.sender, 
+                                                self.weak, 
+                                                self.dispatch_uid)
+            return True
+    _setupbox_post_init = False
+    def setupbox_post_init(self, **kwargs):
+        """ Define toggler pro setupbox_post_init """
+        self.connect = SetupBox._post_init
+        self.sender = SetupBox
+        self.dispatch_uid = "SetupBox._post_init"
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self._setupbox_post_init = self._toggler(self._setupbox_post_init)
+        
+    _pushserver_post_init = False
+    def pushserver_post_init(self, **kwargs):
+        """ Define toggler pro setupbox_post_init """
+        self.connect = PushServer._post_init
+        self.sender = PushServer
+        self.dispatch_uid = "PushServer._post_init"
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+################################################################################
+# Pessoa                                                                       #
+################################################################################
+
 class Pessoa(models.Model):
     """ Modelo que define a pessoa responsável por um setup box? """
     nome = models.CharField(_('Nome'), 
@@ -88,8 +149,7 @@ class PushServer(models.Model):
                                       self.subscriber_link)
         return u'%s://%s:%d' % (self.schema, self.address, self.port)
     def setupboxes(self):
-        setupboxes = SetupBox.objects.filter(pushserver = self.pk).count()
-        return setupboxes
+        return SetupBox.objects.filter(pushserver = self.pk).count()
     class Meta:
         verbose_name        = _(u"Push Server")
         verbose_name_plural = _(u"Push Servers")
@@ -112,12 +172,17 @@ class PushServer(models.Model):
             instance.online             = True
             for channel in pushserver.data.channels_list:
                 try:
-                    #instance.setupbox_set.create(mac = channel)
+                    #Desconectar signals, não são necessários aqui
+                    ToggleSignal().setupbox_post_init()
                     setupbox = SetupBox(
                         pushserver = instance,
                         mac = channel)
+                    #Reconecta signals
+                    ToggleSignal().setupbox_post_init()
                     setupbox.clean_fields()
                     setupbox.save()
+                    
+                    
                 except: print "Falhou ao criar (provavelmente já existe): "+channel
         except: 
             instance.online = False
@@ -125,8 +190,8 @@ class PushServer(models.Model):
         print "PushServer post_init signal executed."
 
 models.signals.post_init.connect(PushServer._post_init, 
-    sender = PushServer,
-    dispatch_uid = "PushServer._post_init")
+                                 sender = PushServer,
+                                 dispatch_uid = "PushServer._post_init")
 
 class PushServerCommands(models.Model):
     """ Modelo que armazena comandos enviados para canal de broadcast de um
@@ -183,7 +248,10 @@ class SetupBox(models.Model):
         diferefente o status ele salva """
         if not instance.mac: return
         pushserver = PushStream()
+        #Desconecta sinal do pushserver
+        ToggleSignal().pushserver_post_init()
         try:
+            
             pushserver.connect(port = instance.pushserver.port, 
                                hostname = instance.pushserver.address)
             channel = pushserver.data.channels_list[instance.mac]
@@ -194,11 +262,13 @@ class SetupBox(models.Model):
             instance.clean_fields()
             instance.save()
         except: pass
-        
+        #Connecta sinal do pushserver
+        ToggleSignal().pushserver_post_init()
         print "SetupBox post_init signal executed."
+        
 models.signals.post_init.connect(SetupBox._post_init, 
-    sender = SetupBox,
-    dispatch_uid = "SetupBox._post_init")
+                                 sender = SetupBox,
+                                 dispatch_uid = "SetupBox._post_init")
 
 class SetupBoxCommands(models.Model):
     """ Modelo que armazena comandos enviados para cada setupbox """
@@ -216,6 +286,12 @@ class SetupBoxCommands(models.Model):
                                   editable = False)
     ping = models.BooleanField(_(u"Solicitar retorno (ping)"), 
                                default = False)
+    def online_setupbox(self):
+        online = u''
+        for setupbox in self.pushservercommandssetupbox_set:
+            online += u", " if online != '' else u''
+            online += u"%s" % setupbox.mac
+        return online
 
 class SetupBoxCommandsResponse(models.Model):
     """ Modelo que armazena respostas do setupbox quando habilitado ping no
@@ -279,14 +355,21 @@ def _pre_save_push_server_command(signal, instance, sender, **kwargs):
     if isinstance(instance, SetupBoxCommands):
         url = instance.setupbox.pushserver.url('pub')
         channel = instance.setupbox.mac
-    else:
+    elif isinstance(instance, PushServerCommands):
         url = instance.pushserver.url('pub')
         channel = instance.pushserver.broadcast_channel
-        for setupbox in SetupBox.objects.filter(pushserver = instance.pushserver,
-                                                connected = True):
-            online = PushServerCommandsSetupBox(pushservercommands = instance.pushserver,
-                                                setupbox = setupbox)
-            online.save()
+        
+        def _post_save_push_server_command(signal, instance, sender, **kwargs):
+            models.signals.post_save.disconnect(instance, sender)
+            for setupbox in SetupBox.objects.filter(pushserver = instance.pushserver,
+                                                    connected = True):
+                online = PushServerCommandsSetupBox(pushservercommands = instance,
+                                                    setupbox = setupbox)
+                online.save()
+        models.signals.post_save.connect(_post_save_push_server_command, sender = PushServerCommands)
+    else:
+        print "Instancia inválida para o signal"
+        return
     url += channel
     
     command = ''
@@ -311,6 +394,6 @@ def _pre_save_push_server_command(signal, instance, sender, **kwargs):
         instance.sended = False
 
 models.signals.pre_save.connect(_pre_save_push_server_command, 
-    sender = SetupBoxCommands)
+                                sender = SetupBoxCommands)
 models.signals.pre_save.connect(_pre_save_push_server_command, 
-    sender = PushServerCommands)
+                                sender = PushServerCommands)

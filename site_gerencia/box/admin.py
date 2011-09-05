@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from models         import SetupBox, SetupBoxCommands, Pessoa, PushServer
+import models
+
 from django.contrib import admin
 from django.forms   import ModelForm
 
@@ -10,15 +11,16 @@ from django.utils.translation import ugettext as _
 class SetupBoxCommandsInlineForm(ModelForm): 
     def __init__(self, *args, **kwargs): 
         super(SetupBoxCommandsInlineForm, self).__init__(*args, **kwargs) 
-        self.fields['inside_room'].queryset = SetupBoxCommands.objects.filter() 
+        self.fields['inside_room'].queryset = models.SetupBoxCommands.objects.filter() 
 
 class SetupBoxCommandsInline(admin.TabularInline):
-    model = SetupBoxCommands 
+    model = models.SetupBoxCommands 
     can_delete = False
     extra = 1
     max_num = model.objects.count() + 1
     # XXX command tem que ser readonly, usar formset pra exibir campo pro response
     readonly_fields = ['response', 'sended', 'ping', 'created',]
+    classes = ['collapse']
 
 class AdminSetupBox(admin.ModelAdmin):
     """
@@ -47,17 +49,31 @@ class AdminSetupBox(admin.ModelAdmin):
                        'updated',
                        ]
     inlines = [SetupBoxCommandsInline]
-    
+
+class PushServerCommandsInlineForm(ModelForm): 
+    def __init__(self, *args, **kwargs): 
+        super(PushServerCommandsInlineForm, self).__init__(*args, **kwargs) 
+        self.fields['inside_room'].queryset = models.PushServerCommands.objects.filter() 
+
+class PushServerCommandsInline(admin.TabularInline):
+    model = models.PushServerCommands 
+    can_delete = False
+    extra = 1
+    max_num = model.objects.count() + 1
+    # XXX command tem que ser readonly, usar formset pra exibir campo pro response
+    readonly_fields = ['response', 'sended', 'ping', 'created',]
+    classes = ['collapse']
+
 class SetupBoxInlineForm(ModelForm): 
     def __init__(self, *args, **kwargs): 
         super(SetupBoxInlineForm, self).__init__(*args, **kwargs) 
-        self.fields['inside_room'].queryset = SetupBox.objects.filter() 
+        self.fields['inside_room'].queryset = models.SetupBox.objects.filter() 
 
 class SetupBoxInline(admin.TabularInline):
-    model = SetupBox
+    model = models.SetupBox
     can_order = True 
     extra = 0
-    readonly_fields = ['mac']
+    readonly_fields = ['mac', 'connected']
 
 class AdminPushServer(admin.ModelAdmin):
     """
@@ -96,10 +112,9 @@ class AdminPushServer(admin.ModelAdmin):
                        'online',
                        'created',
                        ]
-    inlines = [SetupBoxInline]
+    inlines = [SetupBoxInline, PushServerCommandsInline]
 
 
-admin.site.register(SetupBox, AdminSetupBox)
-admin.site.register(PushServer, AdminPushServer)
-admin.site.register(Pessoa)
+admin.site.register(models.SetupBox, AdminSetupBox)
+admin.site.register(models.PushServer,AdminPushServer)
 
