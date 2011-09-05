@@ -80,7 +80,7 @@ class Stream(models.Model):
     pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
     def status(self):
         #return 'lalalalala'
-        from lib.player import Player
+        from stream.player import Player
         p = Player()
         if p.is_playing(self) is True:
             url = reverse('process.views.stop',kwargs={'stream_id':self.id})
@@ -91,7 +91,7 @@ class Stream(models.Model):
     def __unicode__(self):
         return '%s %s:%d -> %s %s:%d' %(self.source.name,self.source.ip,self.source.port,self.destination.name,self.destination.ip,self.destination.port)
     def play(self):
-        from lib.player import Player
+        from stream.player import Player
         p = Player()
         p.play(self.source.ip, self.source.port, self.destination.ip, self.destination.port, self.destination.recovery_port)
 

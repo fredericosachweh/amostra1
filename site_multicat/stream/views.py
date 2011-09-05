@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import resolve
-from lib.player import Player
+from stream.player import Player
 
 from models import Stream
 

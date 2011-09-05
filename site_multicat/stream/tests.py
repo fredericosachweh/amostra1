@@ -12,14 +12,14 @@ from django.test import TestCase
 
 class PlayerTest(TestCase):
     def test_play(self):
-        from lib.player import Player
+        from stream.player import Player
         p = Player()
         proc = p.play('224.0.0.1', 30000, '239.0.1.1', 10000, 50000)
         if proc.pid:
             #print('PID:%d'%proc.pid)
             proc.kill()
     def test_runnig(self):
-        from lib.player import Player
+        from stream.player import Player
         p = Player()
         a = p.play('224.0.0.1', 30000, '239.0.1.1', 10001, 50001)
         b = p.play('224.0.0.1', 30000, '239.0.1.1', 10002, 50002)
@@ -43,7 +43,7 @@ class PlayerTest(TestCase):
         l2 = p.list_running()
         self.assertEqual(len(l2), 0, 'Deveria ser 0 o número de processos')
     def test_control_stream(self):
-        from process import models
+        from stream import models
         origin = models.MediaMulticastSource()
         origin.name = 'Origem teste'
         origin.ip = '239.0.0.10'
