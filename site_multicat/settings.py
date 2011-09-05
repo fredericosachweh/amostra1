@@ -150,9 +150,7 @@ LOGGING = {
     }
 }
 
-MULTICAST = {
-    'APP':'multicat'
-}
+MULTICAST_APP = 'multicat'
 
 
 

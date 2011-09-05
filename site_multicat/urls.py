@@ -20,8 +20,8 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     #url(r'^static/extra/(.*)$', 'django.views.static.serve',{'document_root': settings.STATIC_ROOT,'show_indexes':True}),
     #url(r'^static_admin/(.*)$', 'django.views.static.serve',{'document_root': settings.STATIC_ROOT,'show_indexes':True}),
-    url(r'^$','process.views.home'),
-    url(r'^process/',include('process.urls')),
+    url(r'^$','stream.views.home'),
+    url(r'^stream/',include('stream.urls')),
     #static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
 )
 urlpatterns += staticfiles_urlpatterns()

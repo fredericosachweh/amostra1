@@ -59,5 +59,13 @@ class PlayerTest(TestCase):
         s = models.Stream(source=origin,destination=dest,pid=None)
         ##
         s.save()
+        from player import Player
+        p = Player()
+        
+        m = p.play_stream(s)
+        self.assertGreater(m.pid,0, 'O pid deveria ser maior que 0')
+        m.kill()
+        m.wait(1)
+        #p.kill_all()
         
 

@@ -39,7 +39,8 @@ class Player(object):
         '''
         Constructor
         '''
-        pass
+        from django.conf import settings
+        self._playerapp = settings.MULTICAST_APP or 'multicat'
 
     def play(self,origem_ip=None,origem_porta=None,destino_ip=None,destino_porta=None,porta_recuperacao=None):
         '''
@@ -49,8 +50,7 @@ class Player(object):
         multicat -P 10003 -U -u @224.0.1.1:10000@172.16.0.1 224.0.0.13:11003@192.168.0.1
         '''
         cmd = []
-        from django.conf import settings
-        cmd.append(settings.MULTICAST.get('APP'))
+        cmd.append(self._playerapp)
         if porta_recuperacao is not None:
             rec = '-P %d' %porta_recuperacao
             cmd.append(rec)
@@ -69,8 +69,7 @@ class Player(object):
         Inicia um processo de multicat com o fluxo informado
         """
         cmd = []
-        from django.conf import settings
-        cmd.append(settings.MULTICAST.get('APP'))
+        cmd.append(self._playerapp)
         if stream.source.is_rtp is False:
             cmd.append('-u')
         if stream.destination.is_rtp is False:
@@ -84,8 +83,7 @@ class Player(object):
         if proc.is_running():
             stream.pid = proc.pid
             stream.save()
-            return True
-        return False
+        return proc
     
     def stop_stream(self,stream):
         if stream.pid:
@@ -101,18 +99,15 @@ class Player(object):
         return False
 
     def list_running(self):
-        from django.conf import settings
         lista = []
         for proc in psutil.process_iter():
-            if proc.name == settings.MULTICAST.get('APP'):
+            if proc.name == self._playerapp:
                 lista.append(proc)
         return lista
 
     def kill_all(self):
-        from django.conf import settings
-        #print('APP:%s'%settings.MULTICAST['APP'])
         for proc in psutil.process_iter():
-            if proc.name == settings.MULTICAST['APP']:
+            if proc.name == self._playerapp:
                 #print("Proc: %s" %proc)
                 #print("Matando: Nome:%s PID: %s" %(proc.name,proc.pid))
                 proc.kill()
