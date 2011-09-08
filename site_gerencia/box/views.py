@@ -74,3 +74,22 @@ def canal_update(request):
     #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.strftime('%Y-%m-%dT%H:%M:%S')))
     #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.isoformat()))
     return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.ctime()))
+
+def ping(request):
+    """ Responde true """
+    print('--> Ping from %s' % (request.META['REMOTE_ADDR']))
+    try:
+        import Image
+    except:
+        from PIL import Image
+    image = Image.new("RGB", (1, 1), "black")
+    
+    response = HttpResponse(mimetype='image/png')
+    image.save(response, "PNG")
+    return response
+
+
+
+
+
+

@@ -15,6 +15,8 @@ urlpatterns = patterns('',
     url(r'^canal_update/$', 'box.views.canal_update', name='canal_update'),
     url(r'^setup/$',        'box.views.setup',        name='setup'),
     
+    url(r'^ping/$',         'box.views.ping',         name='ping'),
+    
     url(r'^frontend/$',     direct_to_template, {'template': 'frontend/index.html'}),
     url(r'^frontend/(?P<path>.*)$', 'django.views.static.serve', {
             'document_root': settings.MEDIA_ROOT+"/frontend/",
