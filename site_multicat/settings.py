@@ -20,12 +20,12 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'banco.sqlite3',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'multicat',                      # Or path to database file if using sqlite3.
+        'USER': 'multicat',                      # Not used with sqlite3.
+        'PASSWORD': 'multicat',                  # Not used with sqlite3.
+        'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
     }
 }
 
@@ -62,9 +62,9 @@ if 'runserver' in sys.argv:
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
 else:
-    MEDIA_URL = '/site_multicat/static/'
-    MEDIA_ROOT = '/var/www/html/site_munticat/static/'
-    ADMIN_MEDIA_PREFIX = '/site_multicat/static/admin/'
+    MEDIA_URL = '/multicat/static/'
+    MEDIA_ROOT = '/mnt/projetos/ativos/cianet/site-multicat/site_multicat/static/'
+    ADMIN_MEDIA_PREFIX = '/multicat/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
 
@@ -150,7 +150,8 @@ LOGGING = {
     }
 }
 
-MULTICAST_APP = 'multicat'
+#MULTICAST_APP = '/usr/local/bin/multicat'
+MULTICAST_APP = '/usr/local/bin/roda'
 
 
 

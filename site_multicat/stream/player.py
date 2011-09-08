@@ -2,6 +2,9 @@
 # -*- encoding:utf-8 -*-
 
 import psutil
+import subprocess
+import os
+import sys
 
 ## Pacote: python-psutil.x86_64
 #import psutil
@@ -11,6 +14,7 @@ import psutil
 #        print(proc.pid)
 #        print(proc.name)
 #        proc.kill()
+
 
 """
 Usage: multicat [-i <RT priority>] [-t <ttl>] [-p <PCR PID>] [-s <chunks>] [-n <chunks>] [-d <time>] [-a] [-S <SSRC IP>] [-u] [-U] [-N] [-m <payload size>] [-R <rotate_time>] [-P <port number>] <input item> <output item>
@@ -34,13 +38,17 @@ class Player(object):
     '''
     Player para controle dos servidores de canais
     '''
+    _lista = []
 
     def __init__(self):
         '''
         Constructor
         '''
         from django.conf import settings
-        self._playerapp = settings.MULTICAST_APP or 'multicat'
+        if settings.MULTICAST_APP:
+            self._playerapp = settings.MULTICAST_APP
+        else:
+            self._playerapp = 'multicat'
 
     def play(self,origem_ip=None,origem_porta=None,destino_ip=None,destino_porta=None,porta_recuperacao=None):
         '''
@@ -60,7 +68,8 @@ class Player(object):
         destino = '%s:%s' %(destino_ip,destino_porta)
         cmd.append(origem)
         cmd.append(destino)
-        proc = psutil.Popen(cmd)
+        #proc = psutil.Popen(cmd)
+        proc = subprocess.Popen(cmd)
         #proc = Popen(cmd)
         return proc
     
@@ -78,27 +87,84 @@ class Player(object):
         destino = '%s:%s' %(stream.destination.ip,stream.destination.port)
         cmd.append(origem)
         cmd.append(destino)
-        proc = psutil.Popen(cmd)
+        
+        #cmd.append('&')
         #print('On:Player.play_stream=%s | %s'%(stream,' '.join(cmd)))
-        if proc.is_running():
-            stream.pid = proc.pid
-            stream.save()
-        return proc
+        #stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        #proc = psutil.Popen(cmd)
+        #proc = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE,stdin=subprocess.PIPE,shell=False)
+        
+        #print('On:Player.play_stream=%s | %s'%(stream,' '.join(cmd)))
+        
+        #proc = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE,stdin=subprocess.PIPE,shell=False)
+        #pid = proc.communicate()
+        #pid = proc.communicate()[0]
+        #pid = proc.stdout.read()
+        
+        pid = subprocess.check_output(cmd)
+        #print('pid:%s'%pid)
+        stream.pid = pid
+        stream.save()
+        #proc.wait()
+        return True
+        
+        #print('Antes p0:%d'%os.getpid())
+        #p0 = os.fork()
+        #if p0 == 0:
+        #    ### Primeiro filho
+        #    #print('Antes p1:%d'%os.getpid())
+        #    p1 = os.fork()
+        #    if p1 == 0:
+        #        ### Segundo filho
+        #        #proc = subprocess.Popen(cmd,close_fds=True,shell=False,cwd='/tmp')
+        #        proc = subprocess.Popen(cmd)
+        #        if proc.pid > 0:
+        #            stream.pid = proc.pid
+        #            stream.save()
+        #        proc.wait()
+        #        #print('Saindo proc :%d'%os.getpid())
+        #        sys.exit(0)
+        #        #os._exit(0)
+        #    #print('Saindo p0:%d'%os.getpid())
+        #    #sys.exit(0)
+        #    os._exit(0)
+        #print('Continuando:%d'%os.getpid())
+        
+        #print('Iniciado')
+        #print(self._lista)
+        #return proc
     
     def stop_stream(self,stream):
+        #print(self._lista)
+        #for proc in self._lista:
+        #    if stream.pid == proc.pid:
+        #        proc.kill()
+        #        proc.wait()
+        #        self._lista.remove(proc)
+        #print('parado:%s'%stream)
+        #print(self._lista)
+                
+        #return True
+        #print('parado:%s'%stream)
         if stream.pid:
             proc = psutil.Process(stream.pid)
             proc.kill()
-            proc.wait(1)
+            proc = None
+            #proc.wait(1)
         return True
         
     
     def is_playing(self,stream):
+        #for proc in self._lista:
+        #    if stream.pid == proc.pid:
+        #        return True
+        #return False
         if stream.pid:
             return psutil.pid_exists(stream.pid)
         return False
 
     def list_running(self):
+        #return self._lista
         lista = []
         for proc in psutil.process_iter():
             if proc.name == self._playerapp:
@@ -106,6 +172,10 @@ class Player(object):
         return lista
 
     def kill_all(self):
+        #for proc in self._lista:
+        #    proc.kill()
+        #    proc.wait()
+        #    self._lista.remove(proc)
         for proc in psutil.process_iter():
             if proc.name == self._playerapp:
                 #print("Proc: %s" %proc)
