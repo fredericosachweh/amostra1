@@ -72,6 +72,10 @@ class Record(models.Model):
         pass
 
 class Stream(models.Model):
+    """
+    Classe responsável pelo controle de fluxos multicast entre source (origem)
+    e destination (destino)
+    """
     class Meta:
         verbose_name = _(u'Fluxo')
         verbose_name_plural = _(u'Fluxos')
@@ -79,7 +83,6 @@ class Stream(models.Model):
     destination = models.ForeignKey(MediaMulticastDestination)
     pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
     def status(self):
-        #return 'lalalalala'
         from stream.player import Player
         p = Player()
         if p.is_playing(self) is True:
@@ -93,6 +96,6 @@ class Stream(models.Model):
     def play(self):
         from stream.player import Player
         p = Player()
-        p.play(self.source.ip, self.source.port, self.destination.ip, self.destination.port, self.destination.recovery_port)
+        p.play_stream(self)
 
 

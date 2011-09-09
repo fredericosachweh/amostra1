@@ -13,8 +13,9 @@ def home(request):
 def play(request,stream_id=None):
     stream = get_object_or_404(Stream,id=stream_id)
     p = Player()
-    proc = p.play_stream(stream)
-    proc = None
+    pid = p.play_stream(stream)
+    stream.pid = pid
+    stream.save()
     return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
 
 def stop(request,stream_id=None):
