@@ -27,6 +27,9 @@ urlpatterns = patterns('',
     (r'^canal/',include('canal.urls')),
     # Interface dos setupbox
     (r'^box/',include('box.urls')),
+    # Streams de multicats
+    (r'^stream/',include('stream.urls')),
     # Página inicial
     (r'^$',direct_to_template,{'template':'index.html'} ),
 )
+

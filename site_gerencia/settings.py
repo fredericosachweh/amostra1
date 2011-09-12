@@ -113,6 +113,8 @@ INSTALLED_APPS = (
     'box',
     # Pagina de home
     'home',
+    # Aplicação de controle de stream
+    'stream',
 )
 
 #TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
@@ -128,4 +130,8 @@ LOGIN_REQUIRED_URLS = (
     r'^/canal/((?!canallist$))$',
     r'^/admin/(.*)$',
 )
+
+#MULTICAST_APP = '/usr/local/bin/multicat'
+MULTICAST_COMMAND = '/usr/local/bin/roda'
+MULTICAST_APP = 'multicat'
 
