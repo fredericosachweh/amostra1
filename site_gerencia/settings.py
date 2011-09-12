@@ -2,9 +2,11 @@
 
 import sys,os
 
-ROOT_DIR = os.path.dirname(__file__)
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
+PROJECT_ROOT_PATH = os.path.dirname(__file__)
+if PROJECT_ROOT_PATH not in sys.path:
+    sys.path.append(PROJECT_ROOT_PATH)
+
+ROOT_DIR = PROJECT_ROOT_PATH
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -15,16 +17,29 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': ROOT_DIR+'/sqlite.db',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+if 'test' in sys.argv:
+    ## Banco de dados teste
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ROOT_DIR+'/sqlite.db',
+            'USER':'',
+            'PASSWORD':'',
+            'HOST':'',
+            'PORT':''
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+            'NAME': 'multicat',                      # Or path to database file if using sqlite3.
+            'USER': 'multicat',                      # Not used with sqlite3.
+            'PASSWORD': 'multicat',                  # Not used with sqlite3.
+            'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
+            'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
+        }
+    }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -49,24 +64,20 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ROOT_DIR+'/media'
+if 'runserver' in sys.argv:
+    MEDIA_URL = 'http://127.0.0.1:8000/media/'
+    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media/')
+    #ADMIN_MEDIA_PREFIX = '/static_admin/admin/'
+    ADMIN_MEDIA_PREFIX = '/static/'
+    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
+    STATIC_URL = '/static/'
+else:
+    MEDIA_URL = '/multicat/static/'
+    MEDIA_ROOT = '/mnt/projetos/ativos/cianet/site-multicat/site_multicat/static/'
+    ADMIN_MEDIA_PREFIX = '/multicat/static/admin/'
+    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
+    STATIC_URL = '/static/'
 
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash if there is a path component (optional in other cases).
-# Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/media/'
-
-# URL raiz
-ROOT_URL = '/'
-
-
-# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-#ADMIN_MEDIA_PREFIX = '/adm_media/'
-ADMIN_MEDIA_PREFIX = '/media/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
@@ -93,7 +104,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    ROOT_DIR+'/templates',
+    os.path.join(PROJECT_ROOT_PATH,'templates/')
 )
 
 #FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'
