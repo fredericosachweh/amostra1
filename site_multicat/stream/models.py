@@ -96,6 +96,9 @@ class Stream(models.Model):
     def play(self):
         from stream.player import Player
         p = Player()
-        p.play_stream(self)
+        pid = p.play_stream(self)
+        self.pid = pid
+        self.save()
+        
 
 

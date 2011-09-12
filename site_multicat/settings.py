@@ -18,16 +18,29 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'multicat',                      # Or path to database file if using sqlite3.
-        'USER': 'multicat',                      # Not used with sqlite3.
-        'PASSWORD': 'multicat',                  # Not used with sqlite3.
-        'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
+if 'test' in sys.argv:
+    ## Banco de dados teste
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'test.sqlite3',
+            'USER':'',
+            'PASSWORD':'',
+            'HOST':'',
+            'PORT':''
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+            'NAME': 'multicat',                      # Or path to database file if using sqlite3.
+            'USER': 'multicat',                      # Not used with sqlite3.
+            'PASSWORD': 'multicat',                  # Not used with sqlite3.
+            'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
+            'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
+        }
+    }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -151,7 +164,8 @@ LOGGING = {
 }
 
 #MULTICAST_APP = '/usr/local/bin/multicat'
-MULTICAST_APP = '/usr/local/bin/roda'
+MULTICAST_COMMAND = '/usr/local/bin/roda'
+MULTICAST_APP = 'multicat'
 
 
 

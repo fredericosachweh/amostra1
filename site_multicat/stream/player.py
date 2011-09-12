@@ -3,7 +3,7 @@
 
 import subprocess
 import os
-import sys
+#import sys
 import signal
 
 ## Pacote: python-psutil.x86_64
@@ -39,7 +39,7 @@ def list_procs():
     proc = subprocess.Popen(['ps','-eo','pid,comm,args'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
-    stdout, notused = proc.communicate()
+    stdout = proc.communicate()[0]
     ret = []
     for line in stdout.splitlines()[1:]:
         cmd = line.split()
@@ -63,9 +63,11 @@ class Player(object):
         '''
         from django.conf import settings
         if settings.MULTICAST_APP:
-            self._playerapp = settings.MULTICAST_APP
+            self._playerapp = settings.MULTICAST_COMMAND
         else:
             self._playerapp = 'multicat'
+        self._player_name = settings.MULTICAST_APP
+        
 
     def play_stream(self, stream):
         """
@@ -83,7 +85,8 @@ class Player(object):
         cmd.append(origem)
         cmd.append(destino)
         # Retorna o pid na saída padrão
-        pid = subprocess.check_output(cmd)
+        pid = int(subprocess.check_output(cmd))
+        #print('rodou[ %d ]=%s'%(pid,' '.join(cmd)))
         return pid
         
     def stop_stream(self,stream):
@@ -103,10 +106,11 @@ class Player(object):
     def list_running(self):
         lista = []
         for proc in list_procs():
-            if proc['name'] == self._playerapp:
+            if proc['name'] == self._player_name:
                 lista.append(proc)
         return lista
 
     def kill_all(self):
         for proc in self.list_running():
+            #print('kill_all:: Matando:%d'%proc['pid'])
             os.kill(proc['pid'],signal.SIGKILL)
