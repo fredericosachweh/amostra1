@@ -62,7 +62,7 @@ class CanalTest(TestCase):
     def test_canal_service(self):
         c = Client()
         ## Autenticação
-        i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
+        i1 = open(settings.MEDIA_ROOT+'test_files/b.png')
         ## Cria primeiro canal
         c.post('/canal/add/',
                {
@@ -74,7 +74,7 @@ class CanalTest(TestCase):
               'ip':'224.0.0.10',
               'porta':11000
               })
-        i2 = open(settings.MEDIA_ROOT+'/test_files/c.png')
+        i2 = open(settings.MEDIA_ROOT+'test_files/c.png')
         ## Cria primeiro canal
         c.post('/canal/add/',
                {

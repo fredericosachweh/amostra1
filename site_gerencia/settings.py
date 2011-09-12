@@ -73,9 +73,9 @@ if 'runserver' in sys.argv:
     STATIC_URL = '/static/'
     ROOT_URL = '/'
 else:
-    MEDIA_URL = '/multicat/static/'
-    MEDIA_ROOT = '/mnt/projetos/ativos/cianet/site-multicat/site_multicat/static/'
-    ADMIN_MEDIA_PREFIX = '/multicat/static/admin/'
+    MEDIA_URL = '/tv/static/'
+    MEDIA_ROOT = '/mnt/projetos/ativos/cianet/iptv-middleware/site_gerencia/media/'
+    ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
     ROOT_URL = '/'
