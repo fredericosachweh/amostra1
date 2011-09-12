@@ -3,35 +3,27 @@
 
 import subprocess
 import os
-#import sys
 import signal
 
-## Pacote: python-psutil.x86_64
-#import psutil
-#for proc in psutil.process_iter():
-#    if proc.name == 'multicat':
-#        print(proc)
-#        print(proc.pid)
-#        print(proc.name)
-#        proc.kill()
-
-
 """
-Usage: multicat [-i <RT priority>] [-t <ttl>] [-p <PCR PID>] [-s <chunks>] [-n <chunks>] [-d <time>] [-a] [-S <SSRC IP>] [-u] [-U] [-N] [-m <payload size>] [-R <rotate_time>] [-P <port number>] <input item> <output item>
-    item format: <file path | device path | FIFO path | network host>
+Usage: multicat [-i <RT priority>] [-t <ttl>] [-X] [-f] [-p <PCR PID>] [-s <chunks>] [-n <chunks>] [-k <start time>] [-d <duration>] [-a] [-r <file duration>] [-S <SSRC IP>] [-u] [-U] [-m <payload size>] [-c <remote socket>] [-N] <input item> <output item>
+    item format: <file path | device path | FIFO path | directory path | network host>
     host format: [<connect addr>[:<connect port>]][@[<bind addr][:<bind port>]]
+    -X: also pass-through all packets to stdout
+    -f: output packets as fast as possible
     -p: overwrite or create RTP timestamps using PCR PID (MPEG-2/TS)
-    -s: skip the first N chunks of payload
-    -n: exit after playing N chunks of payload
+    -s: skip the first N chunks of payload [deprecated]
+    -n: exit after playing N chunks of payload [deprecated]
+    -k: start at the given position (in 27 MHz units, negative = from the end)
     -d: exit after definite time (in 27 MHz units)
     -a: append to existing destination file (risky)
+    -r: in directory mode, rotate file after this duration (default: 97200000000 ticks = 1 hour)
     -S: overwrite or create RTP SSRC
     -u: source has no RTP header
     -U: destination has no RTP header
     -m: size of the payload chunk, excluding optional RTP header (default 1316)
+    -c: unix local socket file to control the stream flow
     -N: don't remove stuffing (PID 0x1FFF) from stream
-    -R: Rotate the output file every <rotate_time> (in seconds)
-    -P: Port number to server recovery packets
 """
 
 def list_procs():
