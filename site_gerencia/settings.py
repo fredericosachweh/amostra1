@@ -6,8 +6,6 @@ PROJECT_ROOT_PATH = os.path.dirname(__file__)
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
-ROOT_DIR = PROJECT_ROOT_PATH
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -22,7 +20,7 @@ if 'test' in sys.argv:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ROOT_DIR+'/sqlite.db',
+            'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
             'USER':'',
             'PASSWORD':'',
             'HOST':'',
@@ -33,9 +31,9 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-            'NAME': 'multicat',                      # Or path to database file if using sqlite3.
-            'USER': 'multicat',                      # Not used with sqlite3.
-            'PASSWORD': 'multicat',                  # Not used with sqlite3.
+            'NAME': 'iptv',                      # Or path to database file if using sqlite3.
+            'USER': 'iptv',                      # Not used with sqlite3.
+            'PASSWORD': 'iptv',                  # Not used with sqlite3.
             'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
             'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
         }
@@ -67,18 +65,17 @@ USE_L10N = True
 if 'runserver' in sys.argv:
     MEDIA_URL = 'http://127.0.0.1:8000/media/'
     MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media/')
-    #ADMIN_MEDIA_PREFIX = '/static_admin/admin/'
     ADMIN_MEDIA_PREFIX = '/static/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
     ROOT_URL = '/'
 else:
-    MEDIA_URL = '/tv/static/'
-    MEDIA_ROOT = '/mnt/projetos/ativos/cianet/iptv-middleware/site_gerencia/media/'
-    ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = '/var/www/html/media/'
+    ADMIN_MEDIA_PREFIX = '/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
-    ROOT_URL = '/'
+    ROOT_URL = '/tv/'
 
 
 # Make this unique, and don't share it with anybody.
