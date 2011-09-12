@@ -1,4 +1,4 @@
-# Django settings for site_gerencia project.
+# -*- encoding:utf-8 -*-
 
 import sys,os
 
@@ -71,12 +71,14 @@ if 'runserver' in sys.argv:
     ADMIN_MEDIA_PREFIX = '/static/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
+    ROOT_URL = '/'
 else:
     MEDIA_URL = '/multicat/static/'
     MEDIA_ROOT = '/mnt/projetos/ativos/cianet/site-multicat/site_multicat/static/'
     ADMIN_MEDIA_PREFIX = '/multicat/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
     STATIC_URL = '/static/'
+    ROOT_URL = '/'
 
 
 # Make this unique, and don't share it with anybody.
