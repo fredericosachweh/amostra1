@@ -1,7 +1,7 @@
-/site_gerencia.komodoproject
-gerencia.komodoproject
 /docs/site_gerencia.asta.bak
 /.project
 /.pydevproject
 /.settings
 /site_gerencia/media/imgs/canal/logo
+*.pyc
+banco.sqlite3
