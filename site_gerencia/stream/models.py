@@ -80,7 +80,7 @@ class Stream(models.Model):
         verbose_name = _(u'Fluxo')
         verbose_name_plural = _(u'Fluxos')
     source = models.ForeignKey(MediaMulticastSource)
-    destination = models.ForeignKey(MediaMulticastDestination)
+    destination = models.ForeignKey(MediaMulticastDestination, unique=True)
     pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
     def status(self):
         from stream.player import Player
