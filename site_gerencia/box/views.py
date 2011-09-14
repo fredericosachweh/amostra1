@@ -43,9 +43,9 @@ def auth(request,mac=None):
 
 def remote_log(request):
     #print(dir(request))
-    print('----->ERROR IP: %s' %request.META['REMOTE_ADDR'])
-    print('message',request.POST['body'])
-    print('stack',request.POST['stack'])
+    #print('----->ERROR IP: %s' %request.META.get('REMOTE_ADDR'))
+    #print('message',request.POST.get('body'))
+    #print('stack',request.POST.get('stack'))
     return HttpResponse('{"success":"true"}')
 
 def canal_list(request):
