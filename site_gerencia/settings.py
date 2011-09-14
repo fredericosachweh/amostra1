@@ -15,7 +15,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-if 'test' in sys.argv:
+if 'runserver' in sys.argv or 'test' in sys.argv:
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -62,11 +62,11 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if 'runserver' in sys.argv:
+if 'runserver' in sys.argv or 'test' in sys.argv:
     MEDIA_URL = 'http://127.0.0.1:8000/media/'
-    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media/')
-    ADMIN_MEDIA_PREFIX = '/static/'
-    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
+    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
+    ADMIN_MEDIA_PREFIX = '/static/admin/'
+    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
     STATIC_URL = '/static/'
     ROOT_URL = '/'
 else:
@@ -80,6 +80,23 @@ else:
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
+
+# Additional locations of static files
+STATICFILES_DIRS = (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    #os.path.join(PROJECT_ROOT_PATH,'static/'),
+    #'/var/www/html/tv/static/',
+)
+
+# List of finder classes that know how to find static files in
+# various locations.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+)
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -114,6 +131,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'django.contrib.admin',
     # Testes com nose
     #'django_nose',
