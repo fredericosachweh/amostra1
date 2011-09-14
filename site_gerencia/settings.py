@@ -33,7 +33,7 @@ else:
             'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
             'NAME': 'iptv',                      # Or path to database file if using sqlite3.
             'USER': 'iptv',                      # Not used with sqlite3.
-            'PASSWORD': 'iptv',                  # Not used with sqlite3.
+            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',          # Not used with sqlite3.
             'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
             'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
         }
@@ -70,16 +70,34 @@ if 'runserver' in sys.argv:
     STATIC_URL = '/static/'
     ROOT_URL = '/'
 else:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = '/var/www/html/media/'
-    ADMIN_MEDIA_PREFIX = '/static/admin/'
-    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
-    STATIC_URL = '/static/'
+    MEDIA_URL = '/tvfiles/media/'
+    MEDIA_ROOT = '/var/www/html/tvfiles/media/'
+    ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+    STATIC_ROOT = '/var/www/html/tvfiles/static/'
+    STATIC_URL = '/tvfiles/static/'
     ROOT_URL = '/tv/'
 
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
+
+# Additional locations of static files
+STATICFILES_DIRS = ( 
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    #os.path.join(PROJECT_ROOT_PATH,'static/'),
+    #'/var/www/html/tv/static/',
+)
+
+# List of finder classes that know how to find static files in
+# various locations.
+STATICFILES_FINDERS = ( 
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+)
+
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -114,6 +132,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'django.contrib.admin',
     # Testes com nose
     #'django_nose',
