@@ -17,7 +17,7 @@ def index(request):
     #print(request.COOKIES)
     #print(dir(request.META))
     #print(' | '.join(request.META))
-    print('---->IP:',request.META['REMOTE_ADDR'],end='|',sep='=')
+    #print('---->IP:',request.META['REMOTE_ADDR'],end='|',sep='=')
     stress = request.GET.get('stress')
     #print('IP=%s'%request.META['REMOTE_ADDR'])
     #print('IP: %s %s' %(request.REMOTE_ADDR,request.REMOTE_HOST))
@@ -43,9 +43,9 @@ def auth(request,mac=None):
 
 def remote_log(request):
     #print(dir(request))
-    print('----->ERROR IP: %s' %request.META['REMOTE_ADDR'])
-    print('message',request.POST['body'])
-    print('stack',request.POST['stack'])
+    #print('----->ERROR IP: %s' %request.META.get('REMOTE_ADDR'))
+    #print('message',request.POST.get('body'))
+    #print('stack',request.POST.get('stack'))
     return HttpResponse('{"success":"true"}')
 
 def canal_list(request):
@@ -60,8 +60,8 @@ def canal_list(request):
 
 def canal_update(request):
     """Retorna a data de atualização mais recente da lista de canais"""
-    print('---->IP:',request.META['REMOTE_ADDR'],end=' ')
-    sys.stdout.flush()
+    #print('---->IP:',request.META['REMOTE_ADDR'],end=' ')
+    #sys.stdout.flush()
     #print('META',' | '.join(request.META))
     atual = Canal.objects.all().order_by('-atualizado')[0]
     #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.strftime('%Y-%m-%dT%H:%M:%S')))

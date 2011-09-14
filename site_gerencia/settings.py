@@ -15,7 +15,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-if 'test' in sys.argv:
+if 'runserver' in sys.argv or 'test' in sys.argv:
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -62,11 +62,11 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if 'runserver' in sys.argv:
+if 'runserver' in sys.argv or 'test' in sys.argv:
     MEDIA_URL = 'http://127.0.0.1:8000/media/'
-    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media/')
-    ADMIN_MEDIA_PREFIX = '/static/'
-    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static/')
+    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
+    ADMIN_MEDIA_PREFIX = '/static/admin/'
+    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
     STATIC_URL = '/static/'
     ROOT_URL = '/'
 else:
@@ -97,7 +97,6 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
-
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
