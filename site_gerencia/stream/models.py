@@ -86,9 +86,9 @@ class Stream(models.Model):
         from stream.player import Player
         p = Player()
         if p.is_playing(self) is True:
-            url = reverse('stream.views.stop',kwargs={'stream_id':self.id})
+            url = reverse('stream.views.stop',kwargs={'streamid':self.id})
             return '<a href="%s" id="stream_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
-        url = reverse('stream.views.play',kwargs={'stream_id':self.id})
+        url = reverse('stream.views.play',kwargs={'streamid':self.id})
         return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
     status.allow_tags = True
     def __unicode__(self):

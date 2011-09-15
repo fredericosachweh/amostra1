@@ -10,16 +10,16 @@ from models import Stream
 def home(request):
     return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
 
-def play(request,stream_id=None):
-    stream = get_object_or_404(Stream,id=stream_id)
+def play(request,streamid=None):
+    stream = get_object_or_404(Stream,id=streamid)
     p = Player()
     pid = p.play_stream(stream)
     stream.pid = pid
     stream.save()
     return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
 
-def stop(request,stream_id=None):
-    stream = get_object_or_404(Stream,id=stream_id)
+def stop(request,streamid=None):
+    stream = get_object_or_404(Stream,id=streamid)
     p = Player()
     p.stop_stream(stream)
     return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))

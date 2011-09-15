@@ -10,8 +10,8 @@ from django.contrib import admin
 import models
 
 class AdminStream(admin.ModelAdmin):
-    class Media:
-        js = ('jquery/jquery-1.6.2.js','player.js',)
+    #class Media:
+    #    js = ('jquery/jquery-1.6.2.js','player.js',)
     list_display = ('__unicode__','status',)
 
 
