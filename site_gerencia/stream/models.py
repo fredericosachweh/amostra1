@@ -5,25 +5,6 @@ from django.db import models
 from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
 
-"""
-Ajuda do multicat:
-Usage: multicat [-i <RT priority>] [-t <ttl>] [-p <PCR PID>] [-s <chunks>] [-n <chunks>] [-d <time>] [-a] [-S <SSRC IP>] [-u] [-U] [-N] [-m <payload size>] [-R <rotate_time>] [-P <port number>] <input item> <output item>
-    item format: <file path | device path | FIFO path | network host>
-    host format: [<connect addr>[:<connect port>]][@[<bind addr][:<bind port>]]
-    -p: overwrite or create RTP timestamps using PCR PID (MPEG-2/TS)
-    -s: skip the first N chunks of payload
-    -n: exit after playing N chunks of payload
-    -d: exit after definite time (in 27 MHz units)
-    -a: append to existing destination file (risky)
-    -S: overwrite or create RTP SSRC
-    -u: source has no RTP header
-    -U: destination has no RTP header
-    -m: size of the payload chunk, excluding optional RTP header (default 1316)
-    -N: don't remove stuffing (PID 0x1FFF) from stream
-    -R: Rotate the output file every <rotate_time> (in seconds)
-    -P: Port number to server recovery packets
-"""
-
 class MediaMulticastSource(models.Model):
     class Meta:
         verbose_name = _(u'Origem de fluxo')
@@ -90,6 +71,7 @@ class Stream(models.Model):
             return '<a href="%s" id="stream_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
         url = reverse('stream.views.play',kwargs={'streamid':self.id})
         return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+        #return '%s'%self.id
     status.allow_tags = True
     def __unicode__(self):
         return '%s %s:%d -> %s %s:%d' %(self.source.name,self.source.ip,self.source.port,self.destination.name,self.destination.ip,self.destination.port)
