@@ -120,7 +120,9 @@ Cianet.ux.osd = {
 		this.el.setVisible(true);
 		Cianet.ux.PlayerState.osd = true;
 		try {
-			caMediaPlayer.toSetOsdOpacity(220);
+			//caOsdController.toSetOsdAlphaMode(true);
+			caOsdController.toSetOsdEntireAlpha(200);
+			//caMediaPlayer.toSetOsdOpacity(220);
 		}catch(e){
 			debug(e);
 		}
@@ -130,7 +132,27 @@ Cianet.ux.osd = {
 		this.el.setVisible(false);
 		Cianet.ux.PlayerState.osd = false;
 		try {
-			caMediaPlayer.toSetOsdOpacity(0);
+			//caMediaPlayer.toSetOsdOpacity(0);
+			caOsdController.toSetOsdEntireAlpha(0);
+			//caOsdController.toSetOsdAlphaMode(false);
+		}catch(e){
+			debug(e);
+		}
+	},
+	disable : function(){
+		this.el.setVisible(false);
+		Cianet.ux.PlayerState.osd = false;
+		try {
+			caOsdController.toSetOsdAlphaMode(false);
+		}catch(e){
+			debug(e);
+		}
+	},
+	enable : function(){
+		this.el.setVisible(true);
+		Cianet.ux.PlayerState.osd = true;
+		try {
+			caOsdController.toSetOsdAlphaMode(true);
 		}catch(e){
 			debug(e);
 		}
@@ -437,6 +459,7 @@ function loadMedia(){
 					Cianet.ux.mediainfo.setMovie(this);
 					Cianet.ux.medialist.hide();
 					Cianet.ux.osd.setMovie(this);
+					Cianet.ux.osd.enable();
 					Cianet.ux.osd.show();
 					Cianet.ux.mediainfo.hide();
 					task.delay(7000);
@@ -446,6 +469,7 @@ function loadMedia(){
 				movie.on('stop',function(){
 					Cianet.ux.mediainfo.hide();
 					Cianet.ux.osd.hide();
+					Cianet.ux.osd.disable();
 					Cianet.ux.medialist.show();
 				},movie);
 
@@ -463,8 +487,10 @@ function loadMedia(){
 				movie.on('info',function(){
 					Cianet.ux.mediainfo.setMovie(this);
 					Cianet.ux.medialist.hide();
-					Cianet.ux.osd.hide();
+					//Cianet.ux.osd.hide();
+					Cianet.ux.osd.enable();
 					Cianet.ux.mediainfo.toogle();
+					//Cianet.ux.mediainfo.show();
 				},movie);
 
 				// Event[fullscreen]
@@ -604,6 +630,7 @@ Ext.onReady(function() {
 	// OSD
 	Cianet.ux.osd.setEl(Ext.get('osd'));
 	Cianet.ux.osd.hide();
+	Cianet.ux.osd.disable();
 	// Listagem de midias
 	Cianet.ux.medialist.setEl(Ext.get('movies'));
 	Cianet.ux.medialist.show();
@@ -677,7 +704,7 @@ Ext.onReady(function() {
 			movie.play();
 			break;
 		case Browser.KEY.HOME:
-			loadMedia();
+			window.location.reload();
 			break;
 		}
 		return false;

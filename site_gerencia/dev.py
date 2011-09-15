@@ -62,20 +62,12 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if 'runserver' in sys.argv or 'test' in sys.argv:
-    MEDIA_URL = 'http://127.0.0.1:8000/media/'
-    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
-    ADMIN_MEDIA_PREFIX = '/static/admin/'
-    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
-    STATIC_URL = '/static/'
-    ROOT_URL = '/'
-else:
-    MEDIA_URL = '/tvfiles/media/'
-    MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-    ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-    STATIC_ROOT = '/var/www/html/tvfiles/static/'
-    STATIC_URL = '/tvfiles/static/'
-    ROOT_URL = '/tv/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
+ADMIN_MEDIA_PREFIX = '/static/admin/'
+STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
+STATIC_URL = '/static/'
+ROOT_URL = '/'
 
 
 # Make this unique, and don't share it with anybody.
