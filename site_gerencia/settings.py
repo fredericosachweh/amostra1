@@ -162,4 +162,5 @@ LOGIN_REQUIRED_URLS = (
 #MULTICAST_APP = '/usr/local/bin/multicat'
 MULTICAST_COMMAND = '/usr/local/bin/roda'
 MULTICAST_APP = 'multicat'
+DVBLAST_DIR = '/etc/dvblast'
 
