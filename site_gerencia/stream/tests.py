@@ -99,4 +99,163 @@ class PlayerTest(TestCase):
         l = p.list_running()
         self.assertEqual(len(l), 0, 'A lista de processos deveria ser vazia')
         
+class DVBTest(TestCase):
+    """
+    Testes do device dvb
+    """
+    def test_parse(self):
+        from player import parse_dvb
+        cmd = """DVBlast 2.0.0 (git-379e8c5)
+warning: restarting
+debug: binding socket to 239.0.1.10:10000
+debug: conf: 224.0.0.17:10000/udp config=0x9 sid=1 pids[0]
+frontend has acquired lock
+debug: new RTP source: 68.84.65.160
+new RTP source: 68.84.65.160
+debug: Dump is 1316206720 seconds late - reset timing
+debug: new PAT tsid=1 version=0
+debug:   * program number=1 pid=80
+debug: end PAT
+debug: new PMT program=1 version=0 pcrpid=256
+debug:   * ES pid=256 streamtype=0x1b
+debug:     - desc 52 unknown
+debug:   * ES pid=512 streamtype=0x3
+debug:     - desc 52 unknown
+debug: end PMT
+"""
+        proglist = parse_dvb(cmd)
+        self.assertEqual(len(proglist), 1, 'Deveria hever 1 programa')
+        cmd1 = """DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+warning: raw UDP output is deprecated.  Please consider using RTP.
+warning: for DVB-IP compliance you should use RTP.
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3074000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3074000 srate=6666000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter4/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+debug: conf: 239.0.1.6:10000/udp config=0x9 sid=0 pids[0]
+debug: conf: 239.0.1.7:10000/udp config=0x9 sid=1 pids[0]
+debug: conf: 239.0.1.8:10000/udp config=0x9 sid=2 pids[0]
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+frontend has acquired lock
+debug: - Bit error rate: 236
+debug: - Signal strength: 50688
+debug: - SNR: 0
+debug: Dump is 1316395400 seconds late - reset timing
 
+debug: setting filter on PID 32
+debug: setting filter on PID 259
+debug: new PAT tsid=0 version=7
+debug:   * NIT pid=16
+debug:   * program number=1 pid=32
+debug:   * program number=2 pid=259
+debug: end PAT
+debug: setting filter on PID 389
+debug: setting filter on PID 390
+debug: setting filter on PID 391
+debug: new PMT program=2 version=0 pcrpid=389
+debug:   * ES pid=389 streamtype=0x2
+debug:   * ES pid=390 streamtype=0x3
+debug:   * ES pid=391 streamtype=0x3
+debug:     - desc 0a language=SAP audiotype=0x0
+debug: end PMT
+debug: setting filter on PID 289
+debug: setting filter on PID 290
+debug: setting filter on PID 350
+debug: setting filter on PID 291
+debug: new PMT program=1 version=0 pcrpid=289
+debug:   * ES pid=289 streamtype=0x2
+debug:   * ES pid=290 streamtype=0x3
+debug:   * ES pid=350 streamtype=0x3
+debug:   * ES pid=291 streamtype=0x3
+debug:     - desc 0a language=SAP audiotype=0x0
+debug: end PMT
+debug: new SDT actual tsid=0 version=5 onid=1
+debug:   * service sid=1 eit present running=4
+debug:     - desc 48 type=0x1 provider="Impsat" service="TV Justica"
+debug:   * service sid=2 eit present running=4
+debug:     - desc 48 type=0x1 provider="" service="TV Justica 2"
+debug: end SDT
+debug: new NIT actual networkid=1 version=0
+debug: end NIT
+"""
+        proglist = parse_dvb(cmd1,debug=False)
+        self.assertEqual(len(proglist), 2, 'Deveria hever 2 programas')
+        cmd3 = """DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter5/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+warning: no lock, tuning again
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+warning: no lock, tuning again
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+warning: no lock, tuning again
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has lost carrier
+debug: frontend has acquired carrier
+debug: frontend has lost carrier
+debug: frontend has acquired carrier
+debug: frontend has lost carrier
+debug: frontend has acquired carrier"""
+        proglist = parse_dvb(cmd3)
+        self.assertEqual(len(proglist), 0, 'Deveria estar vazio')
+        self.assertTrue(True, "TODO")

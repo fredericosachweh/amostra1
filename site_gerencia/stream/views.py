@@ -1,9 +1,9 @@
-# Create your views here.
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
-from stream.player import Player
+#from stream.player import Player
+from models import Stream,DVBSource
 
 from models import Stream
 
@@ -12,14 +12,19 @@ def home(request):
 
 def play(request,streamid=None):
     stream = get_object_or_404(Stream,id=streamid)
-    p = Player()
-    pid = p.play_stream(stream)
-    stream.pid = pid
-    stream.save()
+    stream.play()
     return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
 
 def stop(request,streamid=None):
     stream = get_object_or_404(Stream,id=streamid)
-    p = Player()
-    p.stop_stream(stream)
+    stream.stop()
     return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
+
+def scan_dvb(request,dvbid=None):
+    dvb = get_object_or_404(DVBSource,id=dvbid)
+    import simplejson
+    canais = dvb.scan_channels()
+    enc = simplejson.encoder.JSONEncoder()
+    resposta = enc.encode(canais)
+    #print(resposta)
+    return HttpResponse(resposta,mimetype='application/javascript')

@@ -7,4 +7,5 @@ urlpatterns = patterns('',
     (r'^$','stream.views.home'),
     (r'^play/(?P<streamid>\d+)/$','stream.views.play'),
     (r'^stop/(?P<streamid>\d+)/$','stream.views.stop'),
+    (r'^scan_dvb/(?P<dvbid>\d+)/$','stream.views.scan_dvb'),
 )
