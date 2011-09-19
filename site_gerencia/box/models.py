@@ -172,13 +172,9 @@ class PushServer(models.Model):
             instance.online             = True
             for channel in pushserver.data.channels_list:
                 try:
-                    #Desconectar signals, não são necessários aqui
-                    ToggleSignal().setupbox_post_init()
                     setupbox = SetupBox(
                         pushserver = instance,
                         mac = channel)
-                    #Reconecta signals
-                    ToggleSignal().setupbox_post_init()
                     setupbox.clean_fields()
                     setupbox.save()
                     

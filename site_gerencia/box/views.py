@@ -59,11 +59,10 @@ def canal_list(request):
     """
     Usado pelo setupbox para pegar a lista de canais
     """
-    canais    = Canal.objects.all().order_by('numero')
-    media_url = getattr(settings, 'MEDIA_URL')
+    canais = Canal.objects.all().order_by('numero')
     # Chama o canal e pega a listagem do aplicativo canal
     json = serializers.serialize('json', canais, indent=2, use_natural_keys = True)
-    return HttpResponse('{"media_url":"%s","data":%s}'%(media_url, json))
+    return HttpResponse(json)
 
 def canal_update(request):
     """Retorna a data de atualização mais recente da lista de canais"""
@@ -86,6 +85,7 @@ def ping(request):
     
     response = HttpResponse(mimetype='image/png')
     image.save(response, "PNG")
+    #return HttpResponse() # Remova o comentário para emular servidor sem conexão
     return response
 
 
