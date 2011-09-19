@@ -1,7 +1,8 @@
-/docs/site_gerencia.asta.bak
-/.project
-/.pydevproject
-/.settings
+*.bak
+.project
+.pydevproject
+.settings
 /site_gerencia/media/imgs/canal/logo
 *.pyc
 banco.sqlite3
+*.swp
