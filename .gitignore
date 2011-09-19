@@ -6,3 +6,5 @@
 *.pyc
 banco.sqlite3
 *.swp
+/site_gerencia.komodoproject
+gerencia.komodoproject
