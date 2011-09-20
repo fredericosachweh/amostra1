@@ -18,13 +18,14 @@ class AdminStream(admin.ModelAdmin):
 
 class AdminDVBDestinationInline(admin.TabularInline):#StackedInline
     model = models.DVBDestination
-    extra = 1
+    extra = 3
 
 class AdminDVBSource(admin.ModelAdmin):
     class Media:
         js = ('jquery/jquery-1.6.2.js','player.js',)
     inlines = [AdminDVBDestinationInline,]
-    fieldsets = ()
+    list_display = ('__unicode__','status',)
+    #fieldsets = ()
     #def __init__(self, model, admin_site):
     #    super(AdminDVBSource,self).__init__( model, admin_site)
     
