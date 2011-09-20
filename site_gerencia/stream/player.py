@@ -142,7 +142,7 @@ class DVB(object):
         dvb = '/usr/local/bin/dvblast'
         #dvb = '/usr/local/bin/fake_dvblast'
         cmd.append(dvb)
-        cmd.append(u'-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
+        cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)
@@ -159,8 +159,9 @@ class DVB(object):
         cmd = []
         dvb = '/usr/local/bin/dvblast'
         #dvb = '/usr/local/bin/fake_dvblast'
+        dvbsource.record_config()
         cmd.append(dvb)
-        cmd.append(u'-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
+        cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)
