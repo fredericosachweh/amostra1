@@ -28,3 +28,13 @@ def scan_dvb(request,dvbid=None):
     resposta = enc.encode(canais)
     #print(resposta)
     return HttpResponse(resposta,mimetype='application/javascript')
+
+def fake_scan_dvb(request,dvbid=None):
+    import simplejson
+    if dvbid == 1:
+        canais = {'program': '1', 'pid': '80'}
+    else:
+        canais = {'program': '1', 'pid': '32'}, {'program': '2', 'pid': '259'}
+    enc = simplejson.encoder.JSONEncoder()
+    resposta = enc.encode(canais)
+    return HttpResponse(resposta,mimetype='application/javascript')

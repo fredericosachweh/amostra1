@@ -127,7 +127,6 @@ def parse_dvb(stdout,debug=False):
             res.append({'program':prog,'pid':pid}) 
         
         if debug: print ('L:%s'%linha);
-    print(res)
     return res
 
 
@@ -138,54 +137,21 @@ class DVB(object):
         Inicia um processo de dvblast com o fluxo (stream)
         retorna pid
         """
-        #import time
-        #import sys
-        #import psutil
         cmd = []
         dvb = '/usr/local/bin/dvblast'
         #dvb = '/usr/local/bin/fake_dvblast'
         cmd.append(dvb)
-        cmd.append('-c /etc/dvblast/channels.d/1.conf')
+        cmd.append(u'-c /etc/dvblast/channels.d/TVJustica.conf')
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)
-        #print('Comando:%s' %scmd)
-        #from easyprocess import EasyProcess
         from easyprocess import Proc
-        proc = Proc(scmd).call(timeout=5)
+        proc = Proc(scmd).call(timeout=8)
         #stdout=proc.stdout
         stdout=proc.stderr
-        #stdout = EasyProcess(' '.join(cmd)).call(timeout=5).stdout
-        #print(stdout)
         ret = parse_dvb(stdout,debug=True)
         if proc.is_alive():
             proc.stop()
         return ret
     
-        
-        
-        #proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-        #t = 0
-        #l = ''
-        #res = ''
-        #while t<100:
-        #    l = proc.stdout.readline()
-        #    if l == '' and proc.poll() != None:
-        #        break
-        #    #if l.find('end NIT') >0:
-        #    #    t=100
-        #    #sys.stdout.flush()
-        #    time.sleep(0.01)
-        #    #print(t)
-        #    t += 1
-        #    res += l
-        ##print('Leu')
-        ##if proc.pid:
-        #proc.kill()
-        #ret = parse_dvb(res,debug=True)
-        #proc.stdout.close()
-        #proc.stderr.close()
-        #return ret
-
-
 

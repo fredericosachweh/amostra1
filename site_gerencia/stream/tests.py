@@ -124,6 +124,7 @@ debug:     - desc 52 unknown
 debug: end PMT
 """
         proglist = parse_dvb(cmd)
+        #print(proglist)
         self.assertEqual(len(proglist), 1, 'Deveria hever 1 programa')
         cmd1 = """DVBlast 2.0.0 (git-1.2-122-g379e8c5)
 warning: restarting
@@ -203,6 +204,7 @@ debug: new NIT actual networkid=1 version=0
 debug: end NIT
 """
         proglist = parse_dvb(cmd1,debug=False)
+        #print(proglist)
         self.assertEqual(len(proglist), 2, 'Deveria hever 2 programas')
         cmd3 = """DVBlast 2.0.0 (git-1.2-122-g379e8c5)
 warning: restarting
@@ -257,5 +259,6 @@ debug: frontend has acquired carrier
 debug: frontend has lost carrier
 debug: frontend has acquired carrier"""
         proglist = parse_dvb(cmd3)
+        #print(proglist)
         self.assertEqual(len(proglist), 0, 'Deveria estar vazio')
         self.assertTrue(True, "TODO")
