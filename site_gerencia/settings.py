@@ -16,7 +16,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-if True: # in sys.argv:
+if False: # in sys.argv:
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -63,7 +63,7 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if True: # in sys.argv or 'test' in sys.argv:
+if False: # in sys.argv or 'test' in sys.argv:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
     ADMIN_MEDIA_PREFIX = '/static/admin/'
@@ -161,8 +161,8 @@ LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
-    r'^/canal/((?!canallist$))$',
-    r'^/admin/(.*)$',
+    r'^/tv/canal/((?!canallist$))$',
+    r'^/tv/admin/(.*)$',
 )
 
 #MULTICAST_APP = '/usr/local/bin/multicat'
@@ -183,3 +183,6 @@ DEBUG_TOOLBAR_PANELS = (
     'debug_toolbar.panels.signals.SignalDebugPanel',
     'debug_toolbar.panels.logger.LoggingPanel',
 )
+
+FORCE_SCRIPT_NAME=""
+
