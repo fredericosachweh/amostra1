@@ -1,6 +1,7 @@
-#Tue Sep 06 11:51:47 BRT 2011
+#Tue Sep 20 03:43:59 BRT 2011
 eclipse.preferences.version=1
 encoding//box/admin.py=utf-8
 encoding//box/models.py=utf8
 encoding//box/urls.py=utf8
 encoding//box/views.py=utf-8
+encoding/settings.py=utf-8
