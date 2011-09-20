@@ -103,12 +103,42 @@ class DVBSource(models.Model):
     pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
     def __unicode__(self):
         return self.name
+    def status(self):
+        from stream.player import Player
+        p = Player()
+        if p.is_playing(self) is True:
+            url = reverse('stream.views.dvb_stop',kwargs={'streamid':self.id})
+            return '<a href="%s" id="stream_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
+        url = reverse('stream.views.dvb_play',kwargs={'streamid':self.id})
+        return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+    status.allow_tags = True
     def record_config(self):
+        dst = DVBDestination.objects.filter(source=self)
+        # 224.0.0.17:10000/udp 1 1
+        template = '%s:%d/udp %d 1\n'
+        cfg_file = '/etc/dvblast/channels.d/%s.conf' %self.id
+        config = open(cfg_file,'w')
+        cfg = []
+        for destination in dst:
+            linha = template%(destination.ip,destination.port,destination.channel_program)
+            config.write(linha)
+            cfg.append(linha)
+        config.close()
         return True
     def scan_channels(self):
         from player import DVB
         d = DVB()
         return d.scan_channels(self)
+    def play(self):
+        from player import DVB
+        d = DVB()
+        pid = d.play_source(self)
+        self.pid = pid
+        self.save()
+    def stop(self):
+        from player import DVB
+        d = DVB()
+        d.stop_dvb(self)
 
 
 class DVBDestination(models.Model):

@@ -3,6 +3,7 @@
 
 import subprocess
 import os
+import sys
 import signal
 
 """
@@ -141,7 +142,7 @@ class DVB(object):
         dvb = '/usr/local/bin/dvblast'
         #dvb = '/usr/local/bin/fake_dvblast'
         cmd.append(dvb)
-        cmd.append(u'-c /etc/dvblast/channels.d/TVJustica.conf')
+        cmd.append(u'-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)
@@ -153,5 +154,31 @@ class DVB(object):
         if proc.is_alive():
             proc.stop()
         return ret
+    
+    def play_source(self,dvbsource):
+        cmd = []
+        dvb = '/usr/local/bin/dvblast'
+        #dvb = '/usr/local/bin/fake_dvblast'
+        cmd.append(dvb)
+        cmd.append(u'-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
+        device = '%s'%dvbsource.device
+        cmd.append(device)
+        scmd = ' '.join(cmd)
+        print(scmd)
+        from easyprocess import Proc
+        proc = Proc(scmd).start()
+        pid_ret = proc.pid
+        pid = os.fork()
+        if pid == 0:
+            proc.wait()
+            #sys.exit(0)
+        return pid_ret
+
+    def stop_dvb(self,dvbsource):
+        if dvbsource.pid:
+            os.kill(dvbsource.pid,signal.SIGKILL)
+        return True
+         
+        
     
 

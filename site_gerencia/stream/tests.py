@@ -262,3 +262,35 @@ debug: frontend has acquired carrier"""
         #print(proglist)
         self.assertEqual(len(proglist), 0, 'Deveria estar vazio')
         self.assertTrue(True, "TODO")
+    
+    def test_config(self):
+        from models import DVBSource, DVBDestination
+        source = DVBSource(name='Source 1')
+        source.save()
+        dest1 = DVBDestination(name='Dest 1',ip='224.0.0.11',port=5001,channel_program=1,channel_pid=225,source=source)
+        dest2 = DVBDestination(name='Dest 2',ip='224.0.0.12',port=5002,channel_program=2,channel_pid=225,source=source)
+        dest1.save()
+        dest2.save()
+        s = DVBSource.objects.all()
+        self.assertEqual(s[0], source, 'Deverial ser iguais')
+        source.record_config()
+        cfg_file = '/etc/dvblast/channels.d/%s.conf' %source.id
+        f = open(cfg_file,'r')
+        l1 = f.readline()
+        l2 = f.readline()
+        c1 = '%s:%d/udp %d 1\n'%(dest1.ip,dest1.port,dest1.channel_program)
+        #print(c1,l1)
+        self.assertEqual(c1, l1, 'Configuração gravada errado')
+        self.assertEqual('%s:%d/udp %d 1\n'%(dest2.ip,dest2.port,dest2.channel_program), l2, 'Configuração gravada errado')
+        f.close()
+        
+        
+
+
+
+
+
+
+
+
+

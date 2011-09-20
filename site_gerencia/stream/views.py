@@ -38,3 +38,14 @@ def fake_scan_dvb(request,dvbid=None):
     enc = simplejson.encoder.JSONEncoder()
     resposta = enc.encode(canais)
     return HttpResponse(resposta,mimetype='application/javascript')
+
+def dvb_play(request,streamid=None):
+    stream = get_object_or_404(DVBSource,id=streamid)
+    stream.play()
+    return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
+
+def dvb_stop(request,streamid=None):
+    stream = get_object_or_404(DVBSource,id=streamid)
+    stream.stop()
+    return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
+
