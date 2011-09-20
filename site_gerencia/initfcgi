@@ -1,0 +1,33 @@
+#!/bin/bash
+
+PROJECT_DIR=$(dirname $0)
+[ "x." = "x$PROJECT_DIR" ] && PROJECT_DIR=$(pwd)
+
+function stop(){
+    if [ -f "${PROJECT_DIR}/fcgi.pid" ];then
+        kill `cat ${PROJECT_DIR}/fcgi.pid`
+        [ $? == 0 ] && rm -f ${PROJECT_DIR}/fcgi.pid ${PROJECT_DIR}/fcgi.socket
+    fi
+}
+
+function start() {
+    python ${PROJECT_DIR}/manage.py runfcgi --settings=settings daemonize=true maxchildren=10 maxspare=5 minspare=2 method=prefork socket=${PROJECT_DIR}/fcgi.socket pidfile=${PROJECT_DIR}/fcgi.pid
+    chmod go+w ${PROJECT_DIR}/fcgi.socket
+}
+
+case "$1" in
+    start)
+        start && exit 0
+        ;;
+    stop)
+        stop || exit 0
+        ;;
+    restart)
+        stop
+    start
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop}"
+        exit 2
+esac
+
