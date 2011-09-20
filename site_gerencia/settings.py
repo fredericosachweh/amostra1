@@ -16,7 +16,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-if False: # in sys.argv:
+if True: # in sys.argv:
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -63,13 +63,13 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if False: # in sys.argv or 'test' in sys.argv:
+if True: # in sys.argv or 'test' in sys.argv:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
     ADMIN_MEDIA_PREFIX = '/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
     STATIC_URL = '/static/'
-    ROOT_URL = '/'
+    ROOT_URL = '/tv/'
 else:
     MEDIA_URL = '/tvfiles/media/'
     MEDIA_ROOT = '/var/www/html/tvfiles/media/'
