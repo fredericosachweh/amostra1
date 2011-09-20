@@ -131,76 +131,6 @@ def parse_dvb(stdout,debug=False):
     return res
 
 
-#def timeout_command(command, timeout):
-#    """call shell-command and either return its output or kill it
-#    if it doesn't normally exit within timeout seconds and return None"""
-#    import subprocess, datetime, os, time, signal
-#    #cmd = command.split(" ")
-#    cmd = command
-#    start = datetime.datetime.now()
-#    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#    while process.poll() is None:
-#        time.sleep(0.1)
-#        now = datetime.datetime.now()
-#        if (now - start).seconds > timeout:
-#            os.kill(process.pid, signal.SIGKILL)
-#            os.waitpid(-1, os.WNOHANG)
-#            return None
-#    return process.stdout.read()
-
-class TimeoutInterrupt(Exception):
-    pass
-
-def timeout_command(cmdline, timeout=60):
-    """
-    Execute cmdline, limit execution time to 'timeout' seconds.
-    Uses the subprocess module and subprocess.PIPE.
-    
-    Raises TimeoutInterrupt
-    """
-    import time
-    bufsize = -1
-    
-    p = subprocess.Popen(
-        cmdline,
-        bufsize = bufsize,
-        shell   = False,
-        stdout  = subprocess.PIPE,
-        stderr  = subprocess.PIPE
-    )
-    
-    t_begin         = time.time()                         # Monitor execution time
-    seconds_passed  = 0  
-    
-    out = ''
-    err = ''
-    
-    while p.poll() is None and seconds_passed < timeout:  # Monitor process
-        time.sleep(0.01)                                     # Wait a little
-        #print('lendo')
-        seconds_passed = time.time() - t_begin
-        out += p.stdout.flush()
-        out += p.stdout.read()
-        #err += p.stderr.read(10)
-    
-        if seconds_passed >= timeout:
-            try:
-                p.stdout.close()  # If they are not closed the fds will hang around until
-                p.stderr.close()  # os.fdlimit is exceeded and cause a nasty exception
-                p.terminate()     # Important to close the fds prior to terminating the process!
-                # NOTE: Are there any other "non-freed" resources?
-            except:
-                pass
-            
-            raise TimeoutInterrupt('Erro')
-    
-    returncode  = p.returncode
-    
-    return (returncode, err, out)
-
-
-
-
 class DVB(object):
     
     def scan_channels(self, dvbsource):
@@ -208,41 +138,54 @@ class DVB(object):
         Inicia um processo de dvblast com o fluxo (stream)
         retorna pid
         """
-        import time
-        import sys
+        #import time
+        #import sys
         #import psutil
         cmd = []
-        cmd.append('/usr/local/bin/fake_dvblast')
+        dvb = '/usr/local/bin/dvblast'
+        #dvb = '/usr/local/bin/fake_dvblast'
+        cmd.append(dvb)
         cmd.append('-c /etc/dvblast/channels.d/1.conf')
         device = '%s'%dvbsource.device
         cmd.append(device)
-        print('Comando:%s' %' '.join(cmd))
-        #ret = timeout_command(cmd,2)
-        #res = ret[2]
-        
-        proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-        #proc = subprocess.Popen(cmd,stdout=subprocess.PIPE)
-        t = 0
-        l = ''
-        res = ''
-        while t<100:
-            l = proc.stdout.readline()
-            if l == '' and proc.poll() != None:
-                break
-            #if l.find('end NIT') >0:
-            #    t=100
-            #sys.stdout.flush()
-            time.sleep(0.01)
-            #print(t)
-            t += 1
-            res += l
-        #print('Leu')
-        #if proc.pid:
-        proc.kill()
-        ret = parse_dvb(res,debug=True)
-        proc.stdout.close()
-        proc.stderr.close()
+        scmd = ' '.join(cmd)
+        #print('Comando:%s' %scmd)
+        #from easyprocess import EasyProcess
+        from easyprocess import Proc
+        proc = Proc(scmd).call(timeout=5)
+        #stdout=proc.stdout
+        stdout=proc.stderr
+        #stdout = EasyProcess(' '.join(cmd)).call(timeout=5).stdout
+        #print(stdout)
+        ret = parse_dvb(stdout,debug=True)
+        if proc.is_alive():
+            proc.stop()
         return ret
+    
+        
+        
+        #proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+        #t = 0
+        #l = ''
+        #res = ''
+        #while t<100:
+        #    l = proc.stdout.readline()
+        #    if l == '' and proc.poll() != None:
+        #        break
+        #    #if l.find('end NIT') >0:
+        #    #    t=100
+        #    #sys.stdout.flush()
+        #    time.sleep(0.01)
+        #    #print(t)
+        #    t += 1
+        #    res += l
+        ##print('Leu')
+        ##if proc.pid:
+        #proc.kill()
+        #ret = parse_dvb(res,debug=True)
+        #proc.stdout.close()
+        #proc.stderr.close()
+        #return ret
 
 
 
