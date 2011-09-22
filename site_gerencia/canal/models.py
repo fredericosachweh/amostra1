@@ -19,20 +19,20 @@ class Canal(models.Model):
         unique_together = ( ('ip','porta'), )
         verbose_name_plural = _('Canais')
     numero = models.PositiveSmallIntegerField(_('Numero'),unique=True)
-    nome = models.CharField(_('Nome'), max_length=100, unique=True)
+    nome   = models.CharField(_('Nome'), max_length=100, blank=False)
+    descricao = models.TextField(_('Descricao'))
+    sigla = models.CharField(_('Sigla'),blank=False,max_length=5)
+    logo = models.ImageField(_('Logo'),upload_to='imgs/canal/logo/tmp' ,help_text='Imagem do canal')
+    thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb' ,help_text='Imagem do canal')
+    ip = models.IPAddressField(_('IP'), blank=True)
+    porta = models.PositiveSmallIntegerField(_('Porta'), blank=True, null=True)
+    atualizado = models.DateTimeField(auto_now=True)
     def __unicode__(self):
         return u"[%s] %s" %(self.numero,self.nome);
     def imagem_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />'%(self.thumb.url)
     imagem_thum.short_description = 'Miniatura'
     imagem_thum.allow_tags = True
-    descricao = models.TextField(_('Descricao'))
-    logo = models.ImageField(_('Logo'),upload_to='imgs/canal/logo/tmp' ,help_text='Imagem do canal')
-    thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb' ,help_text='Imagem do canal')
-    sigla = models.CharField(_('Sigla'),blank=False,max_length=5)
-    ip = models.IPAddressField(_('IP'),blank=False,unique=True)
-    porta = models.PositiveSmallIntegerField(_('Porta'),blank=False)
-    atualizado = models.DateTimeField(auto_now=True)
 
 class Genero(models.Model):
     def __unicode__(self):
@@ -56,7 +56,7 @@ class Programa(models.Model):
         #return "%s - %s [%s - %s]" %(self.canal,self.nome,self.hora_inicial,self.hora_final)
 
 
-def canal_post_save(signal,instance,sender,**kwargs):
+def canal_post_save(signal, instance, sender, **kwargs):
     """
     Manipulador de evento post-save do Canal
     """
