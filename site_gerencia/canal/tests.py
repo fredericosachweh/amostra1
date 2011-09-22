@@ -32,8 +32,10 @@ class CanalTest(TestCase):
         Canal.objects.all().delete()
         c = Client()
         l1 = open(settings.MEDIA_ROOT+'/test_files/a.png')
+        url_add = reverse('canal.views.add')
+        #print(url_add)
         ## Cria segundo canal
-        c.post('%s/canal/add/'%settings.ROOT_URL,
+        response = c.post(url_add,
                {
               'logo':l1,
               'nome':'Rede BOBO de Televisão',
@@ -43,6 +45,9 @@ class CanalTest(TestCase):
               'ip':'224.0.0.12',
               'porta':11002
               })
+        #print(response)
+        #print(response.status_code)
+        self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
         # Busca o canal criado
         c1 = Canal.objects.get(numero=13)
         self.failIfEqual(c1 is None,'Canal não foi criado')
@@ -70,7 +75,8 @@ class CanalTest(TestCase):
         ## Carga da imagem
         i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
         ## Cria primeiro canal
-        response = c.post('%s/canal/add/'%settings.ROOT_URL,
+        url_add = reverse('canal.views.add')
+        response = c.post(url_add,
                {
               'logo':i1,
               'nome':'Rede SBT',
@@ -83,7 +89,7 @@ class CanalTest(TestCase):
         self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
         i2 = open(settings.MEDIA_ROOT+'/test_files/c.png')
         ## Cria primeiro canal
-        response = c.post('%s/canal/add/'%settings.ROOT_URL,
+        response = c.post(url_add,
                {
               'logo':i2,
               'nome':'Rede SBT 1',
@@ -97,10 +103,8 @@ class CanalTest(TestCase):
         i2.close()
         self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
         ## url da lista de canais -> movido para o app box
-        list_url = reverse('box.views.canal_update')
-        #print('URL de listagem=%s'%list_url)
-        response = c.get('%s/box/canal_list/'%settings.ROOT_URL)
-        #print(response)
+        list_url = reverse('box.views.canal_list')
+        response = c.get(list_url)
         self.failUnlessEqual(response.status_code,200,'Status da lista de canais')
         import simplejson as json
         # Objeto JSON
@@ -108,8 +112,8 @@ class CanalTest(TestCase):
         jcanal = decoder.decode(response.content)
         self.failUnlessEqual(len(jcanal),2,'Deveria haver 2 canais')
         for canal in jcanal:
-            #print(canal)
-            response = c.get('%s/canal/delete/%d'%(settings.ROOT_URL,canal['pk']))
+            url_delete = reverse('canal.views.delete',args=[canal['pk']])
+            response = c.get(url_delete)
             self.failUnlessEqual(response.status_code,302,'Deveria redirecionar após remoção')
 
 

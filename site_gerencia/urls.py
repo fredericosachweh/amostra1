@@ -30,6 +30,7 @@ urlpatterns = patterns('',
     # Streams de multicats
     (r'^%sstream/'%settings.ROOT_URL,include('stream.urls')),
     # Página inicial
-    (r'^%s$'%settings.ROOT_URL,direct_to_template,{'template':'index.html'} ),
+    #(r'^%s$'%settings.ROOT_URL,direct_to_template,{'template':'index.html'} ),
+    (r'^%s$'%settings.ROOT_URL,include('home.urls')),
 )
 

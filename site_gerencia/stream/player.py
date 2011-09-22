@@ -158,8 +158,13 @@ class DVB(object):
     
     def play_source(self,dvbsource):
         cmd = []
+<<<<<<< HEAD
         #dvb = '/usr/local/bin/dvblast'
         dvb = '/usr/local/bin/fake_dvblast'
+=======
+        dvb = '/usr/local/bin/dvblast'
+        #dvb = '/usr/local/bin/fake_dvblast'
+>>>>>>> 114d48ffce5f025bf5a949967d5427d97b15dd02
         dvbsource.record_config()
         cmd.append(dvb)
         cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)

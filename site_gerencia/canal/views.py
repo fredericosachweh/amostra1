@@ -23,9 +23,9 @@ def add(request):
     """
     Adiciona novo canal.
     """
+    form = forms.CanalForm(request.POST or None,request.FILES or None)
     if request.method == 'POST':
         # Adiciona novo canal
-        form = forms.CanalForm(request.POST,request.FILES)
         if form.is_valid():
             novocanal = models.Canal()
             fcanal = forms.CanalForm(request.POST,request.FILES,instance=novocanal)
@@ -35,7 +35,6 @@ def add(request):
             return render_to_response('canal/canaladd.html', {'form': form},
                                         context_instance=RequestContext(request))
     else:
-        form = forms.CanalForm()
         return render_to_response('canal/canaladd.html', {'form': form},
                                             context_instance=RequestContext(request))
 
