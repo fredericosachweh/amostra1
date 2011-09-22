@@ -64,16 +64,3 @@ def delete(request,id):
 
 
 
-#def canal_list(request):
-#    """
-#    Usado pelo setupbox para pegar a lista de canais
-#    """
-#    canais = models.Canal.objects.all()
-#    MEDIA_URL=getattr(settings, 'MEDIA_URL')
-#    # Chama o canal e pega a listagem do aplicativo canal
-#    js = serializers.serialize('json',canais,indent=2, use_natural_keys=True)
-#    return HttpResponse('{"media_url":"%s","data":%s}'%(MEDIA_URL,js))
-
-
-
-

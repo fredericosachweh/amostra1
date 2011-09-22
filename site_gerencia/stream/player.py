@@ -139,8 +139,8 @@ class DVB(object):
         retorna pid
         """
         cmd = []
-        dvb = '/usr/local/bin/dvblast'
-        #dvb = '/usr/local/bin/fake_dvblast'
+        #dvb = '/usr/local/bin/dvblast'
+        dvb = '/usr/local/bin/fake_dvblast'
         dvbsource.record_config()
         cmd.append(dvb)
         cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
@@ -158,8 +158,8 @@ class DVB(object):
     
     def play_source(self,dvbsource):
         cmd = []
-        dvb = '/usr/local/bin/dvblast'
-        #dvb = '/usr/local/bin/fake_dvblast'
+        #dvb = '/usr/local/bin/dvblast'
+        dvb = '/usr/local/bin/fake_dvblast'
         dvbsource.record_config()
         cmd.append(dvb)
         cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)

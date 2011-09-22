@@ -43,7 +43,7 @@ function scan_dvb_success(data){
 function scan_dvb(){
 	var sid = $('#id_origem-__prefix__-source').val();
 	var resp = $.ajax({
-		url:'/tv/stream/scan_dvb/'+sid+'/',
+		url:'/%sstream/scan_dvb/'+sid+'/',
 		dataType: 'json',
 		success:scan_dvb_success
 		});

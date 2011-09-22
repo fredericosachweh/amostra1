@@ -69,14 +69,14 @@ if True: # in sys.argv or 'test' in sys.argv:
     ADMIN_MEDIA_PREFIX = '/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
     STATIC_URL = '/static/'
-    ROOT_URL = '/tv/'
+    ROOT_URL = '/%s'
 else:
     MEDIA_URL = '/tvfiles/media/'
     MEDIA_ROOT = '/var/www/html/tvfiles/media/'
     ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
     STATIC_ROOT = '/var/www/html/tvfiles/static/'
     STATIC_URL = '/tvfiles/static/'
-    ROOT_URL = '/tv/'
+    ROOT_URL = '/%s'
 
 
 # Make this unique, and don't share it with anybody.
@@ -88,7 +88,7 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     #os.path.join(PROJECT_ROOT_PATH,'static/'),
-    #'/var/www/html/tv/static/',
+    #'/var/www/html/%sstatic/',
 )
 
 # List of finder classes that know how to find static files in
@@ -161,8 +161,8 @@ LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
-    r'^/tv/canal/((?!canallist$))$',
-    r'^/tv/admin/(.*)$',
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
 )
 
 #MULTICAST_APP = '/usr/local/bin/multicat'

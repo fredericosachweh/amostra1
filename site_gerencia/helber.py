@@ -67,7 +67,7 @@ MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
 ADMIN_MEDIA_PREFIX = '/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
 STATIC_URL = '/static/'
-ROOT_URL = '/'
+ROOT_URL = ''
 
 
 # Make this unique, and don't share it with anybody.
@@ -79,7 +79,7 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     #os.path.join(PROJECT_ROOT_PATH,'static/'),
-    #'/var/www/html/tv/static/',
+    #'/var/www/html/static/',
 )
 
 # List of finder classes that know how to find static files in

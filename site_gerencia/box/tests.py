@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 # -*- coding:utf8 -*-
-"""
-Teste de campo MAC
->>> from fields import MACAddressField
->>> 2*2
-4
-"""
 
 from django.test import TestCase
-from models import SetupBox
+from models import SetupBox, PushServer
 from fields import MACAddressFormField
 
 from django.forms import ValidationError
@@ -17,7 +11,13 @@ class SetUpBoxTest(TestCase):
     ##@skipIfDBFeature('supports_transactions')
     def testSetupBox(self):
         """Teste do objeto SetupBox."""
+        server = PushServer()
+        server.address = '127.0.0.1'
+        server.hostname = '127.0.0.1'
+        server.port = 8000
+        server.save()
         b = SetupBox()
+        b.pushserver = server
         b.save()
         b.mac = 'invalid mac'
         b.clean()

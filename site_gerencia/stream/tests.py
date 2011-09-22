@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-"""
-This file demonstrates writing tests using the unittest module. These will pass
-when you run "manage.py test".
-
-Replace this with more appropriate tests for your application.
-"""
-
+from django.conf import settings
 from django.test import TestCase
 
 class PlayerTest(TestCase):
@@ -265,6 +259,8 @@ debug: frontend has acquired carrier"""
     
     def test_config(self):
         from models import DVBSource, DVBDestination
+        ## Remover todos os sources
+        DVBSource.objects.all().delete()
         source = DVBSource(name='Source 1')
         source.save()
         dest1 = DVBDestination(name='Dest 1',ip='224.0.0.11',port=5001,channel_program=1,channel_pid=225,source=source)

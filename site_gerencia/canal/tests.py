@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+from django.conf import settings
 from django.test import TestCase,Client
 from django.conf import settings
+
+from django.core.urlresolvers import reverse
 
 #import pdb
 #pdb.set_trace()
@@ -30,7 +33,7 @@ class CanalTest(TestCase):
         c = Client()
         l1 = open(settings.MEDIA_ROOT+'/test_files/a.png')
         ## Cria segundo canal
-        c.post('/canal/add/',
+        c.post('%s/canal/add/'%settings.ROOT_URL,
                {
               'logo':l1,
               'nome':'Rede BOBO de Televisão',
@@ -64,10 +67,10 @@ class CanalTest(TestCase):
         from models import Canal
         Canal.objects.all().delete()
         c = Client()
-        ## Autenticação
+        ## Carga da imagem
         i1 = open(settings.MEDIA_ROOT+'/test_files/b.png')
         ## Cria primeiro canal
-        c.post('/canal/add/',
+        response = c.post('%s/canal/add/'%settings.ROOT_URL,
                {
               'logo':i1,
               'nome':'Rede SBT',
@@ -77,9 +80,10 @@ class CanalTest(TestCase):
               'ip':'224.0.0.10',
               'porta':11000
               })
+        self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
         i2 = open(settings.MEDIA_ROOT+'/test_files/c.png')
         ## Cria primeiro canal
-        c.post('/canal/add/',
+        response = c.post('%s/canal/add/'%settings.ROOT_URL,
                {
               'logo':i2,
               'nome':'Rede SBT 1',
@@ -91,25 +95,21 @@ class CanalTest(TestCase):
               })
         i1.close()
         i2.close()
-        response = c.get('/box/canal_list/')
+        self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
+        ## url da lista de canais -> movido para o app box
+        list_url = reverse('box.views.canal_update')
+        #print('URL de listagem=%s'%list_url)
+        response = c.get('%s/box/canal_list/'%settings.ROOT_URL)
+        #print(response)
         self.failUnlessEqual(response.status_code,200,'Status da lista de canais')
         import simplejson as json
         # Objeto JSON
         decoder = json.JSONDecoder()
         jcanal = decoder.decode(response.content)
-        self.failUnlessEqual(len(jcanal['data']),2,'Deveria haver 2 canais')
-        for canal in jcanal['data']:
+        self.failUnlessEqual(len(jcanal),2,'Deveria haver 2 canais')
+        for canal in jcanal:
             #print(canal)
-            response = c.get('/canal/delete/%d'%canal['pk'])
+            response = c.get('%s/canal/delete/%d'%(settings.ROOT_URL,canal['pk']))
             self.failUnlessEqual(response.status_code,302,'Deveria redirecionar após remoção')
 
-
-
-
-class ProgramTest(TestCase):
-    def setUp(self):
-        pass
-
-    def test_program(self):
-        pass
 
