@@ -2,3 +2,4 @@
 *.pyc
 *.pyo
 *.e4p
+stream/debug
