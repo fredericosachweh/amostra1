@@ -69,18 +69,14 @@ if True: # in sys.argv or 'test' in sys.argv:
     ADMIN_MEDIA_PREFIX = '/static/admin/'
     STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
     STATIC_URL = '/static/'
-<<<<<<< HEAD
-    ROOT_URL = '/%s'
-=======
-    ROOT_URL = '/tv/'
->>>>>>> 114d48ffce5f025bf5a949967d5427d97b15dd02
+    ROOT_URL = ''
 else:
     MEDIA_URL = '/tvfiles/media/'
     MEDIA_ROOT = '/var/www/html/tvfiles/media/'
     ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
     STATIC_ROOT = '/var/www/html/tvfiles/static/'
     STATIC_URL = '/tvfiles/static/'
-    ROOT_URL = '/%s'
+    ROOT_URL = 'tv/'
 
 
 # Make this unique, and don't share it with anybody.

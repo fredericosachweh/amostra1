@@ -58,7 +58,7 @@ class Player(object):
         else:
             self._playerapp = 'multicat'
         self._player_name = settings.MULTICAST_APP
-        
+
 
     def play_stream(self, stream):
         """
@@ -80,19 +80,19 @@ class Player(object):
         #
         #print(cmd)
         proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        stdout,stderr = proc.communicate() 
+        stdout,stderr = proc.communicate()
         pid = int(stdout.strip())
         proc.stdout.close()
         proc.stderr.close()
-        
+
         return pid
-        
+
     def stop_stream(self,stream):
         if stream.pid:
             os.kill(stream.pid,signal.SIGKILL)
         return True
-        
-    
+
+
     def is_playing(self,stream):
         if stream.pid:
             for p in list_procs():
@@ -125,14 +125,14 @@ def parse_dvb(stdout,debug=False):
         index = linha.find('* program number=')
         if index >= 0:
             prog, pid = r.findall(linha)
-            res.append({'program':prog,'pid':pid}) 
-        
+            res.append({'program':prog,'pid':pid})
+
         if debug: print ('L:%s'%linha);
     return res
 
 
 class DVB(object):
-    
+
     def scan_channels(self, dvbsource):
         """
         Inicia um processo de dvblast com o fluxo (stream)
@@ -155,16 +155,11 @@ class DVB(object):
         if proc.is_alive():
             proc.stop()
         return ret
-    
+
     def play_source(self,dvbsource):
         cmd = []
-<<<<<<< HEAD
-        #dvb = '/usr/local/bin/dvblast'
-        dvb = '/usr/local/bin/fake_dvblast'
-=======
         dvb = '/usr/local/bin/dvblast'
         #dvb = '/usr/local/bin/fake_dvblast'
->>>>>>> 114d48ffce5f025bf5a949967d5427d97b15dd02
         dvbsource.record_config()
         cmd.append(dvb)
         cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
@@ -185,7 +180,7 @@ class DVB(object):
         if dvbsource.pid:
             os.kill(dvbsource.pid,signal.SIGKILL)
         return True
-         
-        
-    
+
+
+
 
