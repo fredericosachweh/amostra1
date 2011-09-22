@@ -6,7 +6,6 @@
 *.pyc
 banco.sqlite3
 *.swp
-/site_gerencia.komodoproject
-gerencia.komodoproject
+/*.komodoproject
 /site_gerencia/static
 /site_gerencia/media/videos
