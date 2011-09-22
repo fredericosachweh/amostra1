@@ -1,0 +1,15 @@
+[submodule "site_gerencia/media/frontend"]
+	path = site_gerencia/media/frontend
+	url = git@cianet:iptv/iptv-middleware/iptv-frontend.git
+[submodule "nginx"]
+	path = nginx
+	url = git@cianet:iptv/iptv-middleware/iptv-middleware-nginx.git
+[submodule "django"]
+	path = django
+	url = git://github.com/django/django.git
+[submodule "modules/django-debug-toolbar"]
+	path = modules/django-debug-toolbar
+	url = git://github.com/robhudson/django-debug-toolbar.git
+[submodule "modules/django-importer"]
+	path = modules/django-importer
+	url = git://github.com/ricobl/django-importer.git
