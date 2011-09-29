@@ -155,3 +155,5 @@ LOGIN_REQUIRED_URLS = (
 MULTICAST_COMMAND = '/usr/local/bin/roda'
 MULTICAST_APP = 'multicat'
 
+FORCE_SCRIPT_NAME=""
+
