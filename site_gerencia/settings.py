@@ -2,7 +2,11 @@
 
 import sys,os
 
-PROJECT_ROOT_PATH = os.path.dirname(__file__)
+PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
+
+# stream.management.commands.runmedia
+
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
@@ -16,7 +20,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-if True: # in sys.argv:
+if 'test' in sys.argv:
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -139,8 +143,6 @@ INSTALLED_APPS = (
     'debug_toolbar',
     # South http://south.aeracode.org/docs/
     'south',
-    # Testes com nose
-    #'django_nose',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
@@ -150,10 +152,6 @@ INSTALLED_APPS = (
     # Aplicação de controle de stream
     'stream',
 )
-
-#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
-#USE_TERMINAL_COLORS=True
 
 LOGIN_URL = ROOT_URL+'accounts/login'
 

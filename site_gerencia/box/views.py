@@ -5,7 +5,7 @@
 from __future__       import print_function
 import sys
 
-from django.http      import HttpResponse
+from django.http      import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template  import RequestContext
 
@@ -25,11 +25,12 @@ def index(request):
     stress = request.GET.get('stress')
     #print('IP=%s'%request.META['REMOTE_ADDR'])
     #print('IP: %s %s' %(request.REMOTE_ADDR,request.REMOTE_HOST))
-    return render_to_response(
-                              'box/index.html',
-                              { 'stress':stress },
-                              context_instance=RequestContext(request)
-                              )
+    #return render_to_response(
+    #                          'box/index.html',
+    #                          { 'stress':stress },
+    #                          context_instance=RequestContext(request)
+    #                          )
+    return HttpResponseRedirect('%sfrontend/'%settings.MEDIA_URL)
 
 def setup(request):
     """Ambiente base de setup"""

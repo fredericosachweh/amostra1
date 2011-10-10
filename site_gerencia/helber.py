@@ -63,12 +63,12 @@ USE_I18N = True
 USE_L10N = True
 
 MEDIA_URL = '/media/'
+#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tv','media')
 MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
-ADMIN_MEDIA_PREFIX = '/static/admin/'
+ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
 STATIC_URL = '/static/'
-ROOT_URL = ''
-
+ROOT_URL = 'tv/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
@@ -127,6 +127,9 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Testes com nose
     #'django_nose',
+    'debug_toolbar',
+    # Migração
+    'south',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
@@ -141,9 +144,10 @@ INSTALLED_APPS = (
 
 #USE_TERMINAL_COLORS=True
 
-LOGIN_URL = ROOT_URL+'accounts/login'
+LOGIN_URL = ROOT_URL+'/accounts/login'
 
-LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
+#LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
+LOGIN_REDIRECT_URL = '/tv/administracao/'
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
@@ -154,6 +158,21 @@ LOGIN_REQUIRED_URLS = (
 #MULTICAST_APP = '/usr/local/bin/multicat'
 MULTICAST_COMMAND = '/usr/local/bin/roda'
 MULTICAST_APP = 'multicat'
+DVBLAST_DIR = '/etc/dvblast'
+
+INTERNAL_IPS = ('127.0.0.1',)
+
+DEBUG_TOOLBAR_PANELS = (
+    'debug_toolbar.panels.version.VersionDebugPanel',
+    'debug_toolbar.panels.timer.TimerDebugPanel',
+    'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+    'debug_toolbar.panels.headers.HeaderDebugPanel',
+    'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
+    'debug_toolbar.panels.template.TemplateDebugPanel',
+    'debug_toolbar.panels.sql.SQLDebugPanel',
+    'debug_toolbar.panels.signals.SignalDebugPanel',
+    'debug_toolbar.panels.logger.LoggingPanel',
+)
 
 FORCE_SCRIPT_NAME=""
 

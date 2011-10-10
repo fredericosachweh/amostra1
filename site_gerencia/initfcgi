@@ -1,19 +1,33 @@
 #!/bin/bash
 
+SETTINGS=helber
+METHOD=prefork
+DEAMONIZE=false
+#PYTHONPATH="../python:.."
+PYTHONPATH=".:.."
+
 PROJECT_DIR=$(dirname $0)
 [ "x." = "x$PROJECT_DIR" ] && PROJECT_DIR=$(pwd)
 
 function stop(){
     if [ -f "${PROJECT_DIR}/fcgi.pid" ];then
         kill `cat ${PROJECT_DIR}/fcgi.pid`
-        [ $? == 0 ] && rm -f ${PROJECT_DIR}/fcgi.pid ${PROJECT_DIR}/fcgi.socket
+        find ${PROJECT_DIR} -name '*.pyc' | xargs rm -f
+        #[ $? == 0 ] &&
+        rm -f ${PROJECT_DIR}/fcgi.pid ${PROJECT_DIR}/fcgi.socket
     fi
 }
 
 function start() {
 exec /usr/bin/env - \
-  PYTHONPATH="../python:.." \
-    python ${PROJECT_DIR}/manage.py runfcgi --settings=helber daemonize=true maxchildren=10 maxspare=5 minspare=2 method=prefork socket=${PROJECT_DIR}/fcgi.socket pidfile=${PROJECT_DIR}/fcgi.pid
+  PYTHONPATH=${PYTHONPATH} \
+    python ${PROJECT_DIR}/manage.py runfcgi \
+    --settings=${SETTINGS} daemonize=${DEAMONIZE} \
+    maxchildren=10 \
+    maxspare=5 \
+    minspare=2 \
+    method=${METHOD} socket=${PROJECT_DIR}/fcgi.socket \
+    pidfile=${PROJECT_DIR}/fcgi.pid
     chmod go+w ${PROJECT_DIR}/fcgi.socket
 }
 
