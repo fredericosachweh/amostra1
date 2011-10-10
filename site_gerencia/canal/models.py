@@ -33,6 +33,15 @@ class Canal(models.Model):
         return u'<img width="40" alt="Thum não existe" src="%s" />'%(self.thumb.url)
     imagem_thum.short_description = 'Miniatura'
     imagem_thum.allow_tags = True
+    def delete(self):
+        """
+        Limpeza da imagem.
+        Remove o logo e o thumbnail ao remover o canal
+        """
+        super(Canal,self).delete()
+        import os
+        os.unlink(self.logo.path)
+        os.unlink(self.thumb.path)
 
 class Genero(models.Model):
     def __unicode__(self):
@@ -64,11 +73,11 @@ def canal_post_save(signal, instance, sender, **kwargs):
     #print(instance.logo.url)
     #print('signal:%s'%signal)
     #print('sender:%s'%sender)
-    #if instance.logo.name is None:
+    #if instance.logo is None:
     #    return
     if instance.logo.name.startswith('imgs/canal/logo/tmp'):
         ## Carrega biblioteca de manipulação de imagem
-        print('Original:\n%s'%instance.logo.path)
+        #print('Original:\n%s'%instance.logo.path)
         try:
             import Image
         except ImportError:
@@ -90,7 +99,7 @@ def canal_post_save(signal, instance, sender, **kwargs):
         thumb.save(instance.thumb.path)
         # Imagem original
         original = 'imgs/canal/logo/original/%d.%s' %(instance.id,extensao)
-        print('Copiando:\n%s\n%s'%(instance.logo.path,os.path.join(MEDIA_ROOT,original)))
+        #print('Copiando:\n%s\n%s'%(instance.logo.path,os.path.join(MEDIA_ROOT,original)))
         shutil.copyfile(instance.logo.path, os.path.join(MEDIA_ROOT,original))
         # Remove arquivo temporário
         os.unlink(instance.logo.path)
@@ -99,14 +108,4 @@ def canal_post_save(signal, instance, sender, **kwargs):
         instance.save()
 
 
-def canal_post_delete(signal,instance,sender,**kwargs):
-    # Delete img files
-    print("removendo:%s"%instance.thumb)
-    instance.thumb.delete()
-    print("removendo:%s"%instance.logo)
-    instance.logo.delete()
-
 signals.post_save.connect(canal_post_save, sender=Canal)
-#signals.pre_delete
-#signals.post_delete.connect(canal_post_delete, sender=Canal)
-

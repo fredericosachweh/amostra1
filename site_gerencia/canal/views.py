@@ -58,7 +58,6 @@ def delete(request,id):
     Remove o canal
     """
     canal = get_object_or_404(models.Canal,pk=id)
-    print('Deletando:%s'%canal)
     canal.delete()
     return HttpResponseRedirect(reverse('canal_index'))
 
