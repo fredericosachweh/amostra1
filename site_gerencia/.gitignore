@@ -3,3 +3,4 @@
 *.pyo
 *.e4p
 stream/debug
+*.pid

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SETTINGS=helber
+SETTINGS=gartz
 METHOD=prefork
 DEAMONIZE=false
 #PYTHONPATH="../python:.."
