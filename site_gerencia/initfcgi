@@ -1,8 +1,8 @@
 #!/bin/bash
 
-SETTINGS=gartz
+SETTINGS=settings
 METHOD=prefork
-DEAMONIZE=false
+DEAMONIZE=true
 #PYTHONPATH="../python:.."
 PYTHONPATH=".:.."
 
