@@ -16,7 +16,7 @@ urlpatterns = patterns('',
     url(r'^canal_update/$', 'box.views.canal_update', name='canal_update'),
     url(r'^setup/$',        'box.views.setup',        name='setup'),
     
-    url(r'^ping/$',         'box.views.ping',         name='ping'),
+    url(r'^ping$',          'box.views.ping',         name='ping'),
     
     url(r'^stb/(?P<path>.*)$', 'django.views.static.serve', {
             'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/dist-stb/",
