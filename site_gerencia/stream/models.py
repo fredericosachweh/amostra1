@@ -115,7 +115,7 @@ class DVBSource(models.Model):
     def record_config(self):
         dst = DVBDestination.objects.filter(source=self)
         # 224.0.0.17:10000/udp 1 1
-        template = '%s:%d/udp %d 1\n'
+        template = '%s:%d/udp 1 %d\n'
         cfg_file = '/etc/dvblast/channels.d/%s.conf' %self.id
         config = open(cfg_file,'w')
         cfg = []

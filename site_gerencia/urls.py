@@ -21,8 +21,8 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     (r'^%sadministracao/'%settings.ROOT_URL, include(admin.site.urls)),
     # Midias estaticas
-    (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-    (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
+    (r'^%smedia/(?P<path>.*)$'%settings.ROOT_URL, 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
+    (r'^%sstatic/(?P<path>.*)$'%settings.ROOT_URL, 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
     # Configuração de canais
     (r'^%scanal/'%settings.ROOT_URL,include('canal.urls')),
     # Interface dos setupbox

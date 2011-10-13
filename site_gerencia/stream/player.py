@@ -126,7 +126,6 @@ def parse_dvb(stdout,debug=False):
         if index >= 0:
             prog, pid = r.findall(linha)
             res.append({'program':prog,'pid':pid})
-
         if debug: print ('L:%s'%linha);
     return res
 
@@ -139,8 +138,8 @@ class DVB(object):
         retorna pid
         """
         cmd = []
-        #dvb = '/usr/local/bin/dvblast'
-        dvb = '/usr/local/bin/fake_dvblast'
+        dvb = '/usr/local/bin/dvblast'
+        #dvb = '/usr/local/bin/fake_dvblast'
         dvbsource.record_config()
         cmd.append(dvb)
         cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)

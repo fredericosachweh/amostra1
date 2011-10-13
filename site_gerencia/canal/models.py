@@ -28,11 +28,20 @@ class Canal(models.Model):
     porta = models.PositiveSmallIntegerField(_('Porta'), blank=True, null=True)
     atualizado = models.DateTimeField(auto_now=True)
     def __unicode__(self):
-        return u"[%s] %s" %(self.numero,self.nome);
+        return u"[%d] num=%s %s" %(self.id,self.numero,self.nome);
     def imagem_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />'%(self.thumb.url)
     imagem_thum.short_description = 'Miniatura'
     imagem_thum.allow_tags = True
+    def delete(self):
+        """
+        Limpeza da imagem.
+        Remove o logo e o thumbnail ao remover o canal
+        """
+        super(Canal,self).delete()
+        import os
+        os.unlink(self.logo.path)
+        os.unlink(self.thumb.path)
 
 class Genero(models.Model):
     def __unicode__(self):
@@ -61,12 +70,14 @@ def canal_post_save(signal, instance, sender, **kwargs):
     Manipulador de evento post-save do Canal
     """
     #print('canal_post_save:%s'%instance)
+    #print(instance.logo.url)
     #print('signal:%s'%signal)
     #print('sender:%s'%sender)
-    #if instance.logo.name is None:
+    #if instance.logo is None:
     #    return
     if instance.logo.name.startswith('imgs/canal/logo/tmp'):
         ## Carrega biblioteca de manipulação de imagem
+        #print('Original:\n%s'%instance.logo.path)
         try:
             import Image
         except ImportError:
@@ -77,10 +88,10 @@ def canal_post_save(signal, instance, sender, **kwargs):
         # Busca a configuração MEDIA_ROOT
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         # Caso não exista, cria o diretório
-        if os.path.exists(MEDIA_ROOT+'/imgs/canal/logo/thumb/') == False:
-            os.mkdir(MEDIA_ROOT+'/imgs/canal/logo/thumb/')
-        if os.path.exists(MEDIA_ROOT+'/imgs/canal/logo/original/') == False:
-            os.mkdir(MEDIA_ROOT+'/imgs/canal/logo/original/')
+        if os.path.exists(os.path.join(MEDIA_ROOT,'imgs/canal/logo/thumb')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT,'imgs/canal/logo/thumb'))
+        if os.path.exists(os.path.join(MEDIA_ROOT,'imgs/canal/logo/original')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT,'imgs/canal/logo/original'))
         # Criação da miniatura
         instance.thumb.name = 'imgs/canal/logo/thumb/%d.%s' %(instance.id,extensao)
         thumb = Image.open(instance.logo.path)
@@ -88,22 +99,13 @@ def canal_post_save(signal, instance, sender, **kwargs):
         thumb.save(instance.thumb.path)
         # Imagem original
         original = 'imgs/canal/logo/original/%d.%s' %(instance.id,extensao)
-        shutil.copyfile(instance.logo.path,MEDIA_ROOT+'/'+original)
+        #print('Copiando:\n%s\n%s'%(instance.logo.path,os.path.join(MEDIA_ROOT,original)))
+        shutil.copyfile(instance.logo.path, os.path.join(MEDIA_ROOT,original))
         # Remove arquivo temporário
         os.unlink(instance.logo.path)
-        instance.thumb.file
+        #instance.thumb.file
         instance.logo.name = original
         instance.save()
 
 
-def canal_post_delete(signal,instance,sender,**kwargs):
-    # Delete img files
-    print("removendo:%s"%instance.thumb)
-    instance.thumb.delete()
-    print("removendo:%s"%instance.logo)
-    instance.logo.delete()
-
 signals.post_save.connect(canal_post_save, sender=Canal)
-
-#signals.post_delete.connect(canal_post_delete, sender=Canal)
-

@@ -5,6 +5,13 @@ from django.conf import settings
 from django.test import TestCase
 
 class PlayerTest(TestCase):
+    def setUp(self):
+        pass
+        #print('No setUp')
+    
+    def tearDown(self):
+        pass
+        #print('No tearDown')
     
     def test_play(self):
         from stream import models
@@ -97,6 +104,15 @@ class DVBTest(TestCase):
     """
     Testes do device dvb
     """
+    
+    def setUp(self):
+        from models import DVBSource, DVBDestination
+        ## Remover todos os sources
+        #DVBSource.objects.all().delete()
+        #print(DVBSource.objects.all())
+    def tearDown(self):
+        pass
+        
     def test_parse(self):
         from player import parse_dvb
         cmd = """DVBlast 2.0.0 (git-379e8c5)
@@ -274,10 +290,12 @@ debug: frontend has acquired carrier"""
         f = open(cfg_file,'r')
         l1 = f.readline()
         l2 = f.readline()
-        c1 = '%s:%d/udp %d 1\n'%(dest1.ip,dest1.port,dest1.channel_program)
-        #print(c1,l1)
-        self.assertEqual(c1, l1, 'Configuração gravada errado')
-        self.assertEqual('%s:%d/udp %d 1\n'%(dest2.ip,dest2.port,dest2.channel_program), l2, 'Configuração gravada errado')
+        c1 = '%s:%d/udp 1 %d\n'%(dest1.ip,dest1.port,dest1.channel_program)
+        c2 = '%s:%d/udp 1 %d\n'%(dest2.ip,dest2.port,dest2.channel_program)
+        self.assertEqual(c1, l1, 'Configuração 1 gravada errado')
+        self.assertEqual(c2, l2, 'Configuração 2 gravada errado')
+        self.assertEqual('%s:%d/udp 1 %d\n'%(dest1.ip,dest1.port,dest1.channel_program), l1, 'Configuração 1 gravada errado')
+        self.assertEqual('%s:%d/udp 1 %d\n'%(dest2.ip,dest2.port,dest2.channel_program), l2, 'Configuração 2 gravada errado')
         f.close()
         
         
