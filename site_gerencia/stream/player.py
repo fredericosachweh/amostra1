@@ -132,17 +132,29 @@ def parse_dvb(stdout,debug=False):
 
 class DVB(object):
 
+    def __init__(self):
+        '''
+        Construtor
+        '''
+        from django.conf import settings
+        if settings.DVBLAST_APP:
+            self._playerapp = settings.DVBLAST_APP
+        else:
+            self._playerapp = 'dvblast'
+        self._player_name = settings.DVBLAST_APP
+
+
     def scan_channels(self, dvbsource):
         """
         Inicia um processo de dvblast com o fluxo (stream)
         retorna pid
         """
         cmd = []
-        dvb = '/usr/local/bin/dvblast'
-        #dvb = '/usr/local/bin/fake_dvblast'
+        from django.conf import settings
+        dvb = settings.DVBLAST_COMMAND
         dvbsource.record_config()
         cmd.append(dvb)
-        cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
+        cmd.append('-c %s/channels.d/%s.conf' %(settings.DVBLAST_CONF_DIR,dvbsource.id))
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)
@@ -157,11 +169,11 @@ class DVB(object):
 
     def play_source(self,dvbsource):
         cmd = []
-        dvb = '/usr/local/bin/dvblast'
-        #dvb = '/usr/local/bin/fake_dvblast'
+        from django.conf import settings
+        dvb = settings.DVBLAST_COMMAND
         dvbsource.record_config()
         cmd.append(dvb)
-        cmd.append('-c /etc/dvblast/channels.d/%s.conf' %dvbsource.id)
+        cmd.append('-c %s/channels.d/%s.conf' %(settings.DVBLAST_CONF_DIR,dvbsource.id))
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)

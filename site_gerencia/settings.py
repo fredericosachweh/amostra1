@@ -5,8 +5,6 @@ import sys,os
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
 
-# stream.management.commands.runmedia
-
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
@@ -67,20 +65,13 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if True: # in sys.argv or 'test' in sys.argv:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
-    ADMIN_MEDIA_PREFIX = '/static/admin/'
-    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
-    STATIC_URL = '/static/'
-    ROOT_URL = ''
-else:
-    MEDIA_URL = '/tvfiles/media/'
-    MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-    ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-    STATIC_ROOT = '/var/www/html/tvfiles/static/'
-    STATIC_URL = '/tvfiles/static/'
-    ROOT_URL = 'tv/'
+
+MEDIA_URL = '/tvfiles/media/'
+MEDIA_ROOT = '/var/www/html/tvfiles/media/'
+ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+STATIC_ROOT = '/var/www/html/tvfiles/static/'
+STATIC_URL = '/tvfiles/static/'
+ROOT_URL = 'tv/'
 
 
 # Make this unique, and don't share it with anybody.
@@ -164,9 +155,15 @@ LOGIN_REQUIRED_URLS = (
 )
 
 #MULTICAST_APP = '/usr/local/bin/multicat'
-MULTICAST_COMMAND = '/usr/local/bin/roda'
+
+MULTICAST_COMMAND = '/usr/bin/multicat_daemon'
+#MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
-DVBLAST_DIR = '/etc/dvblast'
+
+DVBLAST_COMMAND = '/usr/bin/dvblast_daemon'
+#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
+DVBLAST_APP = 'dvblast'
+DVBLAST_CONF_DIR = '/etc/dvblast'
 
 INTERNAL_IPS = ('127.0.0.1',)
 
