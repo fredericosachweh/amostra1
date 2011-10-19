@@ -5,8 +5,6 @@ import sys,os
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
 
-# stream.management.commands.runmedia
-
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
@@ -66,6 +64,7 @@ USE_I18N = True
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale
 USE_L10N = True
+
 
 MEDIA_URL = '/tvfiles/media/'
 MEDIA_ROOT = '/var/www/html/tvfiles/media/'
@@ -156,9 +155,15 @@ LOGIN_REQUIRED_URLS = (
 )
 
 #MULTICAST_APP = '/usr/local/bin/multicat'
-MULTICAST_COMMAND = '/usr/local/bin/roda'
+
+MULTICAST_COMMAND = '/usr/bin/multicat_daemon'
+#MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
-DVBLAST_DIR = '/etc/dvblast'
+
+DVBLAST_COMMAND = '/usr/bin/dvblast_daemon'
+#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
+DVBLAST_APP = 'dvblast'
+DVBLAST_CONF_DIR = '/etc/dvblast'
 
 INTERNAL_IPS = ('127.0.0.1',)
 

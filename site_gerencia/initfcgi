@@ -2,8 +2,7 @@
 
 SETTINGS=settings
 METHOD=prefork
-DEAMONIZE=true
-#PYTHONPATH="../python:.."
+DEAMONIZE=false
 PYTHONPATH=".:.."
 
 PROJECT_DIR=$(dirname $0)
