@@ -131,7 +131,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
-    'debug_toolbar',
+    #'debug_toolbar',
     # South http://south.aeracode.org/docs/
     'south',
     # Gestao de canal
@@ -154,13 +154,12 @@ LOGIN_REQUIRED_URLS = (
     r'^/%sadmin/(.*)$',
 )
 
-#MULTICAST_APP = '/usr/local/bin/multicat'
-
-MULTICAST_COMMAND = '/usr/bin/multicat_daemon'
-#MULTICAST_COMMAND = '/usr/bin/multicat'
+MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
+MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
 
-DVBLAST_COMMAND = '/usr/bin/dvblast_daemon'
+DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
+DVBLAST_COMMAND = '/usr/bin/dvblast'
 #DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'

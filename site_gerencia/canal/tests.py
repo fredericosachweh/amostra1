@@ -46,7 +46,11 @@ class CanalTest(TestCase):
               'ip':'224.0.0.12',
               'porta':11002
               })
-        self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
+        self.assertEqual(
+            response.status_code,
+            302,
+            'O código de retorno deveria ser 302 (Redirecionamento)'
+            )
         logoa.close()
         # Busca o canal criado
         c1 = Canal.objects.get(numero=13)
@@ -62,7 +66,11 @@ class CanalTest(TestCase):
         ## Limpeza
         url_del = reverse('canal.views.delete',args=[c1.id])
         response = c.get(url_del)
-        self.failUnlessEqual(response.status_code,302,'Deveria redirecionar após remoção')
+        self.failUnlessEqual(
+            response.status_code,
+            302,
+            'Deveria redirecionar após remoção'
+            )
         existsThum = os.path.exists(thumb)
         existsLogo = os.path.exists(logo)
         self.failIf( (existsThum is True) ,'Thumbnail deveria ser removido')
@@ -87,7 +95,11 @@ class CanalTest(TestCase):
               'ip':'224.0.0.10',
               'porta':11000
               })
-        self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
+        self.assertEqual(
+            response.status_code,
+            302,
+            'O código de retorno deveria ser 302 (Redirecionamento)'
+            )
         i2 = open('canal/fixtures/test_files/c.png')
         ## Cria primeiro canal
         response = c.post(url_add,

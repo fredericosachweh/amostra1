@@ -65,10 +65,10 @@ USE_L10N = True
 MEDIA_URL = '/media/'
 #MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tv','media')
 MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
-ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+ADMIN_MEDIA_PREFIX = '/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
 STATIC_URL = '/static/'
-ROOT_URL = 'tv/'
+ROOT_URL = ''
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
@@ -155,10 +155,15 @@ LOGIN_REQUIRED_URLS = (
     r'^/admin/(.*)$',
 )
 
-#MULTICAST_APP = '/usr/local/bin/multicat'
-MULTICAST_COMMAND = '/usr/local/bin/roda'
+MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
+MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
-DVBLAST_DIR = '/etc/dvblast'
+
+DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
+DVBLAST_COMMAND = '/usr/bin/dvblast'
+#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
+DVBLAST_APP = 'dvblast'
+DVBLAST_CONF_DIR = '/etc/dvblast'
 
 INTERNAL_IPS = ('127.0.0.1',)
 
