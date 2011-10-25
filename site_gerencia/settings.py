@@ -107,8 +107,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'lib.middleware.login.RequireLoginMiddleware',
+    #'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -131,9 +131,9 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
-    'debug_toolbar',
+    #'debug_toolbar',
     # South http://south.aeracode.org/docs/
-    'south',
+    #'south',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
@@ -154,29 +154,29 @@ LOGIN_REQUIRED_URLS = (
     r'^/%sadmin/(.*)$',
 )
 
-#MULTICAST_APP = '/usr/local/bin/multicat'
-
-MULTICAST_COMMAND = '/usr/bin/multicat_daemon'
-#MULTICAST_COMMAND = '/usr/bin/multicat'
+MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
+MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
 
-DVBLAST_COMMAND = '/usr/bin/dvblast_daemon'
+DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
+DVBLAST_COMMAND = '/usr/bin/dvblast'
 #DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
 
-INTERNAL_IPS = ('127.0.0.1',)
-
-DEBUG_TOOLBAR_PANELS = (
-    'debug_toolbar.panels.version.VersionDebugPanel',
-    'debug_toolbar.panels.timer.TimerDebugPanel',
-    'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
-    'debug_toolbar.panels.headers.HeaderDebugPanel',
-    'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-    'debug_toolbar.panels.template.TemplateDebugPanel',
-    'debug_toolbar.panels.sql.SQLDebugPanel',
-    'debug_toolbar.panels.signals.SignalDebugPanel',
-    'debug_toolbar.panels.logger.LoggingPanel',
-)
+#INTERNAL_IPS = ('127.0.0.1',)
+#
+#DEBUG_TOOLBAR_PANELS = (
+#    'debug_toolbar.panels.version.VersionDebugPanel',
+#    'debug_toolbar.panels.timer.TimerDebugPanel',
+#    'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+#    'debug_toolbar.panels.headers.HeaderDebugPanel',
+#    'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
+#    'debug_toolbar.panels.template.TemplateDebugPanel',
+#    'debug_toolbar.panels.sql.SQLDebugPanel',
+#    'debug_toolbar.panels.signals.SignalDebugPanel',
+#    'debug_toolbar.panels.logger.LoggingPanel',
+#)
 
 FORCE_SCRIPT_NAME=""
+

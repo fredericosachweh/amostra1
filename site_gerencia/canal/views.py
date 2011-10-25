@@ -13,10 +13,10 @@ from canal import models, forms
 def index(request):
     lista =  models.Canal.objects.all()
     return render_to_response(
-                              'canal/canais.html',
-                              { 'canais': lista },
-                              context_instance=RequestContext(request)
-                              )
+        'canal/canais.html',
+        { 'canais': lista },
+        context_instance=RequestContext(request)
+        )
 
 
 def add(request):
@@ -28,15 +28,20 @@ def add(request):
         # Adiciona novo canal
         if form.is_valid():
             novocanal = models.Canal()
-            fcanal = forms.CanalForm(request.POST,request.FILES,instance=novocanal)
+            fcanal = forms.CanalForm(
+                request.POST,
+                request.FILES,
+                instance=novocanal)
             fcanal.save()
             return HttpResponseRedirect(reverse('canal_index'))
         else:
-            return render_to_response('canal/canaladd.html', {'form': form},
-                                        context_instance=RequestContext(request))
+            return render_to_response('canal/canaladd.html',
+                {'form': form},
+                context_instance=RequestContext(request))
     else:
-        return render_to_response('canal/canaladd.html', {'form': form},
-                                            context_instance=RequestContext(request))
+        return render_to_response('canal/canaladd.html',
+            {'form': form},
+            context_instance=RequestContext(request))
 
 def edit(request,id):
     """
@@ -50,8 +55,10 @@ def edit(request,id):
             return HttpResponseRedirect(reverse('canal_index'))
     else:
         form = forms.CanalForm(instance=canal)
-    return render_to_response('canal/canaledit.html', {'form': form , 'canal':canal},
-                                        context_instance=RequestContext(request))
+    return render_to_response(
+        'canal/canaledit.html',
+        {'form': form , 'canal':canal},
+        context_instance=RequestContext(request))
 
 def delete(request,id):
     """

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#echo "[`date`] $@" >> /tmp/log.txt
+
+#nohup /usr/local/bin/dvblast $@ >/dev/null 2>&1 &
+#sudo -u helber /usr/local/bin/dvblast $@ >>/tmp/log.txt 2>&1 &
+#sudo -u helber /usr/local/bin/dvblast $@ >/dev/null 2>&1 &
+
+nohup /usr/bin/dvblast $@ >/dev/null 2>&1 &
+PID=$!
+#echo "PID:$PID" >> /tmp/log.txt
+
+echo -n "$PID"
+#echo ""
+exit 0
+

@@ -18,8 +18,15 @@ class AdminImageWidget(AdminFileWidget):
         if value and getattr(value, "url", None):
             image_url = value.url
             file_name = str(value)
-            output.append(u' <a href="%s" target="_blank"><img src="%s" alt="%s" /></a> %s ' % \
-                (image_url, image_url.replace('original', 'thumb'), file_name, ('Change:')))
+            output.append(
+                u'<a href="%s" target="_blank"><img src="%s" alt="%s" /></a>%s'
+                %(
+                    image_url,
+                    image_url.replace('original', 'thumb'),
+                    file_name,
+                    ('Change:')
+                )
+            )
         output.append(super(AdminFileWidget, self).render(name, value, attrs))
         return mark_safe(u''.join(output))
 

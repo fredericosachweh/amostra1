@@ -53,8 +53,8 @@ class Player(object):
         Constructor
         '''
         from django.conf import settings
-        if settings.MULTICAST_APP:
-            self._playerapp = settings.MULTICAST_COMMAND
+        if settings.MULTICAST_DAEMON:
+            self._playerapp = settings.MULTICAST_DAEMON
         else:
             self._playerapp = 'multicat'
         self._player_name = settings.MULTICAST_APP
@@ -170,21 +170,16 @@ class DVB(object):
     def play_source(self,dvbsource):
         cmd = []
         from django.conf import settings
-        dvb = settings.DVBLAST_COMMAND
+        dvb = settings.DVBLAST_DAEMON
         dvbsource.record_config()
         cmd.append(dvb)
         cmd.append('-c %s/channels.d/%s.conf' %(settings.DVBLAST_CONF_DIR,dvbsource.id))
         device = '%s'%dvbsource.device
         cmd.append(device)
         scmd = ' '.join(cmd)
-        print(scmd)
         from easyprocess import Proc
-        proc = Proc(scmd).start()
-        pid_ret = proc.pid
-        pid = os.fork()
-        if pid == 0:
-            proc.wait()
-            #sys.exit(0)
+        stdout = Proc(scmd).call().stdout
+        pid_ret = int(stdout.strip())
         return pid_ret
 
     def stop_dvb(self,dvbsource):
