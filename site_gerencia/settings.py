@@ -1,6 +1,8 @@
 # -*- encoding:utf-8 -*-
 
-import sys,os
+import sys
+import os
+import logging
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
@@ -108,7 +110,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'lib.middleware.login.RequireLoginMiddleware',
-    #'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -120,8 +121,6 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH,'templates/')
 )
 
-#FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'
-
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -130,8 +129,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
-    #'debug_toolbar',
     # South http://south.aeracode.org/docs/
     #'south',
     # Gestao de canal
@@ -164,19 +161,36 @@ DVBLAST_COMMAND = '/usr/bin/dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
 
-#INTERNAL_IPS = ('127.0.0.1',)
-#
-#DEBUG_TOOLBAR_PANELS = (
-#    'debug_toolbar.panels.version.VersionDebugPanel',
-#    'debug_toolbar.panels.timer.TimerDebugPanel',
-#    'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
-#    'debug_toolbar.panels.headers.HeaderDebugPanel',
-#    'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-#    'debug_toolbar.panels.template.TemplateDebugPanel',
-#    'debug_toolbar.panels.sql.SQLDebugPanel',
-#    'debug_toolbar.panels.signals.SignalDebugPanel',
-#    'debug_toolbar.panels.logger.LoggingPanel',
-#)
+
+
+logging.basicConfig(
+    level=logging.DEBUG if DEBUG else logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+if DEBUG:
+    try:
+        # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
+        import debug_toolbar
+        INTERNAL_IPS = ('127.0.0.1',)
+        DEBUG_TOOLBAR_PANELS = (
+            'debug_toolbar.panels.version.VersionDebugPanel',
+            'debug_toolbar.panels.timer.TimerDebugPanel',
+            'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+            'debug_toolbar.panels.headers.HeaderDebugPanel',
+            'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
+            'debug_toolbar.panels.template.TemplateDebugPanel',
+            'debug_toolbar.panels.sql.SQLDebugPanel',
+            'debug_toolbar.panels.signals.SignalDebugPanel',
+            'debug_toolbar.panels.logger.LoggingPanel',
+        )
+        INSTALLED_APPS += ('debug_toolbar',)
+        MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+    except ImportError:
+        #logging.info("Running debug mode without debug_toolbar: install it if you need it")
+        pass
+
+
+
 
 FORCE_SCRIPT_NAME=""
 
