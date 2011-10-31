@@ -18,11 +18,11 @@ urlpatterns = patterns('',
     
     url(r'^ping$',          'box.views.ping',         name='ping'),
     
-    url(r'^stb/(?P<path>.*)$', 'django.views.static.serve', {
-            'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/dist-stb/",
+    url(r'^debug/(?P<path>.*)$', 'django.views.static.serve', {
+            'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/src/",
         }),
     url(r'^$',     direct_to_template, {'template': 'box/index.html'}),
     url(r'^(?P<path>.*)$', 'django.views.static.serve', {
-            'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/dist-srv/",
+            'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/dist/",
         }),
     )
