@@ -2,7 +2,6 @@
 
 import sys
 import os
-import logging
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
@@ -68,12 +67,29 @@ USE_I18N = True
 USE_L10N = True
 
 
-MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-STATIC_ROOT = '/var/www/html/tvfiles/static/'
-STATIC_URL = '/tvfiles/static/'
+#MEDIA_URL = '/tvfiles/media/'
+#MEDIA_ROOT = '/var/www/html/tvfiles/media/'
+#ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+#STATIC_ROOT = '/var/www/html/tvfiles/static/'
+#STATIC_URL = '/tvfiles/static/'
+#ROOT_URL = 'tv/'
+
 ROOT_URL = 'tv/'
+MEDIA_URL = '/tvfiles/media/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
+ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
+STATIC_URL = '/tvfiles/static/'
+#ROOT_URLCONF = '/tv'
+
+LOGIN_URL = '/'+ROOT_URL+'accounts/login'
+LOGIN_REDIRECT_URL = '/'+ROOT_URL+'administracao/'
+
+#^/canal/(add|remove|edit|delete)/(.*)$
+LOGIN_REQUIRED_URLS = (
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
+)
 
 
 # Make this unique, and don't share it with anybody.
@@ -84,7 +100,7 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    #os.path.join(PROJECT_ROOT_PATH,'static/'),
+    #os.path.join(PROJECT_ROOT_PATH,'tvfiles','static'),
     #'/var/www/html/%sstatic/',
 )
 
@@ -102,14 +118,15 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.Loader',
 #     'django.template.loaders.eggs.Loader',
 )
-
+#MessageMiddleware
+#from django.contrib.messages.middleware.MessageMiddleware
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'lib.middleware.login.RequireLoginMiddleware',
+    #'lib.middleware.login.RequireLoginMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -118,8 +135,26 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_ROOT_PATH,'templates/')
+    os.path.join(PROJECT_ROOT_PATH,'templates')
 )
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    }
+}
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -136,19 +171,9 @@ INSTALLED_APPS = (
     # Interface dos setup-box
     'box',
     # Pagina de home
-    'home',
+    #'home',
     # Aplicação de controle de stream
     'stream',
-)
-
-LOGIN_URL = ROOT_URL+'accounts/login'
-
-LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
-
-#^/canal/(add|remove|edit|delete)/(.*)$
-LOGIN_REQUIRED_URLS = (
-    r'^/%scanal/((?!canallist$))$',
-    r'^/%sadmin/(.*)$',
 )
 
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
@@ -161,13 +186,7 @@ DVBLAST_COMMAND = '/usr/bin/dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
 
-
-
-logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
-    format='%(levelname)s: %(message)s'
-)
-if DEBUG:
+if DEBUG == True:
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
@@ -186,7 +205,6 @@ if DEBUG:
         INSTALLED_APPS += ('debug_toolbar',)
         MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
     except ImportError:
-        #logging.info("Running debug mode without debug_toolbar: install it if you need it")
         pass
 
 

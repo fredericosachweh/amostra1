@@ -99,7 +99,33 @@ class PlayerTest(TestCase):
         p.stop_stream(s)
         l = p.list_running()
         self.assertEqual(len(l), 0, 'A lista de processos deveria ser vazia')
+
+
+class DVBTestMAC(TestCase):
+    """
+    Teste de link entre o device DVB
+    """
+    def test_get_adapter(self):
+        import os
+        # a1 = 00:18:BD:5D:DE:14 
+        # a0 = 00:18:BD:5D:D9:F4
+        f0 = open('/dev/dvb/adapter0.mac','w')
+        f1 = open('/dev/dvb/adapter1.mac','w')
+        f0.write('00:18:BD:5D:D9:F4\n')
+        f1.write('00:18:BD:5D:DE:14\n')
+        f0.close()
+        f1.close()
         
+        from models import DVBSource
+        dvb0 = DVBSource.objects.create(name='Teste 0',device='-f 3390000 -s 7400000 -m psk_8 -U -u -d 239.0.1.1:10000',hardware_id='00:18:BD:5D:D9:F4')
+        dvb1 = DVBSource.objects.create(name='Teste 1',device='-f 3274000 -s 5926000 -U -u -d 239.0.1.2:10000',hardware_id='00:18:BD:5D:DE:14')
+        dvb0.save()
+        dvb1.save()
+        self.assertEqual(dvb0.get_adapter(), 0, 'O adaptador deveria ser o 0')
+        self.assertEqual(dvb1.get_adapter(), 1, 'O adaptador deveria ser o 1')
+        
+        
+
 class DVBTest(TestCase):
     """
     Testes do device dvb

@@ -1,8 +1,11 @@
 # -*- encoding:utf-8 -*-
 
-import sys,os
+import sys
+import os
 
-PROJECT_ROOT_PATH = os.path.dirname(__file__)
+PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
+
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
@@ -11,6 +14,7 @@ TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
+    ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -62,13 +66,31 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-MEDIA_URL = '/media/'
-#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tv','media')
-MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
-ADMIN_MEDIA_PREFIX = '/static/admin/'
-STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
-STATIC_URL = '/static/'
-ROOT_URL = ''
+
+#MEDIA_URL = '/tvfiles/media/'
+#MEDIA_ROOT = '/var/www/html/tvfiles/media/'
+#ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+#STATIC_ROOT = '/var/www/html/tvfiles/static/'
+#STATIC_URL = '/tvfiles/static/'
+#ROOT_URL = 'tv/'
+
+ROOT_URL = 'tv/'
+MEDIA_URL = '/tvfiles/media/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
+ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
+STATIC_URL = '/tvfiles/static/'
+#ROOT_URLCONF = '/tv'
+
+LOGIN_URL = '/'+ROOT_URL+'accounts/login'
+LOGIN_REDIRECT_URL = '/'+ROOT_URL+'administracao/'
+
+#^/canal/(add|remove|edit|delete)/(.*)$
+LOGIN_REQUIRED_URLS = (
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
+)
+
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lxl'
@@ -78,8 +100,8 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    #os.path.join(PROJECT_ROOT_PATH,'static/'),
-    #'/var/www/html/static/',
+    #os.path.join(PROJECT_ROOT_PATH,'tvfiles','static'),
+    #'/var/www/html/%sstatic/',
 )
 
 # List of finder classes that know how to find static files in
@@ -96,14 +118,15 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.Loader',
 #     'django.template.loaders.eggs.Loader',
 )
-
+#MessageMiddleware
+#from django.contrib.messages.middleware.MessageMiddleware
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'lib.middleware.login.RequireLoginMiddleware',
+    #'lib.middleware.login.RequireLoginMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -112,10 +135,26 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_ROOT_PATH,'templates/')
+    os.path.join(PROJECT_ROOT_PATH,'templates')
 )
 
-#FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    }
+}
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -125,34 +164,16 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    # Testes com nose
-    #'django_nose',
-    'debug_toolbar',
-    # Migração
-    'south',
+    # South http://south.aeracode.org/docs/
+    #'south',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
     'box',
     # Pagina de home
-    'home',
+    #'home',
     # Aplicação de controle de stream
     'stream',
-)
-
-#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
-#USE_TERMINAL_COLORS=True
-
-LOGIN_URL = ROOT_URL+'/accounts/login'
-
-#LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
-LOGIN_REDIRECT_URL = '/tv/administracao/'
-
-#^/canal/(add|remove|edit|delete)/(.*)$
-LOGIN_REQUIRED_URLS = (
-    r'^/canal/((?!canallist$))$',
-    r'^/admin/(.*)$',
 )
 
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
@@ -165,19 +186,28 @@ DVBLAST_COMMAND = '/usr/bin/dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
 
-INTERNAL_IPS = ('127.0.0.1',)
+if DEBUG == True:
+    try:
+        # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
+        import debug_toolbar
+        INTERNAL_IPS = ('127.0.0.1',)
+        DEBUG_TOOLBAR_PANELS = (
+            'debug_toolbar.panels.version.VersionDebugPanel',
+            'debug_toolbar.panels.timer.TimerDebugPanel',
+            'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+            'debug_toolbar.panels.headers.HeaderDebugPanel',
+            'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
+            'debug_toolbar.panels.template.TemplateDebugPanel',
+            'debug_toolbar.panels.sql.SQLDebugPanel',
+            'debug_toolbar.panels.signals.SignalDebugPanel',
+            'debug_toolbar.panels.logger.LoggingPanel',
+        )
+        INSTALLED_APPS += ('debug_toolbar',)
+        MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+    except ImportError:
+        pass
 
-DEBUG_TOOLBAR_PANELS = (
-    'debug_toolbar.panels.version.VersionDebugPanel',
-    'debug_toolbar.panels.timer.TimerDebugPanel',
-    'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
-    'debug_toolbar.panels.headers.HeaderDebugPanel',
-    'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-    'debug_toolbar.panels.template.TemplateDebugPanel',
-    'debug_toolbar.panels.sql.SQLDebugPanel',
-    'debug_toolbar.panels.signals.SignalDebugPanel',
-    'debug_toolbar.panels.logger.LoggingPanel',
-)
+
+
 
 FORCE_SCRIPT_NAME=""
-

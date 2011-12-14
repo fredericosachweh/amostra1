@@ -146,14 +146,19 @@ class DVB(object):
 
     def scan_channels(self, dvbsource):
         """
-        Inicia um processo de dvblast com o fluxo (stream)
-        retorna pid
+        Executa o processo de DVB para buscar os canais contidos no fluxo
+        retorna a lista de canais encontrados
+        TODO: execução remota
         """
         cmd = []
         from django.conf import settings
         dvb = settings.DVBLAST_COMMAND
         dvbsource.record_config()
         cmd.append(dvb)
+        if dvbsource.hardware_id is not None:
+            dev = dvbsource.get_adapter()
+            if dev >= 0:
+                cmd.append('-a %d'%dev)
         cmd.append('-c %s/channels.d/%s.conf' %(settings.DVBLAST_CONF_DIR,dvbsource.id))
         device = '%s'%dvbsource.device
         cmd.append(device)
@@ -168,11 +173,20 @@ class DVB(object):
         return ret
 
     def play_source(self,dvbsource):
+        """
+        Inicia um processo de dvblast com o fluxo (stream)
+        retorna pid
+        TODO: execução remota
+        """
         cmd = []
         from django.conf import settings
         dvb = settings.DVBLAST_DAEMON
         dvbsource.record_config()
         cmd.append(dvb)
+        if dvbsource.hardware_id is not None:
+            dev = dvbsource.get_adapter()
+            if dev >= 0:
+                cmd.append('-a %d'%dev)
         cmd.append('-c %s/channels.d/%s.conf' %(settings.DVBLAST_CONF_DIR,dvbsource.id))
         device = '%s'%dvbsource.device
         cmd.append(device)
@@ -183,10 +197,33 @@ class DVB(object):
         return pid_ret
 
     def stop_dvb(self,dvbsource):
+        """
+        Interrompe a execução do processo
+        TODO: execução remota
+        """
         if dvbsource.pid:
             os.kill(dvbsource.pid,signal.SIGKILL)
         return True
 
+    def is_playing(self,dvbsource):
+        if dvbsource.pid:
+            for p in list_procs():
+                if p['pid'] == dvbsource.pid:
+                    return True
+            #return psutil.pid_exists(stream.pid)
+        return False
+
+    def list_running(self):
+        lista = []
+        for proc in list_procs():
+            if proc['name'] == self._player_name:
+                lista.append(proc)
+        return lista
+
+    def kill_all(self):
+        for proc in self.list_running():
+            #print('kill_all:: Matando:%d'%proc['pid'])
+            os.kill(proc['pid'],signal.SIGKILL)
 
 
 

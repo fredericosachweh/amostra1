@@ -90,6 +90,15 @@ class Stream(models.Model):
         from stream.player import Player
         p = Player()
         p.stop_stream(self)
+        self.pid = None
+        self.save()
+    def autostart(self):
+        if self.pid is not None:
+            from stream.player import Player
+            p = Player()
+            if p.is_playing(self) is False:
+                self.play()
+        
 
 
 class DVBSource(models.Model):
@@ -99,10 +108,23 @@ class DVBSource(models.Model):
     name = models.CharField(_(u'Nome'),max_length=200)
     #frequency = models.PositiveIntegerField(u'Frequencia de MHz')
     #symbol_rate = models.PositiveIntegerField(u'Taxa de Simbolos')
-    device = models.CharField(u'Dispositivo',max_length=250,help_text='Ex.: -D @239.0.1.10:10000 | -a 2 -f 3870000 -s 1280000')
+    device = models.CharField(u'Dispositivo',max_length=250,help_text='Ex.: -D @239.0.1.10:10000 | -f 3870000 -s 1280000')
     pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
+    hardware_id = models.CharField(u'Identificação de hardware(MAC)',max_length=200,blank=True,null=True)
+    def get_adapter(self):
+        "Retorna o numero do adaptador que coicide com o endereço mac cadastrado, caso contrario retorna -1"
+        import os
+        for f in os.listdir('/dev/dvb'):
+            if f.endswith('.mac'):
+                adapter = int(f[7:-4])
+                macfile = open('/dev/dvb/%s'%f,'r')
+                mac = macfile.readline().strip()
+                macfile.close()
+                if mac == self.hardware_id:
+                    return adapter
+        return -1
     def __unicode__(self):
-        return self.name
+        return '%s->%s' %(self.name,self.hardware_id)
     def status(self):
         from stream.player import Player
         p = Player()
@@ -139,6 +161,14 @@ class DVBSource(models.Model):
         from player import DVB
         d = DVB()
         d.stop_dvb(self)
+        self.pid = None
+        self.save()
+    def autostart(self):
+        if self.pid is not None:
+            from player import DVB
+            d = DVB()
+            if d.is_playing(self) is False:
+                self.play()
 
 
 class DVBDestination(models.Model):
