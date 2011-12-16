@@ -49,3 +49,22 @@ def dvb_stop(request,streamid=None):
     stream.stop()
     return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
 
+
+def tvod_play(request):
+    from player import Player
+    #p = Player()
+    channel = '/mnt/backup/gravacoes/globomg'
+    #channel = '@239.0.1.2:10000'
+    ip = request.META.get('REMOTE_ADDR')
+    seek = request.GET.get('seek')
+    if seek:
+        seek = int(seek)
+    else:
+        seek =  60*5
+    port = 12000
+    p = Player()
+    pid = p.play_direct(channel, ip, port, seek)
+    resposta = '{"status":"OK","PID":"%s"}' %pid
+    return HttpResponse(resposta,mimetype='application/javascript')
+
+

@@ -81,7 +81,10 @@ def ping(request):
     try:
         import Image
     except:
-        from PIL import Image
+        try:
+            from PIL import Image
+        except:
+            pass
     image = Image.new("RGB", (1, 1), "black")
     
     response = HttpResponse(mimetype='image/png')

@@ -112,6 +112,24 @@ class Player(object):
         for proc in self.list_running():
             #print('kill_all:: Matando:%d'%proc['pid'])
             os.kill(proc['pid'],signal.SIGKILL)
+    
+    def play_direct(self,channel,ip,port,seek):
+        fps = 27000000
+        delta = seek*fps
+        cmd = []
+        cmd.append(self._playerapp)
+        cmd.append('-u')
+        cmd.append('-U')
+        cmd.append('-k -%d'%delta)
+        origem = '%s' %(channel)
+        destino = '%s:%s' %(ip,port)
+        cmd.append(origem)
+        cmd.append(destino)
+        scmd = ' '.join(cmd)
+        from easyprocess import Proc
+        stdout = Proc(scmd).call().stdout
+        pid_ret = int(stdout.strip())
+        return pid_ret
 
 
 
