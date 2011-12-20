@@ -111,17 +111,26 @@ class DVBSource(models.Model):
     device = models.CharField(u'Dispositivo',max_length=250,help_text='Ex.: -D @239.0.1.10:10000 | -f 3870000 -s 1280000')
     pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
     hardware_id = models.CharField(u'Identificação de hardware(MAC)',max_length=200,blank=True,null=True)
-    def get_adapter(self):
-        "Retorna o numero do adaptador que coicide com o endereço mac cadastrado, caso contrario retorna -1"
+    def get_adapter_list(self):
+        "Retorna a lista de adaptadores encontrados no SO"
         import os
+        adapters = []
+        if not os.path.exists('/dev/dvb'):
+            return adapters
         for f in os.listdir('/dev/dvb'):
             if f.endswith('.mac'):
                 adapter = int(f[7:-4])
                 macfile = open('/dev/dvb/%s'%f,'r')
                 mac = macfile.readline().strip()
+                adapters.append((adapter,mac))
                 macfile.close()
-                if mac == self.hardware_id:
-                    return adapter
+        #print(adapters)
+        return adapters
+    def get_adapter(self):
+        "Retorna o numero do adaptador que coicide com o endereço mac cadastrado, caso contrario retorna -1"
+        for adapter in self.get_adapter_list():
+            if adapter[1] == self.hardware_id:
+                return adapter[0]
         return -1
     def __unicode__(self):
         return '%s->%s' %(self.name,self.hardware_id)

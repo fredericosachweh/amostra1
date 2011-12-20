@@ -67,20 +67,19 @@ USE_I18N = True
 USE_L10N = True
 
 
-#MEDIA_URL = '/tvfiles/media/'
-#MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-#ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-#STATIC_ROOT = '/var/www/html/tvfiles/static/'
-#STATIC_URL = '/tvfiles/static/'
-#ROOT_URL = 'tv/'
-
-ROOT_URL = 'tv/'
 MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
+MEDIA_ROOT = '/var/www/html/tvfiles/media/'
 ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
+STATIC_ROOT = '/var/www/html/tvfiles/static/'
 STATIC_URL = '/tvfiles/static/'
-#ROOT_URLCONF = '/tv'
+ROOT_URL = 'tv/'
+
+#ROOT_URL = 'tv/'
+#MEDIA_URL = '/tvfiles/media/'
+#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
+#ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+#STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
+#STATIC_URL = '/tvfiles/static/'
 
 LOGIN_URL = '/'+ROOT_URL+'accounts/login'
 LOGIN_REDIRECT_URL = '/'+ROOT_URL+'administracao/'

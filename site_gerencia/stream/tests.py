@@ -107,6 +107,8 @@ class DVBTestMAC(TestCase):
     """
     def test_get_adapter(self):
         import os
+        if not os.path.exists('/dev/dvb'):
+            return
         # a1 = 00:18:BD:5D:DE:14 
         # a0 = 00:18:BD:5D:D9:F4
         f0 = open('/dev/dvb/adapter0.mac','w')
