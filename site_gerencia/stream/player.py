@@ -113,7 +113,7 @@ class Player(object):
             #print('kill_all:: Matando:%d'%proc['pid'])
             os.kill(proc['pid'],signal.SIGKILL)
     
-    def play_direct(self,channel,ip,port,seek):
+    def direct_play(self,channel,ip,port,seek):
         ## Por hora mata o processo anterior e inicia um novo com os parametros
         for proc in self.list_running():
             if proc['command'].find(ip) > 0:
@@ -134,6 +134,12 @@ class Player(object):
         stdout = Proc(scmd).call().stdout
         pid_ret = int(stdout.strip())
         return pid_ret
+    def direct_stop(self,ip):
+        ## Por hora mata o processo anterior e inicia um novo com os parametros
+        for proc in self.list_running():
+            if proc['command'].find(ip) > 0:
+                os.kill(proc['pid'],signal.SIGKILL)
+        
 
 
 

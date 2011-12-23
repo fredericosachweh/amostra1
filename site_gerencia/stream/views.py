@@ -57,22 +57,31 @@ def tvod(request):
     ip = request.META.get('REMOTE_ADDR')
     seek = request.GET.get('seek')
     channel_number = request.GET.get('channel')
+    channel = '%s/ch_%s' %(settings.CHANNEL_RECORD_DIR,channel_number)
+    if os.path.exists(channel) is False:
+        resposta = '{"status":"ERROR","message":"channel record %s does not existis"}' %channel_number
+        return HttpResponse(resposta,mimetype='application/javascript')
+        
     action = request.GET.get('action')
     # Grava:
     # multicat -r 97200000000 -u @239.0.1.1:10000 /ldslsdld/dsasd/ch_3
     # Roda unicast 5 min. 
     # multicat -U -k -$((60*5*27000000)) /ldslsdld/dsasd/ch_3 192.168.0.244:5000
-    #channel = os.path.join(settings.CHANNEL_RECORD_DIR,channel_number)
-    channel = '%s/ch_%s' %(settings.CHANNEL_RECORD_DIR,channel_number)
     if seek:
         seek = int(seek)
     else:
         seek =  60*5
     port = 12000
-    p = Player()
-    pid = p.play_direct(channel, ip, port, seek)
-    #pid = 9999
-    resposta = '{"status":"OK","PID":"%s","seek":%s,"channel_path":"%s","destination":"%s"}' %(pid,seek,channel,'%s:%d'%(ip,port))
-    return HttpResponse(resposta,mimetype='application/javascript')
+    if action == 'stop':
+        p = Player()
+        p.direct_stop(ip)
+        resposta = '{"status":"OK","command":"stop"}'
+        return HttpResponse(resposta,mimetype='application/javascript')
+    else:
+        p = Player()
+        pid = p.direct_play(channel, ip, port, seek)
+        resposta = '{"status":"OK","PID":"%s","seek":%s,"channel_path":"%s","destination":"%s"}' %(pid,seek,channel,'%s:%d'%(ip,port))
+        return HttpResponse(resposta,mimetype='application/javascript')
+    
 
 
