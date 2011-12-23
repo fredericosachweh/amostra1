@@ -59,7 +59,7 @@ def tvod(request):
     channel_number = request.GET.get('channel')
     channel = '%s/ch_%s' %(settings.CHANNEL_RECORD_DIR,channel_number)
     if os.path.exists(channel) is False:
-        resposta = '{"status":"ERROR","message":"channel record %s does not existis"}' %channel_number
+        resposta = '{"status":"ERROR","message":"channel record %s does not existis":"path":"%s"}' %(channel_number,channel)
         return HttpResponse(resposta,mimetype='application/javascript')
         
     action = request.GET.get('action')
