@@ -55,9 +55,9 @@ def tvod(request):
     from django.conf import settings
     import os
     ip = request.META.get('REMOTE_ADDR')
-    seek = request.POST.get('seek')
-    channel_number = request.POST.get('channel')
-    action = request.POST.get('action')
+    seek = request.GET.get('seek')
+    channel_number = request.GET.get('channel')
+    action = request.GET.get('action')
     # Grava:
     # multicat -r 97200000000 -u @239.0.1.1:10000 /ldslsdld/dsasd/ch_3
     # Roda unicast 5 min. 
