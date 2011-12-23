@@ -185,6 +185,7 @@ DVBLAST_COMMAND = '/usr/bin/dvblast'
 #DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
+CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
     try:

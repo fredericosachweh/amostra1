@@ -102,6 +102,7 @@ class Stream(models.Model):
 
 
 class DVBSource(models.Model):
+    ### alter table stream_dvbsource add hardware_id varchar (200);
     class Meta:
         verbose_name = _(u'Origem de fluxo DVB')
         verbose_name_plural = _(u'Origem de fluxo DVB')

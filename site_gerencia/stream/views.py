@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 #from stream.player import Player
 from models import Stream,DVBSource
 
-from models import Stream
+#from models import Stream
 
 def home(request):
     return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
@@ -50,13 +50,20 @@ def dvb_stop(request,streamid=None):
     return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
 
 
-def tvod_play(request):
+def tvod(request):
     from player import Player
-    #p = Player()
-    channel = '/mnt/backup/gravacoes/globomg'
-    #channel = '@239.0.1.2:10000'
+    from django.conf import settings
+    import os
     ip = request.META.get('REMOTE_ADDR')
-    seek = request.GET.get('seek')
+    seek = request.POST.get('seek')
+    channel_number = request.POST.get('channel')
+    action = request.POST.get('action')
+    # Grava:
+    # multicat -r 97200000000 -u @239.0.1.1:10000 /ldslsdld/dsasd/ch_3
+    # Roda unicast 5 min. 
+    # multicat -U -k -$((60*5*27000000)) /ldslsdld/dsasd/ch_3 192.168.0.244:5000
+    #channel = os.path.join(settings.CHANNEL_RECORD_DIR,channel_number)
+    channel = '%s/ch_%s' %(settings.CHANNEL_RECORD_DIR,channel_number)
     if seek:
         seek = int(seek)
     else:
@@ -64,7 +71,8 @@ def tvod_play(request):
     port = 12000
     p = Player()
     pid = p.play_direct(channel, ip, port, seek)
-    resposta = '{"status":"OK","PID":"%s"}' %pid
+    #pid = 9999
+    resposta = '{"status":"OK","PID":"%s","seek":%s,"channel_path":"%s","destination":"%s"}' %(pid,seek,channel,'%s:%d'%(ip,port))
     return HttpResponse(resposta,mimetype='application/javascript')
 
 

@@ -2,7 +2,8 @@
 # -*- encoding:utf-8 -*-
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.core.urlresolvers import reverse
 
 class PlayerTest(TestCase):
     def setUp(self):
@@ -328,7 +329,16 @@ debug: frontend has acquired carrier"""
         
         
 
-
+class TVODTest(TestCase):
+    def test_play_channel(self):
+        c = Client()
+        url = reverse('stream.views.tvod_play')
+        response = c.post(url, data={'seek':-200,'channel':3})
+        import simplejson as json
+        decoder = json.JSONDecoder()
+        objresponse = decoder.decode(response.content)
+        self.failUnlessEqual(objresponse['seek'],-200,'Deveria retornar o mesmo valor de seek')
+        #print(objresponse)
 
 
 

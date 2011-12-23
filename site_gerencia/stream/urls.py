@@ -11,5 +11,5 @@ urlpatterns = patterns('',
     (r'^fake_scan_dvb/(?P<dvbid>\d+)/$','stream.views.fake_scan_dvb'),
     (r'^dvb_play/(?P<streamid>\d+)/$','stream.views.dvb_play'),
     (r'^dvb_stop/(?P<streamid>\d+)/$','stream.views.dvb_stop'),
-    (r'^tvod_play/$','stream.views.tvod_play'),
+    (r'^tvod_play/$','stream.views.tvod'),
 )

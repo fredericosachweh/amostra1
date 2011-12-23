@@ -114,6 +114,10 @@ class Player(object):
             os.kill(proc['pid'],signal.SIGKILL)
     
     def play_direct(self,channel,ip,port,seek):
+        ## Por hora mata o processo anterior e inicia um novo com os parametros
+        for proc in self.list_running():
+            if proc['command'].find(ip) > 0:
+                os.kill(proc['pid'],signal.SIGKILL)
         fps = 27000000
         delta = seek*fps
         cmd = []
