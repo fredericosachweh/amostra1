@@ -54,6 +54,8 @@ class Record(models.Model):
         pass
     def stop(self):
         pass
+    def __unicode__(self):
+        return u'%s > %s' %(self.source,self.filename)
 
 class Stream(models.Model):
     """
