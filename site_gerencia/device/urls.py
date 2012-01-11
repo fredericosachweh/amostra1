@@ -4,8 +4,8 @@
 from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('',
-    (r'^$','stream.views.home'),
-#    (r'^play/(?P<streamid>\d+)/$','stream.views.play'),
+    (r'^$','device.views.home'),
+    (r'^ssh_status/(?P<pk>\d+)/$','device.views.ssh_status'),
 #    (r'^stop/(?P<streamid>\d+)/$','stream.views.stop'),
 #    (r'^scan_dvb/(?P<dvbid>\d+)/$','stream.views.scan_dvb'),
 #    (r'^fake_scan_dvb/(?P<dvbid>\d+)/$','stream.views.fake_scan_dvb'),
