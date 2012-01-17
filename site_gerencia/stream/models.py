@@ -11,6 +11,8 @@ class UniqueIP(models.Model):
     ip = models.IPAddressField(_(u'Endereço IP'),default='239.0.0.')
     port = models.PositiveSmallIntegerField(_(u'Porta'),default=10000)
     #XXX: Validar IP + PORTA devem ser unico
+    def __unicode__(self):
+        return '%s:%s'%(self.ip,self.port)
 
 class Source(UniqueIP):
     """

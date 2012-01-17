@@ -5,8 +5,6 @@ from django.db import models
 from stream import models as stream
 from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
-from lib.pexpect import pxssh
-import time
 
 class Server(models.Model):
     """
@@ -16,28 +14,46 @@ class Server(models.Model):
         verbose_name = _(u'Servidor de Recursos')
         verbose_name_plural = _(u'Servidores de Recursos')
     name = models.CharField(_(u'Nome'),max_length=100,unique=True)
-    ip = models.IPAddressField(_(u'Endereço IP'),blank=True,unique=True)
+    host = models.IPAddressField(_(u'Host'),blank=True,unique=True)
     username = models.CharField(_(u'Usuário'),max_length=200,blank=True)
     password = models.CharField(_(u'Senha'),max_length=200,blank=True)
     rsakey = models.TextField(_(u'Chave RSA'),blank=True)
     ssh_port = models.PositiveSmallIntegerField(_(u'Porta SSH'),blank=True,null=True,default=22)
-    status_time = models.DateTimeField(_(u'Data do último status'),blank=True,null=True)
+    modified = models.DateTimeField(_(u'Última modificação'),auto_now=True)
     status = models.BooleanField(_(u'Status'),default=False)
-    error = models.CharField(_(u'Mensagem de erro'),max_length=255,blank=True)
+    msg = models.TextField(_(u'Mensagem de retorno'),blank=True)
     def __unicode__(self):
         return '%s' %(self.name)
-    def statusUpdate(self):
-        """Faz conexão com servidor e valida se esta foi feita com sucesso, então
-        atualiza informações de status_time, status e/ou error"""
-        print 'pxssh statusUpdate: %s' %(self)
-        s = pxssh.pxssh()
-        print 'login: %s %s %s' %(self.ip, self.username, self.password)
-        s.login(self.ip, self.username, self.password)
-        time.sleep(0.5)
-        print 'comando uptime'
-        s.sendline('uptime')
-        time.sleep(0.5)
-        print s.before
+    def connect(self):
+        """Conecta-se ao servidor"""
+        from lib import ssh
+        s = None
+        try:
+            s = ssh.Connection(host = self.host, username = self.username, password = self.password)
+            self.status = True
+        except ValueError:
+            self.status = False
+            self.msg = ValueError;
+        self.save()
+        return s
+    
+    def execute(self, command):
+        """Executa um comando no servidor"""
+        s = self.connect()
+        w = None
+        try:
+            w = s.execute(command)
+            self.msg = w;
+            print('command: [%s] %s'%(command,self.msg))
+        except ValueError:
+            self.msg = ValueError
+            print('command fail')
+        self.save()
+        return w
+            
+               
+            
+        
 
 class Vlc(stream.SourceRelation):
     """
@@ -49,12 +65,36 @@ class Vlc(stream.SourceRelation):
     description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
     source = models.CharField(_(u'Origem'),max_length=255)
     server = models.ForeignKey(Server)
-    status = models.BooleanField(_(u'Status'),default=False)
-    pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True)
+    status = models.BooleanField(_(u'Status'),default=False,editable=False)
+    pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
     def __unicode__(self):
         return '[%s] %s > %s' %(self.server,self.source,self.destine)
-    def status(self):
-        pass
+    def start(self):
+        """Inicia processo do VLC"""
+        try:
+            c = self.server.execute('/usr/local/bin/vlcwrapper %s %s '%
+                                    (self.source, self.destine))
+            print('VLC: %s'%c)
+            self.status = True
+            self.pid = c[0]
+        except ValueError:
+            print('vlc execute error: %s'%ValueError)
+            self.status = False
+            self.pid = None
+        self.save()
+        return self.status
+    def stop(self):
+        """Interrompe processo do VLC"""
+        try:
+            self.server.execute('kill %s'%self.pid)
+            print('VLC: [stop] %s'%self.pid)
+            self.status = False
+            self.pid = None
+        except ValueError:
+            print('vlc execute error: %s'%ValueError)
+        self.save()
+        return not self.status
+        
 
 class Dvblast(models.Model):
     class Meta:
