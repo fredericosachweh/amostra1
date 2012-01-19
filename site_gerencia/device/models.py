@@ -7,9 +7,7 @@ from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
 
 class Server(models.Model):
-    """
-    Servidores e caracteristicas de conexão
-    """
+    """Servidores e caracteristicas de conexão"""
     class Meta:
         verbose_name = _(u'Servidor de Recursos')
         verbose_name_plural = _(u'Servidores de Recursos')
@@ -24,6 +22,10 @@ class Server(models.Model):
     msg = models.TextField(_(u'Mensagem de retorno'),blank=True)
     def __unicode__(self):
         return '%s' %(self.name)
+    def switch_link(self):
+        url = reverse('device.views.server_status',kwargs={'pk':self.id})
+        return '<a href="%s" id="server_id_%s" >Atualizar</a>'%(url,self.id)
+    switch_link.allow_tags = True
     def connect(self):
         """Conecta-se ao servidor"""
         from lib import ssh
@@ -37,28 +39,30 @@ class Server(models.Model):
         self.save()
         return s
     
-    def execute(self, command):
+    def execute(self, command, persist = False):
         """Executa um comando no servidor"""
-        s = self.connect()
-        w = None
+        try:
+            s = self.connect()
+        except Exception as ex:
+            self.msg = ex
+            self.status = False
+            self.save()
+            return None
         try:
             w = s.execute(command)
-            self.msg = w;
-            print('command: [%s] %s'%(command,self.msg))
-        except ValueError:
+        except Exception as ex:
             self.msg = ValueError
             print('command fail')
+        else:
+            self.msg = w;
+            print('command: [%s] %s'%(command,self.msg))
+        if not persist:
+            s.close()
         self.save()
         return w
-            
-               
-            
-        
 
 class Vlc(stream.SourceRelation):
-    """
-    VLC streaming device
-    """
+    """VLC streaming device"""
     class Meta:
         verbose_name = _(u'VLC')
         verbose_name_plural = _(u'VLC\'s')
@@ -94,7 +98,21 @@ class Vlc(stream.SourceRelation):
             print('vlc execute error: %s'%ValueError)
         self.save()
         return not self.status
-        
+    def server_status(self):
+        return self.server.status
+    server_status.boolean = True
+    def link_status(self):
+        if self.status and self.server.status:
+            return True
+        return False
+    link_status.boolean = True
+    def switch_link(self):
+        if self.status is True:
+            url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
+            return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
+        url = reverse('device.views.vlc_start',kwargs={'pk':self.id})
+        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+    switch_link.allow_tags = True
 
 class Dvblast(models.Model):
     class Meta:

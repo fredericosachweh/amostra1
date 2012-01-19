@@ -5,7 +5,7 @@ from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('',
     (r'^$','device.views.home'),
-    (r'^ssh_status/(?P<pk>\d+)/$','device.views.ssh_status'),
+    (r'^server/status/(?P<pk>\d+)/$','device.views.server_status'),
     (r'^vlc/start/(?P<pk>\d+)/$','device.views.vlc_start'),
     (r'^vlc/stop/(?P<pk>\d+)/$','device.views.vlc_stop'),
 #    (r'^scan_dvb/(?P<dvbid>\d+)/$','stream.views.scan_dvb'),

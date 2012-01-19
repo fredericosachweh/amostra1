@@ -9,6 +9,25 @@ from django.contrib import admin
 
 import models
 
+class AdminServer(admin.ModelAdmin):
+    readonly_fields = ('status','modified','msg',)
+    list_display = ('__unicode__','status','msg','switch_link',)
+    fieldsets = (
+      (None, {
+        'fields': (('status', 'modified', 'msg',),
+            ('name',), 
+            ('host', 'ssh_port',), 
+            ('username', 'password',),
+            ('rsakey'),
+        )
+      }),
+    )
+
+class AdminDevice(admin.ModelAdmin):
+    class Media:
+        js = ('jquery/jquery-1.6.2.js','player.js',)
+    list_display = ('__unicode__','status','link_status','server_status','switch_link',)
+
 class AdminStream(admin.ModelAdmin):
     #class Media:
     #    js = ('jquery/jquery-1.6.2.js','player.js',)
@@ -32,8 +51,8 @@ class AdminDVBSource(admin.ModelAdmin):
 
 
 #admin.site.register(models.Channel)
-admin.site.register(models.Server,AdminStream)
-admin.site.register(models.Vlc)
+admin.site.register(models.Server,AdminServer)
+admin.site.register(models.Vlc,AdminDevice)
 admin.site.register(models.Dvblast)
 admin.site.register(models.Multicat)
 admin.site.register(models.MulticatRecorder)
