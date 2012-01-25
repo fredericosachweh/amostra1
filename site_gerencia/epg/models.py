@@ -1,6 +1,13 @@
+#!/usr/bin/env python
+# -*- encoding:utf-8 -*-
+
 from django.db import models
 from django.db.models import signals
+from django import db
+from django.core.files.storage import FileSystemStorage
+import os
 
+from django.utils.translation import ugettext as _
 import logging
 import zipfile
 from lxml import etree
@@ -11,14 +18,61 @@ from types import NoneType
 from sys import getrefcount
 from guppy import hpy
 
-class Arquivo(models.Model):
-	filefield = models.FileField(upload_to='epg/')
+class Arquivo_Epg(models.Model):
+
+	class Meta:
+		verbose_name = _(u'Arquivo XML/ZIP EPG')
+		verbose_name_plural = _(u'Arquivos XML/ZIP EPG')
+	filefield = models.FileField(_(u'Arquivo a ser importado'),upload_to='epg/')
+	# Grabbed from <tv> element
+	source_info_url = models.CharField(_(u'Source info url'),max_length=100, blank=True, null=True)
+	source_info_name = models.CharField(_(u'Source info name'),max_length=100, blank=True, null=True)
+	source_data_url = models.CharField(_(u'Source data url'),max_length=100, blank=True, null=True)
+	generator_info_name = models.CharField(_(u'Generator info name'),max_length=100, blank=True, null=True)
+	generator_info_url = models.CharField(_(u'Generator info url'),max_length=100, blank=True, null=True)
+	# Time diference between the smallest and the farthest time
+	minor_start = models.DateTimeField(_(u'Menor tempo de inicio encontrado nos programas'),blank=True, null=True)
+	major_stop = models.DateTimeField(_(u'Maior tempo de final encontrado nos programas'),blank=True, null=True)
+	# Total number of elements in the file
+	numberofElements = models.PositiveIntegerField(_(u'Número de elementos neste arquivo'),blank=True, null=True)
 	def __unicode__(self):
 	        return self.filefield.path
 
-class Epg(models.Model):
-	generator_info_name = models.CharField(max_length=100)
-	generator_info_url = models.CharField(max_length=100)
+	def save(self, *args, **kwargs):
+
+		# It's necessary to get the real file path
+		# Call the "real" save() method.
+		super(Arquivo_Epg, self).save(*args, **kwargs)
+
+		path = str(self.filefield.path)
+		numberofElements = 0
+		if path.endswith('xml'):
+			file = open(path, 'r')
+			obj = XML_Epg_Importer(file)
+			numberofElements += obj.get_number_of_elements()
+			file.close()
+		elif path.endswith('zip'):
+			z = zipfile.ZipFile(path, 'r')
+			for f in z.namelist():
+				file = z.open(f)
+				obj = XML_Epg_Importer(file)
+				numberofElements += obj.get_number_of_elements()
+				file.close()
+		else:
+			raise Exception('Unknow file type to import')
+
+		# Update Arquivo_Epg fields
+		self.numberofElements = numberofElements
+		self.minor_start, self.major_stop = obj.get_period_of_the_file()
+		info = obj.get_xml_info()
+		self.source_info_url = info['source_info_url']
+		self.source_info_name = info['source_info_name']
+		self.source_data_url = info['source_data_url']
+		self.generator_info_name = info['generator_info_name']
+		self.generator_info_url = info['generator_info_url']
+
+		# Call the "real" save() method.
+		super(Arquivo_Epg, self).save(*args, **kwargs)
 
 class Lang(models.Model):
 	value = models.CharField(max_length=10)
@@ -83,11 +137,18 @@ class Programme(models.Model):
 	actors = models.ManyToManyField(Actor, blank=True, null=True)
 
 class XML_Epg_Importer:
-	def __init__(self,input):
-		self.input = input
+	def __init__(self,xml):
+		if type(xml) == str:
+			# Input is string
+			self.tree = etree.fromstring(xml)
+		else:
+			# Input is a file-like object (provides a read method)
+			self.tree = etree.parse(xml)
 
 	def __del__(self):
-		print 'Um objeto XML_Epg_Importer vai ser deletado'
+		print '********************************************'
+		print 'Um objeto XML_Epg_Importer vai ser deletado:', self
+		print '********************************************'
 
 	def __get_or_create_lang(self,lang):
 		if lang is None:
@@ -95,17 +156,57 @@ class XML_Epg_Importer:
         	L, created = Lang.objects.get_or_create(value=lang)
 	        return L
 
-	def parse_channel_elements(self,element_tree):
-		for e in element_tree.iter('channel'):
+	def count_channel_elements(self):
+		count = 0
+		for e in self.tree.iter('channel'):
+			count = count + 1
+		return count
+	
+	def count_programme_elements(self):
+		count = 0
+		for e in self.tree.iter('programme'):
+			count = count + 1
+		return count
+
+	def get_number_of_elements(self):
+		return self.count_channel_elements() + self.count_programme_elements()
+
+	def get_period_of_the_file(self):
+		minor_start = parse(self.tree.find('programme').get('start')[0:-6])
+		major_stop = parse(self.tree.find('programme').get('stop')[0:-6])
+		for e in self.tree.iter('programme'):
+			start = parse(e.get('start')[0:-6])
+			stop=parse(e.get('stop')[0:-6])
+			if minor_start > start:
+				minor_start=start
+			if major_stop < stop:
+				major_stop=stop
+		return minor_start,major_stop
+			
+	def get_xml_info(self):
+		tv = self.tree.getroot()
+		return { 'source_info_url' : tv.get('source-info-url'), \
+			'source_info_name' : tv.get('source-info-name'), \
+			'source_data_url' : tv.get('source-data-url'), \
+			'generator_info_name' : tv.get('generator-info-name'), \
+			'generator_info_url' : tv.get('generator-info-url') }
+
+	def parse_channel_elements(self):
+		for e in self.tree.iter('channel'):
 			C, created = Channel.objects.get_or_create(channelid=e.get('id'),icon_src = e.find('icon').get('src'))
 			for d in e.iter('display-name'):
 				D, created = Display_Name.objects.get_or_create(value=d.text,lang=self.__get_or_create_lang(d.get('lang')))
 				C.displays.add(D)
 			C.save()
 
-	def parse_programme_elements(self,element_tree):
-		for e in element_tree.iter('programme'):
-			chan, created = Channel.objects.get_or_create(channelid=e.get('channel'))
+	def parse_programme_elements(self):
+		for e in self.tree.iter('programme'):
+			# Get the channel object
+			try:
+				chan = Channel.objects.get(channelid=e.get('channel'))
+			except:
+				raise Exception('Trying to create a programme from a channel that wasn\'t created yet')
+			# Try to get a date element, if availble
 			try:
 				date=parse(e.find('date').text)
 			except:
@@ -169,24 +270,18 @@ class XML_Epg_Importer:
 			P.save()
 
 	def parse(self):
-		if type(self.input) == str:
-			# Input is string
-			tree = etree.fromstring(self.input)
-		else:
-			# Input is a file-like object (provides a read method)
-			tree = etree.parse(self.input)
-
 		# Parse <channel> elements
-		self.parse_channel_elements(tree)
-
+		self.parse_channel_elements()
 		# Parse <programme> elements
-		self.parse_programme_elements(tree)
+		self.parse_programme_elements()
+
+		print '*****************************'
+		print 'Number of processed elements:', self.get_number_of_elements()
+		print '*****************************'
 
 def arquivo_post_save(signal, instance, sender, **kwargs):
 
-	if instance.filefield is None:
-		raise Exception('Empty uploaded file path')
-
+	return
 	# TODO: Improve this handling
 	path = str(instance.filefield.path)
 	if path.endswith('xml'):
@@ -199,11 +294,21 @@ def arquivo_post_save(signal, instance, sender, **kwargs):
 		for f in z.namelist():
 			file = z.open(f)
 			obj = XML_Epg_Importer(file)
-			obj.parse()
+			obj.parse_channel_elements()
 			file.close()
 	else:
 		raise Exception('Unknow file type to import')
 
+def arquivo_post_delete(signal, instance, sender, **kwargs):
+	# Delete the archive
+	path = str(instance.filefield.path)
+	print '*********'
+	print 'Deleting:', path
+	print '*********'
+	try:
+		os.remove(path)
+	except:
+		print 'Could not remove the file:', path
 
-signals.post_save.connect(arquivo_post_save, sender=Arquivo)
-
+signals.post_save.connect(arquivo_post_save, sender=Arquivo_Epg)
+signals.post_delete.connect(arquivo_post_delete, sender=Arquivo_Epg)
