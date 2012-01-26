@@ -9,7 +9,17 @@ function callStop(streamId){
 	//$.ajax('/process/stop/'+streamId+'/');
 }
 
+var interval;
 
+function import_current_status( pk ) {
+	interval = window.setInterval(function(){
+		var resp = $.ajax({
+			url: '/tv/epg/import_status/' + pk + '/',
+			dataType: 'json',
+			success: update_progress_bar
+		})
+	}, 3000);
+}
 
 $(document).ready(function(){
 	var selector_import = "a#link-to-import-data";
@@ -19,12 +29,28 @@ $(document).ready(function(){
 	if ( pk ) {
 		$("a#link-to-import-data").click(function(){
 			import_epg( pk );
+			import_current_status( pk );
 		});
 		$("a#link-to-delete-data").click(function(){
 			delete_epg( pk );
+			import_current_status( pk );
 		});
 	}
+	$(function(){
+		$( "#progressbar" ).progressbar({
+			value: 0
+		});
+	});
 });
+
+function update_progress_bar( data ){
+	$( "#progressbar" ).progressbar({
+		value: data
+	 });
+	if (data == 100){
+		clearInterval(interval);
+	}
+}
 
 function import_epg_success( data ){
 	alert( data );

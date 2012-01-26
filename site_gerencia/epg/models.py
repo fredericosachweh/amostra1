@@ -2,6 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 from django.db import models
+from django.db import transaction
 from django.db.models import signals
 from django import db
 from django.core.files.storage import FileSystemStorage
@@ -34,6 +35,8 @@ class Arquivo_Epg(models.Model):
 	major_stop = models.DateTimeField(_(u'Maior tempo de final encontrado nos programas'),blank=True, null=True)
 	# Total number of elements in the file
 	numberofElements = models.PositiveIntegerField(_(u'Número de elementos neste arquivo'),blank=True, null=True)
+	# Number of imported elements
+	importedElements = models.PositiveIntegerField(_(u'Número de elementos ja importados'),blank=True, null=True)
 	def __unicode__(self):
 	        return self.filefield.path
 
@@ -42,6 +45,9 @@ class Arquivo_Epg(models.Model):
 		# It's necessary to get the real file path
 		# Call the "real" save() method.
 		super(Arquivo_Epg, self).save(*args, **kwargs)
+
+		if self.numberofElements > 0:
+			return
 
 		path = str(self.filefield.path)
 		numberofElements = 0
@@ -158,7 +164,8 @@ class Zip_to_XML:
 		return open(self.input_file)
 			
 class XML_Epg_Importer:
-	def __init__(self,xml):
+	def __init__(self,xml,arquivo_epg_instance=None):
+		self._arquivo_epg_instance=arquivo_epg_instance
 		if type(xml) == str:
 			# Input is string
 			print 'XML_Epg_Importer arg was a string:', self
@@ -214,6 +221,12 @@ class XML_Epg_Importer:
 			'generator_info_name' : tv.get('generator-info-name'), \
 			'generator_info_url' : tv.get('generator-info-url') }
 
+	@transaction.commit_on_success
+	def _increment_importedElements(self):
+		if isinstance(self._arquivo_epg_instance,Arquivo_Epg):
+			self._arquivo_epg_instance.importedElements = 1 + self._arquivo_epg_instance.importedElements
+			self._arquivo_epg_instance.save()
+
 	def parse_channel_elements(self):
 		for e in self.tree.iter('channel'):
 			C, created = Channel.objects.get_or_create(channelid=e.get('id'),icon_src = e.find('icon').get('src'))
@@ -221,6 +234,8 @@ class XML_Epg_Importer:
 				D, created = Display_Name.objects.get_or_create(value=d.text,lang=self.__get_or_create_lang(d.get('lang')))
 				C.displays.add(D)
 			C.save()
+			# Update Arquivo_Epg instance, for the progress bar
+                        self._increment_importedElements()
 
 	def parse_programme_elements(self):
 		for e in self.tree.iter('programme'):
@@ -291,6 +306,8 @@ class XML_Epg_Importer:
 
 			# Save relationship modifications
 			P.save()
+			# Update Arquivo_Epg instance, for the progress bar
+			self._increment_importedElements()
 
 	def parse(self):
 		# Parse <channel> elements
