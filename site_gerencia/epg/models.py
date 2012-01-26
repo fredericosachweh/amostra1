@@ -5,7 +5,6 @@ from django.db import models
 from django.db.models import signals
 from django import db
 from django.core.files.storage import FileSystemStorage
-import os
 
 from django.utils.translation import ugettext as _
 import logging
@@ -136,13 +135,37 @@ class Programme(models.Model):
 	directors = models.ManyToManyField(Director, blank=True, null=True)
 	actors = models.ManyToManyField(Actor, blank=True, null=True)
 
+class Zip_to_XML:
+	def __init__(self,input_file_path):
+		import mimetypes
+		file_type, encoding = mimetypes.guess_type(input_file_path)
+		if file_type == 'application/zip':
+			self.input_file = zipfile.ZipFile(input_file_path, 'r')
+			self.get_all_files = self._get_zip
+		elif file_type == 'application/xhtml+xml':
+			self.input_file = input_file_path
+			self.get_all_files = self._get_xml
+		else:
+			raise Exception('Unkown type of file to import')
+
+	def _get_zip(self):
+		ret = []
+		for f in self.input_file.namelist():
+			ret.append(self.input_file.open(f))
+		return ret
+
+	def _get_xml(self):
+		return open(self.input_file)
+			
 class XML_Epg_Importer:
 	def __init__(self,xml):
 		if type(xml) == str:
 			# Input is string
+			print 'XML_Epg_Importer arg was a string:', self
 			self.tree = etree.fromstring(xml)
 		else:
 			# Input is a file-like object (provides a read method)
+			print 'XML_Epg_Importer arg was a file-like object:', self
 			self.tree = etree.parse(xml)
 
 	def __del__(self):
@@ -279,27 +302,8 @@ class XML_Epg_Importer:
 		print 'Number of processed elements:', self.get_number_of_elements()
 		print '*****************************'
 
-def arquivo_post_save(signal, instance, sender, **kwargs):
-
-	return
-	# TODO: Improve this handling
-	path = str(instance.filefield.path)
-	if path.endswith('xml'):
-		file = open(path, 'r')
-		obj = XML_Epg_Importer(file)
-		obj.parse()
-		file.close()
-	elif path.endswith('zip'):
-		z = zipfile.ZipFile(path, 'r')
-		for f in z.namelist():
-			file = z.open(f)
-			obj = XML_Epg_Importer(file)
-			obj.parse_channel_elements()
-			file.close()
-	else:
-		raise Exception('Unknow file type to import')
-
 def arquivo_post_delete(signal, instance, sender, **kwargs):
+	import os
 	# Delete the archive
 	path = str(instance.filefield.path)
 	print '*********'
@@ -309,6 +313,5 @@ def arquivo_post_delete(signal, instance, sender, **kwargs):
 		os.remove(path)
 	except:
 		print 'Could not remove the file:', path
-
-signals.post_save.connect(arquivo_post_save, sender=Arquivo_Epg)
+			
 signals.post_delete.connect(arquivo_post_delete, sender=Arquivo_Epg)

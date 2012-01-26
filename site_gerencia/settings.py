@@ -10,6 +10,8 @@ PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
+sys.path.append('../modules/django-dowser')
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -141,6 +143,7 @@ INSTALLED_APPS = (
     'stream',
     # EPG
     'epg',
+    'django_dowser',
 )
 
 LOGIN_URL = '/'+ROOT_URL+'accounts/login'
