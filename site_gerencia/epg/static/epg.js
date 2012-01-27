@@ -11,7 +11,7 @@ function callStop(streamId){
 
 var interval;
 
-function import_current_status( pk ) {
+function operation_current_status( pk ) {
 	interval = window.setInterval(function(){
 		var resp = $.ajax({
 			url: '/tv/epg/import_status/' + pk + '/',
@@ -24,16 +24,16 @@ function import_current_status( pk ) {
 $(document).ready(function(){
 	var selector_import = "a#link-to-import-data";
 	var selector_delete = "a#link-to-delete-data";
-	var patt=/arquivo_epg\/(\d*)\//;
+	var patt=/epg_source\/(\d*)\//;
 	var pk = patt.exec( document.location.href )[1];
 	if ( pk ) {
 		$("a#link-to-import-data").click(function(){
 			import_epg( pk );
-			import_current_status( pk );
+			operation_current_status( pk );
 		});
 		$("a#link-to-delete-data").click(function(){
 			delete_epg( pk );
-			import_current_status( pk );
+			operation_current_status( pk );
 		});
 	}
 	$(function(){
@@ -47,25 +47,34 @@ function update_progress_bar( data ){
 	$( "#progressbar" ).progressbar({
 		value: data
 	 });
+	/* Stop on 100% */
 	if (data == 100){
 		clearInterval(interval);
 	}
 }
 
 function import_epg_success( data ){
-	alert( data );
+	alert( "import_epg_success" + data );
+}
+
+function delete_epg_success( data ){
+	alert( "delete_epg_success" + data );
 }
 
 function import_epg( pk ){
 	var resp = $.ajax({
-		url: '/tv/epg/import/' + pk + '/',
+		url: '/tv/epg/import_to_db/' + pk + '/',
 		dataType: 'json',
 		success: import_epg_success
 	});
 }
 
 function delete_epg( pk ){
-	alert( "delete " + pk );
+	var resp = $.ajax({
+		url: '/tv/epg/delete_from_db/' + pk + '/',
+		dataType: 'json',
+		success: delete_epg_success
+	});
 }
 
 function scan_dvb_success(data){
