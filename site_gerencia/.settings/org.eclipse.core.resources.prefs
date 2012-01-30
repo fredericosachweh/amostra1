@@ -1,4 +1,4 @@
-#Fri Oct 07 16:10:42 BRT 2011
+#Tue Jan 17 10:15:13 BRST 2012
 =\=\=\=\=\=\=
 <<<<<<<=HEAD
 >>>>>>>=114d48ffce5f025bf5a949967d5427d97b15dd02
@@ -10,4 +10,6 @@ encoding//box/views.py=utf-8
 encoding//canal/models.py=utf8
 encoding//canal/tests.py=utf-8
 encoding//canal/views.py=utf8
+encoding/claudio.py=utf-8
 encoding/settings.py=utf-8
+encoding/urls.py=utf8
