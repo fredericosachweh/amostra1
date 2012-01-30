@@ -9,6 +9,8 @@ PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
+sys.path.append('../modules/django-dowser')
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -37,8 +39,8 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
             'NAME': 'iptv',                      # Or path to database file if using sqlite3.
-            'USER': 'iptv',                      # Not used with sqlite3.
-            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',          # Not used with sqlite3.
+            'USER': 'root',                      # Not used with sqlite3.
+            'PASSWORD': 'root',          # Not used with sqlite3.
             'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
             'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
         }
@@ -175,6 +177,19 @@ INSTALLED_APPS = (
     #'home',
     # Aplicação de controle de stream
     'stream',
+    # EPG
+    'epg',
+    'django_dowser',
+)
+
+LOGIN_URL = '/'+ROOT_URL+'accounts/login'
+
+LOGIN_REDIRECT_URL = '/'+ROOT_URL+'administracao/'
+
+#^/canal/(add|remove|edit|delete)/(.*)$
+LOGIN_REQUIRED_URLS = (
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
 )
 
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
