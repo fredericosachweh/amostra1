@@ -18,12 +18,24 @@ def server_status(request,pk=None):
 
 def vlc_start(request,pk=None):
     print 'vlc_start'
-    vlc = get_object_or_404(models.Vlc,id=pk)
-    vlc.start()
+    o = get_object_or_404(models.Vlc,id=pk)
+    o.start()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
 def vlc_stop(request,pk=None):
     print 'vlc_stop'
-    vlc = get_object_or_404(models.Vlc,id=pk)
-    vlc.stop()
+    o = get_object_or_404(models.Vlc,id=pk)
+    o.stop()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
+
+def multicat_start(request,pk=None):
+    print 'multicat_start'
+    o = get_object_or_404(models.Multicat,id=pk)
+    o.start()
+    return HttpResponseRedirect(reverse('admin:device_multicat_changelist'))
+
+def multicat_stop(request,pk=None):
+    print 'multicat_stop'
+    o = get_object_or_404(models.Multicat,id=pk)
+    o.stop()
+    return HttpResponseRedirect(reverse('admin:device_multicat_changelist'))

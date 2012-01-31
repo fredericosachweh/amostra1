@@ -9,10 +9,11 @@ from django.contrib import admin
 
 import models
 
-#class AdminStream(admin.ModelAdmin):
+
+class AdminSource(admin.ModelAdmin):
     #class Media:
     #    js = ('jquery/jquery-1.6.2.js','player.js',)
-#    list_display = ('__unicode__','status',)
+    list_display = ('__unicode__','in_use','destinations',)
 
 
 
@@ -32,7 +33,7 @@ import models
 
 
 #admin.site.register(models.Channel)
-admin.site.register(models.Source)
+admin.site.register(models.Source, AdminSource)
 admin.site.register(models.Destination)
 
 

@@ -28,6 +28,11 @@ class Source(UniqueIP):
         rtp = '[RTP]' if self.is_rtp else ''
         desc = '- %s'%(self.desc) if self.desc else ''
         return '%s:%d %s %s' %(self.ip,self.port,rtp,desc)
+    def destinations(self):
+        return self.destination_set.all()
+    def in_use(self):
+        return bool(self.sourcerelation)
+    in_use.boolean = True
 
 class SourceRelation(models.Model):
     """

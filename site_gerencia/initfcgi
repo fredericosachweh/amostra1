@@ -1,8 +1,8 @@
 #!/bin/bash
 
-SETTINGS=settings
+SETTINGS=gartz
 METHOD=prefork
-DEAMONIZE=true
+DEAMONIZE=false
 PYTHONPATH=".:.."
 
 PROJECT_DIR=$(dirname $0)

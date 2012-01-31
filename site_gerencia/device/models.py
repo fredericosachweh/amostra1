@@ -75,10 +75,15 @@ class Vlc(stream.SourceRelation):
         return '[%s] %s > %s' %(self.server,self.source,self.destine)
     def start(self):
         """Inicia processo do VLC"""
+        pid_uri = '~/%s.pid'%(str(self.destine).strip())
         try:
-            c = self.server.execute('/usr/local/bin/vlcwrapper %s %s '%
-                                    (self.source, self.destine))
-            print('VLC: %s'%c)
+            c = self.server.execute('/usr/bin/vlc -I dummy --daemon -v -R %s ' \
+                '--sout \"#std{access=udp,mux=ts,dst=%s }\" ' \
+                '--pidfile %s >/dev/null 2>&1 & '%
+                                    (self.source, self.destine, pid_uri), persist=True)
+            print 'VLC: %s'%c
+            c = self.server.execute('cat %s'%pid_uri)
+            print 'VLC: %s'%c
             self.status = True
             self.pid = c[0]
         except ValueError:
@@ -177,6 +182,54 @@ class Multicat(stream.SourceRelation):
     ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'))
     parans = models.CharField(_(u'Parâmetros extra'),max_length=255,blank=True)
+    server = models.ForeignKey(Server)
+    status = models.BooleanField(_(u'Status'),default=False,editable=False)
+    pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
+    def __unicode__(self):
+        return '%s:%s -> %s'%(self.ip,self.port,self.destine)
+    def start(self):
+        """Inicia processo do Multicat"""
+        try:
+            c = self.server.execute('/usr/bin/multicat -u -U @%s:%s %s ' \
+                ' >/dev/null 2>&1 & '%
+                                    (self.ip, self.port, self.destine), persist=True)
+            print 'Multicat: %s'%c
+            c = self.server.execute('echo $@')
+            print 'Multicat: %s'%c
+            self.status = True
+            self.pid = c[0]
+        except ValueError:
+            print('vlc execute error: %s'%ValueError)
+            self.status = False
+            self.pid = None
+        self.save()
+        return self.status
+    def stop(self):
+        """Interrompe processo"""
+        try:
+            self.server.execute('kill %s'%self.pid)
+            print('Multicat: [stop] %s'%self.pid)
+            self.status = False
+            self.pid = None
+        except ValueError:
+            print('vlc execute error: %s'%ValueError)
+        self.save()
+        return not self.status
+    def server_status(self):
+        return self.server.status
+    server_status.boolean = True
+    def link_status(self):
+        if self.status and self.server.status:
+            return True
+        return False
+    link_status.boolean = True
+    def switch_link(self):
+        if self.status is True:
+            url = reverse('device.views.multicat_stop',kwargs={'pk':self.id})
+            return '<a href="%s" id="multicat_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
+        url = reverse('device.views.multicat_start',kwargs={'pk':self.id})
+        return '<a href="%s" id="multicat_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+    switch_link.allow_tags = True
 
 class MulticatRecorder(models.Model):
     """
