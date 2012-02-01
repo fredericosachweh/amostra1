@@ -4,9 +4,12 @@
 from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('',
-    (r'^$','stream.views.home'),
-#    (r'^play/(?P<streamid>\d+)/$','stream.views.play'),
-#    (r'^stop/(?P<streamid>\d+)/$','stream.views.stop'),
+    (r'^$','device.views.home'),
+    (r'^server/status/(?P<pk>\d+)/$','device.views.server_status'),
+    (r'^vlc/start/(?P<pk>\d+)/$','device.views.vlc_start'),
+    (r'^vlc/stop/(?P<pk>\d+)/$','device.views.vlc_stop'),
+    (r'^multicat/start/(?P<pk>\d+)/$','device.views.multicat_start'),
+    (r'^multicat/stop/(?P<pk>\d+)/$','device.views.multicat_stop'),
 #    (r'^scan_dvb/(?P<dvbid>\d+)/$','stream.views.scan_dvb'),
 #    (r'^fake_scan_dvb/(?P<dvbid>\d+)/$','stream.views.fake_scan_dvb'),
 #    (r'^dvb_play/(?P<streamid>\d+)/$','stream.views.dvb_play'),

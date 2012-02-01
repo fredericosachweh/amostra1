@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SETTINGS=claudio
+SETTINGS=gartz
 METHOD=prefork
 DEAMONIZE=false
 PYTHONPATH=".:.."
