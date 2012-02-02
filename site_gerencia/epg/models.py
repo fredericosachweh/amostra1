@@ -64,8 +64,8 @@ class Title(models.Model):
 	lang = models.ForeignKey(Lang)
 
 class Sub_Title(models.Model):
-        value = models.CharField(max_length=100)
-        lang = models.ForeignKey(Lang)
+	value = models.CharField(max_length=100)
+	lang = models.ForeignKey(Lang)
 
 class Director(models.Model):
 	name = models.CharField(max_length=100)
@@ -94,9 +94,6 @@ class Rating(models.Model):
 
 class Programme(models.Model):
 	source = models.ForeignKey(Epg_Source)
-	start = models.DateTimeField()
-	stop = models.DateTimeField()
-	channel = models.ForeignKey(Channel)
 	programid = models.CharField(max_length=10)
 	titles = models.ManyToManyField(Title, blank=True, null=True)
 	sub_titles = models.ManyToManyField(Sub_Title, blank=True, null=True)
@@ -109,9 +106,16 @@ class Programme(models.Model):
 	rating = models.ForeignKey(Rating, blank=True, null=True)
 	directors = models.ManyToManyField(Director, blank=True, null=True)
 	actors = models.ManyToManyField(Actor, blank=True, null=True)
+	
+class Guide(models.Model):
+	source = models.ForeignKey(Epg_Source)
+	programme = models.ForeignKey(Programme)
+	channel = models.ForeignKey(Channel)
+	start = models.DateTimeField(blank=True, null=True)
+	stop = models.DateTimeField(blank=True, null=True)
 
 # Signal used to delete the zip/xml file when a Epg_Source object is deleted from db
-def arquivo_post_delete(signal, instance, sender, **kwargs):
+def dvb_source_post_delete(signal, instance, sender, **kwargs):
 	import os
 	# Delete the archive
 	path = str(instance.filefield.path)
@@ -123,4 +127,4 @@ def arquivo_post_delete(signal, instance, sender, **kwargs):
 	except:
 		print 'Could not remove the file:', path
 			
-signals.post_delete.connect(arquivo_post_delete, sender=Epg_Source)
+signals.post_delete.connect(dvb_source_post_delete, sender=Epg_Source)

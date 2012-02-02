@@ -10,6 +10,8 @@ from types import NoneType
 
 from models import *
 
+from profilehooks import profile
+
 class Zip_to_XML:
 
 	def __init__(self,input_file_path):
@@ -46,12 +48,6 @@ class XML_Epg_Importer:
 		else:
 			# Input is a file-like object (provides a read method)
 			self.tree = etree.parse(xml)
-
-	def __get_or_create_lang(self,lang):
-		if lang is None:
-                	return None
-        	L, created = Lang.objects.get_or_create(value=lang)
-	        return L
 
 	def count_channel_elements(self):
 		count = 0
@@ -100,51 +96,84 @@ class XML_Epg_Importer:
 			self._epg_source_instance.importedElements -= 1
 			self._epg_source_instance.save()
 
-	def import_channel_elements(self):
-		for e in self.tree.iter('channel'):
-			C, created = Channel.objects.get_or_create(channelid=e.get('id'), \
-															icon_src = e.find('icon').get('src'), \
-															source=self._epg_source_instance, \
-															)
-			for d in e.iter('display-name'):
-				D, created = Display_Name.objects.get_or_create(value=d.text,lang=self.__get_or_create_lang(d.get('lang')))
-				C.displays.add(D)
-			C.save()
-			# Update Arquivo_Epg instance, for the progress bar
-                        self._increment_importedElements()
+	def _get_dict_for_langs(self):
+		# Search for lang attributes in the xml
+		lang_set = set()
+		for l in self.tree.findall(".//*[@lang]"):
+			lang_set.add(l.get('lang'))	# Auto exclude dupplicates
+		langs = dict()
+		for lang in lang_set:
+			L, created = Lang.objects.get_or_create(value=lang)
+			langs[lang]=L
+		return langs
 
-	def import_programme_elements(self):
-		for e in self.tree.iter('programme'):
-			# Get the channel object
+	@profile
+	def import_channel_elements_fast(self):
+	
+		# Search for lang attributes in the xml
+		langs = self._get_dict_for_langs()
+	
+		for e in self.tree.iter('channel'):
+			print '***********************************************************************************************'
 			try:
-				chan = Channel.objects.get(channelid=e.get('channel'))
+				C = Channel.objects.only('channelid').get(channelid=e.get('id'))
+				continue
 			except:
-				raise Exception('Trying to create a programme from a channel that wasn\'t created yet')
+				C = Channel.objects.create(source=self._epg_source_instance, \
+														icon_src = e.find('icon').get('src'), \
+														channelid=e.get('id'))
+			displays = []
+			for d in e.iter('display-name'):
+				D, created = Display_Name.objects.get_or_create(value=d.text,lang=langs[d.get('lang')])
+				displays.append(D)
+			
+			if len(displays) > 0:
+				C.displays.add(*displays)
+			# Update Arquivo_Epg instance, for the progress bar
+			#self._increment_importedElements()
+		
+	@profile
+	def import_programme_elements_fast(self):
+	
+		# Get channels from db
+		channels = dict()
+		for c in Channel.objects.only('channelid'):
+			channels[c.channelid] = c
+		# Search for lang attributes in the xml
+		langs = self._get_dict_for_langs()
+		
+		total = 1
+		
+		for e in self.tree.iter('programme'):
+			print '***********************************************************************************************'
 			# Try to get a date element, if availble
 			try:
 				date=parse(e.find('date').text)
 			except:
 				date=None
-			# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
-			P, created = Programme.objects.get_or_create(start=parse(e.get('start')[0:-6]), \
-								stop=parse(e.get('stop')[0:-6]), \
-								channel=chan, \
-								programid=e.get('program_id'), \
-								desc=e.find('desc').text, \
-								date=date, \
-								source=self._epg_source_instance, \
-								)
+
+			# Try to find the programme in db
+			try:
+				P = Programme.objects.only('programid').get(programid=e.get('program_id'))
+				continue
+			except:
+				# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
+				P = Programme.objects.create(programid=e.get('program_id'), \
+															desc=e.find('desc').text, \
+															date=date,
+															source=self._epg_source_instance)
+
 			# Get titles
 			for t in e.iter('title'):
-				T, created = Title.objects.get_or_create(value=t.text,lang=self.__get_or_create_lang(t.get('lang')))
+				T, created = Title.objects.get_or_create(value=t.text,lang=langs[t.get('lang')])
 				P.titles.add(T)
 			# Get Sub titles
 			for st in e.iter('sub-title'):
-				ST, created = Sub_Title.objects.get_or_create(value=st.text,lang=self.__get_or_create_lang(st.get('lang')))
+				ST, created = Sub_Title.objects.get_or_create(value=st.text,lang=langs[t.get('lang')])
 				P.sub_titles.add(ST)
 			# Get categories
 			for c in e.iter('category'):
-				C, created = Category.objects.get_or_create(value=c.text,lang=self.__get_or_create_lang(c.get('lang')))
+				C, created = Category.objects.get_or_create(value=c.text,lang=langs[t.get('lang')])
 				P.categories.add(C)
 			# Get video element
 			try:
@@ -181,16 +210,83 @@ class XML_Epg_Importer:
 					A, created = Actor.objects.get_or_create(name=a.text)
 					P.actors.add(A)
 
-			# Save relationship modifications
-			P.save()
 			# Update Epg_Source instance, for the progress bar
-			self._increment_importedElements()
+			#self._increment_importedElements()
+			#if total > 0:
+			#	total -= 1
+			#else:
+			#	break
 
+	def import_exibition_times(self):
+
+		total = 10
+
+		channels = dict()
+		programmes = dict()
+		
+		for c in list(Channel.objects.only('channelid').filter(source=self._epg_source_instance)):
+			channels[c.channelid] = c
+			
+		for p in list(Programme.objects.only('programid').filter(source=self._epg_source_instance)):
+			programmes[p.programid] = p
+		
+		for e in self.tree.iter('programme'):
+			print '***********************************************************************************************'
+			try:
+				#c = channels.get(channelid=e.get('channel'))
+				c = channels[e.get('channel')]
+				#p = programmes.get(programid=e.get('program_id'))
+				p = programmes[e.get('program_id')]
+			except:
+				continue
+			G, created = Guide.objects.get_or_create(source=self._epg_source_instance, \
+																	channel=c, \
+																	programme=p, \
+																	start=parse(e.get('start')[0:-6]), \
+																	stop=parse(e.get('stop')[0:-6]))
+			#if total > 0:
+			#	total -= 1
+			#else:
+			#	break
+			
+	def import_exibition_times_bkp(self):
+
+		channels = list(Channel.objects.filter(source=self._epg_source_instance).only('channelid'))
+		programmes = list(Programme.objects.filter(source=self._epg_source_instance).only('programid'))
+		for c in channels:
+			print '***********************************************************************************************'
+			for p in programmes:
+				exibition_times = []
+				search_string = ".//programme[@program_id='%s'] and [@channel='%s']" % (p.programid, c.channelid)
+				print 'search_string:', search_string
+				for e in self.tree.findall(search_string):
+					start = parse(e.get('start'))
+					stop = parse(e.get('stop'))
+					BT, created = Programme_Time.objects.get_or_create(time=start.time())
+					BD, created = Programme_Date.objects.get_or_create(date=start.date())
+					ET, created = Programme_Time.objects.get_or_create(time=stop.time())
+					ED, created = Programme_Date.objects.get_or_create(date=stop.date())
+					begin, created = Programme_DateTime.objects.get_or_create(time=BT,date=BD)
+					end, created = Programme_DateTime.objects.get_or_create(time=ET,date=ED)
+					exibition, created = Programme_Exibition_Time.objects.get_or_create(start=begin,stop=end)
+					if created is True:
+						#exibition_times.append(exibition)
+						G, created = Guide_Item.objects.get_or_create(source=self._epg_source_instance, \
+																	channel=c, \
+																	programme=p)
+						G.exibition_times.add(G)
+						
+				#if len(exibition_times) > 0:
+					#G.exibition_times.add(*exibition_times)
+
+	@transaction.commit_on_success
 	def import_to_db(self):
 		# Import <channel> elements
-		self.import_channel_elements()
+		self.import_channel_elements_fast()
 		# Import <programme> elements
-		self.import_programme_elements()
+		self.import_programme_elements_fast()
+		# Import exibiton times
+		self.import_exibition_times()
 		
 	def delete_from_db(self):
 		# Delete <programme> elements
@@ -200,7 +296,7 @@ class XML_Epg_Importer:
 		# TODO: Maybe put inside a transaction, but I don't know if it's necessary
 		deleteElements = self._epg_source_instance.importedElements
 		self._epg_source_instance.importedElements = 0
-		self._epg_source_instance.importedElements.save()
+		self._epg_source_instance.save()
 		return deleteElements
 		
 def get_info_from_epg_source(epg_source):
