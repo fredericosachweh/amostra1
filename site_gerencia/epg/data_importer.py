@@ -50,16 +50,10 @@ class XML_Epg_Importer:
 			self.tree = etree.parse(xml)
 
 	def count_channel_elements(self):
-		count = 0
-		for e in self.tree.iter('channel'):
-			count = count + 1
-		return count
+		return len( self.tree.findall('channel') )
 	
 	def count_programme_elements(self):
-		count = 0
-		for e in self.tree.iter('programme'):
-			count = count + 1
-		return count
+		return len( self.tree.findall('programme') )
 
 	def get_number_of_elements(self):
 		return self.count_channel_elements() + self.count_programme_elements()
