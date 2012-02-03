@@ -10,7 +10,7 @@ from types import NoneType
 
 from models import *
 
-from profilehooks import profile
+#from profilehooks import profile
 
 class Zip_to_XML:
 
@@ -101,8 +101,7 @@ class XML_Epg_Importer:
 			langs[lang]=L
 		return langs
 
-	@profile
-	def import_channel_elements_fast(self):
+	def import_channel_elements(self):
 	
 		# Search for lang attributes in the xml
 		langs = self._get_dict_for_langs()
@@ -126,8 +125,7 @@ class XML_Epg_Importer:
 			# Update Arquivo_Epg instance, for the progress bar
 			#self._increment_importedElements()
 		
-	@profile
-	def import_programme_elements_fast(self):
+	def import_programme_elements(self):
 	
 		# Get channels from db
 		channels = dict()
@@ -135,8 +133,6 @@ class XML_Epg_Importer:
 			channels[c.channelid] = c
 		# Search for lang attributes in the xml
 		langs = self._get_dict_for_langs()
-		
-		total = 1
 		
 		for e in self.tree.iter('programme'):
 			print '***********************************************************************************************'
@@ -206,14 +202,8 @@ class XML_Epg_Importer:
 
 			# Update Epg_Source instance, for the progress bar
 			#self._increment_importedElements()
-			#if total > 0:
-			#	total -= 1
-			#else:
-			#	break
 
 	def import_exibition_times(self):
-
-		total = 10
 
 		channels = dict()
 		programmes = dict()
@@ -227,9 +217,7 @@ class XML_Epg_Importer:
 		for e in self.tree.iter('programme'):
 			print '***********************************************************************************************'
 			try:
-				#c = channels.get(channelid=e.get('channel'))
 				c = channels[e.get('channel')]
-				#p = programmes.get(programid=e.get('program_id'))
 				p = programmes[e.get('program_id')]
 			except:
 				continue
@@ -238,47 +226,13 @@ class XML_Epg_Importer:
 																	programme=p, \
 																	start=parse(e.get('start')[0:-6]), \
 																	stop=parse(e.get('stop')[0:-6]))
-			#if total > 0:
-			#	total -= 1
-			#else:
-			#	break
 			
-	def import_exibition_times_bkp(self):
-
-		channels = list(Channel.objects.filter(source=self._epg_source_instance).only('channelid'))
-		programmes = list(Programme.objects.filter(source=self._epg_source_instance).only('programid'))
-		for c in channels:
-			print '***********************************************************************************************'
-			for p in programmes:
-				exibition_times = []
-				search_string = ".//programme[@program_id='%s'] and [@channel='%s']" % (p.programid, c.channelid)
-				print 'search_string:', search_string
-				for e in self.tree.findall(search_string):
-					start = parse(e.get('start'))
-					stop = parse(e.get('stop'))
-					BT, created = Programme_Time.objects.get_or_create(time=start.time())
-					BD, created = Programme_Date.objects.get_or_create(date=start.date())
-					ET, created = Programme_Time.objects.get_or_create(time=stop.time())
-					ED, created = Programme_Date.objects.get_or_create(date=stop.date())
-					begin, created = Programme_DateTime.objects.get_or_create(time=BT,date=BD)
-					end, created = Programme_DateTime.objects.get_or_create(time=ET,date=ED)
-					exibition, created = Programme_Exibition_Time.objects.get_or_create(start=begin,stop=end)
-					if created is True:
-						#exibition_times.append(exibition)
-						G, created = Guide_Item.objects.get_or_create(source=self._epg_source_instance, \
-																	channel=c, \
-																	programme=p)
-						G.exibition_times.add(G)
-						
-				#if len(exibition_times) > 0:
-					#G.exibition_times.add(*exibition_times)
-
 	@transaction.commit_on_success
 	def import_to_db(self):
 		# Import <channel> elements
-		self.import_channel_elements_fast()
+		self.import_channel_elements()
 		# Import <programme> elements
-		self.import_programme_elements_fast()
+		self.import_programme_elements()
 		# Import exibiton times
 		self.import_exibition_times()
 		
