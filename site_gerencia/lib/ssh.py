@@ -17,6 +17,7 @@ class Connection(object):
                  ):
         self._sftp_live = False
         self._sftp = None
+        self._transport_live = False
         if not username:
             username = os.environ['LOGNAME']
 
@@ -26,12 +27,14 @@ class Connection(object):
 
         # Begin the SSH transport.
         self._transport = paramiko.Transport((host, port))
-        self._tranport_live = True
+        #self._transport.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self._transport_live = True
         # Authenticate the transport.
         if password:
             # Using Password.
-            self._transport.connect(username = username, password = password)
+            self._transport.connect(username = username, password = password )
         else:
+            #print(private_key)
             # Use Private Key.
             if not private_key:
                 # Try to use default key.
@@ -41,10 +44,11 @@ class Connection(object):
                     private_key = '~/.ssh/id_dsa'
                 else:
                     raise TypeError, "You have not specified a password or key."
-
             private_key_file = os.path.expanduser(private_key)
+            #paramiko.RSAKey.generate(2048)
             rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
-            self._transport.connect(username = username, pkey = rsa_key)
+            #print(private_key_file)
+            self._transport.connect(username = username, pkey = rsa_key)#password=password, 
     
     def _sftp_connect(self):
         """Establish the SFTP connection."""
@@ -83,9 +87,9 @@ class Connection(object):
             self._sftp.close()
             self._sftp_live = False
         # Close the SSH Transport.
-        if self._tranport_live:
+        if self._transport_live:
             self._transport.close()
-            self._tranport_live = False
+            self._transport_live = False
 
     def __del__(self):
         """Attempt to clean up if not explicitly closed."""

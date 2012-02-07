@@ -11,7 +11,7 @@ class Server(models.Model):
     class Meta:
         verbose_name = _(u'Servidor de Recursos')
         verbose_name_plural = _(u'Servidores de Recursos')
-    name = models.CharField(_(u'Nome'),max_length=100,unique=True)
+    name = models.CharField(_(u'Nome'),max_length=200,unique=True)
     host = models.IPAddressField(_(u'Host'),blank=True,unique=True)
     username = models.CharField(_(u'Usuário'),max_length=200,blank=True)
     password = models.CharField(_(u'Senha'),max_length=200,blank=True)
@@ -31,31 +31,34 @@ class Server(models.Model):
         from lib import ssh
         s = None
         try:
-            s = ssh.Connection(host = self.host, username = self.username, password = self.password)
+            s = ssh.Connection(host = self.host, username = self.username, password = self.password, private_key = self.rsakey)
             self.status = True
+            self.msg = 'OK'
         except ValueError:
             self.status = False
-            self.msg = ValueError;
+            self.msg = ValueError
         self.save()
         return s
     
     def execute(self, command, persist = False):
         """Executa um comando no servidor"""
+        #stdin, stdout, stderr = None,None,None
         try:
             s = self.connect()
+            self.msg = 'OK'
         except Exception as ex:
             self.msg = ex
             self.status = False
             self.save()
-            return None
+            #return None
         try:
             w = s.execute(command)
         except Exception as ex:
             self.msg = ValueError
-            print('command fail')
+            print('command fail',ex)
         else:
-            self.msg = w;
-            print('command: [%s] %s'%(command,self.msg))
+            self.msg = 'OK';
+            #print('command: [%s] %s'%(command,self.msg))
         if not persist:
             s.close()
         self.save()

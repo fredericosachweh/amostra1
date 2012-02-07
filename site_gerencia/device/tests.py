@@ -1,16 +1,24 @@
 """
-This file demonstrates writing tests using the unittest module. These will pass
-when you run "manage.py test".
 
-Replace this with more appropriate tests for your application.
 """
 
 from django.test import TestCase
 
-
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+class ConnectionTest(TestCase):
+    def test_connection(self):
+        from models import Server
+        srv = Server()
+        srv.name = 'local'
+        srv.host = '127.0.0.1'
+        srv.ssh_port = 22
+        srv.username = 'nginx'
+        #srv.password = 'iptv'
+        srv.rsakey = '/home/helber/.ssh/id_rsa_test'
+        srv.connect()
+        ret = srv.execute('/bin/pwd')
+        #print(ret)
+        self.asserttEqual(ret, '/var/lib/nginx\n', 'O home deveria ser "/var/lib/nginx\n"')
+    
+    def test_register_server(self):
+        from models import Server
+        
