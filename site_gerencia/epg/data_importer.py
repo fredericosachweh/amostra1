@@ -98,7 +98,7 @@ class XML_Epg_Importer:
 		langs = dict()
 		for lang in lang_set:
 			L, created = Lang.objects.get_or_create(value=lang)
-			langs[lang]=L
+			langs[lang]=L.id
 		return langs
 
 	def import_channel_elements(self):
@@ -107,21 +107,33 @@ class XML_Epg_Importer:
 		langs = self._get_dict_for_langs()
 	
 		for e in self.tree.iter('channel'):
-			print '***********************************************************************************************'
+
 			try:
 				C = Channel.objects.only('channelid').get(channelid=e.get('id'))
 				continue
 			except:
-				C = Channel.objects.create(source=self._epg_source_instance, \
-														icon_src = e.find('icon').get('src'), \
-														channelid=e.get('id'))
+				C = Channel.objects.create(source=self._epg_source_instance, channelid=e.get('id'))
+			# Display_Names
 			displays = []
 			for d in e.iter('display-name'):
-				D, created = Display_Name.objects.get_or_create(value=d.text,lang=langs[d.get('lang')])
+				D, created = Display_Name.objects.get_or_create(value=d.text,lang__id=langs[d.get('lang')])
 				displays.append(D)
-			
 			if len(displays) > 0:
-				C.displays.add(*displays)
+				C.display_names.add(*displays)
+			# Icons
+			icons = []
+			for i in e.iter('icon'):
+				I, created = Icon.objects.get_or_create(src=i.get('src'))
+				icons.append(I)
+			if len(icons) > 0:
+				C.icons.add(*icons)
+			# URLs
+			urls = []
+			for u in e.iter('url'):
+				U, created = Url.objects.get_or_create(value=u.text)
+				urls.append(U)
+			if len(urls) > 0:
+				C.urls.add(*urls)
 			# Update Arquivo_Epg instance, for the progress bar
 			#self._increment_importedElements()
 		
@@ -129,123 +141,177 @@ class XML_Epg_Importer:
 	
 		# Get channels from db
 		channels = dict()
-		for c in Channel.objects.only('channelid'):
-			channels[c.channelid] = c
+		for c in Channel.objects.values_list('channelid', 'pk'):
+			channels[c[0]] = c[1]
 		# Search for lang attributes in the xml
 		langs = self._get_dict_for_langs()
+		# init guide list
+		guide = []
 		
 		for e in self.tree.iter('programme'):
-			print '***********************************************************************************************'
-			# Try to get a date element, if availble
-			try:
-				date=parse(e.find('date').text)
-			except:
+
+			if e.find('date') is not None:
+				date=e.find('date').text
+			else:
 				date=None
 
 			# Try to find the programme in db
 			try:
 				P = Programme.objects.only('programid').get(programid=e.get('program_id'))
+				# Insert guide
+				# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
+				guide.append(Guide(source=self._epg_source_instance, \
+									start=parse(e.get('start')[0:-6]), \
+									stop=parse(e.get('stop')[0:-6]), \
+									channel_id=channels[e.get('channel')], \
+									programme_id=P.id))
 				continue
 			except:
-				# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
 				P = Programme.objects.create(programid=e.get('program_id'), \
-															desc=e.find('desc').text, \
 															date=date,
 															source=self._epg_source_instance)
-
+			# Insert guide
+			# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
+			guide.append(Guide(source=self._epg_source_instance, \
+								start=parse(e.get('start')[0:-6]), \
+								stop=parse(e.get('stop')[0:-6]), \
+								channel_id=channels[e.get('channel')], \
+								programme_id=P.id))
+			# Get descriptions
+			for d in e.iter('desc'):
+				if langs.has_key(d.get('lang')):
+					lang = langs[d.get('lang')]
+				else:
+					lang = None
+				D, created = Description.objects.get_or_create(value=d.text,lang_id=lang)
 			# Get titles
 			for t in e.iter('title'):
-				T, created = Title.objects.get_or_create(value=t.text,lang=langs[t.get('lang')])
+				T, created = Title.objects.get_or_create(value=t.text,lang_id=langs[t.get('lang')])
 				P.titles.add(T)
 			# Get Sub titles
 			for st in e.iter('sub-title'):
-				ST, created = Sub_Title.objects.get_or_create(value=st.text,lang=langs[t.get('lang')])
-				P.sub_titles.add(ST)
+				ST, created = Title.objects.get_or_create(value=st.text,lang_id=langs[st.get('lang')])
+				P.secondary_titles.add(ST)
 			# Get categories
 			for c in e.iter('category'):
-				C, created = Category.objects.get_or_create(value=c.text,lang=langs[t.get('lang')])
+				C, created = Category.objects.get_or_create(value=c.text,lang_id=langs[c.get('lang')])
 				P.categories.add(C)
-			# Get video element
-			try:
-				color=e.find('video').find('colour').text
-			except:
-				color=None
-			if color is not None:
-				V, created = Video.objects.get_or_create(color=e.find('video').find('colour').text)
-				P.video=V
+			# Get <video> element
+			video = e.find('video')
+			if video is not None:
+				if video.find('colour') is not None:
+					P.video_colour=video.find('colour').text
+				if video.find('present') is not None:
+					P.video_present=video.find('present').text
+				if video.find('aspect') is not None:
+					P.video_aspect=video.find('aspect').text
+				if video.find('quality') is not None:
+					P.video_quality=video.find('quality').text
+			# Get <audio> element
+			audio = e.find('audio')
+			if audio is not None:
+				if audio.find('present') is not None:
+					P.audio_present=audio.find('present').text
+				if audio.find('stereo') is not None:
+					P.audio_stereo=audio.find('stereo').text
 			# Get country element
 			try:
 				country=e.find('country').text
-			except:
-				country=None
-			if country is not None:
 				Ct, created = Country.objects.get_or_create(value=country)
 				P.country=Ct
-			# Get rating
+			except:
+				pass
+			# Get <rating>
+			rating = e.find('rating')
+			if rating is not None:
+				system=rating.get('system')
 			try:
-				system=e.find('rating').get('system')
 				value=e.find('rating').find('value').text
 			except:
-				system=None
 				value=None
 			if (system is not None) and (value is not None):
 				R, created = Rating.objects.get_or_create(system=system,value=value)
 				P.rating=R
-			# Get credits
-			if type(e.find('credits')) is not NoneType:
-				for d in e.find('credits').iter('director'):
-					D, created = Director.objects.get_or_create(name=d.text)
-					P.directors.add(D)
-				for a in e.find('credits').iter('actor'):
-					A, created = Actor.objects.get_or_create(name=a.text)
+			# <star-rating>
+			for sr in e.findall('star-rating'):
+				SR, created = Star_Rating.objects.get_or_create(value=sr.find('value').text,system=sr.get('system'))
+				for i in sr.findall('icon'):
+					I, created = Icon.objects.get_or_create(src=i.get('src'))
+					SR.icons.add(I)
+				P.star_ratings.add(SR)
+			# <language>
+			language = e.find('language')
+			if language is not None:
+				L, created = Language.objects.get_or_create(value=language.text,lang_id=langs[language.get('lang')])
+				P.language=L
+			# <original_language>
+			original_language = e.find('original_language')
+			if original_language is not None:
+				L, created = Language.objects.get_or_create(value=original_language.text,lang_id=langs[original_language.get('lang')])
+				P.original_language=L
+			# <subtitles>
+			subtitles = e.find('subtitles')
+			if subtitles is not None:
+				for sub in subtitles.findall('language'):
+					L, created = Language.objects.get_or_create(value=sub.text,lang_id=langs[sub.get('lang')])
+					S, created = Subtitle.objects.get_or_create(language=L,subtitle_type=sub.get('type'))
+					P.subtitles.add(S)
+			# <length>
+			length = e.find('length')
+			if length is not None:
+				units = length.get('units')
+				if units == 'seconds':
+					P.length = int(length.text)
+				elif units == 'minutes':
+					P.length = int(length.text) * 60
+				elif units == 'hours':
+					P.length = int(length.text) * 3600							
+			# Get <credits>
+			credits = e.find('credits')
+			if credits is not None:
+				for a in credits.findall('actor'):
+					A, created = Actor.objects.get_or_create(name=a.text,role=a.get('role'))
 					P.actors.add(A)
-
+				for s in credits.findall('director'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.directors.add(S)
+				for s in credits.findall('writer'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.writers.add(S)
+				for s in credits.findall('adapter'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.adapters.add(S)
+				for s in credits.findall('producer'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.producers.add(S)
+				for s in credits.findall('composer'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.composers.add(S)
+				for s in credits.findall('editor'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.editors.add(S)
+				for s in credits.findall('presenter'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.presenters.add(S)
+				for s in credits.findall('commentator'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.commentators.add(S)
+				for s in credits.findall('guest'):
+					S, created = Staff.objects.get_or_create(name=s.text)
+					P.guests.add(S)					
+			P.save()
 			# Update Epg_Source instance, for the progress bar
 			#self._increment_importedElements()
+		# Bulk create guide records in chunks of 1000
+		for i in xrange(0, len(guide), 1000):
+			Guide.objects.bulk_create(guide[i:i+1000])
 
-	def import_exibition_times(self):
-
-		channels = dict()
-		programmes = dict()
-		
-		for c in list(Channel.objects.only('channelid').filter(source=self._epg_source_instance)):
-			channels[c.channelid] = c
-			
-		for p in list(Programme.objects.only('programid').filter(source=self._epg_source_instance)):
-			programmes[p.programid] = p
-		
-		for e in self.tree.iter('programme'):
-			print '***********************************************************************************************'
-			try:
-				c = channels[e.get('channel')]
-				p = programmes[e.get('program_id')]
-			except:
-				continue
-			G, created = Guide.objects.get_or_create(source=self._epg_source_instance, \
-																	channel=c, \
-																	programme=p, \
-																	start=parse(e.get('start')[0:-6]), \
-																	stop=parse(e.get('stop')[0:-6]))
-			
 	@transaction.commit_on_success
 	def import_to_db(self):
 		# Import <channel> elements
 		self.import_channel_elements()
 		# Import <programme> elements
 		self.import_programme_elements()
-		# Import exibiton times
-		self.import_exibition_times()
-		
-	def delete_from_db(self):
-		# Delete <programme> elements
-		Programme.objects.filter(source=self._epg_source_instance).delete()
-		# Delete <channel> elements
-		Channel.objects.filter(source=self._epg_source_instance).delete()
-		# TODO: Maybe put inside a transaction, but I don't know if it's necessary
-		deleteElements = self._epg_source_instance.importedElements
-		self._epg_source_instance.importedElements = 0
-		self._epg_source_instance.save()
-		return deleteElements
 		
 def get_info_from_epg_source(epg_source):
 
