@@ -79,6 +79,36 @@ class Connection(object):
             return output
         else:
             return channel.makefile_stderr('rb', -1).readlines()
+    
+    def new_execute(self,command):
+        import sys
+        channel = self._transport.open_session()
+        channel.settimeout(10)
+        channel.exec_command(command)
+        stderr = channel.makefile_stderr()
+        resp = ''
+        for t in range(200):
+            #sys.stdout.write(stderr.read(1))
+            try:
+                ## Neste ponto ocorre erro na rede ou timeout
+                linha = stderr.readlines(1)
+            except:
+                sys.stdout.write('ERROR: >>>%s\n' %t)
+                channel.send_exit_status(15)
+                channel.close()
+                return resp
+            if linha:
+                resp += linha[0]
+                sys.stdout.write('>>>%s\n' %linha)
+            #sys.stdout.write('O[%s]' %channel.recv(1))
+            if t == 200:
+                #sys.stdout.write('Saindo com 15')
+                channel.send_exit_status(15)
+                channel.close()
+            sys.stdout.flush()
+            #print(channel.recv(1))
+        return resp
+        
 
     def close(self):
         """Closes the connection and cleans up."""
@@ -94,6 +124,10 @@ class Connection(object):
     def __del__(self):
         """Attempt to clean up if not explicitly closed."""
         self.close()
+    
+    def genKey(self):
+        return paramiko.RSAKey.generate(2048)
+    
 
 def main():
     """Little test when called directly."""
