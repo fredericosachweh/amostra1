@@ -184,6 +184,7 @@ class XML_Epg_Importer:
 				else:
 					lang = None
 				D, created = Description.objects.get_or_create(value=d.text,lang_id=lang)
+				P.descriptions.add(D)
 			# Get titles
 			for t in e.iter('title'):
 				T, created = Title.objects.get_or_create(value=t.text,lang_id=langs[t.get('lang')])
