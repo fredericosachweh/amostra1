@@ -18,11 +18,8 @@ class ChannelHandler(BaseHandler):
 	def read(self, request, channel_ids=None, fields=None):
 	
 		if fields:
-			self.fields = [ 'id', ]
-			for f in fields.split(','):
-				self.fields.append( channel_fields[f] )
-		else:
-			self.fields = channel_fields.values()
+			self.fields = [f for f in fields.split(',') if f]
+			self.fields.append('id')
 		
 		base = Channel.objects
 		
@@ -83,11 +80,8 @@ class ProgrammeHandler(BaseHandler):
 	def read(self, request, programme_ids=None, fields=None):
 
 		if fields:
-			self.fields = [ 'id', ]
-			for f in fields.split(','):
-				self.fields.append( programme_fields[f] )
-		else:
-			self.fields = programme_fields.values()
+			self.fields = [f for f in fields.split(',') if f]
+			self.fields.append('id')
 
 		base = Programme.objects
 
@@ -172,11 +166,7 @@ class GuideHandler(BaseHandler):
 	def read(self, request, obj=None, ids=None, fields=None):
 	
 		if fields:
-			self.fields = []
-			for f in fields.split(','):
-				self.fields.append( guide_fields[f] )
-		else:
-			self.fields = guide_fields.values()
+			self.fields = [f for f in fields.split(',') if f]
 		
 		base = Guide.objects
 		
