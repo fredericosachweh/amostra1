@@ -28,7 +28,7 @@ class Epg_Source(models.Model):
 	importedElements = models.PositiveIntegerField(_(u'Número de elementos ja importados'),blank=True, null=True)
 	
 	def __unicode__(self):
-	        return self.filefield.path
+		return self.filefield.path
 
 	def save(self, *args, **kwargs):
 
