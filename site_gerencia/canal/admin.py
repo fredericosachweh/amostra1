@@ -37,7 +37,7 @@ class CanalAdmin(admin.ModelAdmin):
     Define modelo administrativo do Canal
     """
     fieldsets = ((None, {
-        'fields':( ('numero', 'nome', 'sigla'),'descricao', 'logo', ('ip', 'porta'), ),
+        'fields':( ('numero', 'nome', 'sigla'),'descricao', 'logo', ('ip', 'porta'), 'epg',),
         }), )
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
