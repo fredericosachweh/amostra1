@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import *
 from piston.resource import Resource
+from piston.doc import documentation_view
 from handlers import *
 
 channel_handler = Resource(ChannelHandler)
@@ -22,7 +23,7 @@ urlpatterns = patterns('',
 	url(r'^channels/$', channel_handler),
 	url(r'^channels/(?P<fields>((%s)(,)*)+)/$' % channel_filters, channel_handler),
 	url(r'^channels/(?P<channel_ids>(\d+(,)*)+)/$', channel_handler),
-	url(r'^channels/(?P<channel_ids>\d+)/(?P<fields>((%s)(,)*)+)/$' % channel_fields, channel_handler),
+	url(r'^channels/(?P<channel_ids>\d+)/(?P<fields>((%s)(,)*)+)/$' % channel_filters, channel_handler),
 
 	# REST interface for programme resources
 	url(r'^programmes/$', programme_handler),
@@ -33,4 +34,8 @@ urlpatterns = patterns('',
 	# REST interface for guide resources
 	url(r'^guide/$', guide_handler),
 	url(r'^guide/(?P<obj>(channels|programmes))/(?P<ids>(\d+(,)*)+)/$', guide_handler),
+	
+	# Auto generated documentation
+	url(r'^$', documentation_view),
+
 )

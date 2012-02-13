@@ -10,12 +10,17 @@ channel_fields = {	'id' : 'id',
 		'urls' : 'urls' }
 
 class ChannelHandler(BaseHandler):
+	'''
+	Handle channel resources
+	'''
 	allowed_methods = ('GET',)
 	model = Channel
 	fields = channel_fields.values()
 
-	@classmethod
 	def read(self, request, channel_ids=None, fields=None):
+		'''
+		Returns a set of channel resources
+		'''
 	
 		if fields:
 			self.fields = [f for f in fields.split(',') if f]
@@ -72,13 +77,18 @@ programme_fields = {	'id' : 'id',
 		'guests' : ('guests', ('name',)) }
 
 class ProgrammeHandler(BaseHandler):
+	'''
+	Handle programme resources
+	'''
 	allowed_methods = ('GET',)
 	model = Programme
 	fields = programme_fields.values()
 
-	@classmethod
 	def read(self, request, programme_ids=None, fields=None):
-
+		'''
+		Returns a set of programme resources
+		'''
+		
 		if fields:
 			self.fields = [f for f in fields.split(',') if f]
 			self.fields.append('id')
@@ -158,12 +168,17 @@ guide_fields = {	'programme' : 'programme_id',
 		'stop' : 'stop' }
 
 class GuideHandler(BaseHandler):
+	'''
+	Handle guide resources
+	'''
 	allowed_methods = ('GET',)
 	model = Guide
 	fields = guide_fields.values()
 
-	@classmethod
 	def read(self, request, obj=None, ids=None, fields=None):
+		'''
+		Returns a set of guide resources
+		'''
 	
 		if fields:
 			self.fields = [f for f in fields.split(',') if f]
