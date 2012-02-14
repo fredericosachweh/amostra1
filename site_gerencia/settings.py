@@ -17,6 +17,7 @@ ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
     ('Eduardo Vieira', 'eduardo@cianet.ind.br'),
+    ('Claudio Guirunas', 'claudio@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -38,8 +39,8 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
             'NAME': 'iptv',                      # Or path to database file if using sqlite3.
-            'USER': 'root',                      # Not used with sqlite3.
-            'PASSWORD': 'root',          # Not used with sqlite3.
+            'USER': 'iptv',                      # Not used with sqlite3.
+            'PASSWORD': 'iptv',          # Not used with sqlite3.
             'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
             'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
         }
@@ -175,7 +176,7 @@ if DEBUG:
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
-        INTERNAL_IPS = ('127.0.0.1',)
+        INTERNAL_IPS = ('127.0.0.3',)
         DEBUG_TOOLBAR_PANELS = (
             'debug_toolbar.panels.version.VersionDebugPanel',
             'debug_toolbar.panels.timer.TimerDebugPanel',
