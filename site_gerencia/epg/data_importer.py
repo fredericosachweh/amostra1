@@ -12,7 +12,12 @@ from models import *
 
 #from profilehooks import profile
 
-class Zip_to_XML:
+class Zip_to_XML(object):
+	'''
+	This class is used to pre-treat an input file
+	that can be a XML, a ZIP with one XML file inside or
+	a ZIP file with multiple XML files inside
+	'''
 
 	def __init__(self,input_file_path):
 		import mimetypes
@@ -20,11 +25,11 @@ class Zip_to_XML:
 		if file_type == 'application/zip':
 			self.input_file = zipfile.ZipFile(input_file_path, 'r')
 			self.get_all_files = self._get_zip
-		elif file_type == 'application/xhtml+xml':
+		elif file_type in ('application/xhtml+xml', 'text/xml'):
 			self.input_file = input_file_path
 			self.get_all_files = self._get_xml
 		else:
-			raise Exception('Unkown type of file to import')
+			raise Exception('Unkown type of file to import:', file_type)
 
 	# Return one or multiple XML file handles inside a Zip archive
 	def _get_zip(self):
@@ -35,9 +40,13 @@ class Zip_to_XML:
 	
 	# Return a file handle of a XML file
 	def _get_xml(self):
-		return open(self.input_file)
+		return ( open(self.input_file), )
 			
-class XML_Epg_Importer:
+class XML_Epg_Importer(object):
+	'''
+	Used to import XMLTV compliant files to the database.
+	It receives a XML file handle as input.
+	'''
 
 	def __init__(self,xml,epg_source_instance):
 	
@@ -116,7 +125,7 @@ class XML_Epg_Importer:
 			# Display_Names
 			displays = []
 			for d in e.iter('display-name'):
-				D, created = Display_Name.objects.get_or_create(value=d.text,lang__id=langs[d.get('lang')])
+				D, created = Display_Name.objects.get_or_create(value=d.text,lang_id=langs[d.get('lang')])
 				displays.append(D)
 			if len(displays) > 0:
 				C.display_names.add(*displays)
@@ -334,3 +343,4 @@ def get_info_from_epg_source(epg_source):
 	epg_source.source_data_url = info['source_data_url']
 	epg_source.generator_info_name = info['generator_info_name']
 	epg_source.generator_info_url = info['generator_info_url']
+

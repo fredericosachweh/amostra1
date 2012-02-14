@@ -23,9 +23,9 @@ class Epg_Source(models.Model):
 	minor_start = models.DateTimeField(_(u'Menor tempo de inicio encontrado nos programas'),blank=True, null=True)
 	major_stop = models.DateTimeField(_(u'Maior tempo de final encontrado nos programas'),blank=True, null=True)
 	# Total number of elements in the file
-	numberofElements = models.PositiveIntegerField(_(u'Número de elementos neste arquivo'),blank=True, null=True)
+	numberofElements = models.PositiveIntegerField(_(u'Número de elementos neste arquivo'),blank=True, null=True, default=0)
 	# Number of imported elements
-	importedElements = models.PositiveIntegerField(_(u'Número de elementos ja importados'),blank=True, null=True)
+	importedElements = models.PositiveIntegerField(_(u'Número de elementos ja importados'),blank=True, null=True, default=0)
 	
 	def __unicode__(self):
 		return self.filefield.path
