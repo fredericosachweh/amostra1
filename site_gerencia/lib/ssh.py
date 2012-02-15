@@ -34,7 +34,6 @@ class Connection(object):
             # Using Password.
             self._transport.connect(username = username, password = password )
         else:
-            #print(private_key)
             # Use Private Key.
             if not private_key:
                 # Try to use default key.
@@ -45,9 +44,7 @@ class Connection(object):
                 else:
                     raise TypeError, "You have not specified a password or key."
             private_key_file = os.path.expanduser(private_key)
-            #paramiko.RSAKey.generate(2048)
             rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
-            #print(private_key_file)
             self._transport.connect(username = username, pkey = rsa_key)#password=password, 
     
     def _sftp_connect(self):
@@ -82,8 +79,9 @@ class Connection(object):
     
     def new_execute(self,command):
         import sys
+        import socket
         channel = self._transport.open_session()
-        channel.settimeout(10)
+        channel.settimeout(2)
         channel.exec_command(command)
         stderr = channel.makefile_stderr()
         resp = ''
@@ -92,18 +90,20 @@ class Connection(object):
             try:
                 ## Neste ponto ocorre erro na rede ou timeout
                 linha = stderr.readlines(1)
-            except:
+            except socket.timeout:
                 sys.stdout.write('ERROR: >>>%s\n' %t)
-                channel.send_exit_status(15)
+                sys.stdout.write('ERROR: timeout? >>>%s\n' %socket.timeout)
+                sys.stdout.flush()
+                channel.send_exit_status(9)
                 channel.close()
                 return resp
             if linha:
                 resp += linha[0]
-                sys.stdout.write('>>>%s\n' %linha)
+                #sys.stdout.write('>>>%s\n' %linha)
             #sys.stdout.write('O[%s]' %channel.recv(1))
             if t == 200:
-                #sys.stdout.write('Saindo com 15')
-                channel.send_exit_status(15)
+                sys.stdout.write('Saindo com 9')
+                channel.send_exit_status(9)
                 channel.close()
             sys.stdout.flush()
             #print(channel.recv(1))
