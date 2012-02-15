@@ -195,9 +195,9 @@ class GuideHandler(BaseHandler):
 				
 		if (ids and obj):
 			if obj == 'channels':
-				return base.filter(channel_id__in=ids.split(','))
+				return base.filter(channel__in=ids.split(','))
 			if obj == 'programmes':
-				return base.filter(programme_id__in=ids.split(','))
+				return base.filter(programme__in=ids.split(','))
 		else:
 			return base.all()
 
