@@ -169,11 +169,11 @@ class XML_Epg_Importer(object):
 				P = Programme.objects.only('programid').get(programid=e.get('program_id'))
 				# Insert guide
 				# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
-				guide.append(Guide(source=self._epg_source_instance, \
-									start=parse(e.get('start')[0:-6]), \
-									stop=parse(e.get('stop')[0:-6]), \
-									channel_id=channels[e.get('channel')], \
-									programme_id=P.id))
+				G, created = Guide.objects.get_or_create(source=self._epg_source_instance, \
+														start=parse(e.get('start')[0:-6]), \
+														stop=parse(e.get('stop')[0:-6]), \
+														channel_id=channels[e.get('channel')], \
+														programme_id=P.id)
 				continue
 			except:
 				P = Programme.objects.create(programid=e.get('program_id'), \
@@ -181,11 +181,11 @@ class XML_Epg_Importer(object):
 															source=self._epg_source_instance)
 			# Insert guide
 			# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
-			guide.append(Guide(source=self._epg_source_instance, \
-								start=parse(e.get('start')[0:-6]), \
-								stop=parse(e.get('stop')[0:-6]), \
-								channel_id=channels[e.get('channel')], \
-								programme_id=P.id))
+			G, created = Guide.objects.get_or_create(source=self._epg_source_instance, \
+													start=parse(e.get('start')[0:-6]), \
+													stop=parse(e.get('stop')[0:-6]), \
+													channel_id=channels[e.get('channel')], \
+													programme_id=P.id)
 			# Get descriptions
 			for d in e.iter('desc'):
 				if langs.has_key(d.get('lang')):
@@ -312,9 +312,6 @@ class XML_Epg_Importer(object):
 			P.save()
 			# Update Epg_Source instance, for the progress bar
 			#self._increment_importedElements()
-		# Bulk create guide records in chunks of 1000
-		for i in xrange(0, len(guide), 1000):
-			Guide.objects.bulk_create(guide[i:i+1000])
 
 	@transaction.commit_on_success
 	def import_to_db(self):
