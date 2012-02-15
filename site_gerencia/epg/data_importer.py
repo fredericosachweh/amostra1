@@ -331,12 +331,19 @@ def get_info_from_epg_source(epg_source):
 	for f in file_list.get_all_files():
 		importer = XML_Epg_Importer(f,epg_source_instance=epg_source)
 		numberofElements += importer.get_number_of_elements()
-		f.close()
+		# Retrive maximum stop time and minimum start time
+		if ( epg_source.minor_start != None ) and ( epg_source.major_stop != None):
+			minor_start, major_stop = importer.get_period_of_the_file()
+			if ( epg_source.minor_start > minor_start ):
+				epg_source.minor_start = minor_start
+			if ( epg_source.major_stop < major_stop ):
+				epg_source.major_stop = major_stop
+		else:
+			epg_source.minor_start, epg_source.major_stop = importer.get_period_of_the_file()
 
 	# Update Epg_Source fields
 	epg_source.numberofElements = numberofElements
 	epg_source.importedElements = 0
-	epg_source.minor_start, epg_source.major_stop = importer.get_period_of_the_file()
 	info = importer.get_xml_info()
 	epg_source.source_info_url = info['source_info_url']
 	epg_source.source_info_name = info['source_info_name']
