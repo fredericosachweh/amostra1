@@ -189,15 +189,19 @@ class GuideHandler(BaseHandler):
 		from dateutil.parser import parse
 		for param in request.GET.iterkeys():
 			if param == 'start':
-				base = base.filter(start__gte=parse(request.GET[param]))
-			if param == 'stop':
-				base = base.filter(stop__lte=parse(request.GET[param]))
+				base = base.filter(stop__gt=parse(request.GET[param]))
+			elif param == 'stop':
+				base = base.filter(start__lt=parse(request.GET[param]))
+			else:
+				return rc.BAD_REQUEST
 				
 		if (ids and obj):
 			if obj == 'channels':
 				return base.filter(channel__in=ids.split(','))
-			if obj == 'programmes':
+			elif obj == 'programmes':
 				return base.filter(programme__in=ids.split(','))
+			else:
+				return rc.BAD_REQUEST
 		else:
 			return base.all()
 
