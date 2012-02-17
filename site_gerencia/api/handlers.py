@@ -40,9 +40,14 @@ class ChannelHandler(BaseHandler):
 				base = base.filter(urls__value__istartswith=request.GET[param])
 	
 		if channel_ids:
-			return base.filter(pk__in=channel_ids.split(','))
+			ret = base.filter(pk__in=channel_ids.split(','))
 		else:
-			return base.all()
+			ret = base.all()
+		
+		if len(ret):
+			return ret
+		else:
+			return rc.NOT_FOUND
 
 # Defining the desired elements
 programme_fields = {	'id' : 'id',
@@ -157,9 +162,14 @@ class ProgrammeHandler(BaseHandler):
 				base = base.filter(guests__name__istartswith=request.GET[param])
 
 		if programme_ids:
-			return base.filter(pk__in=programme_ids.split(','))
+			ret = base.filter(pk__in=programme_ids.split(','))
 		else:
-			return base.all()
+			ret = base.all()
+			
+		if len(ret):
+			return ret
+		else:
+			return rc.NOT_FOUND
 			
 # Defining the desired elements
 guide_fields = {	'programme' : 'programme_id',
@@ -197,11 +207,16 @@ class GuideHandler(BaseHandler):
 				
 		if (ids and obj):
 			if obj == 'channels':
-				return base.filter(channel__in=ids.split(','))
+				ret = base.filter(channel__in=ids.split(','))
 			elif obj == 'programmes':
-				return base.filter(programme__in=ids.split(','))
+				ret = base.filter(programme__in=ids.split(','))
 			else:
 				return rc.BAD_REQUEST
 		else:
-			return base.all()
+			ret = base.all()
+			
+		if len(ret):
+			return ret
+		else:
+			return rc.NOT_FOUND
 
