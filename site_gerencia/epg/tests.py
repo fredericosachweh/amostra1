@@ -212,7 +212,31 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		expected = [{'urls': [], 'channelid': '100', 'id': 1, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Concert Channel'}], \
 		'icons': [{'src': '100.png'}]}, \
 		{'urls': [], 'channelid': '505', 'id': 2, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Band HD'}], 'icons': [{'src': '505.png'}]}]
+		self.assertEquals(response.status_code, 200, msg=response.request)
 		self.assertItemsEqual(json.loads(response.content), expected)
+		# More tests
+		test_cases = (
+			{ 'expected' : expected,
+			  'requests' : (('/tv/api/channels/', {}),
+			  				('/tv/api/channels', {}),
+			  				('/tv/api/channels/1,2/', {}),
+			  				('/tv/api/channels/1,2', {}),
+			  )
+			},
+			{ 'expected' : [expected[1]],
+			  'requests' : (('/tv/api/channels/', {'channelid' : '505'}),
+			  )
+			},			
+		)
+		
+		for test in test_cases:
+			for request in test['requests']:
+				response = c.get(request[0], request[1])
+				self.assertEquals(response.status_code, 200, msg=response.request)
+				self.assertEquals(json.loads(response.content), test['expected'], msg=response.request)
+		# Check for 404 if resource doesn't exists
+		response = c.get('/tv/api/channels/3/')
+		self.assertEquals(response.status_code, 404)
 	
 	def test_Programme_REST(self):
 		c = Client()
@@ -271,13 +295,92 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'video_quality': None, \
 		 'adapters': [], \
 		 'audio_stereo': None}]
+		self.assertEquals(response.status_code, 200, msg=response.request)
 		self.assertItemsEqual(json.loads(response.content), expected)
+		# More tests
+		test_cases = (
+			{ 'expected' : expected,
+			  'requests' : (('/tv/api/programmes/', {}),
+			  				('/tv/api/programmes', {}),
+			  				('/tv/api/programmes/', {'video_colour' : 'yes'}),
+			  				('/tv/api/programmes/1,2/', {}),
+			  				('/tv/api/programmes/1,2', {}),
+			  				('/tv/api/programmes/1,2/', {'video_colour' : 'yes'}),
+			  				('/tv/api/programmes/1,2', {'video_colour' : 'yes'}),
+			  )
+			},
+			{ 'expected' : [expected[1]],
+			  'requests' : (('/tv/api/programmes/', {'actors' : 'Clint Eastwood'}),
+			  )
+			},			
+		)
+		
+		for test in test_cases:
+			for request in test['requests']:
+				response = c.get(request[0], request[1])
+				self.assertEquals(response.status_code, 200, msg=response.request)
+				self.assertEquals(json.loads(response.content), test['expected'], msg=response.request)
+		# Check for 404 if resource doesn't exists
+		response = c.get('/tv/api/programmes/3/')
+		self.assertEquals(response.status_code, 404)
 		
 	def test_Guide_REST(self):
 		c = Client()
-		response = c.get('/tv/api/guide/')
-		expected = [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1}, \
-		{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2}]
-		self.assertItemsEqual(json.loads(response.content), expected)
-		
-		
+		test_cases = (
+		# First programme
+			{ 'expected' : [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1},],
+			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
+			  				('/tv/api/guide/', {'stop' : '20120116004500'}),
+			  				('/tv/api/guide/', {'start' : '20120116000600', 'stop' : '20120116004400'}),
+			  				('/tv/api/guide/', {'stop' : '20120116004400'}),
+			  				('/tv/api/guide/channels/1/', {}),
+			  				('/tv/api/guide/channels/1', {}),
+							('/tv/api/guide/channels/1/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
+							('/tv/api/guide/channels/1', {'start' : '20120116000500', 'stop' : '20120116004500'}),
+			  				('/tv/api/guide/programmes/1/', {}),
+			  				('/tv/api/guide/programmes/1', {}),
+			  				('/tv/api/guide/programmes/1/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
+			  				('/tv/api/guide/programmes/1', {'start' : '20120116000500', 'stop' : '20120116004500'}),
+			  )
+			},
+		# Second programme
+			{ 'expected' : [{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2},],
+			  'requests' : (('/tv/api/guide/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
+			  				('/tv/api/guide/', {'start' : '20120116014500'}),
+			  				('/tv/api/guide/channels/2/', {}),
+			  				('/tv/api/guide/channels/2', {}),
+							('/tv/api/guide/channels/2/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
+							('/tv/api/guide/channels/2', {'start' : '20120116014500', 'stop' : '20120116034500'}),
+			  				('/tv/api/guide/programmes/2/', {}),
+			  				('/tv/api/guide/programmes/2', {}),
+			  				('/tv/api/guide/programmes/2/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
+			  				('/tv/api/guide/programmes/2', {'start' : '20120116014500', 'stop' : '20120116034500'}),
+			  )
+			},
+		# Both programmes
+			{ 'expected' : [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1},
+							{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2},],
+			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
+			  				('/tv/api/guide/', {'stop' : '20120116034500'}),
+			  				('/tv/api/guide/', {'stop' : '20120116034400'}),
+			  				('/tv/api/guide/', {'start' : '20120116000600', 'stop' : '20120116034400'}),
+			  				('/tv/api/guide/', {'start' : '20120116000600'}),
+			  				('/tv/api/guide/channels/1,2/', {}),
+			  				('/tv/api/guide/channels/1,2', {}),
+							('/tv/api/guide/channels/1,2/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
+							('/tv/api/guide/channels/1,2', {'start' : '20120116000500', 'stop' : '20120116034500'}),
+			  				('/tv/api/guide/programmes/1,2/', {}),
+			  				('/tv/api/guide/programmes/1,2', {}),
+			  				('/tv/api/guide/programmes/1,2/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
+			  				('/tv/api/guide/programmes/1,2', {'start' : '20120116000500', 'stop' : '20120116034500'}),
+			  )
+			},
+		)
+
+		for test in test_cases:
+			for request in test['requests']:
+				response = c.get(request[0], request[1])
+				self.assertEquals(response.status_code, 200, msg=response.request)
+				self.assertEquals(json.loads(response.content), test['expected'])
+
+
