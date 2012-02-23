@@ -17,6 +17,10 @@ class ChannelHandler(BaseHandler):
 	model = Channel
 	fields = channel_fields.values()
 
+	@staticmethod
+	def resource_uri():
+		return ('channel_handler', ['channel_ids', 'fields'])
+
 	def read(self, request, channel_ids=None, fields=None):
 		'''
 		Returns a set of channel resources
@@ -92,6 +96,10 @@ class ProgrammeHandler(BaseHandler):
 	allowed_methods = ('GET',)
 	model = Programme
 	fields = programme_fields.values()
+
+	@staticmethod
+	def resource_uri():
+		return ('programme_handler', ['programme_ids', 'fields'])
 
 	def read(self, request, programme_ids=None, fields=None):
 		'''
@@ -193,6 +201,10 @@ class GuideHandler(BaseHandler):
 	model = Guide
 	fields = guide_fields.values()
 
+	@staticmethod
+	def resource_uri():
+		return ('guide_handler', ['obj', 'fields'])
+
 	def read(self, request, obj=None, ids=None, fields=None):
 		'''
 		Returns a set of guide resources
@@ -258,3 +270,15 @@ def api_pagination(queryset, request):
         return []
     else:
         return p.page(page).object_list
+
+
+from piston.doc import generate_doc
+
+doc = generate_doc(ChannelHandler)
+
+for m in doc.get_methods():
+    print m
+    for a in m.iter_args():
+        print a
+
+print doc
