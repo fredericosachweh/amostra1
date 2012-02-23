@@ -21,31 +21,35 @@ class ChannelHandler(BaseHandler):
 		'''
 		Returns a set of channel resources
 		'''
-	
+
 		if fields:
 			self.fields = [f for f in fields.split(',') if f]
 			self.fields.append('id')
-		
+
 		base = Channel.objects
-		
+
 		# Query string for search
 		for param in request.GET.iterkeys():
 			if param == 'channelid':
 				base = base.filter(channelid=request.GET[param])
-			if param == 'display_names':
+			elif param == 'display_names':
 				base = base.filter(display_names__value__istartswith=request.GET[param])
-			if param == 'icons':
+			elif param == 'icons':
 				base = base.filter(icons__src__istartswith=request.GET[param])
-			if param == 'urls':
+			elif param == 'urls':
 				base = base.filter(urls__value__istartswith=request.GET[param])
-	
+			elif param == 'limit' or param == 'page':
+			    continue
+			else:
+				return rc.BAD_REQUEST
+
 		if channel_ids:
 			ret = base.filter(pk__in=channel_ids.split(','))
 		else:
 			ret = base.all()
-		
+
 		if len(ret):
-			return ret
+			return api_pagination(ret, request)
 		else:
 			return rc.NOT_FOUND
 
@@ -93,7 +97,7 @@ class ProgrammeHandler(BaseHandler):
 		'''
 		Returns a set of programme resources
 		'''
-		
+
 		if fields:
 			self.fields = [f for f in fields.split(',') if f]
 			self.fields.append('id')
@@ -104,73 +108,77 @@ class ProgrammeHandler(BaseHandler):
 		for param in request.GET.iterkeys():
 			if param == 'programid':
 				base = base.filter(programid=request.GET[param])
-			if param == 'titles':
+			elif param == 'titles':
 				base = base.filter(titles__value__istartswith=request.GET[param])
-			if param == 'secondary_titles':
+			elif param == 'secondary_titles':
 				base = base.filter(secondary_titles__value__istartswith=request.GET[param])
-			if param == 'descriptions':
+			elif param == 'descriptions':
 				base = base.filter(description__value__istartswith=request.GET[param])
-			if param == 'date':
+			elif param == 'date':
 				base = base.filter(date__istartswith=request.GET[param])
-			if param == 'categories':
+			elif param == 'categories':
 				base = base.filter(categories__value__istartswith=request.GET[param])
-			if param == 'country':
+			elif param == 'country':
 				base = base.filter(country__value__istartswith=request.GET[param])
-			if param == 'episode_numbers':
+			elif param == 'episode_numbers':
 				base = base.filter(episode_numbers__value__istartswith=request.GET[param])
-			if param == 'rating':
+			elif param == 'rating':
 				base = base.filter(rating__value__istartswith=request.GET[param])
-			if param == 'language':
+			elif param == 'language':
 				base = base.filter(language__value__istartswith=request.GET[param])
-			if param == 'original_language':
+			elif param == 'original_language':
 				base = base.filter(original_language__value__istartswith=request.GET[param])
-			if param == 'length':
+			elif param == 'length':
 				base = base.filter(length=request.GET[param])
-			if param == 'subtitles':
+			elif param == 'subtitles':
 				base = base.filter(subtitles__value__istartswith=request.GET[param])
-			if param == 'video_present':
+			elif param == 'video_present':
 				base = base.filter(video_present=request.GET[param])
-			if param == 'video_colour':
+			elif param == 'video_colour':
 				base = base.filter(video_colour=request.GET[param])
-			if param == 'video_aspect':
+			elif param == 'video_aspect':
 				base = base.filter(video_aspect=request.GET[param])
-			if param == 'video_quality':
+			elif param == 'video_quality':
 				base = base.filter(video_quality=request.GET[param])
-			if param == 'audio_present':
+			elif param == 'audio_present':
 				base = base.filter(audio_present=request.GET[param])
-			if param == 'audio_stereo':
+			elif param == 'audio_stereo':
 				base = base.filter(audio_stereo=request.GET[param])
-			if param == 'actors':
+			elif param == 'actors':
 				base = base.filter(actors__name__istartswith=request.GET[param])
-			if param == 'directors':
+			elif param == 'directors':
 				base = base.filter(directors__name__istartswith=request.GET[param])
-			if param == 'writers':
+			elif param == 'writers':
 				base = base.filter(writers__name__istartswith=request.GET[param])
-			if param == 'adapters':
+			elif param == 'adapters':
 				base = base.filter(adapters__name__istartswith=request.GET[param])
-			if param == 'producers':
+			elif param == 'producers':
 				base = base.filter(producers__name__istartswith=request.GET[param])
-			if param == 'composers':
+			elif param == 'composers':
 				base = base.filter(composers__name__istartswith=request.GET[param])
-			if param == 'editors':
+			elif param == 'editors':
 				base = base.filter(editors__name__istartswith=request.GET[param])
-			if param == 'presenters':
+			elif param == 'presenters':
 				base = base.filter(presenters__name__istartswith=request.GET[param])
-			if param == 'commentators':
+			elif param == 'commentators':
 				base = base.filter(commentators__name__istartswith=request.GET[param])
-			if param == 'guests':
+			elif param == 'guests':
 				base = base.filter(guests__name__istartswith=request.GET[param])
+			elif param == 'limit' or param == 'page':
+			    continue
+			else:
+				return rc.BAD_REQUEST
 
 		if programme_ids:
 			ret = base.filter(pk__in=programme_ids.split(','))
 		else:
 			ret = base.all()
-			
+
 		if len(ret):
-			return ret
+			return api_pagination(ret, request)
 		else:
 			return rc.NOT_FOUND
-			
+
 # Defining the desired elements
 guide_fields = {	'programme' : 'programme_id',
 		'channel' : 'channel_id',
@@ -189,12 +197,11 @@ class GuideHandler(BaseHandler):
 		'''
 		Returns a set of guide resources
 		'''
-	
 		if fields:
 			self.fields = [f for f in fields.split(',') if f]
-		
+
 		base = Guide.objects
-		
+
 		# Query string for search
 		from dateutil.parser import parse
 		for param in request.GET.iterkeys():
@@ -202,9 +209,11 @@ class GuideHandler(BaseHandler):
 				base = base.filter(stop__gt=parse(request.GET[param]))
 			elif param == 'stop':
 				base = base.filter(start__lt=parse(request.GET[param]))
+			elif param == 'limit' or param == 'page':
+			    continue
 			else:
 				return rc.BAD_REQUEST
-				
+
 		if (ids and obj):
 			if obj == 'channels':
 				ret = base.filter(channel__in=ids.split(','))
@@ -214,9 +223,38 @@ class GuideHandler(BaseHandler):
 				return rc.BAD_REQUEST
 		else:
 			ret = base.all()
-			
+
 		if len(ret):
-			return ret
+			return api_pagination(ret, request)
 		else:
 			return rc.NOT_FOUND
 
+# Handle pagination
+def api_pagination(queryset, request):
+
+    from django.core.paginator import Paginator
+    from django.shortcuts import redirect
+
+    limit = 50    # Maximum allowed
+    page = 1
+
+    if request.GET.has_key('limit'):
+        if int(request.GET['limit']) > limit:
+            return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
+        else:
+            limit = int(request.GET['limit'])
+    else:
+        if queryset.count() > limit:
+            return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
+        else:
+            return queryset
+
+    if request.GET.has_key('page'):
+        page = int(request.GET['page'])
+
+    p = Paginator(queryset, limit)
+
+    if page > p.num_pages:
+        return []
+    else:
+        return p.page(page).object_list

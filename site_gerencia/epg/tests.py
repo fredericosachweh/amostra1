@@ -30,7 +30,7 @@ input_xml_1 = '''<?xml version="1.0" encoding="UTF-8"?>
 		</programme>
 		</tv>
 	'''
-	
+
 input_xml_2 = '''<?xml version="1.0" encoding="UTF-8"?>
 		<tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" generator-info-url="http://xmltv.revistaeletronica.com.br">
 		<channel id="505">
@@ -75,14 +75,14 @@ class Test_XML_to_db(object):
 		self.assertEquals(self.epg_source.minor_start, parse('20120116000500'))
 		self.assertEquals(self.epg_source.major_stop, parse('20120116004500'))
 		self.assertEquals(self.epg_source.numberofElements, 2)
-	
+
 	def test_Channel_1(self):
 		channel = Channel.objects.get(channelid='100')
 		self.assertEquals(channel.source, self.epg_source)
 		self.assertEquals(channel.display_names.values_list('lang__value','value')[0], (u'pt',u'Concert Channel',))
 		self.assertEquals(channel.icons.values_list('src')[0], (u'100.png',))
 		self.assertEquals(channel.urls.count(), 0)
-		
+
 	def test_Programme_1(self):
 		programme = Programme.objects.get(programid='0000257856')
 		self.assertEquals(programme.source, self.epg_source)
@@ -112,12 +112,12 @@ class One_Raw_XML(Test_XML_to_db, TestCase):
 
 	def tearDown(self):
 		self.f.close()
-		
+
 	def test_Models_count(self):
 		self.assertEquals(Channel.objects.all().count(), 1)
 		self.assertEquals(Programme.objects.all().count(), 1)
 		self.assertEquals(Guide.objects.all().count(), 1)
-		
+
 class One_Zipped_XML(Test_XML_to_db, TestCase):
 
 	def setUp(self):
@@ -138,7 +138,7 @@ class One_Zipped_XML(Test_XML_to_db, TestCase):
 
 	def tearDown(self):
 		self.f.close()
-		
+
 	def test_Models_count(self):
 		self.assertEquals(Channel.objects.all().count(), 1)
 		self.assertEquals(Programme.objects.all().count(), 1)
@@ -167,7 +167,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 
 	def tearDown(self):
 		self.f.close()
-	
+
 	def test_Epg_Source(self):
 		from dateutil.parser import parse
 		self.assertEquals(self.epg_source.generator_info_name, 'Revista Eletronica - Unidade Lorenz Ltda')
@@ -175,7 +175,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		self.assertEquals(self.epg_source.minor_start, parse('20120116000500'))
 		self.assertEquals(self.epg_source.major_stop, parse('20120116034500'))
 		self.assertEquals(self.epg_source.numberofElements, 8)
-	
+
 	def test_Models_count(self):
 		self.assertEquals(Channel.objects.all().count(), 2)
 		self.assertEquals(Programme.objects.all().count(), 2)
@@ -187,7 +187,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		self.assertEquals(channel.display_names.values_list('lang__value','value')[0], (u'pt',u'Band HD',))
 		self.assertEquals(channel.icons.values_list('src')[0], (u'505.png',))
 		self.assertEquals(channel.urls.count(), 0)
-		
+
 	def test_Programme_2(self):
 		programme = Programme.objects.get(programid='0000025536')
 		self.assertEquals(programme.source, self.epg_source)
@@ -205,7 +205,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		self.assertItemsEqual(programme.actors.values_list('name'), actors)
 		self.assertItemsEqual(programme.directors.values_list('name'), ( ((u'Sergio Leone'),), ))
 		self.assertItemsEqual(programme.star_ratings.values_list('value'), ( ((u'5/5'),), ))
-		
+
 	def test_Channel_REST(self):
 		c = Client()
 		response = c.get('/tv/api/channels/')
@@ -226,9 +226,9 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			{ 'expected' : [expected[1]],
 			  'requests' : (('/tv/api/channels/', {'channelid' : '505'}),
 			  )
-			},			
+			},
 		)
-		
+
 		for test in test_cases:
 			for request in test['requests']:
 				response = c.get(request[0], request[1])
@@ -237,7 +237,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		# Check for 404 if resource doesn't exists
 		response = c.get('/tv/api/channels/3/')
 		self.assertEquals(response.status_code, 404)
-	
+
 	def test_Programme_REST(self):
 		c = Client()
 		response = c.get('/tv/api/programmes/')
@@ -312,9 +312,9 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			{ 'expected' : [expected[1]],
 			  'requests' : (('/tv/api/programmes/', {'actors' : 'Clint Eastwood'}),
 			  )
-			},			
+			},
 		)
-		
+
 		for test in test_cases:
 			for request in test['requests']:
 				response = c.get(request[0], request[1])
@@ -323,7 +323,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		# Check for 404 if resource doesn't exists
 		response = c.get('/tv/api/programmes/3/')
 		self.assertEquals(response.status_code, 404)
-		
+
 	def test_Guide_REST(self):
 		c = Client()
 		test_cases = (
@@ -341,6 +341,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  				('/tv/api/guide/programmes/1', {}),
 			  				('/tv/api/guide/programmes/1/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
 			  				('/tv/api/guide/programmes/1', {'start' : '20120116000500', 'stop' : '20120116004500'}),
+			  				# Pagination
+			  				('/tv/api/guide/', {'limit' : '1', 'page' : '1'}),
 			  )
 			},
 		# Second programme
@@ -355,6 +357,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  				('/tv/api/guide/programmes/2', {}),
 			  				('/tv/api/guide/programmes/2/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/programmes/2', {'start' : '20120116014500', 'stop' : '20120116034500'}),
+			  				# Pagination
+			  				('/tv/api/guide/', {'limit' : '1', 'page' : '2'}),
 			  )
 			},
 		# Both programmes
@@ -373,6 +377,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  				('/tv/api/guide/programmes/1,2', {}),
 			  				('/tv/api/guide/programmes/1,2/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/programmes/1,2', {'start' : '20120116000500', 'stop' : '20120116034500'}),
+			  				# Pagination
+			  				('/tv/api/guide/', {'limit' : '2', 'page' : '1'}),
 			  )
 			},
 		)
@@ -380,7 +386,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		for test in test_cases:
 			for request in test['requests']:
 				response = c.get(request[0], request[1])
-				self.assertEquals(response.status_code, 200, msg=response.request)
+				self.assertEquals(response.status_code, 200, msg=response.__dict__)
 				self.assertEquals(json.loads(response.content), test['expected'])
 
 
