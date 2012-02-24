@@ -78,37 +78,53 @@ class Connection(object):
             return channel.makefile_stderr('rb', -1).readlines()
     
     def new_execute(self,command):
-        import sys
+        """
+        TODO: executar aplicativos como daemon
+        Ex.: daemonize -p /home/helber/vlc.pid -o /home/helber/vlc.o -e /home/helber/vlc.e /usr/bin/cvlc -I dummy -v -R /home/videos/Novos/red_ridding_hood_4M.ts --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
+        """
         import socket
+        import select
+        import time
+        start = time.time()
         channel = self._transport.open_session()
-        channel.settimeout(2)
         channel.exec_command(command)
-        stderr = channel.makefile_stderr()
         resp = ''
-        for t in range(200):
-            #sys.stdout.write(stderr.read(1))
+        linha = ''
+        run = True
+        while run:
             try:
-                ## Neste ponto ocorre erro na rede ou timeout
-                linha = stderr.readlines(1)
+                r,w,e = select.select([channel],[],[],2)
+                if len(r) > 0:
+                    if channel.recv_ready():
+                        linha = r[0].recv(1024)
+                    if channel.recv_stderr_ready():
+                        linha = r[0].recv_stderr(1024)
+                if len(e) > 0:
+                    channel.send_exit_status(9)
+                    channel.close()
+                    run = False
+                    break
+                if time.time() - start > 10:
+                    channel.send_exit_status(9)
+                    channel.shutdown(2)
+                    channel.close()
+                    try:
+                        channel.get_transport().open_session().exec_command("kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`" % (command))
+                    except:
+                        pass
+                    channel.close()
+                    run = False
+            except KeyboardInterrupt:
+                channel.send_exit_status(9)
+                channel.close()
+                run = False
             except socket.timeout:
-                sys.stdout.write('ERROR: >>>%s\n' %t)
-                sys.stdout.write('ERROR: timeout? >>>%s\n' %socket.timeout)
-                sys.stdout.flush()
                 channel.send_exit_status(9)
                 channel.close()
-                return resp
+                run = False
             if linha:
-                resp += linha[0]
-                #sys.stdout.write('>>>%s\n' %linha)
-            #sys.stdout.write('O[%s]' %channel.recv(1))
-            if t == 200:
-                sys.stdout.write('Saindo com 9')
-                channel.send_exit_status(9)
-                channel.close()
-            sys.stdout.flush()
-            #print(channel.recv(1))
+                resp += linha
         return resp
-        
 
     def close(self):
         """Closes the connection and cleans up."""

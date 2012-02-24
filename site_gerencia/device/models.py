@@ -31,7 +31,7 @@ class Server(models.Model):
         from lib import ssh
         s = None
         try:
-            s = ssh.Connection(host = self.host, username = self.username, password = self.password, private_key = self.rsakey)
+            s = ssh.Connection(host = self.host, port = self.ssh_port, username = self.username, password = self.password, private_key = self.rsakey)
             self.status = True
             self.msg = 'OK'
         except ValueError:
@@ -63,6 +63,26 @@ class Server(models.Model):
             s.close()
         self.save()
         return w
+    def execute_daemon(self,command):
+        try:
+            s = self.connect()
+            self.msg = 'OK'
+        except Exception as ex:
+            self.msg = ex
+            self.status = False
+            self.save()
+            #return None
+        try:
+            w = s.new_execute(command)
+        except Exception as ex:
+            self.msg = ValueError
+            print('command fail',ex)
+        else:
+            self.msg = 'OK';
+            #print('command: [%s] %s'%(command,self.msg))
+        self.save()
+        return w
+        
 
 class Vlc(stream.SourceRelation):
     """VLC streaming device"""
@@ -80,15 +100,16 @@ class Vlc(stream.SourceRelation):
         """Inicia processo do VLC"""
         pid_uri = '~/%s.pid'%(str(self.destine).strip())
         try:
-            c = self.server.execute('/usr/bin/vlc -I dummy --daemon -v -R %s ' \
+            c = self.server.execute_daemon('/usr/bin/cvlc -I dummy --daemon -v -R %s ' \
                 '--sout \"#std{access=udp,mux=ts,dst=%s }\" ' \
                 '--pidfile %s >/dev/null 2>&1 & '%
-                                    (self.source, self.destine, pid_uri), persist=True)
-            print 'VLC: %s'%c
-            c = self.server.execute('cat %s'%pid_uri)
-            print 'VLC: %s'%c
+                                    (self.source, self.destine, pid_uri))
+            #print 'VLC: %s'%c
+            #c = self.server.execute('cat %s'%pid_uri)
+            #print 'VLC: %s'%c
             self.status = True
-            self.pid = c[0]
+            print(c)
+            #self.pid = c
         except ValueError:
             print('vlc execute error: %s'%ValueError)
             self.status = False
@@ -125,6 +146,7 @@ class Vlc(stream.SourceRelation):
 class Dvblast(models.Model):
     class Meta:
         verbose_name = _(u'DVBlast')
+        verbose_name_plural = _(u'DVBlast')
     name = models.CharField(_(u'Nome'),max_length=200)
     ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'))
@@ -259,3 +281,4 @@ class MulticatRecorder(models.Model):
         pass
     def __unicode__(self):
         return u'%s > %s' %(self.source,self.filename)
+

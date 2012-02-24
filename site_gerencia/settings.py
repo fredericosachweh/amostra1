@@ -40,7 +40,7 @@ else:
             'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
             'NAME': 'iptv',                      # Or path to database file if using sqlite3.
             'USER': 'iptv',                      # Not used with sqlite3.
-            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',          # Not used with sqlite3.
+            'PASSWORD': 'iptv',          # Not used with sqlite3.
             'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
             'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
         }
