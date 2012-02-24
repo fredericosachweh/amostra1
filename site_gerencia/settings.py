@@ -2,6 +2,7 @@
 
 import sys
 import os
+import logging
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
@@ -9,14 +10,13 @@ PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
-#sys.path.append('../modules/django-dowser')
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
+    ('Eduardo Vieira', 'eduardo@cianet.ind.br'),
     ('Claudio Guirunas', 'claudio@cianet.ind.br'),
 )
 
@@ -167,6 +167,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'django.contrib.markup',
     # South http://south.aeracode.org/docs/
     #'south',
     # Gestao de canal
@@ -179,8 +180,7 @@ INSTALLED_APPS = (
     'stream',
     'device',
     # EPG
-    #'epg',
-    #'django_dowser',
+    'epg',
 )
 
 LOGIN_URL = '/'+ROOT_URL+'accounts/login'
@@ -224,6 +224,7 @@ if DEBUG == True:
         INSTALLED_APPS += ('debug_toolbar',)
         MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
     except ImportError:
+        #logging.info("Running debug mode without debug_toolbar: install it if you need it")
         pass
 
 

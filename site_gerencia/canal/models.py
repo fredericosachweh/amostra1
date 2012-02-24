@@ -10,6 +10,8 @@ from django.utils.translation import ugettext as _
 from django.db.models import signals
 from django.conf import settings
 
+from epg.models import Channel
+
 class Canal(models.Model):
     """
     Classe de manipulação de Canal de TV
@@ -27,6 +29,7 @@ class Canal(models.Model):
     ip = models.IPAddressField(_('IP'), blank=True)
     porta = models.PositiveSmallIntegerField(_('Porta'), blank=True, null=True)
     atualizado = models.DateTimeField(auto_now=True)
+    epg = models.ForeignKey(Channel, blank=True, null=True)
     def __unicode__(self):
         return u"[%d] num=%s %s" %(self.id,self.numero,self.nome);
     def imagem_thum(self):
