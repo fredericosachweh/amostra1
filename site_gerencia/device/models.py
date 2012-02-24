@@ -156,7 +156,7 @@ class Dvblast(models.Model):
     def __unicode__(self):
         return '%s (%s:%s)' %(self.name,self.ip,self.port)
     def status(self):
-        from stream.player import Player
+        from lib.player import Player
         p = Player()
         if p.is_playing(self) is True:
             url = reverse('stream.views.stop',kwargs={'streamid':self.id})
@@ -167,21 +167,21 @@ class Dvblast(models.Model):
     status.allow_tags = True
     def play(self):
         'Inicia o fluxo (inicia o processo do multicat)'
-        from stream.player import Player
+        from lib.player import Player
         p = Player()
         pid = p.play_stream(self)
         self.pid = pid
         self.save()
     def stop(self):
         'Para o fluxo (mata o processo do multicat)'
-        from stream.player import Player
+        from lib.player import Player
         p = Player()
         p.stop_stream(self)
         self.pid = None
         self.save()
     def autostart(self):
         if self.pid is not None:
-            from stream.player import Player
+            from lib.player import Player
             p = Player()
             if p.is_playing(self) is False:
                 self.play()
