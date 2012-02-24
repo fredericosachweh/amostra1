@@ -43,7 +43,7 @@ class ChannelHandler(BaseHandler):
 			elif param == 'urls':
 				base = base.filter(urls__value__istartswith=request.GET[param])
 			elif param == 'limit' or param == 'page':
-			    continue
+				continue
 			else:
 				return rc.BAD_REQUEST
 
@@ -173,7 +173,7 @@ class ProgrammeHandler(BaseHandler):
 			elif param == 'guests':
 				base = base.filter(guests__name__istartswith=request.GET[param])
 			elif param == 'limit' or param == 'page':
-			    continue
+				continue
 			else:
 				return rc.BAD_REQUEST
 
@@ -222,7 +222,7 @@ class GuideHandler(BaseHandler):
 			elif param == 'stop':
 				base = base.filter(start__lt=parse(request.GET[param]))
 			elif param == 'limit' or param == 'page':
-			    continue
+				continue
 			else:
 				return rc.BAD_REQUEST
 
@@ -243,30 +243,29 @@ class GuideHandler(BaseHandler):
 
 # Handle pagination
 def api_pagination(queryset, request):
-
-    from django.core.paginator import Paginator
-    from django.shortcuts import redirect
-
-    limit = 50    # Maximum allowed
-    page = 1
-
-    if request.GET.has_key('limit'):
-        if int(request.GET['limit']) > limit:
-            return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
-        else:
-            limit = int(request.GET['limit'])
-    else:
-        if queryset.count() > limit:
-            return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
-        else:
-            return queryset
-
-    if request.GET.has_key('page'):
-        page = int(request.GET['page'])
-
-    p = Paginator(queryset, limit)
-
-    if page > p.num_pages:
-        return []
-    else:
-        return p.page(page).object_list
+	from django.core.paginator import Paginator
+	from django.shortcuts import redirect
+	
+	limit = 50    # Maximum allowed
+	page = 1
+	
+	if request.GET.has_key('limit'):
+		if int(request.GET['limit']) > limit:
+			return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
+		else:
+			limit = int(request.GET['limit'])
+	else:
+		if queryset.count() > limit:
+			return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
+		else:
+			return queryset
+	
+	if request.GET.has_key('page'):
+		page = int(request.GET['page'])
+	
+	p = Paginator(queryset, limit)
+	
+	if page > p.num_pages:
+		return []
+	else:
+		return p.page(page).object_list
