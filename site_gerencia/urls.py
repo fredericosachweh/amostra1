@@ -36,7 +36,6 @@ urlpatterns = patterns('',
     # Página inicial
     #(r'^%s$'%settings.ROOT_URL,direct_to_template,{'template':'index.html'} ),
     (r'^%s$'%settings.ROOT_URL,include('home.urls')),
-    
-    #(r'^dowser/', include('django_dowser.urls')),
+
 )
 
