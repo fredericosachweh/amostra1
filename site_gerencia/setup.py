@@ -7,9 +7,7 @@ setup(
     author='Helber Maciel Guerra, Gabriel Reitz Giannattasio',
     author_email='helber@cianet.ind.br, gartz@cianet.ind.br',
     url='http://cianet.ind.br',
-    
     scripts = ['manager.py'],
-    
     install_requires = ['enum>=0.4.4',
                         'simplejson'
                         'django>=1.3'
