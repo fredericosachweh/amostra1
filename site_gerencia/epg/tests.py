@@ -210,8 +210,9 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		c = Client()
 		response = c.get('/tv/api/channels/')
 		expected = [{'urls': [], 'channelid': '100', 'id': 1, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Concert Channel'}], \
-		'icons': [{'src': '100.png'}]}, \
-		{'urls': [], 'channelid': '505', 'id': 2, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Band HD'}], 'icons': [{'src': '505.png'}]}]
+		'icons': [{'src': '100.png'}], 'resource_uri' : '/tv/api/channels/1'}, \
+		{'urls': [], 'channelid': '505', 'id': 2, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Band HD'}], 'icons': [{'src': '505.png'}],\
+		 'resource_uri' : '/tv/api/channels/2'}]
 		self.assertEquals(response.status_code, 200, msg=response.request)
 		self.assertItemsEqual(json.loads(response.content), expected)
 		# More tests
@@ -266,7 +267,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'video_colour': 'yes', \
 		 'video_quality': None, \
 		 'adapters': [], \
-		 'audio_stereo': None}, \
+		 'audio_stereo': None,
+		 'resource_uri' : '/tv/api/programmes/1'}, \
 		 {'rating': {'system': 'Advisory', 'value': u'Programa impróprio para menores de 14 anos'}, \
 		 'presenters': [], \
 		 'titles': [{'lang': {'value': 'pt'}, 'value': u'Três Homens em Conflito'}, \
@@ -294,7 +296,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'video_colour': 'yes', \
 		 'video_quality': None, \
 		 'adapters': [], \
-		 'audio_stereo': None}]
+		 'audio_stereo': None, \
+		 'resource_uri' : '/tv/api/programmes/2'}]
 		self.assertEquals(response.status_code, 200, msg=response.request)
 		self.assertItemsEqual(json.loads(response.content), expected)
 		# More tests
@@ -328,7 +331,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		c = Client()
 		test_cases = (
 		# First programme
-			{ 'expected' : [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1},],
+			{ 'expected' : [{'id' : 1, 'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116004500'}),
 			  				('/tv/api/guide/', {'start' : '20120116000600', 'stop' : '20120116004400'}),
@@ -346,7 +349,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  )
 			},
 		# Second programme
-			{ 'expected' : [{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2},],
+			{ 'expected' : [{'id' : 2, 'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'start' : '20120116014500'}),
 			  				('/tv/api/guide/channels/2/', {}),
@@ -362,8 +365,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  )
 			},
 		# Both programmes
-			{ 'expected' : [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1},
-							{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2},],
+			{ 'expected' : [{'id' : 1, 'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},
+							{'id' : 2, 'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116034400'}),

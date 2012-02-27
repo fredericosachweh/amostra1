@@ -19,7 +19,7 @@ class ChannelHandler(BaseHandler):
 
 	@staticmethod
 	def resource_uri():
-		return ('channel_handler', ['channel_ids', 'fields'])
+		return ('channel_handler', ['id'])
 
 	def read(self, request, channel_ids=None, fields=None):
 		'''
@@ -99,7 +99,7 @@ class ProgrammeHandler(BaseHandler):
 
 	@staticmethod
 	def resource_uri():
-		return ('programme_handler', ['programme_ids', 'fields'])
+		return ('programme_handler', ['id'])
 
 	def read(self, request, programme_ids=None, fields=None):
 		'''
@@ -188,7 +188,8 @@ class ProgrammeHandler(BaseHandler):
 			return rc.NOT_FOUND
 
 # Defining the desired elements
-guide_fields = {	'programme' : 'programme_id',
+guide_fields = { 'id' : 'id',
+        'programme' : 'programme_id',
 		'channel' : 'channel_id',
 		'start' : 'start',
 		'stop' : 'stop' }
@@ -203,7 +204,7 @@ class GuideHandler(BaseHandler):
 
 	@staticmethod
 	def resource_uri():
-		return ('guide_handler', ['obj', 'fields'])
+		return ('guide_handler', ['id'])
 
 	def read(self, request, obj=None, ids=None, fields=None):
 		'''
@@ -245,10 +246,10 @@ class GuideHandler(BaseHandler):
 def api_pagination(queryset, request):
 	from django.core.paginator import Paginator
 	from django.shortcuts import redirect
-	
+
 	limit = 50    # Maximum allowed
 	page = 1
-	
+
 	if request.GET.has_key('limit'):
 		if int(request.GET['limit']) > limit:
 			return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
@@ -259,12 +260,12 @@ def api_pagination(queryset, request):
 			return redirect('%s?limit=%d&page=%d' % (request.path,limit,page))
 		else:
 			return queryset
-	
+
 	if request.GET.has_key('page'):
 		page = int(request.GET['page'])
-	
+
 	p = Paginator(queryset, limit)
-	
+
 	if page > p.num_pages:
 		return []
 	else:
