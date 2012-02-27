@@ -17,9 +17,9 @@ class ChannelHandler(BaseHandler):
 	model = Channel
 	fields = channel_fields.values()
 
-	@staticmethod
-	def resource_uri():
-		return ('channel_handler', ['channel_ids', 'fields'])
+#	@staticmethod
+#	def resource_uri():
+#		return ('channel_handler', ['channel_ids', 'fields'])
 
 	def read(self, request, channel_ids=None, fields=None):
 		'''
@@ -97,9 +97,9 @@ class ProgrammeHandler(BaseHandler):
 	model = Programme
 	fields = programme_fields.values()
 
-	@staticmethod
-	def resource_uri():
-		return ('programme_handler', ['programme_ids', 'fields'])
+#	@staticmethod
+#	def resource_uri():
+#		return ('programme_handler', ['programme_ids', 'fields'])
 
 	def read(self, request, programme_ids=None, fields=None):
 		'''
@@ -201,9 +201,9 @@ class GuideHandler(BaseHandler):
 	model = Guide
 	fields = guide_fields.values()
 
-	@staticmethod
-	def resource_uri():
-		return ('guide_handler', ['obj', 'fields'])
+#	@staticmethod
+#	def resource_uri():
+#		return ('guide_handler', ['obj', 'fields'])
 
 	def read(self, request, obj=None, ids=None, fields=None):
 		'''
