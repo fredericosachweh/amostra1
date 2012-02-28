@@ -69,17 +69,13 @@ class XML_Epg_Importer(object):
 		return self.count_channel_elements() + self.count_programme_elements()
 
 	def get_period_of_the_file(self):
-		minor_start = parse(self.tree.find('programme').get('start'))
-		major_stop = parse(self.tree.find('programme').get('stop'))
-		for e in self.tree.iter('programme'):
-			start = parse(e.get('start'))
-			stop=parse(e.get('stop'))
-			if minor_start > start:
-				minor_start=start
-			if major_stop < stop:
-				major_stop=stop
-		return minor_start.astimezone(timezone('UTC')).replace(tzinfo=None), \
-		    major_stop.astimezone(timezone('UTC')).replace(tzinfo=None)
+		programmes = self.tree.findall('programme')
+		starts = map(lambda p: parse(p.get('start')), programmes)
+		stops = map(lambda p: parse(p.get('stop')), programmes)
+		starts.sort(); s_start = starts[0]
+		stops.sort(reverse=True); s_stop = stops[0]
+		return s_start.astimezone(timezone('UTC')).replace(tzinfo=None), \
+            s_stop.astimezone(timezone('UTC')).replace(tzinfo=None)
 			
 	def get_xml_info(self):
 		tv = self.tree.getroot()
