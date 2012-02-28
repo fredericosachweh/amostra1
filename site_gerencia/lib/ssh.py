@@ -45,7 +45,7 @@ class Connection(object):
                     raise TypeError, "You have not specified a password or key."
             private_key_file = os.path.expanduser(private_key)
             rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
-            self._transport.connect(username = username, pkey = rsa_key)#password=password, 
+            self._transport.connect(username = username, pkey = rsa_key)
     
     def _sftp_connect(self):
         """Establish the SFTP connection."""
@@ -76,11 +76,34 @@ class Connection(object):
             return output
         else:
             return channel.makefile_stderr('rb', -1).readlines()
-    
-    def new_execute(self,command):
+        
+    def execute_daemon(self,command):
         """
-        TODO: executar aplicativos como daemon
-        Ex.: daemonize -p /home/helber/vlc.pid -o /home/helber/vlc.o -e /home/helber/vlc.e /usr/bin/cvlc -I dummy -v -R /home/videos/Novos/red_ridding_hood_4M.ts --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
+        Executa o comando em daemon e retorna o pid do processo
+        Ex.: /usr/sbin/daemonize -p /home/helber/vlc.pid -o /home/helber/vlc.o -e /home/helber/vlc.e /usr/bin/cvlc -I dummy -v -R /home/videos/Novos/red_ridding_hood_4M.ts --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
+        """
+        import os
+        import datatime
+        channel = self._transport.open_session()
+        appname = os.path.basename(command.split()[0])
+        uid = datetime.datetime.now().toordinal()
+        ## /usr/sbin/daemonize
+        channel.exec_command(command)
+        try:
+            channel.get_transport().open_session().exec_command("kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`" % (command))
+        except:
+            pass
+
+        output = channel.makefile('rb', -1).readlines()
+        if output:
+            return output
+        else:
+            return channel.makefile_stderr('rb', -1).readlines()
+        
+    
+    def execute_with_timeout(self,command,timeout=10):
+        """
+        Executa comando no servidor com timeout e retorna o stdout com o stderr
         """
         import socket
         import select
@@ -104,26 +127,29 @@ class Connection(object):
                     channel.close()
                     run = False
                     break
-                if time.time() - start > 10:
-                    channel.send_exit_status(9)
-                    channel.shutdown(2)
-                    channel.close()
+                if time.time() - start > timeout:
+                    channel.send_exit_status(15)
+                    #channel.shutdown(2)
                     try:
                         channel.get_transport().open_session().exec_command("kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`" % (command))
                     except:
                         pass
                     channel.close()
                     run = False
+                    break
             except KeyboardInterrupt:
                 channel.send_exit_status(9)
                 channel.close()
                 run = False
+                break
             except socket.timeout:
                 channel.send_exit_status(9)
                 channel.close()
                 run = False
+                break
             if linha:
                 resp += linha
+                linha = ''
         return resp
 
     def close(self):

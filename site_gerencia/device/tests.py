@@ -16,7 +16,11 @@ class ConnectionTest(TestCase):
         srv.rsakey = '~/.ssh/id_rsa_test'
         srv.connect()
         ret = srv.execute('/bin/pwd')
-        self.assertEqual(ret[0], '/var/lib/nginx\n', 'O home deveria ser "/var/lib/nginx\n"')
+        self.assertEqual(
+            ret[0],
+            '/var/lib/nginx\n',
+            'O home deveria ser "/var/lib/nginx\n"'
+        )
     
     #def test_register_server(self):
     #    from lib.ssh import Connection
@@ -26,27 +30,68 @@ class ConnectionTest(TestCase):
     
     def test_low_respose_command(self):
         from lib.ssh import Connection
-        import sys
         c = Connection('127.0.0.1',username='nginx',password='iptv')
         #stdin, stdout, stderr = c.new_execute('/var/lib/nginx/test')
         t = c.new_execute('/var/lib/nginx/test')
-        sys.stderr.write(t)
+        self.assertEqual(
+            'Inicio\nP1**********Fim',
+            t,
+            'Valor esperado diferente [%s]' % t
+        )
+        #sys.stderr.write(t)
     
     def test_scan_channel(self):
         from lib.ssh import Connection
         import sys
-        c = Connection('172.17.0.2',username='helber',private_key='~/.ssh/id_rsa_cianet')
-        #r = c.new_execute('/usr/bin/dvblast -a 1 -c /etc/dvblast/channels.d/2.conf -f 3390000 -s 7400000 -m psk_8 -U -u -d 239.0.1.1:10000')
-        r = c.new_execute('/usr/bin/dvblast -a 0 -f 3090000 -s 2220000')
+        c = Connection('172.17.0.2',
+            username='helber',
+            private_key='~/.ssh/id_rsa_cianet')
+        r = c.execute_with_timeout('/usr/bin/dvblast -a 2 -f 3642000 -s 4370000',10)
         sys.stderr.write(r)
     
-    def test_control_dvb(self):
-        self.assertFalse(False, 'Criar o controle de processos do dvb')
+    #def test_control_dvb(self):
+    #    self.assertFalse(False, 'Criar o controle de processos do dvb')
+    #
+    #def test_control_multicat(self):
+    #    self.assertFalse(False, 'Criar o controle de processos do multicat')
+    #
+    #def test_remote_process(self):
+    #    pass
+
+
+class ProcessControlTest(TestCase):
     
-    def test_control_multicat(self):
-        self.assertFalse(False, 'Criar o controle de processos do multicat')
+    def setUp(self):
+        from models import Server
+        self._s = Server(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='nginx',
+            rsakey='~/.ssh/id_rsa_test'
+        )
     
-    def test_remote_process(self):
+    def test_prepare_daemon(self):
+        import os
+        import datetime
+        cmd = '/usr/bin/cvlc -I dummy -v -R \
+/mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
+--sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"'
+        uid = datetime.datetime.now().toordinal()
+        parsed = os.path.basename(cmd.split()[0])
+        self.assertEqual(parsed, 'cvlc', 'Deveria ser retornado o comando')
+        fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)
+        print(fullcmd)
+        self._s.execute(fullcmd)
+    
+    def test_list_process(self):
+        self._s.connect()
+        procs = self._s.list_process()
+        self.assertEqual(procs[0]['pid'],
+            1,
+            'O primero processo deveria ter pid=1')
+    
+    def test_start_process(self):
         pass
-
-
+        
+        

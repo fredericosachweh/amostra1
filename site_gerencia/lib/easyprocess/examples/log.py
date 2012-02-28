@@ -1,10 +1,12 @@
+import os,sys
+sys.path.append(os.path.abspath('../../'))
+
 from easyprocess import EasyProcess
 import logging
 
 # turn on logging
 logging.basicConfig(level=logging.DEBUG)
 
-EasyProcess('echo hello').call()
 EasyProcess('python --version').call()
 EasyProcess('ping localhost').start().sleep(1).stop()
 EasyProcess('python --version').check()

@@ -2,6 +2,7 @@
 Easy to use python subprocess interface.
 '''
 
+from easyprocess.unicodeutil import uniencode, unidecode
 import ConfigParser
 import atexit
 import logging
@@ -14,20 +15,18 @@ import threading
 import time
 import unicodedata
 
-__version__ = '0.0.10'
+__version__ = '0.1.3'
 
 log = logging.getLogger(__name__)
 #log=logging
 
 log.debug('version=' + __version__)
 
-# deadlock test fails if USE_FILES=0
-USE_FILES = 1
 
 CONFIG_FILE = '.easyprocess.cfg'
 SECTION_LINK = 'link'
 POLL_TIME = 0.1
-USE_POLL = 1
+USE_POLL = 0
     
 class EasyProcessError(Exception):
     """  
@@ -37,6 +36,9 @@ class EasyProcessError(Exception):
         self.msg = msg
     def __str__(self):
         return self.msg + ' ' + repr(self.easy_process)
+    
+class EasyProcessUnicodeError(Exception):
+    pass
     
 template = '''cmd={cmd}
 OSError={oserror}  
@@ -59,21 +61,57 @@ class EasyProcessCheckInstalledError(Exception):
                 msg += 'sudo apt-get install %s' % self.easy_process.ubuntu_package
         return msg
 
-
-class Proc():
+def split_command(cmd):
     '''
+     - cmd is string list -> nothing to do
+     - cmd is string -> split it using shlex
+
+    :param cmd: string ('ls -l') or list of strings (['ls','-l']) 
+    :rtype: string list
+    '''
+    if hasattr(cmd, '__iter__'):
+        # cmd is string list
+        pass
+    else:
+        # cmd is string 
+        # The shlex module currently does not support Unicode input!
+        if  isinstance(cmd, unicode):
+            try:
+                cmd = unicodedata.normalize('NFKD', cmd).encode('ascii', 'strict')
+            except UnicodeEncodeError:
+                raise EasyProcessUnicodeError('unicode command "%s" can not be processed.' % cmd+ 
+                'Use string list instead of string')
+            log.debug('unicode is normalized')
+        cmd = shlex.split(cmd)
+    return cmd
+
+class EasyProcess():
+    '''
+    .. module:: easyprocess
+    
     simple interface for :mod:`subprocess` 
 
     shell is not supported (shell=False)
     
+    .. warning::
+
+      unicode is supported only for string list command 
+      (check :mod:`shlex` for more information)
+        
+    :param cmd: string ('ls -l') or list of strings (['ls','-l']) 
+    :param cwd: working directory
+    :param max_bytes_to_log: logging of stdout and stderr is limited by this value
+    :param use_temp_files: use temp files instead of pipes for 
+                           stdout and stderr,
+                           pipes can cause deadlock in some cases
+                           (see unit tests)
     '''
     config = None
     
-    def __init__(self, cmd, ubuntu_package=None, url=None, max_bytes_to_log=1000, cwd=None):
-        '''
-        :param cmd: string ('ls -l') or list of strings (['ls','-l']) 
-        :param max_bytes_to_log: logging of stdout and stderr is limited by this value
-        '''
+    def __init__(self, cmd, ubuntu_package=None, url=None, max_bytes_to_log=1000, cwd=None, use_temp_files=True):
+        self.use_temp_files = use_temp_files
+        self._outputs_processed = False
+
         self.popen = None
         self.stdout = None
         self.stderr = None
@@ -89,17 +127,9 @@ class Proc():
         self._stop_thread = False
         self.timeout_happened = False
         self.cwd = cwd
-        if hasattr(cmd, '__iter__'):
-            # cmd is string list
-            self.cmd = cmd
-        else:
-            # cmd is string 
-            # The shlex module currently does not support Unicode input!
-            if  isinstance(cmd, unicode):
-                log.debug('unicode is normalized')
-                cmd = unicodedata.normalize('NFKD', cmd).encode('ascii', 'ignore')
-            self.cmd = shlex.split(cmd)
-        self.cmd = map(str, self.cmd)
+        cmd = split_command(cmd)
+        cmd = map(uniencode, cmd)
+        self.cmd = cmd
         self.cmd_as_string = ' '.join(self.cmd) # TODO: not perfect
         
         log.debug('param: "%s" command: %s ("%s")' % (str(self.cmd_param), str(self.cmd), self.cmd_as_string))
@@ -143,7 +173,7 @@ class Proc():
     @property
     def pid(self):
         '''
-        PID (subprocess.Popen.pid)
+        PID (:attr:`subprocess.Popen.pid`)
 
         :rtype: int
         '''
@@ -153,7 +183,7 @@ class Proc():
     @property
     def return_code(self):
         '''
-        returncode (``subprocess.Popen.returncode``)
+        returncode (:attr:`subprocess.Popen.returncode`)
 
         :rtype: int
         '''
@@ -206,6 +236,11 @@ class Proc():
         '''
         Run command with arguments. Wait for command to complete.
         
+        same as:
+         1. :meth:`start`
+         2. :meth:`wait`
+         3. :meth:`stop`
+        
         :rtype: self
         '''
         self.start().wait(timeout=timeout)
@@ -217,19 +252,15 @@ class Proc():
         '''
         start command in background and does not wait for it
         
-        Timeout:
-         - discussion: http://stackoverflow.com/questions/1191374/subprocess-with-timeout
-         - implementation: threading with polling
-        
         
         :rtype: self
         '''
         if self.is_started:
             raise EasyProcessError(self, 'process was started twice!')
 
-        if USE_FILES:
-            self._stdout_file = tempfile.NamedTemporaryFile(prefix='stdout_')
-            self._stderr_file = tempfile.NamedTemporaryFile(prefix='stderr_')
+        if self.use_temp_files:
+            self._stdout_file = tempfile.TemporaryFile(prefix='stdout_')
+            self._stderr_file = tempfile.TemporaryFile(prefix='stderr_')
             stdout = self._stdout_file
             stderr = self._stderr_file
             
@@ -251,27 +282,24 @@ class Proc():
         self.is_started = True
         log.debug('process was started (pid=%s)' % (str(self.pid),))
 
-        def target():
-#            log.debug('Thread started')        
-            self._wait4process()
-#            log.debug('Thread finished')
+#        def target():
+#            self._wait4process()
             
-        def shutdown():
-#            log.debug('stopping thread')
-            self._stop_thread = True
-            self._thread.join()
+#        def shutdown():
+#            self._stop_thread = True
+#            self._thread.join()
         
-        self._thread = threading.Thread(target=target)
-        self._thread.daemon = 1
-        self._thread.start()
-        atexit.register(shutdown)
+#        self._thread = threading.Thread(target=target)
+#        self._thread.daemon = 1
+#        self._thread.start()
+#        atexit.register(shutdown)
         
         return self
 
 
     def is_alive(self):
         '''
-        poll process (:func:`subprocess.Popen.poll`)
+        poll process using :meth:`subprocess.Popen.poll`
         
         :rtype: bool
         '''
@@ -284,21 +312,32 @@ class Proc():
         '''
         Wait for command to complete.
         
+        Timeout:
+         - discussion: http://stackoverflow.com/questions/1191374/subprocess-with-timeout
+         - implementation: threading
+         
         :rtype: self
         '''
-
+            
+        if timeout is not None:
+            if not self._thread:
+                self._thread = threading.Thread(target=self._wait4process)
+                self._thread.daemon = 1
+                self._thread.start()
+                
         if self._thread:
             self._thread.join(timeout=timeout)
-            if timeout is not None:
-                self.timeout_happened = self._thread.isAlive()
+            self.timeout_happened = self.timeout_happened or self._thread.isAlive()
+        else:
+            # no timeout and no existing thread
+            self._wait4process()
+
         return self
-    
-    #def __del__(self):
-    #    if self._thread:
-    #        log.debug('waiting for thread')
-    #        self._thread.join()
-            
+                
     def _wait4process(self):
+        if self._outputs_processed:
+            return
+
         def remove_ending_lf(s):
             if s.endswith('\n'):
                 return s[:-1]
@@ -306,7 +345,7 @@ class Proc():
                 return s
                    
         if self.popen:
-            if USE_FILES:    
+            if self.use_temp_files:    
                 if USE_POLL:    
                     while 1:
                         if self.popen.poll() is not None:
@@ -316,9 +355,10 @@ class Proc():
                         time.sleep(POLL_TIME)
 
                 else:
-                    # wait() blocks process
+                    # wait() blocks process, timeout not possible
                     self.popen.wait()
                 
+                self._outputs_processed = True
                 self._stdout_file.seek(0)            
                 self._stderr_file.seek(0)            
                 self.stdout = self._stdout_file.read()
@@ -334,10 +374,13 @@ class Proc():
                 #self.popen.wait()
                 #self.stdout = self.popen.stdout.read()
                 #self.stderr = self.popen.stderr.read()
+                
+                # communicate() blocks process, timeout not possible
+                self._outputs_processed = True
                 (self.stdout, self.stderr) = self.popen.communicate()
             log.debug('process has ended')
-            self.stdout = remove_ending_lf(self.stdout)
-            self.stderr = remove_ending_lf(self.stderr)
+            self.stdout = unidecode(remove_ending_lf(self.stdout))
+            self.stderr = unidecode(remove_ending_lf(self.stderr))
             
             log.debug('return code=' + str(self.return_code))
             def limit_str(s):
@@ -347,15 +390,15 @@ class Proc():
                 return s
             log.debug('stdout=' + limit_str(self.stdout))
             log.debug('stderr=' + limit_str(self.stderr))
-        #self.is_started = False
-        #return self
             
     def stop(self):
         '''
-        Kill process by sending SIGTERM.
+        Kill process
         and wait for command to complete.
         
-        same as ``sendstop().wait()``
+        same as:
+         1. :meth:`sendstop`
+         2. :meth:`wait`
         
         :rtype: self
         '''
@@ -363,7 +406,7 @@ class Proc():
 
     def sendstop(self):
         '''
-        Kill process by sending SIGTERM.
+        Kill process (:meth:`subprocess.Popen.terminate`).
         Do not wait for command to complete.
         
         :rtype: self
@@ -399,11 +442,11 @@ class Proc():
 
         return self
 
-    def wrap(self, callable, delay=0):
+    def wrap(self, func, delay=0):
         '''
         returns a function which:
          1. start process
-         2. call callable, save result
+         2. call func, save result
          3. stop process
          4. returns result
         
@@ -417,7 +460,7 @@ class Proc():
                 self.sleep(delay)
             x = None
             try:     
-                x = callable()
+                x = func()
             except OSError, oserror:
                 log.debug('OSError exception:' + str(oserror))
                 self.oserror = oserror
@@ -437,18 +480,18 @@ class Proc():
         self.stop()
 
 def extract_version(txt):
-    '''general method to get version from help text of any program
+    '''This function tries to extract the version from the help text of any program.
     '''
     words = txt.replace(',', ' ').split()
     version = None
-    for x in words:
+    for x in reversed(words):
         if len(x) > 2:
             if x[0].lower() == 'v':
                 x = x[1:]
-            if '.' in x and x[0].isdigit() and x[-1].isdigit() and x.replace('.', '0').isdigit():
+            if '.' in x and x[0].isdigit():
                 version = x
                 break
     return version
 
 
-EasyProcess = Proc
+Proc = EasyProcess
