@@ -14,7 +14,7 @@ input_xml_1 = '''<?xml version="1.0" encoding="UTF-8"?>
 		<display-name lang="pt">Concert Channel</display-name>
 		<icon src="100.png" />
 		</channel>
-		<programme start="20120116000500 -0200" stop="20120116004500 -0200" channel="100" program_id="0000257856">
+		<programme start="20120115220500 -0200" stop="20120115224500 -0200" channel="100" program_id="0000257856">
 		<title lang="pt">BBC Sessions: The Verve</title>
 		<title lang="en">BBC Sessions: Verve; The</title>
 		<desc>Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - www.revistaeletronica.com.br </desc>
@@ -37,7 +37,7 @@ input_xml_2 = '''<?xml version="1.0" encoding="UTF-8"?>
 		<display-name lang="pt">Band HD</display-name>
 		<icon src="505.png" />
 		</channel>
-		<programme start="20120116014500 -0200" stop="20120116034500 -0200" channel="505" program_id="0000025536">
+		<programme start="20120115234500 -0200" stop="20120116014500 -0200" channel="505" program_id="0000025536">
 		<title lang="pt">Três Homens em Conflito</title>
 		<title lang="en">The Good, The Bad and the Ugly</title>
 		<desc>Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna. - www.revistaeletronica.com.br </desc>
@@ -88,7 +88,7 @@ class Test_XML_to_db(object):
 		self.assertEquals(programme.source, self.epg_source)
 		titles = [(u'pt', u'BBC Sessions: The Verve'),(u'en', u'BBC Sessions: Verve; The')]
 		self.assertItemsEqual(programme.titles.values_list('lang__value', 'value'), titles)
-		descs = (None, u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - www.revistaeletronica.com.br ')
+		descs = (None, u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise.')
 		self.assertEquals(programme.descriptions.values_list('lang__value','value')[0], descs)
 		self.assertEquals(programme.date, '2008')
 		self.assertItemsEqual(programme.categories.values_list('lang__value', 'value'), [(u'pt',u'Espetáculo'),(u'pt', u'Show')])
@@ -193,7 +193,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		self.assertEquals(programme.source, self.epg_source)
 		titles = [(u'pt', u'Três Homens em Conflito'),(u'en', u'The Good, The Bad and the Ugly')]
 		self.assertItemsEqual(programme.titles.values_list('lang__value', 'value'), titles)
-		descs = (None, u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna. - www.revistaeletronica.com.br ')
+		descs = (None, u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna.')
 		self.assertEquals(programme.descriptions.values_list('lang__value','value')[0], descs)
 		self.assertEquals(programme.date, '1966')
 		self.assertItemsEqual(programme.categories.values_list('lang__value', 'value'), [(u'pt',u'Filme'),(u'pt', u'Western')])
@@ -210,8 +210,9 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		c = Client()
 		response = c.get('/tv/api/channels/')
 		expected = [{'urls': [], 'channelid': '100', 'id': 1, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Concert Channel'}], \
-		'icons': [{'src': '100.png'}]}, \
-		{'urls': [], 'channelid': '505', 'id': 2, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Band HD'}], 'icons': [{'src': '505.png'}]}]
+		'icons': [{'src': '100.png'}], 'resource_uri' : '/tv/api/channels/1'}, \
+		{'urls': [], 'channelid': '505', 'id': 2, 'display_names': [{'lang': {'value': 'pt'}, 'value': 'Band HD'}], 'icons': [{'src': '505.png'}],\
+		 'resource_uri' : '/tv/api/channels/2'}]
 		self.assertEquals(response.status_code, 200, msg=response.request)
 		self.assertItemsEqual(json.loads(response.content), expected)
 		# More tests
@@ -255,7 +256,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		'secondary_titles': [], \
 		'episode_numbers': [], \
 		'descriptions': \
-		[{'value': u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - www.revistaeletronica.com.br '}], \
+		[{'value': u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise.'}], \
 		 'video_aspect': None, \
 		 'date': '2008', \
 		 'categories': [{'lang': {'value': 'pt'}, 'value': u'Espetáculo'}, {'lang': {'value': 'pt'}, 'value': 'Show'}], \
@@ -266,7 +267,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'video_colour': 'yes', \
 		 'video_quality': None, \
 		 'adapters': [], \
-		 'audio_stereo': None}, \
+		 'audio_stereo': None,
+		 'resource_uri' : '/tv/api/programmes/1'}, \
 		 {'rating': {'system': 'Advisory', 'value': u'Programa impróprio para menores de 14 anos'}, \
 		 'presenters': [], \
 		 'titles': [{'lang': {'value': 'pt'}, 'value': u'Três Homens em Conflito'}, \
@@ -283,7 +285,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'length': None, \
 		 'secondary_titles': [], \
 		 'episode_numbers': [], \
-		 'descriptions': [{'value': u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna. - www.revistaeletronica.com.br '}], \
+		 'descriptions': [{'value': u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna.'}], \
 		 'video_aspect': None, \
 		 'date': '1966', \
 		 'categories': [{'lang': {'value': 'pt'}, 'value': 'Filme'}, {'lang': {'value': 'pt'}, 'value': 'Western'}], \
@@ -294,7 +296,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'video_colour': 'yes', \
 		 'video_quality': None, \
 		 'adapters': [], \
-		 'audio_stereo': None}]
+		 'audio_stereo': None, \
+		 'resource_uri' : '/tv/api/programmes/2'}]
 		self.assertEquals(response.status_code, 200, msg=response.request)
 		self.assertItemsEqual(json.loads(response.content), expected)
 		# More tests
@@ -324,11 +327,11 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		response = c.get('/tv/api/programmes/3/')
 		self.assertEquals(response.status_code, 404)
 
-	def test_Guide_REST(self):
+	def test_Guide_REST(self):	    
 		c = Client()
 		test_cases = (
 		# First programme
-			{ 'expected' : [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1},],
+			{ 'expected' : [{'id' : 1, 'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116004500'}),
 			  				('/tv/api/guide/', {'start' : '20120116000600', 'stop' : '20120116004400'}),
@@ -346,7 +349,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  )
 			},
 		# Second programme
-			{ 'expected' : [{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2},],
+			{ 'expected' : [{'id' : 2, 'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'start' : '20120116014500'}),
 			  				('/tv/api/guide/channels/2/', {}),
@@ -362,8 +365,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  )
 			},
 		# Both programmes
-			{ 'expected' : [{'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1},
-							{'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2},],
+			{ 'expected' : [{'id' : 1, 'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},
+							{'id' : 2, 'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116034400'}),

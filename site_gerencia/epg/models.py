@@ -6,6 +6,9 @@ from django.db.models import signals
 
 from django.utils.translation import ugettext as _
 
+from dateutil import tz
+from pytz import timezone
+
 class Epg_Source(models.Model):
 
 	class Meta:
@@ -26,9 +29,21 @@ class Epg_Source(models.Model):
 	numberofElements = models.PositiveIntegerField(_(u'Número de elementos neste arquivo'),blank=True, null=True, default=0)
 	# Number of imported elements
 	importedElements = models.PositiveIntegerField(_(u'Número de elementos ja importados'),blank=True, null=True, default=0)
+	# Creation time
+	created = models.DateTimeField(_(u'Data de criação'), auto_now=True)
 	
+	def _get_start_local(self):
+		"Returns minimum start time converted to the local timezone"
+		return self.minor_start.replace(tzinfo=timezone('UTC')).astimezone(tz.tzlocal())
+	minor_start_local = property(_get_start_local)
+
+	def _get_stop_local(self):
+		"Returns maxium stop time converted to the local timezone"
+		return self.major_stop.replace(tzinfo=timezone('UTC')).astimezone(tz.tzlocal())
+	major_stop_local = property(_get_stop_local)
+
 	def __unicode__(self):
-		return self.filefield.path
+		return 'ID: %d - Start: %s - Stop: %s' % (self.id, self.minor_start, self.major_stop)
 
 	def save(self, *args, **kwargs):
 

@@ -54,7 +54,7 @@ class Server(models.Model):
             self.msg = ValueError
         self.save()
         return s
-    
+
     def execute(self, command, persist = False):
         """Executa um comando no servidor"""
         #stdin, stdout, stderr = None,None,None
@@ -98,6 +98,7 @@ class Server(models.Model):
             #print('command: [%s] %s'%(command,self.msg))
         self.save()
         return w
+
     
     def list_process(self):
         """
@@ -112,8 +113,7 @@ class Server(models.Model):
                 {'pid': int(cmd[0]), 'name': cmd[1], 'command': ' '.join(cmd[2:])}
                 )
         return ret
-        
-        
+
 
 class Vlc(stream.SourceRelation):
     """VLC streaming device"""
@@ -239,8 +239,8 @@ class Dvblast(models.Model):
 class DvbblastProgram(stream.SourceRelation):
     
     class Meta:
-        verbose_name = _(u'Programa no pacote de fluxo DVB')
-        verbose_name_plural = _(u'Programas no pacote de fluxo DVB')
+        verbose_name = _(u'Programa DVB')
+        verbose_name_plural = _(u'Programas DVB')
     
     name = models.CharField(_(u'Nome'),max_length=200)
     channel_program = models.PositiveSmallIntegerField(_(u'Programa'))
@@ -252,12 +252,12 @@ class DvbblastProgram(stream.SourceRelation):
 
 class Multicat(stream.SourceRelation):
     """
-    Classe para gerar fluxo pelo multicat ou redireciona-lo 
+    Classe para gerar fluxo pelo multicat ou redireciona-lo
     """
     
     class Meta:
-        verbose_name = _(u'Instancia de Multicat para redirecionar fluxo')
-        verbose_name_plural = _(u'Instancias de Multicat para redirecionar fluxos')
+        verbose_name = _(u'Instancia de Multicat')
+        verbose_name_plural = _(u'Instancias de Multicat')
     ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'))
     parans = models.CharField(_(u'Parâmetros extra'),max_length=255,blank=True)
@@ -312,7 +312,7 @@ class Multicat(stream.SourceRelation):
 
 class MulticatRecorder(models.Model):
     """
-    Classe de gravação 
+    Classe de gravação
     """
     class Meta:
         verbose_name = _(u'Instancia de Multicat para gravação')

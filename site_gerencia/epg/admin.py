@@ -11,8 +11,11 @@ class Epg_Source_admin(admin.ModelAdmin):
 					'generator_info_url', \
 					'minor_start', \
 					'major_stop', \
+					'minor_start_local',
+					'major_stop_local',
 					'numberofElements', \
 					'importedElements', \
+					'created', \
 					)
 	class Meta:
 		form = Epg_Source_Form
