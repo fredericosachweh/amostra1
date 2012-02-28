@@ -28,6 +28,7 @@ class Source(UniqueIP):
         rtp = '[RTP]' if self.is_rtp else ''
         desc = '- %s'%(self.desc) if self.desc else ''
         return '%s:%d %s %s' %(self.ip,self.port,rtp,desc)
+        #return '%s:%d' %(self.ip,self.port)
     def destinations(self):
         return self.destination_set.all()
     def in_use(self):
@@ -41,6 +42,9 @@ class SourceRelation(models.Model):
     
     Um fluxo de origem não pode ter mais que uma fonte, senão causará conflito.
     """
+    class Meta:
+        verbose_name = _(u'Relação')
+        verbose_name_plural = _(u'ORelações')
     destine = models.OneToOneField(Source)
 
 class Destination(UniqueIP):

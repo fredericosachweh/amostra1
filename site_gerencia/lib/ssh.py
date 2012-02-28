@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- encoding:utf-8 -*-
 """Friendly Python SSH2 interface."""
 
 import os
@@ -80,26 +82,29 @@ class Connection(object):
     def execute_daemon(self,command):
         """
         Executa o comando em daemon e retorna o pid do processo
-        Ex.: /usr/sbin/daemonize -p /home/helber/vlc.pid -o /home/helber/vlc.o -e /home/helber/vlc.e /usr/bin/cvlc -I dummy -v -R /home/videos/Novos/red_ridding_hood_4M.ts --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
+        Ex.: 
+/usr/sbin/daemonize -p 
+/home/helber/vlc.pid -o
+/home/helber/vlc.o -e
+/home/helber/vlc.e
+/usr/bin/cvlc -I dummy -v -R
+/home/videos/Novos/red_ridding_hood_4M.ts
+--sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         """
         import os
-        import datatime
-        channel = self._transport.open_session()
+        import datetime
         appname = os.path.basename(command.split()[0])
         uid = datetime.datetime.now().toordinal()
         ## /usr/sbin/daemonize
-        channel.exec_command(command)
-        try:
-            channel.get_transport().open_session().exec_command("kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`" % (command))
-        except:
-            pass
+        fullcommand = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(appname,uid,command)
+        channel = self._transport.open_session()
+        channel.exec_command(fullcommand)
+        pidcommand = "/bin/cat ~/%s-%s.pid" % (appname,uid)
+        ## Buscando o pid
+        output = self.execute(pidcommand)
+        pid = int(output[0])
+        return pid
 
-        output = channel.makefile('rb', -1).readlines()
-        if output:
-            return output
-        else:
-            return channel.makefile_stderr('rb', -1).readlines()
-        
     
     def execute_with_timeout(self,command,timeout=10):
         """

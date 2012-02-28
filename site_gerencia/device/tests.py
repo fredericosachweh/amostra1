@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+# -*- encoding:utf-8 -*-
 """
-
+Testes unitários
 """
 
 from django.test import TestCase
@@ -32,7 +34,7 @@ class ConnectionTest(TestCase):
         from lib.ssh import Connection
         c = Connection('127.0.0.1',username='nginx',password='iptv')
         #stdin, stdout, stderr = c.new_execute('/var/lib/nginx/test')
-        t = c.new_execute('/var/lib/nginx/test')
+        t = c.execute_with_timeout('/var/lib/nginx/test',timeout=2)
         self.assertEqual(
             'Inicio\nP1**********Fim',
             t,
@@ -81,8 +83,6 @@ class ProcessControlTest(TestCase):
         parsed = os.path.basename(cmd.split()[0])
         self.assertEqual(parsed, 'cvlc', 'Deveria ser retornado o comando')
         fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)
-        print(fullcmd)
-        self._s.execute(fullcmd)
     
     def test_list_process(self):
         self._s.connect()
@@ -92,6 +92,16 @@ class ProcessControlTest(TestCase):
             'O primero processo deveria ter pid=1')
     
     def test_start_process(self):
-        pass
+        cmd = '/usr/bin/cvlc -I dummy -v -R \
+/mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
+--sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"'
+        pid = self._s.execute_daemon(cmd)
+        self.assertGreater(pid, 0, 'O processo deveria ser maios que zero')
+        processos = self._s.list_process()
+        for f in processos:
+            if f['pid'] == pid:
+                print('Está rodando:%s' % f)
+        self._s.kill_process(pid)
+        self.assertFalse(self._s.process_alive(pid), 'O processo deveria ter morrido')
         
         

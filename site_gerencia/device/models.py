@@ -73,32 +73,29 @@ class Server(models.Model):
             print('command fail',ex)
         else:
             self.msg = 'OK';
-            #print('command: [%s] %s'%(command,self.msg))
         if not persist:
             s.close()
         self.save()
         return w
     
     def execute_daemon(self,command):
+        pid = -1
         try:
             s = self.connect()
             self.msg = 'OK'
         except Exception as ex:
             self.msg = ex
             self.status = False
-            self.save()
-            #return None
-        try:
-            w = s.new_execute(command)
-        except Exception as ex:
-            self.msg = ValueError
-            print('command fail',ex)
-        else:
-            self.msg = 'OK';
-            #print('command: [%s] %s'%(command,self.msg))
+        pid = s.execute_daemon(command)
         self.save()
-        return w
-
+        return pid
+    
+    def process_alive(self,pid):
+        for p in self.list_process():
+            if p['pid'] == pid:
+                print('process_alive:%s' % p)
+                return True
+        return False
     
     def list_process(self):
         """
@@ -113,13 +110,23 @@ class Server(models.Model):
                 {'pid': int(cmd[0]), 'name': cmd[1], 'command': ' '.join(cmd[2:])}
                 )
         return ret
+    
+    def kill_process(self,pid):
+        try:
+            s = self.connect()
+            s.execute('/bin/kill %s' % self.pid)
+        except:
+            pass
+        
 
 
 class Vlc(stream.SourceRelation):
     """VLC streaming device"""
+    
     class Meta:
-        verbose_name = _(u'VLC')
-        verbose_name_plural = _(u'VLC\'s')
+        verbose_name = _(u'Trailer')
+        verbose_name_plural = _(u'Trailers')
+    
     description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
     source = models.CharField(_(u'Origem'),max_length=255)
     server = models.ForeignKey(Server)
@@ -131,30 +138,21 @@ class Vlc(stream.SourceRelation):
     
     def start(self):
         """Inicia processo do VLC"""
-        pid_uri = '~/%s.pid'%(str(self.destine).strip())
-        try:
-            c = self.server.execute_daemon('/usr/bin/cvlc -I dummy --daemon -v -R %s ' \
-                '--sout \"#std{access=udp,mux=ts,dst=%s }\" ' \
-                '--pidfile %s >/dev/null 2>&1 & '%
-                                    (self.source, self.destine, pid_uri))
-            #print 'VLC: %s'%c
-            #c = self.server.execute('cat %s'%pid_uri)
-            #print 'VLC: %s'%c
-            self.status = True
-            print(c)
-            #self.pid = c
-        except ValueError:
-            print('vlc execute error: %s'%ValueError)
-            self.status = False
-            self.pid = None
+        c = self.server.execute_daemon('/usr/bin/cvlc -I dummy -v -R %s ' \
+            '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
+            self.source,
+            self.destine.ip,
+            self.destine.port)
+        )
+        self.status = True
+        self.pid = c
         self.save()
         return self.status
     
     def stop(self):
         """Interrompe processo do VLC"""
         try:
-            self.server.execute('kill %s'%self.pid)
-            print('VLC: [stop] %s'%self.pid)
+            self.server.kill_process(self.pid)
             self.status = False
             self.pid = None
         except ValueError:
