@@ -324,6 +324,9 @@ class XML_Epg_Importer(object):
 		self.import_channel_elements()
 		# Import <programme> elements
 		self.import_programme_elements()
+		# Update importedElements
+		self._epg_source_instance.importedElements = self._epg_source_instance.numberofElements
+		self._epg_source_instance.save()
 		
 def get_info_from_epg_source(epg_source):
 
