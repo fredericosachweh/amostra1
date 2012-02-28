@@ -88,7 +88,7 @@ class Test_XML_to_db(object):
 		self.assertEquals(programme.source, self.epg_source)
 		titles = [(u'pt', u'BBC Sessions: The Verve'),(u'en', u'BBC Sessions: Verve; The')]
 		self.assertItemsEqual(programme.titles.values_list('lang__value', 'value'), titles)
-		descs = (None, u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - www.revistaeletronica.com.br ')
+		descs = (None, u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise.')
 		self.assertEquals(programme.descriptions.values_list('lang__value','value')[0], descs)
 		self.assertEquals(programme.date, '2008')
 		self.assertItemsEqual(programme.categories.values_list('lang__value', 'value'), [(u'pt',u'Espetáculo'),(u'pt', u'Show')])
@@ -193,7 +193,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		self.assertEquals(programme.source, self.epg_source)
 		titles = [(u'pt', u'Três Homens em Conflito'),(u'en', u'The Good, The Bad and the Ugly')]
 		self.assertItemsEqual(programme.titles.values_list('lang__value', 'value'), titles)
-		descs = (None, u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna. - www.revistaeletronica.com.br ')
+		descs = (None, u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna.')
 		self.assertEquals(programme.descriptions.values_list('lang__value','value')[0], descs)
 		self.assertEquals(programme.date, '1966')
 		self.assertItemsEqual(programme.categories.values_list('lang__value', 'value'), [(u'pt',u'Filme'),(u'pt', u'Western')])
@@ -256,7 +256,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		'secondary_titles': [], \
 		'episode_numbers': [], \
 		'descriptions': \
-		[{'value': u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - www.revistaeletronica.com.br '}], \
+		[{'value': u'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise.'}], \
 		 'video_aspect': None, \
 		 'date': '2008', \
 		 'categories': [{'lang': {'value': 'pt'}, 'value': u'Espetáculo'}, {'lang': {'value': 'pt'}, 'value': 'Show'}], \
@@ -285,7 +285,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		 'length': None, \
 		 'secondary_titles': [], \
 		 'episode_numbers': [], \
-		 'descriptions': [{'value': u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna. - www.revistaeletronica.com.br '}], \
+		 'descriptions': [{'value': u'Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna.'}], \
 		 'video_aspect': None, \
 		 'date': '1966', \
 		 'categories': [{'lang': {'value': 'pt'}, 'value': 'Filme'}, {'lang': {'value': 'pt'}, 'value': 'Western'}], \

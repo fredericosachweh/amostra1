@@ -196,7 +196,12 @@ class XML_Epg_Importer(object):
 					lang = langs[d.get('lang')]
 				else:
 					lang = None
-				D, created = Description.objects.get_or_create(value=d.text,lang_id=lang)
+				# Strip the banner ' - www.revistaeletronica.com.br '
+				if len( d.text ) > 32:
+				    desc = d.text[:-32]
+				else:
+				    desc = d.text
+				D, created = Description.objects.get_or_create(value=desc,lang_id=lang)
 				P.descriptions.add(D)
 			# Get titles
 			for t in e.iter('title'):
