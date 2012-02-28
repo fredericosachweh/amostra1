@@ -6,6 +6,7 @@ from lxml import etree
 from django.db import transaction
 from datetime import tzinfo, timedelta, datetime
 from dateutil.parser import parse
+from pytz import timezone
 from types import NoneType
 
 from models import *
@@ -68,16 +69,17 @@ class XML_Epg_Importer(object):
 		return self.count_channel_elements() + self.count_programme_elements()
 
 	def get_period_of_the_file(self):
-		minor_start = parse(self.tree.find('programme').get('start')[0:-6])
-		major_stop = parse(self.tree.find('programme').get('stop')[0:-6])
+		minor_start = parse(self.tree.find('programme').get('start'))
+		major_stop = parse(self.tree.find('programme').get('stop'))
 		for e in self.tree.iter('programme'):
-			start = parse(e.get('start')[0:-6])
-			stop=parse(e.get('stop')[0:-6])
+			start = parse(e.get('start'))
+			stop=parse(e.get('stop'))
 			if minor_start > start:
 				minor_start=start
 			if major_stop < stop:
 				major_stop=stop
-		return minor_start,major_stop
+		return minor_start.astimezone(timezone('UTC')).replace(tzinfo=None), \
+		    major_stop.astimezone(timezone('UTC')).replace(tzinfo=None)
 			
 	def get_xml_info(self):
 		tv = self.tree.getroot()
@@ -164,14 +166,17 @@ class XML_Epg_Importer(object):
 			else:
 				date=None
 
+			# Get time and convert it to UTC
+			start = parse(e.get('start')).astimezone(timezone('UTC')).replace(tzinfo=None)
+			stop = parse(e.get('stop')).astimezone(timezone('UTC')).replace(tzinfo=None)
+
 			# Try to find the programme in db
 			try:
 				P = Programme.objects.only('programid').get(programid=e.get('program_id'))
 				# Insert guide
-				# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
 				G, created = Guide.objects.get_or_create(source=self._epg_source_instance, \
-														start=parse(e.get('start')[0:-6]), \
-														stop=parse(e.get('stop')[0:-6]), \
+														start=start, \
+														stop=stop, \
 														channel_id=channels[e.get('channel')], \
 														programme_id=P.id)
 				continue
@@ -180,10 +185,9 @@ class XML_Epg_Importer(object):
 															date=date,
 															source=self._epg_source_instance)
 			# Insert guide
-			# MySQL backend does not support timezone-aware datetimes. That's why I'm cutting off this information.
 			G, created = Guide.objects.get_or_create(source=self._epg_source_instance, \
-													start=parse(e.get('start')[0:-6]), \
-													stop=parse(e.get('stop')[0:-6]), \
+													start=start, \
+													stop=stop, \
 													channel_id=channels[e.get('channel')], \
 													programme_id=P.id)
 			# Get descriptions

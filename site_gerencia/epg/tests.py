@@ -14,7 +14,7 @@ input_xml_1 = '''<?xml version="1.0" encoding="UTF-8"?>
 		<display-name lang="pt">Concert Channel</display-name>
 		<icon src="100.png" />
 		</channel>
-		<programme start="20120116000500 -0200" stop="20120116004500 -0200" channel="100" program_id="0000257856">
+		<programme start="20120115220500 -0200" stop="20120115224500 -0200" channel="100" program_id="0000257856">
 		<title lang="pt">BBC Sessions: The Verve</title>
 		<title lang="en">BBC Sessions: Verve; The</title>
 		<desc>Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - www.revistaeletronica.com.br </desc>
@@ -37,7 +37,7 @@ input_xml_2 = '''<?xml version="1.0" encoding="UTF-8"?>
 		<display-name lang="pt">Band HD</display-name>
 		<icon src="505.png" />
 		</channel>
-		<programme start="20120116014500 -0200" stop="20120116034500 -0200" channel="505" program_id="0000025536">
+		<programme start="20120115234500 -0200" stop="20120116014500 -0200" channel="505" program_id="0000025536">
 		<title lang="pt">Três Homens em Conflito</title>
 		<title lang="en">The Good, The Bad and the Ugly</title>
 		<desc>Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos numa fortuna. - www.revistaeletronica.com.br </desc>
@@ -327,7 +327,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		response = c.get('/tv/api/programmes/3/')
 		self.assertEquals(response.status_code, 404)
 
-	def test_Guide_REST(self):
+	def test_Guide_REST(self):	    
 		c = Client()
 		test_cases = (
 		# First programme
