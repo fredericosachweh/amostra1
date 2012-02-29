@@ -29,6 +29,12 @@ urlpatterns = patterns('',
     (r'^%sbox/'%settings.ROOT_URL,include('box.urls')),
     # Streams de multicats
     (r'^%sstream/'%settings.ROOT_URL,include('stream.urls')),
+    # EPG
+    (r'^%sepg/'%settings.ROOT_URL,include('epg.urls')),
+    # REST interface for the EPG
+    (r'^%sapi/'%settings.ROOT_URL, include('api.urls')),
+    # Devices em servidores
+    (r'^%sdevice/'%settings.ROOT_URL,include('device.urls')),
     # Página inicial
     #(r'^%s$'%settings.ROOT_URL,direct_to_template,{'template':'index.html'} ),
     (r'^%s$'%settings.ROOT_URL,include('home.urls')),
