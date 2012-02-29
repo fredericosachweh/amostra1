@@ -8,12 +8,14 @@ def home(request):
     return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
 
 def server_status(request,pk=None):
-    print 'server_status'
     device = get_object_or_404(models.Server,id=pk)
+    device.connect()
     whoami = device.execute('whoami')
     whoami = '' if device.execute('whoami') == None else whoami[0]
     device.status = (whoami.strip() == device.username.strip())
     device.save()
+    print('Device:%s [%s]' %(device,device.status))
+    print 'server_status'
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
 def vlc_start(request,pk=None):

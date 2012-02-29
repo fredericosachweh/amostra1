@@ -4,7 +4,7 @@ import sys
 import os
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
+PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
@@ -24,22 +24,22 @@ if 'test' in sys.argv:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-            'USER':'',
-            'PASSWORD':'',
-            'HOST':'',
-            'PORT':''
+            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+            'USER': '',
+            'PASSWORD': '',
+            'HOST': '',
+            'PORT': ''
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-            'NAME': 'iptv',                      # Or path to database file if using sqlite3.
-            'USER': 'iptv',                      # Not used with sqlite3.
-            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',          # Not used with sqlite3.
-            'HOST': '127.0.0.1',                      # Set to empty string for localhost. Not used with sqlite3.
-            'PORT': '3306',                      # Set to empty string for default. Not used with sqlite3.
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'iptv',
+            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
         }
     }
 
@@ -76,14 +76,14 @@ USE_L10N = True
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
+MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
 ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
+STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
 STATIC_URL = '/tvfiles/static/'
 #ROOT_URLCONF = '/tv'
 
-LOGIN_URL = '/'+ROOT_URL+'accounts/login'
-LOGIN_REDIRECT_URL = '/'+ROOT_URL+'administracao/'
+LOGIN_URL = '/%saccounts/login' % ROOT_URL
+LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
@@ -132,10 +132,10 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Put strings here, like "/home/html/django_templates"
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_ROOT_PATH,'templates')
+    os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
 LOGGING = {
@@ -204,11 +204,10 @@ if DEBUG == True:
             'debug_toolbar.panels.logger.LoggingPanel',
         )
         INSTALLED_APPS += ('debug_toolbar',)
-        MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+        MIDDLEWARE_CLASSES += (
+            'debug_toolbar.middleware.DebugToolbarMiddleware',
+        )
     except ImportError:
         pass
 
-
-
-
-FORCE_SCRIPT_NAME=""
+FORCE_SCRIPT_NAME = ""

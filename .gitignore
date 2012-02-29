@@ -9,3 +9,4 @@ banco.sqlite3
 /*.komodoproject
 /site_gerencia/static
 /site_gerencia/media/videos
+/site_gerencia/.settings

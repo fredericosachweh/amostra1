@@ -3,9 +3,6 @@
 from optparse import make_option
 from django.core.management.base import BaseCommand, CommandError, NoArgsCommand
 
-from stream.models import Stream
-from stream.models import DVBSource
-
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--debug','-d',
@@ -19,15 +16,16 @@ class Command(BaseCommand):
     #self.can_import_settings = True
 
     def handle(self, **options):
-        streams = Stream.objects.filter(pid__isnull=False)
-        for stream in streams:
-            if options.get('debug') > 0:
-                self.stdout.write('Iniciando stream [%s]\n' %stream)
-            stream.autostart()
-        dvbs = DVBSource.objects.filter(pid__isnull=False)
-        for dvb in dvbs:
-            if options.get('debug') > 0:
-                self.stdout.write('Iniciando DVB [%s]\n' %dvb)
-            dvb.autostart()
+        pass
+        #streams = Stream.objects.filter(pid__isnull=False)
+        #for stream in streams:
+        #    if options.get('debug') > 0:
+        #        self.stdout.write('Iniciando stream [%s]\n' %stream)
+        #    stream.autostart()
+        #dvbs = DVBSource.objects.filter(pid__isnull=False)
+        #for dvb in dvbs:
+        #    if options.get('debug') > 0:
+        #        self.stdout.write('Iniciando DVB [%s]\n' %dvb)
+        #    dvb.autostart()
         
 

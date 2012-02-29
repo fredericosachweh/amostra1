@@ -10,29 +10,39 @@ from django.utils.translation import ugettext as _
 from django.db.models import signals
 from django.conf import settings
 
+from epg.models import Channel
+
 class Canal(models.Model):
     """
     Classe de manipulação de Canal de TV
     """
-    class Meta:
-        ordering = ('numero',)
-        unique_together = ( ('ip','porta'), )
-        verbose_name_plural = _('Canais')
-    numero = models.PositiveSmallIntegerField(_('Numero'),unique=True)
-    nome   = models.CharField(_('Nome'), max_length=100, blank=False)
+    numero = models.PositiveSmallIntegerField(_('Numero'), unique=True)
+    nome   = models.CharField(_('Nome'), max_length=100)
     descricao = models.TextField(_('Descricao'))
-    sigla = models.CharField(_('Sigla'),blank=False,max_length=5)
-    logo = models.ImageField(_('Logo'),upload_to='imgs/canal/logo/tmp' ,help_text='Imagem do canal')
-    thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb' ,help_text='Imagem do canal')
+    sigla = models.CharField(_('Sigla'), max_length=5)
+    logo = models.ImageField(_('Logo'), upload_to='imgs/canal/logo/tmp', 
+        help_text='Imagem do canal')
+    thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb',
+        help_text='Imagem do canal')
     ip = models.IPAddressField(_('IP'), blank=True)
     porta = models.PositiveSmallIntegerField(_('Porta'), blank=True, null=True)
     atualizado = models.DateTimeField(auto_now=True)
+    epg = models.ForeignKey(Channel, blank=True, null=True)
+    class Meta:
+        ordering = ('numero',)
+        unique_together = ( ('ip', 'porta'), )
+        verbose_name_plural = _('Canais')
+    
     def __unicode__(self):
-        return u"[%d] num=%s %s" %(self.id,self.numero,self.nome);
+        return u"[%d] num=%s %s" %(self.id,self.numero,self.nome)
+    
     def imagem_thum(self):
-        return u'<img width="40" alt="Thum não existe" src="%s" />'%(self.thumb.url)
+        return u'<img width="40" alt="Thum não existe" src="%s" />' % (
+             self.thumb.url)
+    
     imagem_thum.short_description = 'Miniatura'
     imagem_thum.allow_tags = True
+    
     def delete(self):
         """
         Limpeza da imagem.
@@ -62,7 +72,6 @@ class Programa(models.Model):
     hora_final = models.DateTimeField()
     def __unicode__(self):
         return self.nome
-        #return "%s - %s [%s - %s]" %(self.canal,self.nome,self.hora_inicial,self.hora_final)
 
 
 def canal_post_save(signal, instance, sender, **kwargs):
