@@ -192,7 +192,7 @@ class Multicat(stream.SourceRelation):
         try:
             c = self.server.execute('/usr/bin/multicat -u -U @%s:%s %s ' \
                 ' >/dev/null 2>&1 & '%
-                                    (self.ip, self.port, self.destine), persist=True)
+                (self.ip, self.port, self.destine), persist=True)
             print 'Multicat: %s'%c
             c = self.server.execute('echo $@')
             print 'Multicat: %s'%c
