@@ -80,6 +80,7 @@ class Server(models.Model):
             self.msg = ex
             self.status = False
         pid = s.execute_daemon(command)
+        s.close()
         self.save()
         return pid
 
@@ -105,12 +106,10 @@ class Server(models.Model):
         return ret
 
     def kill_process(self,pid):
-        try:
-            s = self.connect()
-            s.execute('/bin/kill %s' % self.pid)
-        except:
-            pass
-
+        s = self.connect()
+        resp = s.execute('/bin/kill %d' % pid)
+        s.close()
+        return resp
 
 
 class Vlc(stream.SourceRelation):

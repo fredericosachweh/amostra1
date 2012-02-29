@@ -90,6 +90,7 @@ class Connection(object):
 /usr/bin/cvlc -I dummy -v -R
 /home/videos/Novos/red_ridding_hood_4M.ts
 --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
+        TODO: melhorar o local e nome do pidfile
         """
         import os
         import datetime
@@ -97,8 +98,7 @@ class Connection(object):
         uid = datetime.datetime.now().toordinal()
         ## /usr/sbin/daemonize
         fullcommand = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(appname,uid,command)
-        channel = self._transport.open_session()
-        channel.exec_command(fullcommand)
+        output = self.execute(fullcommand)
         pidcommand = "/bin/cat ~/%s-%s.pid" % (appname,uid)
         ## Buscando o pid
         output = self.execute(pidcommand)

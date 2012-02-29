@@ -5,6 +5,8 @@ Testes unitários
 """
 
 from django.test import TestCase
+from django.conf import settings
+
 
 class ConnectionTest(TestCase):
     def test_connection(self):
@@ -65,7 +67,7 @@ class ProcessControlTest(TestCase):
 
     def setUp(self):
         from models import Server
-        self._s = Server(
+        self.s = Server(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
@@ -85,21 +87,19 @@ class ProcessControlTest(TestCase):
         fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)
 
     def test_list_process(self):
-        self._s.connect()
-        procs = self._s.list_process()
+        self.s.connect()
+        procs = self.s.list_process()
         self.assertEqual(procs[0]['pid'],
             1,
             'O primero processo deveria ter pid=1')
 
     def test_start_process(self):
-        cmd = '/usr/bin/cvlc -I dummy -v -R \
+        cmd = '/usr/bin/nvlc -I dummy -v -R \
 /mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
---sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"'
-        pid = self._s.execute_daemon(cmd)
+--sout "#std{access=udp,mux=ts,dst=127.0.0.1:5000}"'
+        pid = self.s.execute_daemon(cmd)
         self.assertGreater(pid, 0, 'O processo deveria ser maios que zero')
-        processos = self._s.list_process()
-        for f in processos:
-            if f['pid'] == pid:
-                print('Está rodando:%s' % f)
-        self._s.kill_process(pid)
-        self.assertFalse(self._s.process_alive(pid), 'O processo deveria ter morrido')
+        self.s.kill_process(pid)
+        self.assertFalse(self.s.process_alive(pid),
+            'O processo pid=%d deveria ter morrido.' % pid )
+
