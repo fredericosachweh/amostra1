@@ -130,7 +130,7 @@ class Vlc(stream.SourceRelation):
 
     def start(self):
         """Inicia processo do VLC"""
-        c = self.server.execute_daemon('/usr/bin/cvlc -I dummy -v -R %s ' \
+        c = self.server.execute_daemon('/usr/bin/cvlc -I dummy -v -R "%s" ' \
             '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             self.source,
             self.destine.ip,
