@@ -60,11 +60,12 @@ class Server(models.Model):
         try:
             s = self.connect()
             self.msg = 'OK'
-            return None
+        except:
+            pass
         try:
             w = s.execute(command)
         except Exception as ex:
-            self.msg = ValueError
+            self.msg = ex
             print('command: [%s] %s'%(command,self.msg))
         if not persist:
             s.close()
