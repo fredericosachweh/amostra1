@@ -117,8 +117,8 @@ class Vlc(stream.SourceRelation):
     """VLC streaming device"""
 
     class Meta:
-        verbose_name = _(u'Trailer')
-        verbose_name_plural = _(u'Trailers')
+        verbose_name = _(u'Vídeo em loop')
+        verbose_name_plural = _(u'Vídeos em loop')
     description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
     source = models.CharField(_(u'Origem'),max_length=255)
     server = models.ForeignKey(Server)
