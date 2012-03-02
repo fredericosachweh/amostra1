@@ -37,18 +37,18 @@ class CanalAdmin(admin.ModelAdmin):
     Define modelo administrativo do Canal
     """
     fieldsets = ((None, {
-        'fields':( ('numero', 'nome', 'sigla'),'descricao', 'logo', ('ip', 'porta'), 'epg',),
+        'fields':( ('numero', 'nome', 'sigla'),'descricao', 'logo', ('source'), 'epg',),
         }), )
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
-    #fields = ('numero','nome','descricao','logo','sigla','ip','porta', )
-    list_display  = ('imagem_thum', 'numero', 'nome', 'ip', 'porta', )
+    #fields = ('numero','nome','descricao','logo','sigla','source', )
+    list_display  = ('imagem_thum', 'numero', 'nome', 'source', )
     list_display_links = ('imagem_thum', )
-    list_editable = ('numero', 'ip', 'porta', 'nome', )
+    list_editable = ('numero', 'source', 'nome', )
     #inline        = (Programa,)
     save_as       = True
     list_per_page = 10
-    search_fields = ['nome', 'ip', 'porta']
+    search_fields = ['nome', 'source']
     formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):

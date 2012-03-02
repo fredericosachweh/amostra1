@@ -237,33 +237,38 @@ class DvbblastProgram(stream.SourceRelation):
     def __unicode__(self):
         return self.name
 
-class Multicat(stream.SourceRelation):
+class Multicat(models.Model):
     """
-    Classe para gerar fluxo pelo multicat ou redireciona-lo
-    """
-
+    Classe generica de fluxo via multicat
+    
+    Precisa ser implementado _input(self) e _output(self) para que os métodos de
+    comando funcionem.
+    """ 
     class Meta:
         verbose_name = _(u'Instancia de Multicat')
         verbose_name_plural = _(u'Instancias de Multicat')
-    ip = models.IPAddressField(_(u'Endereço IP'))
-    port = models.PositiveSmallIntegerField(_(u'Porta'))
     parans = models.CharField(_(u'Parâmetros extra'),max_length=255,blank=True)
+    rtp    = models.BooleanField(_(u'RTP'), default=False)
     server = models.ForeignKey(Server)
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
     def __unicode__(self):
-        return '%s:%s -> %s'%(self.ip,self.port,self.destine)
+        return '%s -> %s'%(self.input,self.destine)
+    def _input(self):
+        return ''
+    def _output(self):
+        return ''
     def start(self):
         """Inicia processo do Multicat"""
+        rtp = '-u -U' if not self.rtp else ''
         try:
-            c = self.server.execute('/usr/bin/multicat -u -U @%s:%s %s ' \
-                ' >/dev/null 2>&1 & '%
-                                    (self.ip, self.port, self.destine), persist=True)
-            print 'Multicat: %s'%c
-            c = self.server.execute('echo $@')
+            c = u'/usr/bin/multicat %s %s %s ' \
+                ' >/dev/null 2>&1 & '% (rtp, self._input(), self._output())
+            print c
+            c = self.server.execute_daemon(c)
             print 'Multicat: %s'%c
             self.status = True
-            self.pid = c[0]
+            self.pid = c
         except ValueError:
             print('vlc execute error: %s'%ValueError)
             self.status = False
@@ -294,6 +299,61 @@ class Multicat(stream.SourceRelation):
             url = reverse('device.views.multicat_stop',kwargs={'pk':self.id})
             return '<a href="%s" id="multicat_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
         url = reverse('device.views.multicat_start',kwargs={'pk':self.id})
+        return '<a href="%s" id="multicat_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+    switch_link.allow_tags = True
+
+class MulticatGeneric(Multicat):
+    """
+    Classe para gerar fluxo pelo multicat de origem e destino qualquer
+    """
+    class Meta:
+        verbose_name = _(u'Instancia de Multicat')
+        verbose_name_plural = _(u'Instancias de Multicat')
+    input  = models.CharField(_(u'Input Item'),max_length=255,blank=True)
+    destine = models.CharField(_(u'Destine Item'),max_length=255,blank=True)
+    def _input(self):
+        return u'@%s:%s' % (self.ip, self.port)
+    def _output(self):
+        return u'%s:%s' % (self.target.ip, self.target.port)
+    def __unicode__(self):
+        return u'%s %s' % (self.input, self.destine)
+
+class MulticatSource(Multicat, stream.SourceRelation):
+    """
+    Classe para gerar fluxo pelo multicat de origem customizada
+    """
+    class Meta:
+        verbose_name = _(u'Instancia de Multicat via IP')
+        verbose_name_plural = _(u'Instancias de Multicat via IP')
+    ip = models.IPAddressField(_(u'Endereço IP'),blank=True)
+    port = models.PositiveSmallIntegerField(_(u'Porta'),blank=True)
+    def _input(self):
+        return u'@%s:%s' % (self.ip, self.port)
+    def _output(self):
+        return u'%s:%s' % (self.target.ip, self.target.port)
+    def __unicode__(self):
+        return u'%s' % self.target
+ 
+
+class MulticatRedirect(Multicat):
+    """
+    Classe para gerar fluxo de redirecionamento via multicat
+    """
+    class Meta:
+        verbose_name = _(u'Instancia de Redirecionamento Multicat')
+        verbose_name_plural = _(u'Instancias de Redirecionamento Multicat')
+    target = models.OneToOneField(stream.Destination)
+    def _input(self):
+        return u'@%s:%s' % (self.target.source.ip, self.target.source.port)
+    def _output(self):
+        return u'%s:%s' % (self.target.ip, self.target.port)
+    def __unicode__(self):
+        return u'%s' % self.target
+    def switch_link(self):
+        if self.status is True:
+            url = reverse('device.views.multicat_redirect_stop',kwargs={'pk':self.id})
+            return '<a href="%s" id="multicat_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
+        url = reverse('device.views.multicat_redirect_start',kwargs={'pk':self.id})
         return '<a href="%s" id="multicat_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
     switch_link.allow_tags = True
 

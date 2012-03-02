@@ -10,4 +10,4 @@ class CanalForm(forms.ModelForm):
 
     class Meta:
         model = canal.models.Canal
-        fields = ('numero','nome','descricao','logo','sigla','ip','porta','epg',)
+        fields = ('numero','nome','descricao','logo','sigla','source','epg',)

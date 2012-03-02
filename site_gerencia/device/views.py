@@ -41,3 +41,15 @@ def multicat_stop(request,pk=None):
     o = get_object_or_404(models.Multicat,id=pk)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_multicat_changelist'))
+
+def multicat_redirect_start(request,pk=None):
+    print 'multicat_redirect_start'
+    o = get_object_or_404(models.MulticatRedirect,id=pk)
+    o.start()
+    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
+
+def multicat_redirect_stop(request,pk=None):
+    print 'multicat_redirect_stop'
+    o = get_object_or_404(models.MulticatRedirect,id=pk)
+    o.stop()
+    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))

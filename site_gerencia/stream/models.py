@@ -8,6 +8,8 @@ class UniqueIP(models.Model):
     """
     Classe para ser extendida, para que origem e destino nunca sejam iguais.
     """
+    class Meta:
+        unique_together = ( ('ip', 'port'), )
     ip = models.IPAddressField(_(u'Endereço IP'),default='239.0.0.')
     port = models.PositiveSmallIntegerField(_(u'Porta'),default=10000)
     #XXX: Validar IP + PORTA devem ser unico

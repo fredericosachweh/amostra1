@@ -54,7 +54,9 @@ class AdminDVBSource(admin.ModelAdmin):
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Vlc,AdminDevice)
 admin.site.register(models.Dvblast)
-admin.site.register(models.Multicat,AdminDevice)
+admin.site.register(models.MulticatGeneric,AdminDevice)
+admin.site.register(models.MulticatSource,AdminDevice)
+admin.site.register(models.MulticatRedirect,AdminDevice)
 admin.site.register(models.MulticatRecorder)
 
 
