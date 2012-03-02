@@ -88,7 +88,6 @@ class Server(models.Model):
     def process_alive(self,pid):
         for p in self.list_process():
             if p['pid'] == pid:
-                print('process_alive:%s' % p)
                 return True
         return False
 
