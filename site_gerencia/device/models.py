@@ -130,12 +130,14 @@ class Vlc(stream.SourceRelation):
 
     def start(self):
         """Inicia processo do VLC"""
-        c = self.server.execute_daemon('/usr/bin/cvlc -I dummy -v -R "%s" ' \
+        s = self.source.replace(' ','\ ')
+        c = '/usr/bin/cvlc -I dummy -v -R %s ' \
             '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
-            self.source,
+            s,
             self.destine.ip,
             self.destine.port)
-        )
+        print c
+        c = self.server.execute_daemon(c)
         self.status = True
         self.pid = c
         self.save()
