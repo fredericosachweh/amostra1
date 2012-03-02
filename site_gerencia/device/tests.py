@@ -5,7 +5,6 @@ Testes unitários
 """
 
 from django.test import TestCase
-from django.conf import settings
 
 
 class ConnectionTest(TestCase):
@@ -84,7 +83,7 @@ class ProcessControlTest(TestCase):
         uid = datetime.datetime.now().toordinal()
         parsed = os.path.basename(cmd.split()[0])
         self.assertEqual(parsed, 'cvlc', 'Deveria ser retornado o comando')
-        fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)
+        #fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)
 
     def test_list_process(self):
         self.s.connect()
@@ -94,9 +93,9 @@ class ProcessControlTest(TestCase):
             'O primero processo deveria ter pid=1')
 
     def test_start_process(self):
-        cmd = '/usr/bin/nvlc -I dummy -v -R \
+        cmd = '/usr/bin/cvlc -I dummy -v -R \
 /mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
---sout "#std{access=udp,mux=ts,dst=127.0.0.1:5000}"'
+--sout "#std{access=udp,mux=ts,dst=224.1.1.5:5000}"'
         pid = self.s.execute_daemon(cmd)
         self.assertGreater(pid, 0, 'O processo deveria ser maios que zero')
         self.s.kill_process(pid)

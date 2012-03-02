@@ -97,7 +97,7 @@ class Connection(object):
         appname = os.path.basename(command.split()[0])
         uid = datetime.datetime.now().toordinal()
         ## /usr/sbin/daemonize
-        fullcommand = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(appname,uid,command)
+        fullcommand = '/usr/sbin/daemonize -p ~/%s-%s.pid -o ~/%s-%s.out %s' %(appname,uid,appname,uid,command)
         output = self.execute(fullcommand)
         pidcommand = "/bin/cat ~/%s-%s.pid" % (appname,uid)
         ## Buscando o pid
