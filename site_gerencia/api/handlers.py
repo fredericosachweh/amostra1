@@ -266,7 +266,19 @@ def api_pagination(queryset, request):
 
 	p = Paginator(queryset, limit)
 
-	if page > p.num_pages:
-		return []
-	else:
-		return p.page(page).object_list
+    if page > p.num_pages:
+        return []
+    else:
+        return p.page(page).object_list
+
+
+from piston.doc import generate_doc
+
+doc = generate_doc(ChannelHandler)
+
+for m in doc.get_methods():
+    print m
+    for a in m.iter_args():
+        print a
+
+print doc

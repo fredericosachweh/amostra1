@@ -10,11 +10,12 @@ urlpatterns = patterns('',
     url(r'^index/$',        'box.views.index',        name='box_index'),
 #    url(r'^$',              'box.views.index'),
     url(r'^auth/(?P<mac>[0-9A-F:]{10,20})/.*$','box.views.auth', name='box_auth'),
-    
-    url(r'^canal_list/$',   'box.views.canal_list',   name='canal_list'),
-    url(r'^remote_log/$',   'box.views.remote_log',   name='box_remote_log'),
-    url(r'^canal_update/$', 'box.views.canal_update', name='canal_update'),
-    url(r'^setup/$',        'box.views.setup',        name='setup'),
+    url(r'^canal_list/$',            'box.views.canal_list',   name='canal_list'),
+    url(r'^programme_info/$',        'box.views.programme_info', name='programme_info'),
+    url(r'^guide_programmes/$',        'box.views.guide_programmes', name='guide_programmes'),
+    url(r'^remote_log/$',            'box.views.remote_log',   name='box_remote_log'),
+    url(r'^canal_update/$',          'box.views.canal_update', name='canal_update'),
+    url(r'^setup/$',                 'box.views.setup',        name='setup'),
     
     url(r'^ping$',          'box.views.ping',         name='ping'),
     
