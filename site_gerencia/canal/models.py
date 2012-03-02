@@ -11,7 +11,7 @@ from django.db.models import signals
 from django.conf import settings
 
 from epg.models import Channel
-from stream.models import Destination
+from stream.models import UniqueIP
 
 class Canal(models.Model):
     """
@@ -28,9 +28,10 @@ class Canal(models.Model):
         help_text='Imagem do canal')
     thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb',
         help_text='Imagem do canal')
-    source = models.ForeignKey(Destination, verbose_name="source")
+    source = models.ForeignKey(UniqueIP)
     atualizado = models.DateTimeField(auto_now=True)
     epg = models.ForeignKey(Channel, blank=True, null=True)
+    enabled = models.BooleanField(_(u'Disponível'), default=False)
     def __unicode__(self):
         return u"[%d] num=%s %s" %(self.id,self.numero,self.nome)
     
