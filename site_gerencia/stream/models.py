@@ -15,6 +15,9 @@ class UniqueIP(models.Model):
     #XXX: Validar IP + PORTA devem ser unico
     def __unicode__(self):
         return '%s:%s'%(self.ip,self.port)
+    
+    def natural_key(self):
+        return {'ip':self.ip,'port':self.port}
 
 class Source(UniqueIP):
     """
@@ -24,18 +27,24 @@ class Source(UniqueIP):
     class Meta:
         verbose_name = _(u'Origem de fluxo')
         verbose_name_plural = _(u'Origens de fluxo')
+        
     is_rtp = models.BooleanField(_(u'RTP'),default=False)
     desc = models.CharField(_(u'Descrição'),max_length=100,blank=True)
+    
     def __unicode__(self):
         rtp = '[RTP]' if self.is_rtp else ''
         desc = '- %s'%(self.desc) if self.desc else ''
         return '%s:%d %s %s' %(self.ip,self.port,rtp,desc)
         #return '%s:%d' %(self.ip,self.port)
+    
     def destinations(self):
         return self.destination_set.all()
+    
     def in_use(self):
         return bool(self.sourcerelation)
+    
     in_use.boolean = True
+
 
 class SourceRelation(models.Model):
     """

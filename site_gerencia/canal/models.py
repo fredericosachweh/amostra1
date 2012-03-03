@@ -32,12 +32,14 @@ class Canal(models.Model):
     atualizado = models.DateTimeField(auto_now=True)
     epg = models.ForeignKey(Channel, blank=True, null=True)
     enabled = models.BooleanField(_(u'Disponível'), default=False)
+    
     def __unicode__(self):
         return u"[%d] num=%s %s" %(self.id,self.numero,self.nome)
     
     def imagem_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />' % (
              self.thumb.url)
+    
     imagem_thum.short_description = 'Miniatura'
     imagem_thum.allow_tags = True
     
@@ -50,24 +52,30 @@ class Canal(models.Model):
         import os
         os.unlink(self.logo.path)
         os.unlink(self.thumb.path)
+    
 
 class Genero(models.Model):
+    
     def __unicode__(self):
         return self.nome
+    
     nome = models.CharField(_('Nome'),max_length=100)
 
 class Programa(models.Model):
     """
     Elemento de um programa na grade
     """
+    
     class Meta:
         ordering = ('hora_inicial',)
+    
     nome = models.CharField(_('Nome'),max_length=100)
     sinopse = models.TextField(_('Sinopse'))
     genero = models.ForeignKey(Genero)
     canal = models.ForeignKey(Canal)
     hora_inicial = models.DateTimeField()
     hora_final = models.DateTimeField()
+    
     def __unicode__(self):
         return self.nome
 

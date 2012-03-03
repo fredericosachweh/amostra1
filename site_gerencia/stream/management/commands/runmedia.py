@@ -16,7 +16,13 @@ class Command(BaseCommand):
     #self.can_import_settings = True
 
     def handle(self, **options):
-        pass
+        ## inicia os vlcs
+        from device.models import Vlc, Server
+        vlcs = Vlc.objects.all()
+        for vlc in vlcs:
+            if vlc.status == True:
+                print('Iniciando:%s' %vlc)
+                vlc.start()
         #streams = Stream.objects.filter(pid__isnull=False)
         #for stream in streams:
         #    if options.get('debug') > 0:
