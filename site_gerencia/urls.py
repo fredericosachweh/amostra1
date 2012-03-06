@@ -33,6 +33,8 @@ urlpatterns = patterns('',
     (r'^%sepg/'%settings.ROOT_URL,include('epg.urls')),
     # REST interface for the EPG
     (r'^%sapi/'%settings.ROOT_URL, include('api.urls')),
+    # DVBInfo
+    (r'^%sdvbinfo/'%settings.ROOT_URL, include('dvbinfo.urls')),
     # Devices em servidores
     (r'^%sdevice/'%settings.ROOT_URL,include('device.urls')),
     # Página inicial
