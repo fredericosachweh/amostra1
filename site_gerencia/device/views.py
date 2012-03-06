@@ -32,15 +32,15 @@ def vlc_stop(request,pk=None):
 
 def multicat_start(request,pk=None):
     print 'multicat_start'
-    o = get_object_or_404(models.Multicat,id=pk)
+    o = get_object_or_404(models.MulticatGeneric,id=pk)
     o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicat_changelist'))
+    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
 
 def multicat_stop(request,pk=None):
     print 'multicat_stop'
-    o = get_object_or_404(models.Multicat,id=pk)
+    o = get_object_or_404(models.MulticatGeneric,id=pk)
     o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicat_changelist'))
+    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
 
 def multicat_redirect_start(request,pk=None):
     print 'multicat_redirect_start'

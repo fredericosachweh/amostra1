@@ -125,11 +125,11 @@ class Vlc(stream.SourceRelation):
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
 
     def __unicode__(self):
-        return '[%s] %s > %s' %(self.server,self.source,self.destine)
+        return '[%s] %s > %s' %(self.server,self.destine,self.description)
 
     def start(self):
         """Inicia processo do VLC"""
-        s = self.source.replace(' ','\ ')
+        s = self.source.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
         c = '/usr/bin/cvlc -I dummy -v -R %s ' \
             '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             s,
@@ -313,9 +313,9 @@ class MulticatGeneric(Multicat):
     input  = models.CharField(_(u'Input Item'),max_length=255,blank=True)
     destine = models.CharField(_(u'Destine Item'),max_length=255,blank=True)
     def _input(self):
-        return u'@%s:%s' % (self.ip, self.port)
+        return u'%s' % (self.input)
     def _output(self):
-        return u'%s:%s' % (self.target.ip, self.target.port)
+        return u'%s' % (self.destine)
     def __unicode__(self):
         return u'%s %s' % (self.input, self.destine)
 
