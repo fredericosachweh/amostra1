@@ -11,7 +11,7 @@ from django.db.models import signals
 from django.conf import settings
 
 from epg.models import Channel
-from stream.models import UniqueIP
+from device.models import UniqueIP
 
 class Canal(models.Model):
     """
@@ -24,17 +24,21 @@ class Canal(models.Model):
     nome   = models.CharField(_('Nome'), max_length=100)
     descricao = models.TextField(_('Descricao'))
     sigla = models.CharField(_('Sigla'), max_length=5)
-    logo = models.ImageField(_('Logo'), upload_to='imgs/canal/logo/tmp', 
-        help_text='Imagem do canal')
-    thumb = models.ImageField(_('Miniatura'),upload_to='imgs/canal/logo/thumb',
-        help_text='Imagem do canal')
+    logo = models.ImageField(_('Logo'),
+        upload_to='imgs/canal/logo/tmp', 
+        help_text='Imagem do canal'
+        )
+    thumb = models.ImageField(_('Miniatura'),
+        upload_to='imgs/canal/logo/thumb',
+        help_text='Imagem do canal'
+        )
     source = models.ForeignKey(UniqueIP)
     atualizado = models.DateTimeField(auto_now=True)
     epg = models.ForeignKey(Channel, blank=True, null=True)
     enabled = models.BooleanField(_(u'Disponível'), default=False)
     
     def __unicode__(self):
-        return u"[%d] num=%s %s" %(self.id,self.numero,self.nome)
+        return u"[%d][%s] num=%s %s" %(self.id,self.enabled,self.numero,self.nome)
     
     def imagem_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />' % (
@@ -52,32 +56,6 @@ class Canal(models.Model):
         import os
         os.unlink(self.logo.path)
         os.unlink(self.thumb.path)
-    
-
-class Genero(models.Model):
-    
-    def __unicode__(self):
-        return self.nome
-    
-    nome = models.CharField(_('Nome'),max_length=100)
-
-class Programa(models.Model):
-    """
-    Elemento de um programa na grade
-    """
-    
-    class Meta:
-        ordering = ('hora_inicial',)
-    
-    nome = models.CharField(_('Nome'),max_length=100)
-    sinopse = models.TextField(_('Sinopse'))
-    genero = models.ForeignKey(Genero)
-    canal = models.ForeignKey(Canal)
-    hora_inicial = models.DateTimeField()
-    hora_final = models.DateTimeField()
-    
-    def __unicode__(self):
-        return self.nome
 
 
 def canal_post_save(signal, instance, sender, **kwargs):

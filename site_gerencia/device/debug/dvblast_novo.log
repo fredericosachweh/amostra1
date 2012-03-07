@@ -1,0 +1,1046 @@
+dvblast -f 3870000 -s 1280000
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3870000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3870000 srate=1280000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter0/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+info: Shutdown was requested.
+
+
+[root@multicast ~]# dvblast -f 3870000 -s 1280000 -a 2
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3870000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3870000 srate=1280000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter2/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+info: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3870000 -s 1280000 -a 3
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3870000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3870000 srate=1280000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter3/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+info: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3870000 -s 1280000 -a 4
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_4_5
+debug:   FEC_5_6
+debug:   FEC_6_7
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug:   2G_MODULATION
+debug:   FE_CAN_RECOVER
+debug: frequency 3870000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3870000 srate=1280000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter4/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: Dump is 1316204229 seconds late - reset timing
+debug: new PAT tsid=1 version=9
+debug:   * NIT pid=16
+debug:   * program number=1 pid=256
+debug:   * program number=1408 pid=8136
+debug: end PAT
+warning: no lock, tuning again
+debug: frequency 3870000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3870000 srate=1280000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: no lock, tuning again
+debug: frequency 3870000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3870000 srate=1280000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+info: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3830000 -s 1320000 -a 4
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_4_5
+debug:   FEC_5_6
+debug:   FEC_6_7
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug:   2G_MODULATION
+debug:   FE_CAN_RECOVER
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter4/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+^Cinfo: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3830000 -s 1320000 -a 1
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter1/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+^Cinfo: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3830000 -s 1320000 -a 4
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_4_5
+debug:   FEC_5_6
+debug:   FEC_6_7
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug:   2G_MODULATION
+debug:   FE_CAN_RECOVER
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter4/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+^Cinfo: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3830000 -s 1320000 -a 5
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter5/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+warning: no lock, tuning again
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+warning: no lock, tuning again
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+warning: no lock, tuning again
+debug: frequency 3830000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3830000 srate=1320000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has lost carrier
+debug: frontend has acquired carrier
+debug: frontend has lost carrier
+debug: frontend has acquired carrier
+debug: frontend has lost carrier
+debug: frontend has acquired carrier
+^Cinfo: Shutdown was requested.
+
+
+
+[root@multicast ~]# dvblast -f 3090000 -s 2220000 -a 4
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_4_5
+debug:   FEC_5_6
+debug:   FEC_6_7
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug:   2G_MODULATION
+debug:   FE_CAN_RECOVER
+debug: frequency 3090000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3090000 srate=2220000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter4/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+warning: no lock, tuning again
+debug: frequency 3090000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3090000 srate=2220000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+frontend has acquired lock
+debug: - Bit error rate: 0
+debug: - Signal strength: 3464
+debug: - SNR: 41920
+debug: Dump is 1316204539 seconds late - reset timing
+
+debug: new PAT tsid=1 version=0
+debug:   * NIT pid=16
+debug:   * program number=1 pid=257
+debug: end PAT
+debug: new NIT actual networkid=1 version=0
+debug: end NIT
+debug: new SDT actual tsid=1 version=0 onid=1
+debug:   * service sid=1 eit present running=4
+debug:     - desc 48 type=0x1 provider="STI Telecom" service="Canal Saude"
+debug: end SDT
+
+[helber@multicast ~]$ dvblast -a 4 -f 3074000 -s 6666000 -U -c /etc/dvblast/channels.d/TVJustiça.conf 
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+warning: raw UDP output is deprecated.  Please consider using RTP.
+warning: for DVB-IP compliance you should use RTP.
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3074000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3074000 srate=6666000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter4/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+debug: conf: 239.0.1.6:10000/udp config=0x9 sid=0 pids[0]
+debug: conf: 239.0.1.7:10000/udp config=0x9 sid=1 pids[0]
+debug: conf: 239.0.1.8:10000/udp config=0x9 sid=2 pids[0]
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+frontend has acquired lock
+debug: - Bit error rate: 236
+debug: - Signal strength: 50688
+debug: - SNR: 0
+debug: Dump is 1316395400 seconds late - reset timing
+
+debug: setting filter on PID 32
+debug: setting filter on PID 259
+debug: new PAT tsid=0 version=7
+debug:   * NIT pid=16
+debug:   * program number=1 pid=32
+debug:   * program number=2 pid=259
+debug: end PAT
+debug: setting filter on PID 389
+debug: setting filter on PID 390
+debug: setting filter on PID 391
+debug: new PMT program=2 version=0 pcrpid=389
+debug:   * ES pid=389 streamtype=0x2
+debug:   * ES pid=390 streamtype=0x3
+debug:   * ES pid=391 streamtype=0x3
+debug:     - desc 0a language=SAP audiotype=0x0
+debug: end PMT
+debug: setting filter on PID 289
+debug: setting filter on PID 290
+debug: setting filter on PID 350
+debug: setting filter on PID 291
+debug: new PMT program=1 version=0 pcrpid=289
+debug:   * ES pid=289 streamtype=0x2
+debug:   * ES pid=290 streamtype=0x3
+debug:   * ES pid=350 streamtype=0x3
+debug:   * ES pid=291 streamtype=0x3
+debug:     - desc 0a language=SAP audiotype=0x0
+debug: end PMT
+debug: new SDT actual tsid=0 version=5 onid=1
+debug:   * service sid=1 eit present running=4
+debug:     - desc 48 type=0x1 provider="Impsat" service="TV Justica"
+debug:   * service sid=2 eit present running=4
+debug:     - desc 48 type=0x1 provider="" service="TV Justica 2"
+debug: end SDT
+debug: new NIT actual networkid=1 version=0
+debug: end NIT
+
+
+
+
+[root@multicast channels.d]# dvblast -q -x xml -a 5 -f 3074000 -s 6666000 -U -c TVJustiça.conf
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+<?xml version="1.0" encoding="utf-8"?>
+<TS>
+warning: raw UDP output is deprecated.  Please consider using RTP.
+warning: for DVB-IP compliance you should use RTP.
+warning: failed opening CAM device /dev/dvb/adapter5/ca0 (No such file or directory)
+<PAT tsid="0" version="7" current_next="1"><PROGRAM number="0" pid="16"/><PROGRAM number="1" pid="32"/><PROGRAM number="2" pid="259"/></PAT>
+info: frontend has acquired lock
+<STATUS type="lock" status="1" />
+<PMT program="1" version="0" current_next="1" pcrpid="289"><ES pid="289" streamtype="0x2"></ES><ES pid="290" streamtype="0x3"></ES><ES pid="350" streamtype="0x3"></ES><ES pid="291" streamtype="0x3"><DESC id="10" value="53415000"><AUDIO_LANGUAGE_DESC language="SAP" audiotype="0x0"/></DESC></ES></PMT>
+<PMT program="2" version="0" current_next="1" pcrpid="389"><ES pid="389" streamtype="0x2"></ES><ES pid="390" streamtype="0x3"></ES><ES pid="391" streamtype="0x3"><DESC id="10" value="53415000"><AUDIO_LANGUAGE_DESC language="SAP" audiotype="0x0"/></DESC></ES></PMT>
+<NIT tid="64" networkid="1" version="0" current_next="1"></NIT>
+<SDT tid="66" tsid="0" version="5" current_next="1" onid="1"><SERVICE sid="1" eit_schedule="0" eit_pf="1" running="4" free_CA="0"><DESC id="72" value="0106496d707361740a5456204a757374696361"><SERVICE_DESC type="0x1" provider="Impsat" service="TV Justica"/></DESC></SERVICE><SERVICE sid="2" eit_schedule="0" eit_pf="1" running="4" free_CA="0"><DESC id="72" value="01000c5456204a7573746963612032"><SERVICE_DESC type="0x1" provider="" service="TV Justica 2"/></DESC></SERVICE></SDT>
+
+
+
+
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+warning: raw UDP output is deprecated.  Please consider using RTP.
+warning: for DVB-IP compliance you should use RTP.
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3680000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3680000 srate=6000000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter5/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+debug: conf: 239.0.1.6:10000/udp config=0x9 sid=0 pids[0]
+debug: conf: 239.0.1.7:10000/udp config=0x9 sid=1 pids[0]
+debug: conf: 239.0.1.8:10000/udp config=0x9 sid=2 pids[0]
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+debug: - Bit error rate: 59
+debug: - Signal strength: 49152
+debug: - SNR: 0
+debug: Dump is 1316498687 seconds late - reset timing
+
+debug: setting filter on PID 3200
+debug: new PAT tsid=1 version=6
+debug:   * NIT pid=16
+debug:   * program number=1 pid=3200
+debug: end PAT
+debug: setting filter on PID 320
+debug: setting filter on PID 321
+debug: setting filter on PID 322
+debug: setting filter on PID 325
+debug: new PMT program=1 version=6 pcrpid=320
+debug:   * ES pid=320 streamtype=0x2
+debug:     - desc 52 unknown
+debug:   * ES pid=321 streamtype=0x4
+debug:     - desc 52 unknown
+debug:   * ES pid=322 streamtype=0x4
+debug:     - desc 52 unknown
+debug:   * ES pid=325 streamtype=0x81
+debug:     - desc 52 unknown
+debug: end PMT
+debug: new SDT actual tsid=1 version=0 onid=1
+debug:   * service sid=1 eit present running=4
+debug:     - desc 48 type=0x1 provider="Globo BH" service="TV GLOBO - Minas"
+debug: end SDT
+debug: new NIT actual networkid=1 version=6
+debug:     - desc 40 networkname="TV Globo - Minas Gerais"
+debug:   * ts tsid=1 onid=1
+debug:     - desc 43 dvb-s frequency=4350000H pos=44.0E modulation=qpsk symbolrate=6000000 fecinner=3/4
+debug: end NIT
+[{'program': '1', 'pid': '3200'}]
+[20/Sep/2011 03:04:52] "GET /stream/scan_dvb/1/ HTTP/1.1" 200 33
+
+
+DVBlast 2.0.0 (git-1.2-122-g379e8c5)
+warning: restarting
+warning: raw UDP output is deprecated.  Please consider using RTP.
+warning: for DVB-IP compliance you should use RTP.
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3680000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3680000 srate=6000000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter5/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+debug: conf: 239.0.1.6:10000/udp config=0x9 sid=0 pids[0]
+debug: conf: 239.0.1.7:10000/udp config=0x9 sid=1 pids[0]
+debug: conf: 239.0.1.8:10000/udp config=0x9 sid=2 pids[0]
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+debug: - Bit error rate: 106
+debug: - Signal strength: 53760
+debug: - SNR: 0
+debug: Dump is 1316500211 seconds late - reset timing
+
+debug: setting filter on PID 3200
+debug: new PAT tsid=1 version=6
+debug:   * NIT pid=16
+debug:   * program number=1 pid=3200
+debug: end PAT
+debug: setting filter on PID 320
+debug: setting filter on PID 321
+debug: setting filter on PID 322
+debug: setting filter on PID 325
+debug: new PMT program=1 version=6 pcrpid=320
+debug:   * ES pid=320 streamtype=0x2
+debug:     - desc 52 unknown
+debug:   * ES pid=321 streamtype=0x4
+debug:     - desc 52 unknown
+debug:   * ES pid=322 streamtype=0x4
+debug:     - desc 52 unknown
+debug:   * ES pid=325 streamtype=0x81
+debug:     - desc 52 unknown
+debug: end PMT
+debug: new SDT actual tsid=1 version=0 onid=1
+debug:   * service sid=1 eit present running=4
+debug:     - desc 48 type=0x1 provider="Globo BH" service="TV GLOBO - Minas"
+debug: end SDT
+[{'program': '1', 'pid': '3200'}]
+[20/Sep/2011 03:30:17] "GET /stream/scan_dvb/1/ HTTP/1.1" 200 33
+
+
+
+
+
+
+[root@cianet-demo ~]# dvblast -D @239.0.1.10:10000 -c /etc/dvblast/channels.d/1.conf 
+DVBlast 2.0.0 (git-379e8c5)
+warning: restarting
+debug: binding socket to @239.0.1.10:10000
+debug: conf: 224.0.0.17:10000/udp config=0x9 sid=30 pids[0]
+debug: conf: 224.0.0.18:10000/udp config=0x9 sid=80 pids[0]
+debug: conf: 224.0.0.19:10000/udp config=0x9 sid=81 pids[0]
+debug: conf: 224.0.0.20:10000/udp config=0x9 sid=82 pids[0]
+frontend has acquired lock
+debug: new RTP source: 68.84.65.160
+new RTP source: 68.84.65.160
+debug: Dump is 1317057959 seconds late - reset timing
+
+debug: new PAT tsid=201 version=15
+debug:   * NIT pid=16
+debug:   * program number=30 pid=5030
+debug:   * program number=80 pid=5080
+debug:   * program number=81 pid=5081
+debug:   * program number=82 pid=5082
+debug:   * program number=83 pid=5083
+debug:   * program number=84 pid=5084
+debug:   * program number=85 pid=5085
+debug:   * program number=86 pid=5086
+debug:   * program number=87 pid=5087
+debug:   * program number=88 pid=5088
+debug:   * program number=89 pid=5089
+debug:   * program number=90 pid=5090
+debug:   * program number=99 pid=5099
+debug:   * program number=100 pid=5100
+debug:   * program number=134 pid=5134
+debug:   * program number=133 pid=5133
+debug:   * program number=135 pid=5135
+debug:   * program number=195 pid=5195
+debug:   * program number=196 pid=5196
+debug:   * program number=70 pid=5070
+debug:   * program number=852 pid=5852
+debug:   * program number=72 pid=5072
+debug:   * program number=71 pid=5071
+debug:   * program number=74 pid=5074
+debug: end PAT
+debug: new PMT program=80 version=4 pcrpid=1010
+debug:     - desc 0f unknown
+debug:     - desc 09 sysid=0xe00 pid=6080
+debug:   * ES pid=1010 streamtype=0x2
+debug:   * ES pid=1004 streamtype=0x4
+debug:   * ES pid=1006 streamtype=0x4
+debug: end PMT
+debug: new NIT actual networkid=1 version=11
+debug:     - desc 40 networkname="LA"
+debug:   * ts tsid=1 onid=1
+debug:     - desc 43 dvb-s frequency=3781000H pos=0.0E modulation=qpsk symbolrate=27690000 fecinner=7/8
+debug:     - desc 41 service_list sid=14 type=1
+debug:     - desc 41 service_list sid=45 type=1
+debug:     - desc 41 service_list sid=101 type=1
+debug:     - desc 41 service_list sid=102 type=1
+debug:     - desc 41 service_list sid=103 type=1
+debug:     - desc 41 service_list sid=105 type=1
+debug:     - desc 41 service_list sid=106 type=1
+debug:     - desc 41 service_list sid=107 type=1
+debug:     - desc 41 service_list sid=110 type=1
+debug:     - desc 41 service_list sid=111 type=1
+debug:     - desc 41 service_list sid=112 type=1
+debug:     - desc 41 service_list sid=113 type=1
+debug:     - desc 41 service_list sid=127 type=1
+debug:     - desc 41 service_list sid=128 type=1
+debug:     - desc 41 service_list sid=129 type=1
+debug:     - desc 41 service_list sid=130 type=1
+debug:     - desc 41 service_list sid=131 type=1
+debug:     - desc 41 service_list sid=132 type=1
+debug:     - desc 41 service_list sid=190 type=1
+debug:     - desc 41 service_list sid=191 type=1
+debug:     - desc 41 service_list sid=194 type=1
+debug:     - desc 41 service_list sid=201 type=1
+debug:     - desc 41 service_list sid=202 type=1
+debug:     - desc 41 service_list sid=210 type=1
+debug:     - desc 41 service_list sid=211 type=1
+debug:     - desc 41 service_list sid=227 type=1
+debug:     - desc 41 service_list sid=228 type=1
+debug:     - desc 41 service_list sid=229 type=1
+debug:     - desc 41 service_list sid=230 type=1
+debug:     - desc 41 service_list sid=251 type=1
+debug:     - desc 41 service_list sid=252 type=1
+debug:     - desc 41 service_list sid=301 type=1
+debug:     - desc 41 service_list sid=351 type=1
+debug:     - desc 41 service_list sid=352 type=1
+debug:     - desc 41 service_list sid=353 type=1
+debug:     - desc 41 service_list sid=355 type=1
+debug:     - desc 41 service_list sid=356 type=1
+debug:     - desc 41 service_list sid=357 type=1
+debug:     - desc 41 service_list sid=358 type=1
+debug:     - desc 41 service_list sid=359 type=1
+debug:     - desc 41 service_list sid=104 type=1
+debug:   * ts tsid=201 onid=1
+debug:     - desc 43 dvb-s frequency=3920000H pos=0.0E modulation=qpsk symbolrate=27690000 fecinner=7/8
+debug:     - desc 41 service_list sid=30 type=1
+debug:     - desc 41 service_list sid=80 type=1
+debug:     - desc 41 service_list sid=81 type=1
+debug:     - desc 41 service_list sid=82 type=1
+debug:     - desc 41 service_list sid=83 type=1
+debug:     - desc 41 service_list sid=84 type=1
+debug:     - desc 41 service_list sid=85 type=1
+debug:     - desc 41 service_list sid=86 type=1
+debug:     - desc 41 service_list sid=87 type=1
+debug:     - desc 41 service_list sid=88 type=1
+debug:     - desc 41 service_list sid=89 type=1
+debug:     - desc 41 service_list sid=90 type=1
+debug:     - desc 41 service_list sid=99 type=1
+debug:     - desc 41 service_list sid=100 type=1
+debug:     - desc 41 service_list sid=134 type=1
+debug:     - desc 41 service_list sid=133 type=1
+debug:     - desc 41 service_list sid=135 type=1
+debug:     - desc 41 service_list sid=195 type=1
+debug:     - desc 41 service_list sid=196 type=1
+debug:     - desc 41 service_list sid=70 type=1
+debug:     - desc 41 service_list sid=852 type=1
+debug:     - desc 41 service_list sid=72 type=1
+debug:     - desc 41 service_list sid=71 type=1
+debug:     - desc 41 service_list sid=74 type=1
+debug: end NIT
+debug: new SDT actual tsid=201 version=3 onid=1
+debug:   * service sid=30 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="Servicios LA 3"
+debug:     - desc 53 unknown
+debug:   * service sid=80 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="I-SAT Brasil"
+debug:     - desc 53 unknown
+debug:   * service sid=81 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="Infinito USH"
+debug:     - desc 53 unknown
+debug:   * service sid=82 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="Space Brasil"
+debug:     - desc 53 unknown
+debug:   * service sid=83 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="Space PNR"
+debug:     - desc 53 unknown
+debug:   * service sid=84 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="Space PNR AC-3"
+debug:     - desc 53 unknown
+debug:   * service sid=85 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="Isat PNR AC-3"
+debug:     - desc 53 unknown
+debug:   * service sid=86 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="I-SAT PNR"
+debug:     - desc 53 unknown
+debug:   * service sid=87 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="GLITZ SUR"
+debug:     - desc 53 unknown
+debug:   * service sid=88 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="GLITZ SUR AC-3"
+debug:     - desc 53 unknown
+debug:   * service sid=89 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="GLITZ PNR"
+debug:     - desc 53 unknown
+debug:   * service sid=90 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="GLITZ PNR AC-3"
+debug:     - desc 53 unknown
+debug:   * service sid=99 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="SPACE MEX"
+debug:     - desc 53 unknown
+debug:   * service sid=100 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="SPACE MEX AC3"
+debug:     - desc 53 unknown
+debug:   * service sid=134 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="TNT COLOMBIA"
+debug:     - desc 53 unknown
+debug:   * service sid=133 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="TNT COLOMBIA D9225"
+debug:     - desc 53 unknown
+debug:   * service sid=135 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="TNT COLOMBIA AC-3"
+debug:     - desc 53 unknown
+debug:   * service sid=195 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="TCM BR"
+debug:     - desc 53 unknown
+debug:   * service sid=196 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="TCM BR AC-3"
+debug:     - desc 53 unknown
+debug:   * service sid=70 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="ENC 1 PB MPEG TEST"
+debug:     - desc 53 unknown
+debug:   * service sid=852 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="BOOM USA BCKUP"
+debug:     - desc 53 unknown
+debug:   * service sid=72 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="ENC 2 FM MPEG Y AC3 TEST"
+debug:     - desc 53 unknown
+debug:   * service sid=71 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="ENC 1 PB AC3 TEST"
+debug:     - desc 53 unknown
+debug:   * service sid=74 eit present running=4 scrambled
+debug:     - desc 48 type=0x1 provider="" service="ENC 14  VE MPEG Y AC3 TEST"
+debug:     - desc 53 unknown
+debug: end SDT
+
+
+
+
+/usr/local/bin/dvblast -c /etc/dvblast/channels.d/3.conf -a 0 -f 3990000 -s 7400000 -U -m psk_8 -v 13
+L:DVBlast 2.0.0 (git-379e8c5)
+L:warning: restarting
+L:warning: raw UDP output is deprecated.  Please consider using RTP.
+L:warning: for DVB-IP compliance you should use RTP.
+L:debug: using linux-dvb API version 5
+L:debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+L:debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+L:debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+L:debug:  capabilities:
+L:debug:   INVERSION_AUTO
+L:debug:   FEC_1_2
+L:debug:   FEC_2_3
+L:debug:   FEC_3_4
+L:debug:   FEC_4_5
+L:debug:   FEC_5_6
+L:debug:   FEC_6_7
+L:debug:   FEC_7_8
+L:debug:   FEC_AUTO
+L:debug:   QPSK
+L:debug:   2G_MODULATION
+L:debug:   FE_CAN_RECOVER
+L:debug: frequency 3990000 is in C-band (lower)
+L:debug: configuring LNB to v=13 p=0 satnum=0
+L:debug: tuning QPSK frontend to f=3990000 srate=7400000 inversion=-1 fec=999 rolloff=35 modulation=psk_8 pilot=-1
+L:warning: failed opening CAM device /dev/dvb/adapter0/ca0 (No such file or directory)
+L:debug: setting filter on PID 0
+L:debug: setting filter on PID 16
+L:debug: setting filter on PID 17
+L:debug: setting filter on PID 18
+L:debug: setting filter on PID 19
+L:debug: setting filter on PID 20
+L:debug: Dump is 1318025764 seconds late - reset timing
+L:
+L:debug: new PAT tsid=0 version=7
+L:debug:   * NIT pid=16
+L:debug:   * program number=1 pid=32
+L:debug:   * program number=2 pid=259
+L:debug: end PAT
+L:warning: TS discontinuity on pid    0 expected_cc  4 got 12 (PAT, sid 0)
+L:debug: new PAT tsid=1 version=9
+L:debug:   * NIT pid=16
+L:debug:   * program number=1 pid=256
+L:debug:   * program number=1408 pid=8136
+L:debug: end PAT
+L:debug: frontend has acquired signal
+L:debug: frontend has acquired carrier
+L:debug: frontend has acquired stable FEC
+L:debug: frontend has acquired sync
+L:info: frontend has acquired lock
+L:debug: - Bit error rate: -1
+L:debug: - Signal strength: -52072
+L:debug: - SNR: -29511
+L:debug: new SDT actual tsid=1 version=3 onid=1
+L:debug:   * service sid=1 eit running=4
+L:debug:     - desc 48 type=0x1 provider="BAND" service="BAND HD"
+L:debug: end SDT
+L:debug: new NIT actual networkid=1 version=0
+L:debug: end NIT
+
+
+
+
+
+
+
+
+/usr/local/bin/dvblast -c /etc/dvblast/channels.d/3.conf -a 0 -f 3990000 -s 7400000 -U -m psk_8 -v 13
+L:DVBlast 2.0.0 (git-379e8c5)
+L:warning: restarting
+L:warning: raw UDP output is deprecated.  Please consider using RTP.
+L:warning: for DVB-IP compliance you should use RTP.
+L:debug: using linux-dvb API version 5
+L:debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+L:debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+L:debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+L:debug:  capabilities:
+L:debug:   INVERSION_AUTO
+L:debug:   FEC_1_2
+L:debug:   FEC_2_3
+L:debug:   FEC_3_4
+L:debug:   FEC_4_5
+L:debug:   FEC_5_6
+L:debug:   FEC_6_7
+L:debug:   FEC_7_8
+L:debug:   FEC_AUTO
+L:debug:   QPSK
+L:debug:   2G_MODULATION
+L:debug:   FE_CAN_RECOVER
+L:debug: frequency 3990000 is in C-band (lower)
+L:debug: configuring LNB to v=13 p=0 satnum=0
+L:debug: tuning QPSK frontend to f=3990000 srate=7400000 inversion=-1 fec=999 rolloff=35 modulation=psk_8 pilot=-1
+L:warning: failed opening CAM device /dev/dvb/adapter0/ca0 (No such file or directory)
+L:debug: setting filter on PID 0
+L:debug: setting filter on PID 16
+L:debug: setting filter on PID 17
+L:debug: setting filter on PID 18
+L:debug: setting filter on PID 19
+L:debug: setting filter on PID 20
+
+
+
+
+
+
+
+/usr/bin/dvblast -a 2 -f 3090000 -s 2220000
+Iniciando "dvblast -a 0 -f 3274000 -s 5926000 -U -u -d 239.0.1.2:10000" (Seg Dez 12 15:53:43 BRST 2011)
+DVBlast 1.9.0 (git-6803acd-dirty)
+warning: restarting
+warning: raw UDP output is deprecated.  Please consider using RTP.
+warning: for DVB-IP compliance you should use RTP.
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3274000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3274000 srate=5926000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter0/ca0 (No such file or directory)
+debug: setting filter on PID 8192
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: Dump is 1323712426 seconds late - reset timing
+
+warning: TS discontinuity on pid 1110 expected_cc 11 got  0 (..., sid 0)
+warning: transport_error_indicator on pid 7383 (..., sid 0)
+warning: TS discontinuity on pid 1213 expected_cc  6 got  9 (..., sid 0)
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+debug: - Bit error rate: 100
+debug: - Signal strength: 52224
+debug: - SNR: 0
+debug: new PAT tsid=1 version=2
+debug:   * NIT pid=16
+debug:   * program number=1 pid=5001
+debug: end PAT
+debug: new PMT program=1 version=14 pcrpid=1110
+debug:     - desc 0f private_data_indicator private_indicator=0x53415053
+debug:     - desc 0b system_clock external_clock_reference_indicator=0 clock_accuracy_integer=5 clock_accuracy_exponent=6
+debug:     - desc 10 smoothing_buffer sb_leak_rate=20349 sb_size=1536
+debug:   * ES pid=1110 streamtype=0x02 streamtype_txt="13818-2 video (MPEG-2)"
+debug:     - desc 02 video_stream multiple_frame_rate=0 frame_rate_code=4 frame_rate_txt="29.97" mpeg1_only=0 constraint_parameter=1 still_picture=0 profile=4 profile_txt="Main" level=8 level_txt="Main" chroma_format=1 chroma_format_txt="4:2:0" frame_rate_extension=0
+debug:     - desc 0e maximum_bitrate max_bitrate=19607 max_bitrate_decoded=980350
+debug:     - desc 12 ibp closed_gop_flag=0 identical_gop_flag=0 max_gop_len=15
+debug:     - desc 06 data_stream_alignment alignment=2 alignment_txt="Video access unit"
+debug:     - desc 0a audio_language language=eng audiotype=1 audiotype_txt="clean effects"
+debug:     - desc 52 stream_identifier component_tag=0
+debug:   * ES pid=1211 streamtype=0x04 streamtype_txt="13818-3 audio (MPEG-2)"
+debug:     - desc 0a audio_language language=eng audiotype=0 audiotype_txt="undefined"
+debug:     - desc 0e maximum_bitrate max_bitrate=352 max_bitrate_decoded=17600
+debug:     - desc 03 audio_stream free_format_tag=0 ID=1 layer=2 ID_txt="MPEG Audio" layer_txt="Layer II" vbr_audio_flag=0
+debug:     - desc 06 data_stream_alignment alignment=1 alignment_txt="Slice, or video access unit or syncword"
+debug:     - desc 52 stream_identifier component_tag=0
+debug:   * ES pid=1213 streamtype=0x04 streamtype_txt="13818-3 audio (MPEG-2)"
+debug:     - desc 0a audio_language language=eng audiotype=0 audiotype_txt="undefined"
+debug:     - desc 0e maximum_bitrate max_bitrate=352 max_bitrate_decoded=17600
+debug:     - desc 03 audio_stream free_format_tag=0 ID=1 layer=2 ID_txt="MPEG Audio" layer_txt="Layer II" vbr_audio_flag=0
+debug:     - desc 06 data_stream_alignment alignment=1 alignment_txt="Slice, or video access unit or syncword"
+debug:     - desc 52 stream_identifier component_tag=0
+debug: end PMT
+debug: new NIT actual networkid=1 version=4
+debug:     - desc 40 networkname=""
+debug:   * ts tsid=1 onid=1
+debug:     - desc 43 dvb-s frequency=3874000V pos=70.0W modulation=qpsk symbolrate=5926000 fecinner=3/4
+debug:     - desc 41 service_list sid=1 type=0x01
+debug: end NIT
+debug: new SDT actual tsid=1 version=5 onid=1
+debug:   * service sid=1 eit_pf running=4
+debug:     - desc 48 service type=0x1 provider="" service="RECORD SP DIGITAL   "
+debug: end SDT
+
+
+
+DVBlast 1.9.0 (git-6803acd-dirty)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "SL SI21XX DVB-S" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 125, tolerance: 0
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 500
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_5_6
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug: frequency 3090000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3090000 srate=2220000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter2/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: Dump is 1328793583 seconds late - reset timing
+
+debug: new PAT tsid=1 version=0
+debug:   * NIT pid=16
+debug:   * program number=1 pid=257
+debug: end PAT
+debug: new SDT actual tsid=1 version=0 onid=1
+debug:   * service sid=1 eit_pf running=4
+debug:     - desc 48 service type=0x1 provider="STI Telecom" service="Canal Saude"
+debug: end SDT
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+debug: - Bit error rate: 234
+debug: - Signal strength: 53760
+debug: - SNR: 0
+debug: new NIT actual networkid=1 version=0
+debug: end NIT
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,186 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:		dvblast
+# Required-Start:	$network $local_fs $remote_fs
+# Required-Stop:
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description:	DVBlast DVB Headend
+### END INIT INFO
+
+# /etc/init.d/dvblast: start and stop the DVBlast daemon
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+export PATH=$PATH:/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin
+
+CHANNELS_DIR=/etc/dvblast/channels.d
+LOG_DIR=/var/log/dvblast
+PIDS_DIR=/var/run/dvblast
+
+# Create if it doen't exists
+mkdir -p $PIDS_DIR
+mkdir -p $LOG_DIR
+
+run_dvblast() {
+   echo "Iniciando \"$1\" (`date`)" >> "${LOG_DIR}/${NAME}.log"
+   while [ true ]; do
+      echo "Iniciando \"$1\" (`date`)" >> "${LOG_DIR}/${NAME}.log"
+      $1 &>> "${LOG_DIR}/${NAME}.log"
+      echo "\"$1\" Fechou ! (`date`)" >> "${LOG_DIR}/${NAME}.log"
+      sleep 20
+   done
+}
+
+config_dvblast() {
+   echo "Reading config.... '${CHANNELS_DIR}/$1'" >&2
+   # Reset vars
+   NAME=""; DESC=""; MAC=""; FREQ=""; SRATE=""; MOD=""; CONFIG=""; PROTO=""; IP=""; PORT=""; AUTOSTART=""; BW="";
+   source "$CHANNELS_DIR/$1"
+   NAME="${1%.cfg}"
+   for MAC_FILE in /dev/dvb/adapter*.mac
+   do
+      [ -n "$MAC" ] && TMP=`grep -i $MAC $MAC_FILE`
+      if [ -n $TMP ] && [ "$MAC" == "$TMP" ]
+      then
+         if [ "PixelView" == "$TMP" ]
+         then
+            A=`echo $MAC_FILE | grep -o "[0-9]*"`
+            ISOPEN=`ps aux | grep dvblast | grep "\-a $A"`
+            [ -n "$ISOPEN" ] && continue
+         fi
+         ADAP=`echo $MAC_FILE | grep adapter[0-9]*\.mac | grep -o "[0-9]*"`
+         DVBLAST="dvblast -a $ADAP"
+         [ -n "$FREQ" ] && DVBLAST+=" -f ${FREQ}000"
+         [ -n "$SRATE" ] && DVBLAST+=" -s ${SRATE}000"
+         [ -n "$MOD" ] && DVBLAST+=" -m $MOD"
+         [ -n "$BW" ] && DVBLAST+=" -b $BW"
+         [ "$PROTO" == "udp" ] && DVBLAST+=" -U"
+         [ -n "$CONF" ] && DVBLAST+=" -c $CONF" || DVBLAST+=" -u"
+         [ -n "$IP" ] && [ -n "$PORT" ] && DVBLAST+=" -d $IP:$PORT"
+
+         break
+      fi
+   done
+}
+
+get_child_pid() {
+   echo `ps -ef| awk '$3 == '${1}' { print $2 }'`
+}
+
+start() {
+   # Check if config file exists
+   [ ! -f "$CHANNELS_DIR/$1.cfg" ] && failure && echo
+   # Check if already running
+   [ -f "${PIDS_DIR}/$1.pid" ] && echo -n "$1 Already running..." && failure && echo && exit 1
+   config_dvblast "$1.cfg"
+   run_dvblast "$DVBLAST" &
+   echo -n "Starting... $1"
+   echo $! > "${PIDS_DIR}/${1}.pid" && success || failure
+   echo  # Por motivo desconhecido isso é necessário para aparecer o [ OK ]
+}
+
+start_all() {
+   cd "$CHANNELS_DIR"
+   for f in *.cfg
+   do
+      [ "$f" == ".cfg" ] && continue
+      [ -f "${PIDS_DIR}"/"${f%cfg}"pid ] && echo -n "${f%.cfg} Already running..." && warning && echo && continue
+      config_dvblast "$f"
+      if [ "$AUTOSTART" == "yes" ]; then
+         run_dvblast "$DVBLAST" &
+         echo -n "Starting... ${f%.cfg}"
+         echo $! > "${PIDS_DIR}"/"${f%cfg}"pid && success || failure
+         echo  # Por motivo desconhecido isso é necessário para aparecer o [ OK ]
+      else
+         echo -n "Disabled: ${f%.cfg}"
+         passed
+         echo
+      fi
+   done
+}
+
+stop() {
+   # Check if config file exists
+   [ ! -f "$PIDS_DIR/$1.pid" ] && echo -n "Process not running '$1'" && failure && echo && exit 1
+   PID_FILE="${PIDS_DIR}/${1}.pid"
+   echo -n "Killing ${1}"
+   kill -9 $(get_child_pid `cat "$PID_FILE"`)
+   kill -9 $(cat "$PID_FILE") && success || failure
+   echo  # Por motivo desconhecido isso é necessário para aparecer o [ OK ]
+   rm -f "$PID_FILE"
+}
+
+stop_all() {
+   cd "$PIDS_DIR"
+   for f in *.pid
+   do
+      [ "$f" == ".pid" ] || [ "$f" == "*.pid" ] && continue
+      PID_FILE="${PIDS_DIR}/${f}"
+      echo -n "killing ${f%.pid} "
+      kill -9 $(get_child_pid `cat "$PID_FILE"`)
+      kill -9 $(cat "$PID_FILE") && success || failure
+      echo  # Por motivo desconhecido isso é necessário para aparecer o [ OK ]
+      rm -f "$PID_FILE"
+   done
+}
+restart() {
+   stop
+   start
+}
+
+reload() {
+   cd "$PIDS_DIR"
+   for f in *.pid
+   do
+      [ "$f" == ".pid" ] || [ "$f" == "*.pid" ] && continue
+      PID_FILE="${PIDS_DIR}/"${f}
+      echo "Reloading $i"
+      kill -s HUP $(get_child_pid `cat "$PID_FILE"`) && success || failure
+      echo  # Por motivo desconhecido isso é necessário para aparecer o [ OK ]
+   done
+}
+
+status() {
+   echo "Checking channels status..."
+   cd $CHANNELS_DIR
+   for f in *.cfg
+   do
+      [ "$f" == ".pid" ] || [ "$f" == "*.pid" ] && continue
+      PID_FILE="${PIDS_DIR}/"${f%cfg}pid""
+      echo -n "${f%.cfg} "
+      if [ -f "$PID_FILE" ]; then
+         RUNNING=$(get_child_pid `cat "$PID_FILE"`)
+         [ -n "$RUNNING" ] && success || failure
+      else
+         failure
+      fi
+      echo
+   done
+}
+
+case "$1" in
+   start)
+      [ -z "$2" ] && start_all || start "$2"
+      ;;
+   stop)
+      [ -z "$2" ] && stop_all || stop "$2"
+      ;;
+   restart)
+      restart
+      ;;
+   reload)
+      reload
+      ;;
+   status)
+      status
+      ;;
+   *)
+      echo "Usage: /etc/init.d/dvblast {start|stop|restart|reload|status}"
+      exit 1
+      ;;
+esac
+
+exit 0

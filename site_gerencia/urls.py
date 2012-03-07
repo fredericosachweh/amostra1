@@ -27,8 +27,6 @@ urlpatterns = patterns('',
     (r'^%scanal/'%settings.ROOT_URL,include('canal.urls')),
     # Interface dos setupbox
     (r'^%sbox/'%settings.ROOT_URL,include('box.urls')),
-    # Streams de multicats
-    (r'^%sstream/'%settings.ROOT_URL,include('stream.urls')),
     # EPG
     (r'^%sepg/'%settings.ROOT_URL,include('epg.urls')),
     # REST interface for the EPG

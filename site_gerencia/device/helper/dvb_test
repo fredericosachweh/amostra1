@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+RESP="""DVBlast 1.9.0 (git-6803acd-dirty)
+warning: restarting
+debug: using linux-dvb API version 5
+debug: Frontend "Montage Technology DS3000/TS2020" type "QPSK (DVB-S/S2)" supports:
+debug:  frequency min: 950000, max: 2150000, stepsize: 1011, tolerance: 5000
+debug:  symbolrate min: 1000000, max: 45000000, tolerance: 0
+debug:  capabilities:
+debug:   INVERSION_AUTO
+debug:   FEC_1_2
+debug:   FEC_2_3
+debug:   FEC_3_4
+debug:   FEC_4_5
+debug:   FEC_5_6
+debug:   FEC_6_7
+debug:   FEC_7_8
+debug:   FEC_AUTO
+debug:   QPSK
+debug:   2G_MODULATION
+debug:   FE_CAN_RECOVER
+debug: frequency 3642000 is in C-band (lower)
+debug: configuring LNB to v=13 p=0 satnum=0
+debug: tuning QPSK frontend to f=3642000 srate=4370000 inversion=-1 fec=999 rolloff=35 modulation=legacy pilot=-1
+warning: failed opening CAM device /dev/dvb/adapter2/ca0 (No such file or directory)
+debug: setting filter on PID 0
+debug: setting filter on PID 16
+debug: setting filter on PID 17
+debug: setting filter on PID 18
+debug: setting filter on PID 19
+debug: setting filter on PID 20
+error: no config file
+debug: frontend has acquired signal
+debug: frontend has acquired carrier
+debug: frontend has acquired stable FEC
+debug: frontend has acquired sync
+info: frontend has acquired lock
+debug: - Bit error rate: 0
+debug: - Signal strength: 6464
+debug: - SNR: 31440
+debug: Dump is 1331147733 seconds late - reset timing
+
+debug: new PAT tsid=1 version=11
+debug:   * NIT pid=16
+debug:   * program number=1 pid=100
+debug:   * program number=2 pid=200
+debug: end PAT
+debug: new NIT actual networkid=1 version=0
+debug:     - desc 40 networkname="IVG Default Network"
+debug:   * ts tsid=1 onid=100
+debug: end NIT
+warning: TS discontinuity on pid   17 expected_cc 12 got 14 (SDT, sid 0)
+debug: new SDT actual tsid=1 version=0 onid=100
+debug:   * service sid=1 eit_schedule running=4
+debug:     - desc 48 service type=0x1 provider="mox" service="moxTVCRISTA"
+debug:   * service sid=2 running=4
+debug:     - desc 48 service type=0x1 provider="mox" service="TV BOMNEGOCIO"
+debug: end SDT
+warning: TS discontinuity on pid    0 expected_cc  9 got 11 (PAT, sid 0)"""
+import sys
+from time import sleep
+for c in RESP:
+	sys.stdout.write(c)
+	sleep(0.01)
+	sys.stdout.flush()

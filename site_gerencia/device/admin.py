@@ -9,6 +9,7 @@ from django.contrib import admin
 
 import models
 
+
 class AdminServer(admin.ModelAdmin):
     readonly_fields = ('status','modified','msg',)
     list_display = ('__unicode__','status','msg','switch_link',)
@@ -23,10 +24,12 @@ class AdminServer(admin.ModelAdmin):
       }),
     )
 
+
 class AdminDevice(admin.ModelAdmin):
     class Media:
         js = ('jquery/jquery-1.6.2.js','player.js',)
     list_display = ('__unicode__','status','link_status','server_status','switch_link',)
+
 
 class AdminStream(admin.ModelAdmin):
     #class Media:
@@ -38,6 +41,7 @@ class AdminDVBDestinationInline(admin.TabularInline):#StackedInline
     model = models.DvbblastProgram
     extra = 3
 
+
 class AdminDVBSource(admin.ModelAdmin):
     class Media:
         js = ('jquery/jquery-1.6.2.js','player.js',)
@@ -46,9 +50,12 @@ class AdminDVBSource(admin.ModelAdmin):
     #fieldsets = ()
     #def __init__(self, model, admin_site):
     #    super(AdminDVBSource,self).__init__( model, admin_site)
-    
-    
 
+
+class AdminSource(admin.ModelAdmin):
+    #class Media:
+    #    js = ('jquery/jquery-1.6.2.js','player.js',)
+    list_display = ('__unicode__','in_use','destinations',)
 
 #admin.site.register(models.Channel)
 admin.site.register(models.Server,AdminServer)
@@ -58,6 +65,8 @@ admin.site.register(models.MulticatGeneric,AdminDevice)
 admin.site.register(models.MulticatSource,AdminDevice)
 admin.site.register(models.MulticatRedirect,AdminDevice)
 admin.site.register(models.MulticatRecorder)
+admin.site.register(models.Source, AdminSource)
+admin.site.register(models.Destination)
 
 
 

@@ -163,6 +163,8 @@ INSTALLED_APPS = (
     # Aplicação de controle de stream
     'stream',
     'device',
+    # EPG
+    'epg',
 )
 
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'

@@ -60,10 +60,10 @@ def canal_list(request):
     """
     Usado pelo setupbox para pegar a lista de canais
     """
-    # .select_related('source')
     canais = Canal.objects.filter(enabled=True).order_by('numero')
-    
-    json = serializers.serialize('json', canais, indent=2,
+    json = serializers.serialize('json',
+        canais,
+        indent=2,
         use_natural_keys=True
         )
     return HttpResponse(json,content_type='application/json')
