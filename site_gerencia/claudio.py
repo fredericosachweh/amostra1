@@ -1,11 +1,10 @@
 # -*- encoding:utf-8 -*-
 
-import sys,os
+import sys
+import os
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-PARENT_PATH =  os.path.dirname(PROJECT_ROOT_PATH)
-
-# stream.management.commands.runmedia
+PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
@@ -16,20 +15,38 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
+    ('Eduardo Vieira', 'eduardo@cianet.ind.br'),
     ('Claudio Guirunas', 'claudio@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
-DATABASES = {
-	'default': {
-	    'ENGINE': 'django.db.backends.sqlite3',
-	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-	    'USER':'',
-	    'PASSWORD':'',
-	    'HOST':'',
-	    'PORT':''
-	}
-}
+
+if 'test' in sys.argv:
+    print('TESTE')
+    ## Banco de dados teste
+    DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
+        'USER':'',
+        'PASSWORD':'',
+        'HOST':'',
+        'PORT':''
+        }
+    }
+else:
+    print('DATABASE')
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'iptv',
+            'PASSWORD': 'iptv',
+            'HOST': '127.0.0.1',
+            'PORT': '3306'
+        }
+
+    }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -54,20 +71,30 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-if True: # in sys.argv or 'test' in sys.argv:
-    MEDIA_URL = '/tvfiles/media/'
-    MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'media')
-    ADMIN_MEDIA_PREFIX = '/static/admin/'
-    STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'static')
-    STATIC_URL = '/tvfiles/static/'
-    ROOT_URL = 'tv/'
-else:
-    MEDIA_URL = '/tvfiles/media/'
-    MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-    ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-    STATIC_ROOT = '/var/www/html/tvfiles/static/'
-    STATIC_URL = '/tvfiles/static/'
-    ROOT_URL = 'tv/'
+
+MEDIA_URL = '/tvfiles/media/'
+MEDIA_ROOT = '/var/www/html/tvfiles/media/'
+ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+STATIC_ROOT = '/var/www/html/tvfiles/static/'
+STATIC_URL = '/tvfiles/static/'
+ROOT_URL = 'tv/'
+
+#ROOT_URL = 'tv/'
+#MEDIA_URL = '/tv/media/'
+#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
+#ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+#STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
+#STATIC_URL = '/tv/static/'
+
+
+LOGIN_URL = '/%saccounts/login' % ROOT_URL
+LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
+
+#^/canal/(add|remove|edit|delete)/(.*)$
+LOGIN_REQUIRED_URLS = (
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
+)
 
 
 # Make this unique, and don't share it with anybody.
@@ -78,7 +105,7 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    #os.path.join(PROJECT_ROOT_PATH,'static/'),
+    #os.path.join(PROJECT_ROOT_PATH,'tvfiles','static'),
     #'/var/www/html/%sstatic/',
 )
 
@@ -96,27 +123,43 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.Loader',
 #     'django.template.loaders.eggs.Loader',
 )
-
+#MessageMiddleware
+#from django.contrib.messages.middleware.MessageMiddleware
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'lib.middleware.login.RequireLoginMiddleware',
+    #'lib.middleware.login.RequireLoginMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Put strings here, like "/home/html/django_templates"
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_ROOT_PATH,'templates/')
+    os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
-#FIXTURE_DIRS = '/mnt/projetos/ativos/cianet/site_gerencia/site_gerencia/canal/fixtures/'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    }
+}
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -126,23 +169,25 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
-    'debug_toolbar',
+    'django.contrib.markup',
     # South http://south.aeracode.org/docs/
-    'south',
+    #'south',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
     'box',
     # Pagina de home
-    'home',
+    #'home',
     # Aplicação de controle de stream
     'stream',
+    'device',
+    # EPG
+    'epg',
 )
 
-LOGIN_URL = ROOT_URL+'accounts/login'
+LOGIN_URL = '/%saccounts/login' % ROOT_URL
 
-LOGIN_REDIRECT_URL = ROOT_URL+'administracao/'
+LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
 
 #^/canal/(add|remove|edit|delete)/(.*)$
 LOGIN_REQUIRED_URLS = (
@@ -150,23 +195,39 @@ LOGIN_REQUIRED_URLS = (
     r'^/%sadmin/(.*)$',
 )
 
-#MULTICAST_APP = '/usr/local/bin/multicat'
-MULTICAST_COMMAND = '/usr/local/bin/roda'
+MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
+MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
-DVBLAST_DIR = '/etc/dvblast'
 
-INTERNAL_IPS = ('127.0.0.1',)
+DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
+DVBLAST_COMMAND = '/usr/bin/dvblast'
+#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
+DVBLAST_APP = 'dvblast'
+DVBLAST_CONF_DIR = '/etc/dvblast'
 
-DEBUG_TOOLBAR_PANELS = (
-    'debug_toolbar.panels.version.VersionDebugPanel',
-    'debug_toolbar.panels.timer.TimerDebugPanel',
-    'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
-    'debug_toolbar.panels.headers.HeaderDebugPanel',
-    'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-    'debug_toolbar.panels.template.TemplateDebugPanel',
-    'debug_toolbar.panels.sql.SQLDebugPanel',
-    'debug_toolbar.panels.signals.SignalDebugPanel',
-    'debug_toolbar.panels.logger.LoggingPanel',
-)
+CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
-FORCE_SCRIPT_NAME=""
+if DEBUG == True:
+    try:
+        # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
+        import debug_toolbar
+        INTERNAL_IPS = ('127.0.0.3',)
+        DEBUG_TOOLBAR_PANELS = (
+            'debug_toolbar.panels.version.VersionDebugPanel',
+            'debug_toolbar.panels.timer.TimerDebugPanel',
+            'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+            'debug_toolbar.panels.headers.HeaderDebugPanel',
+            'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
+            'debug_toolbar.panels.template.TemplateDebugPanel',
+            'debug_toolbar.panels.sql.SQLDebugPanel',
+            'debug_toolbar.panels.signals.SignalDebugPanel',
+            'debug_toolbar.panels.logger.LoggingPanel',
+        )
+        INSTALLED_APPS += ('debug_toolbar',)
+        MIDDLEWARE_CLASSES += (
+            'debug_toolbar.middleware.DebugToolbarMiddleware',
+        )
+    except ImportError:
+        pass
+
+FORCE_SCRIPT_NAME = ""
