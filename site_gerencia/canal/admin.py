@@ -2,7 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 from django.contrib import admin
-from models         import Canal, Genero, Programa
+from models         import Canal
 from forms          import CanalForm
 from django.db      import models
 
@@ -60,14 +60,5 @@ class CanalAdmin(admin.ModelAdmin):
     class Meta:
         form = CanalForm
 
-class ProgramaAdmin(admin.ModelAdmin):
-    """
-    Modelo administrativo do Programa
-    """
-    list_filter    = ('canal', 'genero',)
-    date_hierarchy = 'hora_inicial'
-
 admin.site.register(Canal, CanalAdmin)
-admin.site.register(Genero)
-admin.site.register(Programa, ProgramaAdmin)
 

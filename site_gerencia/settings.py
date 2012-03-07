@@ -69,19 +69,19 @@ USE_I18N = True
 USE_L10N = True
 
 
-MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-STATIC_ROOT = '/var/www/html/tvfiles/static/'
-STATIC_URL = '/tvfiles/static/'
-ROOT_URL = 'tv/'
-
+#MEDIA_URL = '/tvfiles/media/'
+#MEDIA_ROOT = '/var/www/html/tvfiles/media/'
+#ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+#STATIC_ROOT = '/var/www/html/tvfiles/static/'
+#STATIC_URL = '/tvfiles/static/'
 #ROOT_URL = 'tv/'
-#MEDIA_URL = '/tv/media/'
-#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
-#ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
-#STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
-#STATIC_URL = '/tv/static/'
+
+ROOT_URL = 'tv/'
+MEDIA_URL = '/tv/media/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
+ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
+STATIC_URL = '/tv/static/'
 
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
@@ -176,7 +176,6 @@ INSTALLED_APPS = (
     # Pagina de home
     #'home',
     # Aplicação de controle de stream
-    'stream',
     'device',
     # EPG
     'epg',

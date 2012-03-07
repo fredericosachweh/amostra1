@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from django.test import TestCase,Client
+from django.test import TestCase, Client
 from django.conf import settings
 
 from django.core.urlresolvers import reverse
@@ -32,19 +32,21 @@ class CanalTest(TestCase):
         """
         from models import Canal
         Canal.objects.all().delete()
+        from device.models import Source
+        source = Source.objects.create(ip='127.0.0.1',port=5000)
         c = Client()
         logoa = open('canal/fixtures/test_files/a.png')
         url_add = reverse('canal.views.add')
         ## Cria segundo canal
         response = c.post(url_add,
                {
-              'logo':logoa,
-              'nome':'Rede BOBO de Televisão',
-              'numero':13,
-              'descricao':'Só para',
-              'sigla':'BOBO',
-              'ip':'224.0.0.12',
-              'porta':11002
+              'logo': logoa,
+              'nome': 'Rede BOBO de Televisão',
+              'numero': 13,
+              'descricao': 'Só para',
+              'sigla': 'BOBO',
+              'source': 1,
+              'enabled': True
               })
         self.assertEqual(
             response.status_code,
@@ -78,6 +80,9 @@ class CanalTest(TestCase):
 
     def test_canal_service(self):
         from models import Canal
+        from device.models import Source
+        source1 = Source.objects.create(ip='127.0.0.1',port=5000)
+        source2 = Source.objects.create(ip='127.0.0.1',port=5001)
         Canal.objects.all().delete()
         #return
         c = Client()
@@ -92,8 +97,8 @@ class CanalTest(TestCase):
               'numero':10,
               'descricao':'Silvio Faliu',
               'sigla':'SBT',
-              'ip':'224.0.0.10',
-              'porta':11000
+              'source':source1.pk,
+              'enabled':True
               })
         self.assertEqual(
             response.status_code,
@@ -104,21 +109,29 @@ class CanalTest(TestCase):
         ## Cria primeiro canal
         response = c.post(url_add,
                {
-              'logo':i2,
-              'nome':'Rede SBT 1',
-              'numero':11,
-              'descricao':'Rede do banco',
-              'sigla':'SBT1',
-              'ip':'224.0.0.11',
-              'porta':11001
+              'logo': i2,
+              'nome': 'Rede SBT 1',
+              'numero': 11,
+              'descricao': 'Rede do banco',
+              'sigla': 'SBT1',
+              'source': source2.pk,
+              'enabled': True
               })
         i1.close()
         i2.close()
-        self.assertEqual(response.status_code,302,'O código de retorno deveria ser 302 (Redirecionamento)')
+        self.assertEqual(
+            response.status_code,
+            302,
+            'O código de retorno deveria ser 302 (Redirecionamento)'
+            )
         ## url da lista de canais -> movido para o app box
         list_url = reverse('box.views.canal_list')
         response = c.get(list_url)
-        self.failUnlessEqual(response.status_code,200,'Status da lista de canais')
+        self.failUnlessEqual(
+            response.status_code,
+            200,
+            'Status da lista de canais'
+            )
         import simplejson as json
         # Objeto JSON
         decoder = json.JSONDecoder()

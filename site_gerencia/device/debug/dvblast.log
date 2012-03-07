@@ -1,0 +1,118 @@
+
+Lista de canais do satelite:
+http://www.portalbsd.com.br/novo/satelite_canais.php?sat=SC2&id=212
+Descrição dos elementos do pacote:
+http://en.wikipedia.org/wiki/MPEG_transport_stream
+
+
+
+
+dvblast -a 4 -f 3390000 -s 7400000 -m psk_8 -U -u -d 239.0.1.1:10000
+dvblast -a 2 -f 3680000 -s 6000000 -U -u -d 239.0.1.2:10000
+dvblast -a 3 -f 3114000 -s 4400000 -U -u -d 239.0.1.9:10000
+dvblast -a 6 -f 3274000 -s 5926000 -U -u -d 239.0.1.5:10000
+dvblast -a 0 -f 3153000 -s 6220000 -U -u -d 239.0.1.3:10000
+dvblast -a 1 -f 3365000 -s 2929000 -U -u -d 239.0.1.4:10000
+
+Band\ HD.cfg
+NAME="Band HD"
+DESC="Canal Bandeirantes nacional em HD TV"
+MAC="00:18:BD:5D:DE:9D"
+FREQ="3390"
+SRATE="7400"
+PROTO="udp"
+MOD="psk_8"
+IP="239.0.1.1"
+PORT="10000"
+AUTOSTART="yes"
+ADAPTER=0
+
+Globo\ MG.cfg
+DESC="Globo MG"
+MAC="00:18:BD:5D:DA:33"
+FREQ="3680"
+SRATE="6000"
+PROTO="udp"
+IP="239.0.1.2"
+PORT="10000"
+AUTOSTART="yes"
+
+
+
+
+
+
+
+dvblast -D 239.0.1.10:10000 -c lalala.conf
+
+
+
+[root@cianet-demo dvblast]# dvblast -D @239.0.1.10:10000
+DVBlast 2.0.0 (git-379e8c5)
+warning: restarting
+debug: binding socket to @239.0.1.10:10000
+error: no config file
+frontend has acquired lock
+debug: new RTP source: 68.84.65.160
+new RTP source: 68.84.65.160
+debug: Dump is 1316202650 seconds late - reset timing
+debug: new PAT tsid=1 version=0
+debug:   * program number=1 pid=80
+debug: end PAT
+debug: new PMT program=1 version=0 pcrpid=256
+debug:   * ES pid=256 streamtype=0x1b
+debug:     - desc 52 unknown
+debug:   * ES pid=780 streamtype=0xf
+debug:     - desc 52 unknown
+debug:   * ES pid=781 streamtype=0xf
+debug:     - desc 52 unknown
+debug: end PMT
+
+
+
+>> Do tv-jusrtiça
+debug: new PAT tsid=0 version=7
+debug:   * NIT pid=16
+debug:   * program number=1 pid=32
+debug:   * program number=2 pid=259
+debug: end PAT
+debug: new SDT actual tsid=0 version=5 onid=1
+debug:   * service sid=1 eit present running=4
+debug:     - desc 48 type=0x1 provider="Impsat" service="TV Justica"
+debug:   * service sid=2 eit present running=4
+debug:     - desc 48 type=0x1 provider="" service="TV Justica 2"
+debug: end SDT
+debug: new NIT actual networkid=1 version=0
+debug: end NIT
+
+TVJustiça.conf
+239.0.1.6:10000/udp 1 0
+239.0.1.7:10000/udp 1 1
+239.0.1.8:10000/udp 1 2
+
+
+
+
+[root@cianet-demo dvblast]# dvblast -D 239.0.1.10:10000 -c lalala.conf 
+DVBlast 2.0.0 (git-379e8c5)
+warning: restarting
+debug: binding socket to 239.0.1.10:10000
+debug: conf: 224.0.0.17:10000/udp config=0x9 sid=1 pids[0]
+frontend has acquired lock
+debug: new RTP source: 68.84.65.160
+new RTP source: 68.84.65.160
+debug: Dump is 1316206720 seconds late - reset timing
+debug: new PAT tsid=1 version=0
+debug:   * program number=1 pid=80
+debug: end PAT
+debug: new PMT program=1 version=0 pcrpid=256
+debug:   * ES pid=256 streamtype=0x1b
+debug:     - desc 52 unknown
+debug:   * ES pid=512 streamtype=0x3
+debug:     - desc 52 unknown
+debug: end PMT
+
+lalala.conf
+224.0.0.17:10000/udp 1 1
+
+
