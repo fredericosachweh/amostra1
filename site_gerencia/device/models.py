@@ -110,20 +110,31 @@ class Server(models.Model):
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
         return resp
-
-
-class Vlc(stream.SourceRelation):
-    """VLC streaming device"""
-
-    class Meta:
-        verbose_name = _(u'Vídeo em loop')
-        verbose_name_plural = _(u'Vídeos em loop')
+        
+class DeviceIp(stream.SourceRelation):
+    """Campos para servidor de Device"""
     description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
-    source = models.CharField(_(u'Origem'),max_length=255)
+    def __unicode__(self):
+        return '[%s] %s' %(self.server,self._type,self.description)
+    def _type(self):
+        return _(u'indefinido')
+        
+class DeviceServer(models.Model):
+    """Relaciona IP com servidor de Device!"""
     server = models.ForeignKey(Server)
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
+    def __unicode__(self):
+        return '[%s] %s' %(self.server,self._type,self.description)
+    def _type(self):
+        return _(u'indefinido')
 
+class Vlc(DeviceIp,DeviceServer):
+    """VLC streaming device"""
+    class Meta:
+        verbose_name = _(u'Vídeo em loop')
+        verbose_name_plural = _(u'Vídeos em loop')
+    source = models.CharField(_(u'Origem'),max_length=255)
     def __unicode__(self):
         return '[%s] %s > %s' %(self.server,self.destine,self.description)
 
@@ -155,7 +166,6 @@ class Vlc(stream.SourceRelation):
 
     def server_status(self):
         return self.server.status
-
     server_status.boolean = True
 
     def link_status(self):
@@ -170,12 +180,10 @@ class Vlc(stream.SourceRelation):
             return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
         url = reverse('device.views.vlc_start',kwargs={'pk':self.id})
         return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
-
     switch_link.allow_tags = True
 
 
-class Dvblast(models.Model):
-
+class Dvblast(DeviceServer):
     class Meta:
         verbose_name = _(u'DVBlast')
         verbose_name_plural = _(u'DVBlast')
@@ -184,12 +192,8 @@ class Dvblast(models.Model):
     ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'))
     is_rtp = models.BooleanField(_(u'RTP'),default=False)
-    server = models.ForeignKey(Server)
-    pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
-
     def __unicode__(self):
         return '%s (%s:%s)' %(self.name,self.ip,self.port)
-
     def status(self):
         from lib.player import Player
         p = Player()
@@ -199,9 +203,7 @@ class Dvblast(models.Model):
         url = reverse('stream.views.play',kwargs={'streamid':self.id})
         return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
         #return '%s'%self.id
-
     status.allow_tags = True
-
     def play(self):
         'Inicia o fluxo (inicia o processo do multicat)'
         from lib.player import Player
@@ -209,7 +211,6 @@ class Dvblast(models.Model):
         pid = p.play_stream(self)
         self.pid = pid
         self.save()
-
     def stop(self):
         'Para o fluxo (mata o processo do multicat)'
         from lib.player import Player
@@ -217,7 +218,6 @@ class Dvblast(models.Model):
         p.stop_stream(self)
         self.pid = None
         self.save()
-
     def autostart(self):
         if self.pid is not None:
             from lib.player import Player
@@ -225,20 +225,18 @@ class Dvblast(models.Model):
             if p.is_playing(self) is False:
                 self.play()
 
-class DvbblastProgram(stream.SourceRelation):
-
+class DvbblastProgram(DeviceIp):
     class Meta:
         verbose_name = _(u'Programa DVB')
         verbose_name_plural = _(u'Programas DVB')
-
     name = models.CharField(_(u'Nome'),max_length=200)
     channel_program = models.PositiveSmallIntegerField(_(u'Programa'))
     channel_pid = models.PositiveSmallIntegerField(_(u'PID (Packet ID)'))
-    source = models.ForeignKey(Dvblast,related_name='origem')
+    source = models.ForeignKey(Dvblast,related_name='source')
     def __unicode__(self):
         return self.name
 
-class Multicat(models.Model):
+class Multicat(DeviceServer):
     """
     Classe generica de fluxo via multicat
     
@@ -250,9 +248,6 @@ class Multicat(models.Model):
         verbose_name_plural = _(u'Instancias de Multicat')
     parans = models.CharField(_(u'Parâmetros extra'),max_length=255,blank=True)
     rtp    = models.BooleanField(_(u'RTP'), default=False)
-    server = models.ForeignKey(Server)
-    status = models.BooleanField(_(u'Status'),default=False,editable=False)
-    pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
     def __unicode__(self):
         return '%s -> %s'%(self.input,self.destine)
     def _input(self):
@@ -319,7 +314,7 @@ class MulticatGeneric(Multicat):
     def __unicode__(self):
         return u'%s %s' % (self.input, self.destine)
 
-class MulticatSource(Multicat, stream.SourceRelation):
+class MulticatSource(Multicat,DeviceIp):
     """
     Classe para gerar fluxo pelo multicat de origem customizada
     """
@@ -336,7 +331,7 @@ class MulticatSource(Multicat, stream.SourceRelation):
         return u'%s' % self.target
  
 
-class MulticatRedirect(Multicat):
+class MulticatRedirect(Multicat,DeviceIp):
     """
     Classe para gerar fluxo de redirecionamento via multicat
     """

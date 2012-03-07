@@ -62,7 +62,6 @@ def canal_list(request):
     """
     # .select_related('source')
     canais = Canal.objects.filter(enabled=True).order_by('numero')
-    
     json = serializers.serialize('json', canais, indent=2,
         use_natural_keys=True
         )
