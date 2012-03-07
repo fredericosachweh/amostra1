@@ -22,7 +22,7 @@ ADMINS = (
 MANAGERS = ADMINS
 
 if 'test' in sys.argv:
-    print('TESTE')
+    print('CLAUDIO: TESTE SQLITE')
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -35,7 +35,7 @@ if 'test' in sys.argv:
         }
     }
 else:
-    print('DATABASE')
+    print('CLAUDIO: DATABASE MYSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -72,11 +72,11 @@ USE_I18N = True
 USE_L10N = True
 
 
-MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-STATIC_ROOT = '/var/www/html/tvfiles/static/'
-STATIC_URL = '/tvfiles/static/'
+MEDIA_URL = '/tv/media/'
+MEDIA_ROOT = '/var/www/html/tv/media/'
+ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+STATIC_ROOT = '/var/www/html/tv/static/'
+STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
 
 #ROOT_URL = 'tv/'
