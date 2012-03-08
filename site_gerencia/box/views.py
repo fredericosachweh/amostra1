@@ -188,28 +188,18 @@ def guide_programmes(request):
         ss   = int(nowStr[12:14])
         now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
         
-        rangeTimeStart = now-timedelta(hours=3)
-        rangeTimeStop = now+timedelta(hours=12)
-        
-        print('--------------')
-        print(rangeTimeStart)
-        print(rangeTimeStop)
-        print('--------------')
-        
         #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
     else:
         now = datetime.datetime.now()
         
-        rangeTimeStart=now-timedelta(hours=3)
-        rangeTimeStop=now+timedelta(hours=12)
+    rangeTimeStart=now-timedelta(hours=3)
+    rangeTimeStop=now+timedelta(hours=12)
     
     channel_id = request.GET.get('channel_id')
     
     #BUSCAR OS CANAIS LISTADOS NA TELA
     
     guides = Guide.objects.filter(channel=channel_id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
-    
-    print(len(guides))
     
     if len(guides) > 0:
         
@@ -220,6 +210,7 @@ def guide_programmes(request):
             programid = int( pro.programid )
             
             #Inicio / Fim
+            start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
             startStr = '{:%H:%M}'.format(guide.start)
             stopStr  =  '{:%H:%M}'.format(guide.stop)
             
@@ -252,6 +243,7 @@ def guide_programmes(request):
             arr.append({
                         'programid':programid,
                         'duracao':int(duracao.total_seconds()),
+                        'start_yyymmddhhmm':start_yyymmddhhmm,
                         'start':startStr,
                         'stop':stopStr,
                         'titles':titlesStr,
@@ -264,6 +256,129 @@ def guide_programmes(request):
     else:
         print('SEM PROGRAMACAO')
         json = simplejson.dumps([])
+        
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json)
+
+
+def guide_programmes_list(request):
+    """
+    Usado pelo setupbox para mostrar a guia de programacao completa
+    """
+    import datetime
+    from datetime import timedelta
+    from epg.models import Guide
+    from django.utils import simplejson
+    
+    #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
+    #Seta uma data passada por GET
+    
+    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+        nowStr = request.GET.get('now') 
+        yyyy = int(nowStr[0:4])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        
+        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
+    else:
+        now = datetime.datetime.now()
+
+    hoursRangeStart = request.GET.get('r_start')
+    hoursRangeStop = request.GET.get('r_stop')
+    
+    if hoursRangeStart > 0 and hoursRangeStop > hoursRangeStart:
+        rangeTimeStart = now-timedelta(hours= hoursRangeStart )
+        rangeTimeStop  = now+timedelta(hours= hoursRangeStop)
+    else:
+        rangeTimeStart = now-timedelta(hours= 3 )
+        rangeTimeStop  = now+timedelta(hours= 12)
+
+    channelEpgRunNow = request.GET.get('c')
+    programmeIdRunNow = int( request.GET.get('p') )
+    
+    channelList = request.GET.get('channel_list')[0:-1].split(',')
+    
+    if len(channelList) > 0 and channelEpgRunNow > 0 and programmeIdRunNow > 0: 
+    
+        #Canal atual
+        arrGuide = []
+        for id in channelList:
+            #BUSCAR OS CANAIS LISTADOS NA TELA
+            guides = Guide.objects.filter(channel=id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
+            
+            arrProgramme = []
+            for guide in guides:
+                pro = guide.programme
+                
+                programid = int( pro.programid )
+                
+                #Inicio / Fim
+                start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
+                startStr = '{:%H:%M}'.format(guide.start)
+                stopStr  =  '{:%H:%M}'.format(guide.stop)
+                
+                duracao = guide.stop-guide.start
+                
+                #Titulos
+                titlesStr = ""
+                
+                titles = pro.titles.all().values()
+                for title in titles:
+                    titlesStr += title['value'] + " - "
+                titlesStr = titlesStr[0:-3]
+                titlesStr = titlesStr.upper()
+                
+                #Segundo titulos
+                secondaryTitlesStr = ""
+                secondaryTitles = pro.secondary_titles.all().values()
+                for secondary_title in secondaryTitles:
+                    secondaryTitlesStr += secondary_title['value'] + " - "
+                
+                secondaryTitlesStr = secondaryTitlesStr[0:-3]
+                 
+                rating = pro.rating.system + ':' + pro.rating.value
+                
+                #Descricao
+                descriptions = ""
+                if(pro.descriptions.get().value):
+                    descriptions = pro.descriptions.get().value
+                
+                is_run_now_programme = 0
+                if( programmeIdRunNow == programid ):
+                    is_run_now_programme = 1
+                    
+                arrProgramme.append({
+                        'pid':programid,
+                        'pnow':is_run_now_programme,
+                        'dur': int((int(duracao.total_seconds()) / 60 )),
+                        'sfo':start_yyymmddhhmm,
+                        'start':startStr,
+                        'stop':stopStr,
+                        'titles':titlesStr,
+                        'st':secondaryTitlesStr,
+                        'desc':descriptions,
+                        'rat':rating
+                    })
+                    
+            is_run_now_channel = 0
+            if( channelEpgRunNow == id ):
+                is_run_now_channel = 1
+                    
+            arrGuide.append({
+                'n':guides[0].channel.display_names.get().value,
+                'epg':id,
+                'enow':is_run_now_channel,
+                'program':arrProgramme
+                })
+        
+        json = simplejson.dumps(arrGuide)
+    else:
+        json = simplejson.dumps([])
+        print('SEM PROGRAMACAO')
         
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json)
