@@ -9,6 +9,10 @@ from django.db      import models
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.safestring      import mark_safe
 
+from django.conf.urls.defaults import url, patterns
+from django.utils.functional import update_wrapper
+from canal.admin_views import create_canal_wizard
+
 class AdminImageWidget(AdminFileWidget):
     """
     Formata renderização de imagem no HTML
@@ -59,6 +63,21 @@ class CanalAdmin(admin.ModelAdmin):
         return super(CanalAdmin, self).formfield_for_dbfield(db_field, **kwargs)
     class Meta:
         form = CanalForm
+        
+    def get_urls(self):
+        def wrap(view):
+            def wrapper(*args, **kwds):
+                kwds['admin'] = self   # Use a closure to pass this admin instance to our wizard
+                return self.admin_site.admin_view(view)(*args, **kwds)
+            return update_wrapper(wrapper, view)
+
+        urlpatterns = patterns('',
+            url(r'^wizard/$',
+                wrap(create_canal_wizard),
+                name='canal_wizard_add')
+        )
+        urlpatterns += super(CanalAdmin, self).get_urls()
+        return urlpatterns
 
 admin.site.register(Canal, CanalAdmin)
 
