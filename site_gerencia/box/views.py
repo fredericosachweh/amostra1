@@ -192,7 +192,7 @@ def guide_programmes(request):
     else:
         now = datetime.datetime.now()
         
-    rangeTimeStart=now-timedelta(hours=3)
+    rangeTimeStart=now-timedelta(hours=12)
     rangeTimeStop=now+timedelta(hours=12)
     
     channel_id = request.GET.get('channel_id')
@@ -290,12 +290,12 @@ def guide_programmes_list(request):
     hoursRangeStart = request.GET.get('r_start')
     hoursRangeStop = request.GET.get('r_stop')
     
-    if hoursRangeStart > 0 and hoursRangeStop > hoursRangeStart:
-        rangeTimeStart = now-timedelta(hours= hoursRangeStart )
-        rangeTimeStop  = now+timedelta(hours= hoursRangeStop)
+    if hoursRangeStart > 1 and hoursRangeStop > hoursRangeStart:
+        rangeTimeStart = now-timedelta(hours=int(hoursRangeStart) )
+        rangeTimeStop  = now+timedelta(hours=int(hoursRangeStop))
     else:
-        rangeTimeStart = now-timedelta(hours= 3 )
-        rangeTimeStop  = now+timedelta(hours= 12)
+        rangeTimeStart = now-timedelta(hours=3)
+        rangeTimeStop  = now+timedelta(hours=12)
 
     channelEpgRunNow = request.GET.get('c')
     programmeIdRunNow = int( request.GET.get('p') )
@@ -308,7 +308,7 @@ def guide_programmes_list(request):
         arrGuide = []
         for id in channelList:
             #BUSCAR OS CANAIS LISTADOS NA TELA
-            guides = Guide.objects.filter(channel=id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
+            guides = Guide.objects.filter(channel=id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).distinct('start')
             
             arrProgramme = []
             for guide in guides:
