@@ -364,6 +364,12 @@ def guide_programmes_list(request):
                 startStr = '{:%H:%M}'.format(guide.start)
                 stopStr  =  '{:%H:%M}'.format(guide.stop)
                 
+                #Verifica se o programa que esta sendo exibido no canal está dentro de horario. 
+                #Utilizado para programas que repetem ao longo do dia.
+                is_run_now_programme = 0
+                if( ( programmeIdRunNow == programid ) and ( guide.start <= now and now <= guide.stop ) ):
+                    is_run_now_programme = 1
+                
                 duracao = guide.stop-guide.start
                 
                 #Titulos
@@ -390,10 +396,6 @@ def guide_programmes_list(request):
                 if(pro.descriptions.get().value):
                     descriptions = pro.descriptions.get().value
                 
-                is_run_now_programme = 0
-                if( programmeIdRunNow == programid ):
-                    is_run_now_programme = 1
-                    
                 arrProgramme.append({
                         'pid':programid,
                         'pnow':is_run_now_programme,
