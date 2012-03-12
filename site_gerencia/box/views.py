@@ -160,7 +160,38 @@ def programme_info(request):
         
     else:
         print('SEM PROGRAMACAO')
-        json = simplejson.dumps([])
+        json = simplejson.dumps( [{ 
+                                   'programid'       :0,
+                                   'rating'          :[" "],
+                                   'start'           :["00:00"],
+                                   'stop'            :["00:00"],
+                                   'titles'          :["Sem programação"],
+                                   'secondary_titles':[" "],
+                                   'descriptions'    :["Programação indisponível"],
+                                   'actors'          :[],
+                                   'length'          :[],
+                                   'adapters'        :[],
+                                   'audio_present'   :[],
+                                   'audio_stereo'    :[],
+                                   'categories'      :[],
+                                   'commentators'    :[],
+                                   'composers'       :[],
+                                   'country'         :[],
+                                   'date'            :[],
+                                   'directors'       :[],
+                                   'editors'         :[],
+                                   'episode_numbers' :[],
+                                   'guests'          :[],
+                                   'length'          :[],
+                                   'presenters'      :[],
+                                   'producers'       :[],
+                                   'subtitles'       :[],
+                                   'video_aspect'    :[],
+                                   'video_colour'    :[],
+                                   'video_present'   :[],
+                                   'video_quality'   :[],
+                                   'writers'         :[]
+                                   }])
         
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json)
@@ -252,10 +283,22 @@ def guide_programmes(request):
                         'rating':rating
                         })
         
-        json = simplejson.dumps(arr)
     else:
         print('SEM PROGRAMACAO')
-        json = simplejson.dumps([])
+        arr = []
+        arr.append({
+            'programid':0,
+            'duracao':"1",
+            'start_yyymmddhhmm':"00000000000000",
+            'start':"00:00",
+            'stop':"00:00",
+            'titles':"Sem programação",
+            'secondary_titles':" ",
+            'descriptions':"Programação indisponível",
+            'rating':""
+            })
+        
+    json = simplejson.dumps(arr)
         
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json)
@@ -375,10 +418,31 @@ def guide_programmes_list(request):
                 'program':arrProgramme
                 })
         
-        json = simplejson.dumps(arrGuide)
     else:
-        json = simplejson.dumps([])
         print('SEM PROGRAMACAO')
+        arrGuide = []
+        arrProgramme = []
+        arrProgramme.append({
+                'pid':0,
+                'pnow':0,
+                'dur': 0,
+                'sfo':"00000000000000",
+                'start':"00:00",
+                'stop':"00:00",
+                'titles':"Sem programação",
+                'st':" ",
+                'desc':"Programação insdisponível",
+                'rat':" "
+            })
+
+        arrGuide.append({
+            'n':"Indisponível",
+            'epg':"0",
+            'enow':"0",
+            'program':arrProgramme
+            })
+
+    json = simplejson.dumps(arrGuide)
         
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json)
