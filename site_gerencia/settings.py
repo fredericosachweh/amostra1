@@ -181,6 +181,8 @@ INSTALLED_APPS = (
     'epg',
     # Utilitário
     'django_extensions',
+    # App with info about possible frequencies to tune
+    'dvbinfo',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL

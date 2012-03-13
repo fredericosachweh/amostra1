@@ -6,16 +6,19 @@ Modulo administrativo do controle de midias e gravacoes
 """
 
 from django.contrib import admin
+from django.db import models
+from django.utils.translation import ugettext as _
 
-import models
-
+from models import *
+from forms import *
 
 class AdminServer(admin.ModelAdmin):
     readonly_fields = ('status','modified','msg',)
-    list_display = ('__unicode__','status','msg','switch_link',)
+    list_display = ('__unicode__','server_type','status','msg','switch_link',)
     fieldsets = (
       (None, {
         'fields': (('status', 'modified', 'msg',),
+            ('server_type'),
             ('name',), 
             ('host', 'ssh_port',), 
             ('username', 'password',),
@@ -38,7 +41,7 @@ class AdminStream(admin.ModelAdmin):
 
 
 class AdminDVBDestinationInline(admin.TabularInline):#StackedInline
-    model = models.DvbblastProgram
+    model = DvbblastProgram
     extra = 3
 
 
@@ -57,16 +60,39 @@ class AdminSource(admin.ModelAdmin):
     #    js = ('jquery/jquery-1.6.2.js','player.js',)
     list_display = ('__unicode__','in_use','destinations',)
 
-#admin.site.register(models.Channel)
-admin.site.register(models.Server,AdminServer)
-admin.site.register(models.Vlc,AdminDevice)
-admin.site.register(models.Dvblast)
-admin.site.register(models.MulticatGeneric,AdminDevice)
-admin.site.register(models.MulticatSource,AdminDevice)
-admin.site.register(models.MulticatRedirect,AdminDevice)
-admin.site.register(models.MulticatRecorder)
-admin.site.register(models.Source, AdminSource)
-admin.site.register(models.Destination)
+class AdminDvbTuner(admin.ModelAdmin):
+    class Media:
+        js = ('js/tuner.js',)
+    form = DvbTunerForm
+    fieldsets = (
+                 (_(u'Auto-preenchimento'), {
+                 'fields' : ('sat', ('trans', 'chan'), 'fta')
+                 }),
+                 (_(u'Sintonizador digital'), {
+                 'fields' : ('server',
+                             'name',
+                             'adapter',
+                             'frequency',
+                             'symbol_rate',
+                             'modulation',
+                             'polarization',
+                             'antenna',
+                             )
+                 }),
+                 )
 
+#admin.site.register(models.Channel)
+admin.site.register(Server,AdminServer)
+admin.site.register(Vlc,AdminDevice)
+admin.site.register(Dvblast)
+admin.site.register(MulticatGeneric,AdminDevice)
+admin.site.register(MulticatSource,AdminDevice)
+admin.site.register(MulticatRedirect,AdminDevice)
+admin.site.register(MulticatRecorder)
+admin.site.register(Source, AdminSource)
+admin.site.register(Destination)
+admin.site.register(Antenna)
+admin.site.register(DvbTuner, AdminDvbTuner)
+admin.site.register(IsdbTuner)
 
 
