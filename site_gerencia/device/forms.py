@@ -5,7 +5,7 @@ from models import *
 from dvbinfo.models import *
 from django.utils.translation import ugettext as _
 
-class TunerForm(forms.ModelForm):
+class DvbTunerForm(forms.ModelForm):
     # TODO: use reverse() to get the URLs for the javascript
     sat = forms.ModelChoiceField(Satellite.objects, 
                                  label=_(u'Satélite'), 
@@ -21,4 +21,4 @@ class TunerForm(forms.ModelForm):
                              widget=forms.CheckboxInput(attrs={'onchange' : 'populate_selects(django.jQuery("select#id_sat").attr("value"));'}))
     
     class Meta:
-        model = Tuner
+        model = DvbTuner

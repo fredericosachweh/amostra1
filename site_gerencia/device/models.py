@@ -330,19 +330,36 @@ class Dvblast(DeviceServer):
                 self.play()
 
 class Antenna(models.Model):
+    
+    LNBS = (
+            (u'normal_c', u'C Normal'),
+            (u'multiponto_c', u'C Multiponto'),
+            (u'universal_ku', u'Ku Universal'),
+            )
+    
     satellite = models.CharField(_(u'Satélite'), max_length=200)
-    lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200)
+    lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200, choices=LNBS)
     
     def __unicode__(self):
         return str(self.satellite)
 
-class Tuner(DeviceServer):
+class DigitalTuner(DeviceServer):
     class Meta:
         verbose_name = _(u'Sintonizador digital')
         verbose_name_plural = _(u'Sintonizadores digitais')
+        abstract = True
     
     def __unicode__(self):
-        return 
+        return self.name
+
+    name = models.CharField(_(u'Nome'), max_length=200)
+    frequency = models.PositiveIntegerField(_(u'Frequência (MHz)'))
+    adapter = models.PositiveSmallIntegerField(_(u'Adaptador'), max_length=200)
+
+class DvbTuner(DigitalTuner):
+    class Meta:
+        verbose_name = _(u'Sintonizador DVB-S/S2')
+        verbose_name_plural = _(u'Sintonizadores DVB-S/S2')
     
     MODULATION_CHOICES = (
                           (u'QPSK', u'QPSK'),
@@ -355,14 +372,22 @@ class Tuner(DeviceServer):
                           (u'L', u'L'),
                           )
     
-    name = models.CharField(_(u'Nome'), max_length=200)
-    frequency = models.PositiveIntegerField(_(u'Frequência (MHz)'))
     symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos (Msym/s)'))
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
-    adapter = models.PositiveSmallIntegerField(_(u'Adaptador'), max_length=200)
     polarization = models.CharField(_(u'Polarização'), max_length=200, choices=POLARIZATION_CHOICES)
-    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
+
+class IsdbTuner(DigitalTuner):
+    class Meta:
+        verbose_name = _(u'Sintonizador ISDB-Tb')
+        verbose_name_plural = _(u'Sintonizadores ISDB-Tb')
+    
+    MODULATION_CHOICES = (
+                          (u'QAM', u'QAM'),
+                          )
+    
+    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
+    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda (MHz)'), null=True)
 
 class DvbblastProgram(DeviceIp):
     class Meta:

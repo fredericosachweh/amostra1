@@ -60,10 +60,10 @@ class AdminSource(admin.ModelAdmin):
     #    js = ('jquery/jquery-1.6.2.js','player.js',)
     list_display = ('__unicode__','in_use','destinations',)
 
-class AdminTuner(admin.ModelAdmin):
+class AdminDvbTuner(admin.ModelAdmin):
     class Media:
         js = ('js/tuner.js',)
-    form = TunerForm
+    form = DvbTunerForm
     fieldsets = (
                  (_(u'Auto-preenchimento'), {
                  'fields' : ('sat', ('trans', 'chan'), 'fta')
@@ -76,7 +76,6 @@ class AdminTuner(admin.ModelAdmin):
                              'symbol_rate',
                              'modulation',
                              'polarization',
-                             'bandwidth',
                              'antenna',
                              )
                  }),
@@ -93,6 +92,7 @@ admin.site.register(MulticatRecorder)
 admin.site.register(Source, AdminSource)
 admin.site.register(Destination)
 admin.site.register(Antenna)
-admin.site.register(Tuner, AdminTuner)
+admin.site.register(DvbTuner, AdminDvbTuner)
+admin.site.register(IsdbTuner)
 
 
