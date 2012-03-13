@@ -179,6 +179,8 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
+    # Utilitário
+    'django_extensions',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL

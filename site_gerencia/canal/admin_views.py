@@ -20,6 +20,7 @@ class CanalCreationWizard(FormWizard):
             'root_path': admin.admin_site.root_path,
             'app_label': opts.app_label,
         })
+        #return super(CanalCreationWizard, self).parse_params(request, admin)
     
     def render_template(self, request, form, previous_fields, step, context=None):
         from django.contrib.admin.helpers import AdminForm

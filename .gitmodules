@@ -13,3 +13,6 @@
 [submodule "modules/django-importer"]
 	path = modules/django-importer
 	url = git://github.com/ricobl/django-importer.git
+[submodule "modules/django-extensions"]
+	path = modules/django-extensions
+	url = git://github.com/django-extensions/django-extensions.git
