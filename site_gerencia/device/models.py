@@ -113,6 +113,13 @@ class Server(models.Model):
     modified = models.DateTimeField(_(u'Última modificação'), auto_now=True)
     status = models.BooleanField(_(u'Status'), default=False)
     msg = models.TextField(_(u'Mensagem de retorno'), blank=True)
+    SERVER_TYPE_CHOICES=(
+                         (u'local', _(u'Servidor local DEMO')),
+                         (u'dvb', _(u'Sintonizador DVB')),
+                         (u'recording', _(u'Servidor TVoD')),
+                         )
+    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100, 
+                                   choices=SERVER_TYPE_CHOICES)
 
     def __unicode__(self):
         return '%s' %(self.name)
@@ -122,6 +129,16 @@ class Server(models.Model):
         return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
 
     switch_link.allow_tags = True
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        if str(self.server_type) == 'local' and str(self.host) != '127.0.0.1':
+            raise ValidationError(_(u'Servidor DEMO só pode ser usado com IP local 127.0.0.1.'))
+    
+    @property    
+    def is_local(self):
+        return True if str(self.server_type) == 'local' else False
 
     def connect(self):
         """Conecta-se ao servidor"""
@@ -208,7 +225,7 @@ class DeviceIp(SourceRelation):
         
 class DeviceServer(models.Model):
     """Relaciona IP com servidor de Device!"""
-    server = models.ForeignKey(Server)
+    server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
     def __unicode__(self):
@@ -311,6 +328,41 @@ class Dvblast(DeviceServer):
             p = Player()
             if p.is_playing(self) is False:
                 self.play()
+
+class Antenna(models.Model):
+    satellite = models.CharField(_(u'Satélite'), max_length=200)
+    lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200)
+    
+    def __unicode__(self):
+        return str(self.satellite)
+
+class Tuner(DeviceServer):
+    class Meta:
+        verbose_name = _(u'Sintonizador digital')
+        verbose_name_plural = _(u'Sintonizadores digitais')
+    
+    def __unicode__(self):
+        return 
+    
+    MODULATION_CHOICES = (
+                          (u'QPSK', u'QPSK'),
+                          (u'8PSK', u'8PSK'),
+                          )
+    POLARIZATION_CHOICES = (
+                          (u'H', u'H'),
+                          (u'V', u'V'),
+                          (u'R', u'R'),
+                          (u'L', u'L'),
+                          )
+    
+    name = models.CharField(_(u'Nome'), max_length=200)
+    frequency = models.PositiveIntegerField(_(u'Frequência (MHz)'))
+    symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos (Msym/s)'))
+    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
+    adapter = models.PositiveSmallIntegerField(_(u'Adaptador'), max_length=200)
+    polarization = models.CharField(_(u'Polarização'), max_length=200, choices=POLARIZATION_CHOICES)
+    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True)
+    antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
 
 class DvbblastProgram(DeviceIp):
     class Meta:

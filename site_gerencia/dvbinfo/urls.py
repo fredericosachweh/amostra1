@@ -3,5 +3,7 @@
 
 from django.conf.urls.defaults import patterns
 
-urlpatterns = patterns('',
+urlpatterns = patterns('dvbinfo.views',
+    (r'^transponders/', 'get_transponders'),
+    (r'^channels/', 'get_channels'),
 )

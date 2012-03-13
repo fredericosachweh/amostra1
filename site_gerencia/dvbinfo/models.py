@@ -6,7 +6,7 @@ from django.utils.translation import ugettext as _
 class Satellite(models.Model):
 
     class Meta:
-        ordering = ('location',)
+        ordering = ('location', 'name')
         verbose_name = _(u'Satélite')
         verbose_name_plural = _(u'Satélites')
 		
@@ -21,6 +21,7 @@ class Satellite(models.Model):
 class Transponder(models.Model):
 
     class Meta:
+        ordering = ('name', 'frequency')
         verbose_name = _(u'Transponder')
         verbose_name_plural = _(u'Transponders')
 
@@ -28,7 +29,7 @@ class Transponder(models.Model):
     band = models.CharField(max_length=20, blank=True)
     frequency = models.PositiveIntegerField()
     symbol_rate = models.PositiveIntegerField()
-    polarization = models.CharField(max_length=1)
+    polarization = models.CharField(max_length=100)
     fec = models.CharField(max_length=10)
     system = models.CharField(max_length=10, null=True)
     modulation = models.CharField(max_length=10, null=True)
@@ -41,6 +42,7 @@ class Transponder(models.Model):
 class Channel(models.Model):
 
     class Meta:
+        ordering = ('name',)
         verbose_name = _(u'Canal')
         verbose_name_plural = _(u'Canais')
 
