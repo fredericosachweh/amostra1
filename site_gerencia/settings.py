@@ -22,18 +22,20 @@ ADMINS = (
 MANAGERS = ADMINS
 
 if 'test' in sys.argv:
+    print('SETTINGS: TESTE SQLITE')
     ## Banco de dados teste
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': ''
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
+        'USER':'',
+        'PASSWORD':'',
+        'HOST':'',
+        'PORT':''
         }
     }
 else:
+    print('SETTINGS: DATABASE MYSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -41,8 +43,9 @@ else:
             'USER': 'iptv',
             'PASSWORD': 'iptv',
             'HOST': '127.0.0.1',
-            'PORT': '3306',
+            'PORT': '3306'
         }
+
     }
 
 # Local time zone for this installation. Choices can be found here:
@@ -69,12 +72,28 @@ USE_I18N = True
 USE_L10N = True
 
 
-MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = '/var/www/html/tvfiles/media/'
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
-STATIC_ROOT = '/var/www/html/tvfiles/static/'
-STATIC_URL = '/tvfiles/static/'
+#IMPORTANTE:
+print('VERIFIQUE LINKS SIMBOLICOS')
+# ARRUMAR LINKS SIMBOLICOS DA SEGUINTE FORMA PARA QUE O SISTEMA FUNCIONE CERTO:
+# EM /var/www/html
+#0 lrwxrwxrwx. 1 nginx nginx   14 Mar  7 10:41 media -> tvfiles/media/
+#0 lrwxrwxrwx. 1 nginx nginx   15 Mar  7 10:41 static -> tvfiles/static/
+#0 lrwxrwxrwx. 1 nginx nginx    7 Mar  7 10:29 tv -> tvfiles
+#4 drwxr-xr-x. 4 nginx nginx 4096 Jan 13 12:23 tvfiles
+#
+# EM /home/claudio/Projects/iptv-middleware/site_gerencia:
+#
+#0 lrwxrwxrwx.  1 claudio claudio     22 Mar  7 10:47 tvfiles -> /var/www/html/tvfiles/
+#0 lrwxrwxrwx.  1 claudio claudio     27 Mar  7 10:38 media -> /var/www/html/tvfiles/media
+
+MEDIA_URL = '/tv/media/'
+MEDIA_ROOT = '/var/www/html/tv/media/'
+ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+STATIC_ROOT = '/var/www/html/tv/static/'
+STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
+
+
 
 #ROOT_URL = 'tv/'
 #MEDIA_URL = '/tv/media/'
@@ -208,7 +227,7 @@ if DEBUG == True:
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
-        INTERNAL_IPS = ('127.0.0.1',)
+        INTERNAL_IPS = ('127.0.0.3',)
         DEBUG_TOOLBAR_PANELS = (
             'debug_toolbar.panels.version.VersionDebugPanel',
             'debug_toolbar.panels.timer.TimerDebugPanel',

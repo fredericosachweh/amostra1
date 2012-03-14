@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SETTINGS=settings
+SETTINGS=claudio
 METHOD=prefork
 DEAMONIZE=false
 PYTHONPATH=".:.."
