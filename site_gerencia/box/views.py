@@ -62,9 +62,7 @@ def canal_list(request):
     """
     # .select_related('source')
     canais = Canal.objects.filter(enabled=True).order_by('numero')
-    json = serializers.serialize('json', canais, indent=2,
-        use_natural_keys=True
-        )
+    json = serializers.serialize('json', canais, indent=2,use_natural_keys=True)
     return HttpResponse(json,content_type='application/json')
 
 def programme_info(request):
@@ -98,7 +96,7 @@ def programme_info(request):
         guide = guides[0]
         pro = guide.programme
         
-        programid = int( pro.programid )
+        programid = int( guide.programme_id )
         
         #Inicio / Fim
         startStr = '{:%H:%M}'.format(guide.start)
@@ -194,7 +192,7 @@ def programme_info(request):
                                    }])
         
     # Chama o canal e pega a listagem do aplicativo canal
-    return HttpResponse(json)
+    return HttpResponse(json,content_type='application/json')
 
 def guide_programmes(request):
     """
@@ -301,7 +299,7 @@ def guide_programmes(request):
     json = simplejson.dumps(arr)
         
     # Chama o canal e pega a listagem do aplicativo canal
-    return HttpResponse(json)
+    return HttpResponse(json,content_type='application/json')
 
 
 def guide_programmes_list(request):
@@ -395,7 +393,7 @@ def guide_programmes_list(request):
                 descriptions = ""
                 if(pro.descriptions.get().value):
                     descriptions = pro.descriptions.get().value
-                
+               
                 arrProgramme.append({
                         'pid':programid,
                         'pnow':is_run_now_programme,
@@ -447,7 +445,189 @@ def guide_programmes_list(request):
     json = simplejson.dumps(arrGuide)
         
     # Chama o canal e pega a listagem do aplicativo canal
-    return HttpResponse(json)
+    return HttpResponse(json,content_type='application/json')
+
+
+
+def channel_programme_info(request):
+    """
+    Usado pelo setupbox para mostrar a INFO do programa
+    """
+    from epg.models import Guide
+    from django.utils import simplejson
+    
+    RunNowChannelEpg = int( request.GET.get('c') )
+    RunNowProgrammeId = int( request.GET.get('p') )
+
+    if(RunNowChannelEpg and RunNowProgrammeId):
+        guides = Guide.objects.filter(channel=RunNowChannelEpg,programme=RunNowProgrammeId)
+        if len(guides) > 0:
+            guide = guides[0]
+                    
+            cha   = guide.channel
+            pro   = guide.programme
+            start = guide.start
+            stop  = guide.stop
+            
+            #Titles
+            titlesStr = ""
+            titles = pro.titles.all().values()
+            for title in titles:
+                titlesStr += title['value'] + " - "
+            titlesStr = titlesStr[0:-3]
+            
+            #Segundo titulos
+            secondaryTitlesStr = ""
+            secondaryTitles = pro.secondary_titles.all().values()
+            for secondary_title in secondaryTitles:
+                secondaryTitlesStr += secondary_title['value'] + " - "
+            secondaryTitlesStr = secondaryTitlesStr[0:-3]
+            
+            #Actors
+            actorsStr = ""
+            actors = pro.actors.all().values()
+            for actor in actors:
+                actorsStr += actor['name'] + ", "
+            actorsStr = actorsStr[0:-2]
+    
+            #Categoria
+            categoriesStr = ""
+            categories = pro.categories.all().values()
+            for categorie in categories:
+                categoriesStr += categorie['value'] + ", "
+            categoriesStr = categoriesStr[0:-2]
+
+            #Diretores
+            directorsStr = ""
+            directors = pro.directors.all().values()
+            for director in directors:
+                directorsStr += director['name'] + ", "
+            directorsStr = directorsStr[0:-2]
+            
+            ratingStr = ""
+            if(pro.rating):
+                ratingStr = pro.rating.system + ':' + pro.rating.value
+                
+            descriptionsStr = ""
+            if(pro.descriptions.get()):
+                descriptionsStr = pro.descriptions.get().value
+
+            countryStr = ""
+            if(pro.country):
+                countryStr = pro.country.value
+            
+            
+            audio_stereoStr = ""
+            if(pro.audio_stereo):
+                audio_stereoStr = pro.audio_stereo
+
+            lengthStr = ""
+            if(pro.length):
+                lengthStr = pro.length
+
+            dateStr = ""
+            if(pro.date):
+                dateStr = pro.date
+
+            video_aspectStr = ""
+            if(pro.video_aspect):
+                video_aspectStr = pro.video_aspect
+
+            video_colourStr = ""
+            if(pro.video_colour):
+                video_colourStr = pro.video_colour
+
+            video_presentStr = ""
+            if(pro.video_present):
+                video_presentStr = pro.video_present
+
+            video_qualityStr = ""
+            if(pro.video_quality):
+                video_qualityStr = pro.video_quality
+
+            audio_presentStr = ""
+            if(pro.audio_present):
+                audio_presentStr = pro.audio_present
+            
+            arrChannel = {
+                'channelepg'   :RunNowChannelEpg,
+                'channelid'    :cha.channelid,
+                'display_names':cha.display_names.get().value,
+                'icons'        :cha.icons.all().values('src')[0].get('src')
+            }
+            
+            arrProgramme = {
+                'id'              :int( RunNowProgrammeId ),
+                'programid'       :int( pro.programid ),
+                'rating'          :( ratingStr.strip() or "Indisponível"),
+                'titles'          :( titlesStr.strip() or "Indisponível"),
+                'secondary_titles':( secondaryTitlesStr.strip() or "Indisponível"),
+                'descriptions'    :( descriptionsStr.strip() or "Indisponível"),
+                'actors'          :( actorsStr.strip() or "Indisponível"),                
+                'categories'      :( categoriesStr.strip() or "Indisponível"),
+                'directors'       :( directorsStr.strip() or "Indisponível"),
+                'country'         :( countryStr.strip() or "Indisponível"),
+                'length'          :( lengthStr.strip() or "Indisponível"),
+                'date'            :( dateStr.strip() or "Indisponível"),
+                'video_aspect'    :( video_aspectStr.strip() or "Indisponível"),
+                'video_colour'    :( video_colourStr.strip() or "Indisponível"),
+                'video_present'   :( video_presentStr.strip() or "Indisponível"),
+                'video_quality'   :( video_qualityStr.strip() or "Indisponível"),
+                'audio_present'   :( audio_presentStr.strip() or "Indisponível"),
+                'audio_stereo'    :( audio_stereoStr.strip() or "Indisponível")
+            }
+            
+            arr = {
+               'start':'{:%H:%M}'.format(start),
+               'stop':'{:%H:%M}'.format(stop),
+               'channel':arrChannel,
+               'programme':arrProgramme
+            }
+            
+        else:
+            arrChannel = {
+                'channelepg'   :RunNowChannelEpg,
+                'channelid'    :0,
+                'display_names':"Indisponível.",
+                'icons'        :""
+            }
+            
+            arrProgramme = {
+                'id'              :int( RunNowProgrammeId ),
+                'programid'       :"Indisponível.",
+                'rating'          :"Indisponível.",
+                'titles'          :"Indisponível.",
+                'secondary_titles':"Indisponível.",
+                'descriptions'    :"Indisponível.",
+                'actors'          :"Indisponível.",              
+                'categories'      :"Indisponível.",
+                'directors'       :"Indisponível.",
+                'country'         :"Indisponível.",
+                'length'          :"Indisponível.",
+                'date'            :"Indisponível.",
+                'video_aspect'    :"Indisponível.",
+                'video_colour'    :"Indisponível.",
+                'video_present'   :"Indisponível.",
+                'video_quality'   :"Indisponível.",
+                'audio_present'   :"Indisponível.",
+                'audio_stereo'    :"Indisponível."
+            }
+            
+            arr = {
+               'start':"00:00",
+               'stop':"00:00",
+               'channel':arrChannel,
+               'programme':arrProgramme
+            }
+    else:
+        print("INEXISTENTE")
+            
+    json = simplejson.dumps(arr)
+    
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json,content_type='application/json')
+
+
 
 def canal_update(request):
     """Retorna a data de atualização mais recente da lista de canais"""
