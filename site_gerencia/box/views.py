@@ -236,7 +236,7 @@ def guide_programmes(request):
         for guide in guides:
             pro = guide.programme
             
-            programid = int( pro.programid )
+            programid = int( guide.programme_id )
             
             #Inicio / Fim
             start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
@@ -355,7 +355,7 @@ def guide_programmes_list(request):
             for guide in guides:
                 pro = guide.programme
                 
-                programid = int( pro.programid )
+                programid = int( guide.programme_id )
                 
                 #Inicio / Fim
                 start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
