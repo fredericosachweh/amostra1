@@ -330,6 +330,9 @@ class Dvblast(DeviceServer):
                 self.play()
 
 class Antenna(models.Model):
+    class Meta:
+        verbose_name = _(u'Antena parabólica')
+        verbose_name_plural = _(u'Antenas parabólicas')
     
     LNBS = (
             (u'normal_c', u'C Normal'),
@@ -386,7 +389,7 @@ class IsdbTuner(DigitalTuner):
                           )
     
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
-    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz')
+    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
 
 class DvbblastProgram(DeviceIp):
     class Meta:
