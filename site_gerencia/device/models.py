@@ -349,17 +349,15 @@ class DigitalTuner(DeviceServer):
         verbose_name_plural = _(u'Sintonizadores digitais')
         abstract = True
     
-    def __unicode__(self):
-        return self.name
-
-    name = models.CharField(_(u'Nome'), max_length=200)
-    frequency = models.PositiveIntegerField(_(u'Frequência (MHz)'))
-    adapter = models.PositiveSmallIntegerField(_(u'Adaptador'), max_length=200)
+    frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
 
 class DvbTuner(DigitalTuner):
     class Meta:
         verbose_name = _(u'Sintonizador DVB-S/S2')
         verbose_name_plural = _(u'Sintonizadores DVB-S/S2')
+    
+    def __unicode__(self):
+        return '%s - %d %s %d' % (self.antenna,self.frequency,self.polarization,self.symbol_rate)
     
     MODULATION_CHOICES = (
                           (u'QPSK', u'QPSK'),
@@ -372,9 +370,10 @@ class DvbTuner(DigitalTuner):
                           (u'L', u'L'),
                           )
     
-    symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos (Msym/s)'))
+    symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'), help_text=u'Msym/s')
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
     polarization = models.CharField(_(u'Polarização'), max_length=200, choices=POLARIZATION_CHOICES)
+    adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
 
 class IsdbTuner(DigitalTuner):
@@ -387,7 +386,7 @@ class IsdbTuner(DigitalTuner):
                           )
     
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
-    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda (MHz)'), null=True)
+    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz')
 
 class DvbblastProgram(DeviceIp):
     class Meta:

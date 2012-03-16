@@ -1,8 +1,10 @@
 
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, render_to_response
 from django.core.urlresolvers import reverse
+from django.template import RequestContext
 import models
+import forms
 
 def home(request):
     return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
@@ -54,8 +56,46 @@ def multicat_redirect_stop(request,pk=None):
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
 
+# View to return list of available DVB-S/S2 tuners
+def get_dvb_tuners(request):
+    if request.method == 'GET' and request.GET.get('server'):
+        server = get_object_or_404(models.Server, id=request.GET.get('server'))
+        # Retrive list of devices MAC addresses
+        import re
+        macs = server.execute('cat /dev/dvb/adapter*.mac')
+        macs = map(lambda x: x.strip(), macs) # Strip \n
+        if len(macs) and re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', macs[0]):
+            # Retrieve DvbTuner objects
+            tuners = models.DvbTuner.objects.filter(server=server).values_list('adapter')
+            tuners = [tuner[0] for tuner in tuners]
+            # Filter already used macs
+            macs = list(set(macs) - set(tuners))
+            # Render html
+            response = ''
+            for mac in macs:
+                response += ('<option value=%s>%s</option>' % (mac, mac))
+            
+            # Put in the currently selected mac address
+            try:
+                query = models.DvbTuner.objects.get(server=server, id=request.GET.get('tuner'))
+                mac = query.adapter
+                response += '<option selected="selected" value="%s">%s</option>' % (mac, mac)
+            except models.DvbTuner.DoesNotExist:
+                pass
+            return HttpResponse(response)
+        else:
+            return HttpResponse()
+    else:
+        return HttpResponseBadRequest()
 
-
+def auto_fill_tuner_form(request):
+    if request.method == 'GET':
+        return render_to_response('tuner_autofill_form.html',
+                                  { 'fields' : forms.DvbTunerAutoFillForm },
+                                  context_instance=RequestContext(request))
+    elif request.method == 'POST':
+        return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s", "%s", "%s", "%s");</script>' % \
+                            (request.POST['freq'],request.POST['sr'],request.POST['pol'],request.POST['mod']))
 
 #def play(request,streamid=None):
 #    stream = get_object_or_404(Stream,id=streamid)

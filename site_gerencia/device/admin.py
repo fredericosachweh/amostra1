@@ -61,25 +61,7 @@ class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__','in_use','destinations',)
 
 class AdminDvbTuner(admin.ModelAdmin):
-    class Media:
-        js = ('js/tuner.js',)
     form = DvbTunerForm
-    fieldsets = (
-                 (_(u'Auto-preenchimento'), {
-                 'fields' : ('sat', ('trans', 'chan'), 'fta')
-                 }),
-                 (_(u'Sintonizador digital'), {
-                 'fields' : ('server',
-                             'name',
-                             'adapter',
-                             'frequency',
-                             'symbol_rate',
-                             'modulation',
-                             'polarization',
-                             'antenna',
-                             )
-                 }),
-                 )
 
 #admin.site.register(models.Channel)
 admin.site.register(Server,AdminServer)

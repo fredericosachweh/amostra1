@@ -1,24 +1,24 @@
 # -*- encoding:utf-8 -*-
 
 from django import forms
+from django.utils.translation import ugettext as _
+from django.contrib import admin
+from django.core.urlresolvers import reverse
 from models import *
 from dvbinfo.models import *
-from django.utils.translation import ugettext as _
 
 class DvbTunerForm(forms.ModelForm):
-    # TODO: use reverse() to get the URLs for the javascript
-    sat = forms.ModelChoiceField(Satellite.objects, 
-                                 label=_(u'Satélite'), 
-                                 widget=forms.Select(attrs={'onchange' : 'populate_selects(this.value);'}))
-    trans = forms.ModelChoiceField(Transponder.objects.filter(channel__crypto__iexact='FTA'), 
-                                   label=_(u'Transponder'), 
-                                   widget=forms.Select(attrs={'onchange' : 'transponder_fill_form(this.value);'}))
-    chan = forms.ModelChoiceField(Channel.objects.filter(crypto__iexact='FTA'), 
-                                  label=_(u'Canal'), 
-                                  widget=forms.Select(attrs={'onchange' : 'channel_fill_form(this.value);'}))
-    fta = forms.BooleanField(label=_(u'Somente canais FTA'), 
-                             initial=True, 
-                             widget=forms.CheckboxInput(attrs={'onchange' : 'populate_selects(django.jQuery("select#id_sat").attr("value"));'}))
-    
     class Meta:
         model = DvbTuner
+        widgets = {
+            'adapter' : forms.Select(),
+        }
+
+class DvbTunerAutoFillForm(forms.Form):
+    sat = forms.ModelChoiceField(Satellite.objects, label=_(u'Satélite'))
+    chan = forms.ChoiceField(label=_(u'Canal'))
+    fta = forms.BooleanField(label=_(u'Somente canais FTA'), initial=True)
+    freq = forms.CharField(label=_(u'Frequência'))
+    sr = forms.CharField(label=_(u'Taxa de símbolos'))
+    pol = forms.CharField(label=_(u'Polaridade'))
+    mod = forms.CharField(label=_(u'Modulação'))

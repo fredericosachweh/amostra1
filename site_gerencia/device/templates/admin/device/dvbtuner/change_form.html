@@ -1,0 +1,58 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+
+	{{ block.super }}
+	
+	<script type="text/javascript">
+		django.jQuery(document).ready(function () {
+			populate_adapters(django.jQuery('select#id_server').val());
+			/* Insert the auto-fill hyperlink */
+			var hyperlink = django.jQuery('<br /><a href="{% url device.views.auto_fill_tuner_form %}">( Auto preencher )</a>');
+			hyperlink.appendTo(django.jQuery('div.form-row.frequency p.help'));
+			/* Insert the onchange callbacks */
+			hyperlink.click( function () {
+				return showAutoFillPopup(this);
+			});
+			django.jQuery('select#id_server').change( function() {
+				populate_adapters(this.value);
+			});
+		});
+		/* Get free adapters list from server and populate the select field */ 
+		function populate_adapters(server_id)
+		{
+			var field = django.jQuery('select#id_adapter');
+			field.attr("disabled", "disabled");
+			field.empty();
+			if (server_id) {
+				var query =  '{% url device.views.get_dvb_tuners %}' + '?server=' + server_id;
+				var tuner = "{{ original.pk }}";
+				if (tuner) {
+					query += '&tuner=' + tuner;
+				}
+				django.jQuery.get(query, function(data) {
+					if (data)
+						field.append(data);
+			        field.removeAttr("disabled");
+			  	});
+		    }
+		}
+		
+		function showAutoFillPopup(link)
+		{
+			var win = window.open(link, 'name', 'height=370,width=400,resizable=yes,scrollbars=yes');
+			win.focus(); 
+			return false;
+		}
+		
+		function dismissAutoFillPopup(win, freq, sr, pol, mod)
+		{
+			django.jQuery('input#id_frequency').val(freq);
+			django.jQuery('input#id_symbol_rate').val(sr);
+			django.jQuery('select#id_modulation').val(mod);
+			django.jQuery('select#id_polarization').val(pol);
+			win.close();
+		}
+	</script>
+	
+{% endblock %}
