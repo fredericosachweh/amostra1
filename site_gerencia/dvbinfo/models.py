@@ -6,17 +6,18 @@ from django.utils.translation import ugettext as _
 class Satellite(models.Model):
 
     class Meta:
-        ordering = ('location', 'name')
+        ordering = ('azimuth_degrees', 'azimuth_direction')
         verbose_name = _(u'Satélite')
         verbose_name_plural = _(u'Satélites')
 		
     name = models.CharField(max_length=200)
-    location = models.CharField(max_length=10)
+    azimuth_degrees = models.FloatField()
+    azimuth_direction = models.CharField(max_length=10)
     info = models.TextField(blank=True)
     logo = models.CharField(max_length=300)
     
     def __unicode__(self):
-        return self.location + ' - ' + self.name
+        return u'%d °%s - %s' % (self.azimuth_degrees, self.azimuth_direction, self.name)
 
 class Transponder(models.Model):
 
