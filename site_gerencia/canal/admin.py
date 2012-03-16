@@ -54,6 +54,7 @@ class CanalAdmin(admin.ModelAdmin):
     list_per_page = 10
     search_fields = ['nome', 'source']
     formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
+    
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'logo':
@@ -61,6 +62,7 @@ class CanalAdmin(admin.ModelAdmin):
             kwargs['widget'] = AdminImageWidget
             return db_field.formfield(**kwargs)
         return super(CanalAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+    
     class Meta:
         form = CanalForm
         

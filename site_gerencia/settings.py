@@ -179,6 +179,8 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
+    # Utilitário
+    'django_extensions',
     # App with info about possible frequencies to tune
     'dvbinfo',
 )
