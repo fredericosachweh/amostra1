@@ -63,6 +63,9 @@ class AdminSource(admin.ModelAdmin):
 class AdminDvbTuner(admin.ModelAdmin):
     form = DvbTunerForm
 
+class AdminIsdbTuner(admin.ModelAdmin):
+    form = IsdbTunerForm
+
 #admin.site.register(models.Channel)
 admin.site.register(Server,AdminServer)
 admin.site.register(Vlc,AdminDevice)
@@ -75,6 +78,6 @@ admin.site.register(Source, AdminSource)
 admin.site.register(Destination)
 admin.site.register(Antenna)
 admin.site.register(DvbTuner, AdminDvbTuner)
-admin.site.register(IsdbTuner)
+admin.site.register(IsdbTuner, AdminIsdbTuner)
 
 
