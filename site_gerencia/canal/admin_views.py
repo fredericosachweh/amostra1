@@ -2,7 +2,6 @@ from django.contrib.formtools.wizard import FormWizard
 from django.utils.encoding import force_unicode
 from forms import *
 from device.models import *
-from canal.models import *
 
 class CanalCreationWizard(FormWizard):
     @property
@@ -36,27 +35,10 @@ class CanalCreationWizard(FormWizard):
         })
         return super(CanalCreationWizard, self).render_template(request, form, previous_fields, step, context)
 
-    def process_step(self, request, form, step):
-        if step == 0 and hasattr(form, 'cleaned_data'):
-            if form.cleaned_data['server'].is_local:
-                return
-            else:
-                self.form_list.pop()
-                if form.cleaned_data['server'].server_type == 'dvb':
-                    self.form_list.append(ConfigureTunerInputForm)
-                
-        if step == 1 and hasattr(form, 'cleaned_data'):
-            if form.cleaned_data['input_type'] == 'dvb-s':
-                self.form_list.append(ConfigureTunerInputForm)
-            elif form.cleaned_data['input_type'] == 'dvb-t':
-                self.form_list.append(ConfigureTunerInputForm)
-
     def done(self, request, form_list):
         data = {}
         for form in form_list:
             data.update(form.cleaned_data)
-        
-        canal = Canal()
 #        # First, create user:
 #        user = User(
 #            username=data['username'],
@@ -77,5 +59,5 @@ class CanalCreationWizard(FormWizard):
         # Display success message and redirect to changelist:
         return self._model_admin.response_add(request, canal)
 
-create_canal_wizard = CanalCreationWizard([SelectInputServerForm,SelectInputTypeForm,])
+create_canal_wizard = CanalCreationWizard([SelectInputForm,])
 
