@@ -92,51 +92,61 @@ class Connection(object):
 --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         TODO: melhorar o local e nome do pidfile
         """
-        import os
         import datetime
         appname = os.path.basename(command.split()[0])
         uid = datetime.datetime.now().toordinal()
         ## /usr/sbin/daemonize
         fullcommand = '/usr/sbin/daemonize -p ~/%s-%s.pid -o ~/%s-%s.out %s' %(appname,uid,appname,uid,command)
-        output = self.execute(fullcommand)
+        self.execute(fullcommand)
         pidcommand = "/bin/cat ~/%s-%s.pid" % (appname,uid)
         ## Buscando o pid
         output = self.execute(pidcommand)
-        pid = int(output[0])
+        pid = int(output[0].strip())
         return pid
 
 
     def execute_with_timeout(self,command,timeout=10):
         """
         Executa comando no servidor com timeout e retorna o stdout com o stderr
+        
+        Estudar e possibilidade de usar epoll ou melhorar o select:
+        http://scotdoyle.com/python-epoll-howto.html
+        http://www.doughellmann.com/PyMOTW/select/
         """
         import socket
         import select
         import time
         start = time.time()
         channel = self._transport.open_session()
+        channel.settimeout(timeout)
         channel.exec_command(command)
         resp = ''
         linha = ''
         run = True
         while run:
             try:
-                r,w,e = select.select([channel],[],[],2)
+                r,w,e = select.select([channel],[],[],timeout)
                 if len(r) > 0:
                     if channel.recv_ready():
                         linha = r[0].recv(1024)
-                    if channel.recv_stderr_ready():
+                    elif channel.recv_stderr_ready():
                         linha = r[0].recv_stderr(1024)
+                    else:
+                        r[0].send_ready()
+                        r[0].recv(1)
                 if len(e) > 0:
-                    channel.send_exit_status(9)
                     channel.close()
                     run = False
                     break
+                if len(w) > 0:
+                    pass
                 if time.time() - start > timeout:
                     channel.send_exit_status(15)
-                    #channel.shutdown(2)
+                    kcommand = "kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`"
                     try:
-                        channel.get_transport().open_session().exec_command("kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`" % (command))
+                        channel.get_transport().open_session().exec_command(\
+                            kcommand % (command)
+                        )
                     except:
                         pass
                     channel.close()
@@ -148,7 +158,6 @@ class Connection(object):
                 run = False
                 break
             except socket.timeout:
-                channel.send_exit_status(9)
                 channel.close()
                 run = False
                 break

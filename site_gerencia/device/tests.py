@@ -8,7 +8,12 @@ from django.test import TestCase
 
 
 class ConnectionTest(TestCase):
+    """
+    Executa os testes de conexão com servidor local e remoto
+    """
+    
     def test_connection(self):
+        "Teste de conexão com o usuário nginx no servidor local"
         from models import Server
         srv = Server()
         srv.name = 'local'
@@ -25,41 +30,23 @@ class ConnectionTest(TestCase):
             'O home deveria ser "/var/lib/nginx\n"'
         )
 
-    #def test_register_server(self):
-    #    from lib.ssh import Connection
-    #    c = Connection('127.0.0.1',username='nginx',password='iptv')
-    #    k = c.genKey()
-    #    #print(k)
-
     def test_low_respose_command(self):
+        "Test de comando demorado para executar"
         from lib.ssh import Connection
-        c = Connection('127.0.0.1',username='nginx',password='iptv')
-        #stdin, stdout, stderr = c.new_execute('/var/lib/nginx/test')
-        t = c.execute_with_timeout('/var/lib/nginx/test',timeout=20)
+        conn = Connection('127.0.0.1',username='nginx',password='iptv')
+        t = conn.execute_with_timeout('/var/lib/nginx/test',timeout=2)
         self.assertEqual(
             'Inicio\nP1**********Fim',
             t,
             'Valor esperado diferente [%s]' % t
         )
-        #sys.stderr.write(t)
 
     def test_scan_channel(self):
         from lib.ssh import Connection
-        import sys
         c = Connection('172.17.0.2',
             username='helber',
             private_key='~/.ssh/id_rsa_cianet')
-        r = c.execute_with_timeout('/usr/bin/dvblast -a 2 -f 3642000 -s 4370000',10)
-        #sys.stderr.write(r)
-
-    #def test_control_dvb(self):
-    #    self.assertFalse(False, 'Criar o controle de processos do dvb')
-    #
-    #def test_control_multicat(self):
-    #    self.assertFalse(False, 'Criar o controle de processos do multicat')
-    #
-    #def test_remote_process(self):
-    #    pass
+        c.execute_with_timeout('/usr/bin/dvblast -a 0 -f 3642000 -s 4370000',timeout=2)
 
 
 class ProcessControlTest(TestCase):
@@ -76,11 +63,9 @@ class ProcessControlTest(TestCase):
 
     def test_prepare_daemon(self):
         import os
-        import datetime
         cmd = '/usr/bin/cvlc -I dummy -v -R \
 /mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
 --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"'
-        uid = datetime.datetime.now().toordinal()
         parsed = os.path.basename(cmd.split()[0])
         self.assertEqual(parsed, 'cvlc', 'Deveria ser retornado o comando')
         #fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)

@@ -2,7 +2,7 @@
 Easy to use python subprocess interface.
 '''
 
-from easyprocess.unicodeutil import uniencode, unidecode
+from unicodeutil import uniencode, unidecode
 import ConfigParser
 import atexit
 import logging

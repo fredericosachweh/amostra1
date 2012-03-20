@@ -6,11 +6,13 @@ Modulo administrativo do controle de midias e gravacoes
 """
 
 from django.contrib import admin
-from django.db import models
-from django.utils.translation import ugettext as _
+#from django.db import models
+#from django.utils.translation import ugettext as _
 
-from models import *
-from forms import *
+#from models import *
+#from forms import *
+import models
+import forms
 
 class AdminServer(admin.ModelAdmin):
     readonly_fields = ('status','modified','msg',)
@@ -26,6 +28,12 @@ class AdminServer(admin.ModelAdmin):
         )
       }),
     )
+    actions = ['testa_tudo']
+    def testa_tudo(self,request,queryset):
+        print(request)
+    testa_tudo.sort_descritpion = 'Teste todos os servidores'
+        
+        
 
 
 class AdminDevice(admin.ModelAdmin):
@@ -41,7 +49,7 @@ class AdminStream(admin.ModelAdmin):
 
 
 class AdminDVBDestinationInline(admin.TabularInline):#StackedInline
-    model = DvbblastProgram
+    model = models.DvbblastProgram
     extra = 3
 
 
@@ -61,20 +69,20 @@ class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__','in_use','destinations',)
 
 class AdminDvbTuner(admin.ModelAdmin):
-    form = DvbTunerForm
+    form = forms.DvbTunerForm
 
 #admin.site.register(models.Channel)
-admin.site.register(Server,AdminServer)
-admin.site.register(Vlc,AdminDevice)
-admin.site.register(Dvblast)
-admin.site.register(MulticatGeneric,AdminDevice)
-admin.site.register(MulticatSource,AdminDevice)
-admin.site.register(MulticatRedirect,AdminDevice)
-admin.site.register(MulticatRecorder)
-admin.site.register(Source, AdminSource)
-admin.site.register(Destination)
-admin.site.register(Antenna)
-admin.site.register(DvbTuner, AdminDvbTuner)
-admin.site.register(IsdbTuner)
+admin.site.register(models.Server,AdminServer)
+admin.site.register(models.Vlc,AdminDevice)
+admin.site.register(models.Dvblast)
+admin.site.register(models.MulticatGeneric,AdminDevice)
+admin.site.register(models.MulticatSource,AdminDevice)
+admin.site.register(models.MulticatRedirect,AdminDevice)
+admin.site.register(models.MulticatRecorder)
+admin.site.register(models.Source, AdminSource)
+admin.site.register(models.Destination)
+admin.site.register(models.Antenna)
+admin.site.register(models.DvbTuner, AdminDvbTuner)
+admin.site.register(models.IsdbTuner)
 
 

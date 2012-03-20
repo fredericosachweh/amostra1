@@ -177,7 +177,6 @@ class Server(models.Model):
         return w
 
     def execute_daemon(self,command):
-        pid = -1
         try:
             s = self.connect()
             self.msg = 'OK'

@@ -1,9 +1,12 @@
+# -*- encoding:utf-8 -*-
 from django.contrib.formtools.wizard import FormWizard
 from django.utils.encoding import force_unicode
-from forms import *
-from device.models import *
+from forms import SelectInputForm
+#from device.models import *
 
 class CanalCreationWizard(FormWizard):
+    "Formulários de criação do canal"
+    
     @property
     def __name__(self):
         return self.__class__.__name__
@@ -57,7 +60,8 @@ class CanalCreationWizard(FormWizard):
 #            website=data.get('website', '')
 #        )
         # Display success message and redirect to changelist:
-        return self._model_admin.response_add(request, canal)
+        #return self._model_admin.response_add(request, canal)
+        return self._model_admin.response_add(request)
 
 create_canal_wizard = CanalCreationWizard([SelectInputForm,])
 
