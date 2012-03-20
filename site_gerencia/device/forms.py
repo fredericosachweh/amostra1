@@ -27,4 +27,16 @@ class IsdbTunerForm(forms.ModelForm):
     class Meta:
         model = IsdbTuner
     
+    def clean_free_adapters(self):
+        fa = int(self.cleaned_data['free_adapters'])
+        if fa <= 0:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(_(u'Deve haver pelo menos 1 adaptador disponível para uso.'))
+    
     free_adapters = forms.IntegerField(label=_('Adaptadores livres'))
+
+class IsdbTunerAutoFillForm(forms.Form):
+    state = forms.ModelChoiceField(State.objects, label=_(u'Estado'))
+    city = forms.ChoiceField(label=_(u'Cidade'))
+    chan = forms.ChoiceField(label=_(u'Canal'))
+    freq = forms.CharField(label=_(u'Frequência'))

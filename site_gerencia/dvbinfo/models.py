@@ -67,10 +67,16 @@ class DvbsChannel(models.Model):
 
 class State(models.Model):
     name = models.CharField(_(u'Nome'), max_length=200)
+    
+    def __unicode__(self):
+        return self.name
 
 class City(models.Model):
     name = models.CharField(_(u'Nome'), max_length=200)
     state = models.ForeignKey(State)
+    
+    def __unicode__(self):
+        return self.name
     
 class PhysicalChannel(models.Model):
     number = models.PositiveSmallIntegerField(_(u'Canal físico'))

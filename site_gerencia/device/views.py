@@ -64,6 +64,8 @@ def get_dvb_tuners(request):
         import re
         macs = server.execute('cat /dev/dvb/adapter*.mac')
         macs = map(lambda x: x.strip(), macs) # Strip \n
+        # Remove 'PixelView' entries from list
+        macs = [ mac for mac in macs if re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', mac) ]
         if len(macs) and re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', macs[0]):
             # Retrieve DvbTuner objects
             tuners = models.DvbTuner.objects.filter(server=server).values_list('adapter')
@@ -88,14 +90,42 @@ def get_dvb_tuners(request):
     else:
         return HttpResponseBadRequest()
 
-def auto_fill_tuner_form(request):
+# View to return the number of available ISDB-Tb tuners
+def get_isdb_tuners(request):
+    if request.method == 'GET' and request.GET.get('server'):
+        server = get_object_or_404(models.Server, id=request.GET.get('server'))
+        adapters = server.execute('cat /dev/dvb/adapter*.mac')
+        adapters = map(lambda x: x.strip(), adapters)
+        # Filter to type PixelView
+        adapters = [ adapter for adapter in adapters if adapter == 'PixelView' ]
+        a_count = len(adapters)
+        # Fetch existent tuners
+        t_count = models.IsdbTuner.objects.filter(server=server).count()
+        # Return the difference
+        diff = a_count - t_count
+        if request.GET.has_key('tuner'):
+            diff = diff + 1
+        return HttpResponse(diff)
+    else:
+        return HttpResponseBadRequest()
+        
+def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
-        return render_to_response('tuner_autofill_form.html',
-                                  { 'fields' : forms.DvbTunerAutoFillForm },
-                                  context_instance=RequestContext(request))
+        if ttype == 'dvbs':
+            return render_to_response('dvbs_autofill_form.html',
+                                      { 'fields' : forms.DvbTunerAutoFillForm },
+                                      context_instance=RequestContext(request))
+        elif ttype == 'isdb':
+            return render_to_response('isdb_autofill_form.html',
+                                      { 'fields' : forms.IsdbTunerAutoFillForm },
+                                      context_instance=RequestContext(request))
     elif request.method == 'POST':
-        return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s", "%s", "%s", "%s");</script>' % \
-                            (request.POST['freq'],request.POST['sr'],request.POST['pol'],request.POST['mod']))
+        if ttype == 'dvbs':
+            return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s", "%s", "%s", "%s");</script>' % \
+                                (request.POST['freq'],request.POST['sr'],request.POST['pol'],request.POST['mod']))
+        elif ttype == 'isdb':
+            return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");</script>' % \
+                                (request.POST['freq']))
 
 #def play(request,streamid=None):
 #    stream = get_object_or_404(Stream,id=streamid)

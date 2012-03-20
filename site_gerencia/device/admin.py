@@ -61,9 +61,11 @@ class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__','in_use','destinations',)
 
 class AdminDvbTuner(admin.ModelAdmin):
+    list_display = ('frequency', 'symbol_rate', 'polarization', 'modulation', 'server', 'adapter', 'antenna')
     form = DvbTunerForm
 
 class AdminIsdbTuner(admin.ModelAdmin):
+    list_display = ('server', 'frequency')
     form = IsdbTunerForm
 
 #admin.site.register(models.Channel)
