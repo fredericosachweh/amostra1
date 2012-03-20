@@ -6,7 +6,7 @@ def get_transponders(request):
     if request.method == 'GET':
         base = Transponder.objects
         if request.GET.has_key('fta') and request.GET['fta']:
-            base = base.filter(channel__crypto__iexact='FTA')
+            base = base.filter(dvbschannel__crypto__iexact='FTA')
         if request.GET.has_key('sat'):
             transponders = base.filter(satellite__id=request.GET['sat'])
             if len(transponders):
@@ -26,7 +26,7 @@ def get_transponders(request):
                     )
                 return HttpResponse(json, content_type='application/json')
         elif request.GET.has_key('chan'):
-            transponder = base.filter(channel__id=request.GET['chan'])
+            transponder = base.filter(dvbschannel__id=request.GET['chan'])
             if len(transponder):
                 json = serializers.serialize('json',
                     transponder,
@@ -40,7 +40,7 @@ def get_transponders(request):
 
 def get_channels(request):
     if request.method == 'GET':
-        base = Channel.objects
+        base = DvbsChannel.objects
         if request.GET.has_key('fta') and request.GET['fta']:
             base = base.filter(crypto__iexact='FTA')
         if request.GET.has_key('trans'):

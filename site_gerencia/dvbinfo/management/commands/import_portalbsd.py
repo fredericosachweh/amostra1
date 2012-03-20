@@ -113,7 +113,7 @@ class Command(BaseCommand):
                 last_update = None
                 raise inst
         
-        channel, created = Channel.objects.get_or_create(name=name,idiom=idiom,category=category, \
+        channel, created = DvbsChannel.objects.get_or_create(name=name,idiom=idiom,category=category, \
                             logo=logo,definition=definition,transponder=transponder)
         channel.codec = codec; channel.crypto = crypto
         channel.last_info = last_info; channel.last_update = last_update
