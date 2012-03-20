@@ -6,7 +6,7 @@ def get_transponders(request):
     if request.method == 'GET':
         base = Transponder.objects
         if request.GET.has_key('fta') and request.GET['fta']:
-            base = base.filter(channel__crypto__iexact='FTA')
+            base = base.filter(dvbschannel__crypto__iexact='FTA')
         if request.GET.has_key('sat'):
             transponders = base.filter(satellite__id=request.GET['sat'])
             if len(transponders):
@@ -26,7 +26,7 @@ def get_transponders(request):
                     )
                 return HttpResponse(json, content_type='application/json')
         elif request.GET.has_key('chan'):
-            transponder = base.filter(channel__id=request.GET['chan'])
+            transponder = base.filter(dvbschannel__id=request.GET['chan'])
             if len(transponder):
                 json = serializers.serialize('json',
                     transponder,
@@ -38,9 +38,9 @@ def get_transponders(request):
             return HttpResponseNotFound()
     return HttpResponseBadRequest()
 
-def get_channels(request):
+def get_dvbs_channels(request):
     if request.method == 'GET':
-        base = Channel.objects
+        base = DvbsChannel.objects
         if request.GET.has_key('fta') and request.GET['fta']:
             base = base.filter(crypto__iexact='FTA')
         if request.GET.has_key('trans'):
@@ -64,3 +64,35 @@ def get_channels(request):
         else:
                 return HttpResponseNotFound()
     return HttpResponseBadRequest()
+
+def get_cities(request):
+    if request.method == 'GET' and request.GET.has_key('state'):
+        json = serializers.serialize('json',
+                    City.objects.filter(state__id=request.GET['state']),
+                    indent=2,
+                    use_natural_keys=True
+                    )
+        return HttpResponse(json, content_type='application/json')
+    else:
+        return HttpResponseBadRequest()
+
+def get_isdb_channels(request):
+    if request.method == 'GET' and request.GET.has_key('city'):
+        channels = VirtualChannel.objects.filter(physical_channel__city=request.GET['city'])
+        json = serializers.serialize('json',
+                    channels,
+                    indent=2,
+                    use_natural_keys=True
+                    )
+        return HttpResponse(json, content_type='application/json')
+    else:
+        return HttpResponseBadRequest()
+
+def get_isdb_channel(request):
+    if request.method == 'GET' and request.GET.has_key('chan'):
+        from django.utils import simplejson
+        virt = VirtualChannel.objects.get(pk=request.GET['chan'])
+        json = simplejson.dumps({'frequency' : virt.physical_channel.frequency})
+        return HttpResponse(json, content_type='application/json')
+    else:
+        return HttpResponseBadRequest()

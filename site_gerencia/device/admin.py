@@ -9,8 +9,6 @@ from django.contrib import admin
 #from django.db import models
 #from django.utils.translation import ugettext as _
 
-#from models import *
-#from forms import *
 import models
 import forms
 
@@ -69,7 +67,12 @@ class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__','in_use','destinations',)
 
 class AdminDvbTuner(admin.ModelAdmin):
+    list_display = ('frequency', 'symbol_rate', 'polarization', 'modulation', 'server', 'adapter', 'antenna')
     form = forms.DvbTunerForm
+
+class AdminIsdbTuner(admin.ModelAdmin):
+    list_display = ('server', 'frequency')
+    form = forms.IsdbTunerForm
 
 #admin.site.register(models.Channel)
 admin.site.register(models.Server,AdminServer)

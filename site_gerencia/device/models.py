@@ -227,8 +227,8 @@ class DeviceServer(models.Model):
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
-    def __unicode__(self):
-        return '[%s] %s' %(self.server,self._type,self.description)
+#    def __unicode__(self):
+#        return '[%s] %s' % (self.server, self._type)
     def _type(self):
         return _(u'indefinido')
 
@@ -347,8 +347,6 @@ class Antenna(models.Model):
 
 class DigitalTuner(DeviceServer):
     class Meta:
-        verbose_name = _(u'Sintonizador digital')
-        verbose_name_plural = _(u'Sintonizadores digitais')
         abstract = True
     
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
@@ -383,11 +381,14 @@ class IsdbTuner(DigitalTuner):
         verbose_name = _(u'Sintonizador ISDB-Tb')
         verbose_name_plural = _(u'Sintonizadores ISDB-Tb')
     
+    def __unicode__(self):
+        return str(self.frequency)
+    
     MODULATION_CHOICES = (
                           (u'QAM', u'QAM'),
                           )
     
-    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
+    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'QAM')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
 
 class DvbblastProgram(DeviceIp):

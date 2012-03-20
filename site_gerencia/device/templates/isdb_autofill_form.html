@@ -7,66 +7,86 @@
 		<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.init.js"></script>
 		<script type="text/javascript">
 			django.jQuery(document).ready(function() {
-				populate_channels(django.jQuery('select#id_sat').val());
-				preview_values(django.jQuery('select#id_chan').val());
-				
-				django.jQuery('select#id_sat').change( function () {
-					populate_channels(this.value);
+				populate_cities();
+				populate_channels();
+				preview_values();
+
+				django.jQuery('select#id_state').change( function () {
+					populate_cities();
+				});
+				django.jQuery('select#id_city').change( function () {
+					populate_channels();
 				});
 				django.jQuery('select#id_chan').change( function () {
-					preview_values(this.value);
-				});
-				django.jQuery('checkbox#id_fta').change( function () {
-					populate_channels(django.jQuery("select#id_sat").attr("value"));
+					preview_values();
 				});
 			});
 			
-			function populate_channels(sat)
+			function populate_cities()
 			{
-				if (sat) {
+				var state = django.jQuery('select#id_state').val();
+				
+				if (state) {
+					django.jQuery('select#id_city').attr("disabled", "disabled");
+					django.jQuery(':submit').attr("disabled", "disabled");
+					var query =  "{% url dvbinfo.views.get_cities %}?state=" + state;
+					django.jQuery.getJSON(query, function(data) {
+						django.jQuery('select#id_city').empty();
+						django.jQuery('select#id_city').append('<option>---</option>');
+						django.jQuery.each(data, function(key, value) {
+				        	var option = '<option value="' + value.pk + '">' + value.fields.name + '</option>'; 
+				        	django.jQuery('select#id_city').append(option);
+				        });
+						django.jQuery('select#id_city').removeAttr("disabled");
+				        django.jQuery(':submit').removeAttr("disabled");
+					});
+				}
+			}
+			
+			function populate_channels()
+			{
+				var city = django.jQuery('select#id_city').val();
+				
+				if (city) {
 					django.jQuery('select#id_chan').attr("disabled", "disabled");
 					django.jQuery(':submit').attr("disabled", "disabled");
-				    // Fill the channels <select> field
-				    query =  "{% url dvbinfo.views.get_channels %}?sat=" + sat;
-					if (django.jQuery('input#id_fta').attr('checked')) query += '&fta=1';
-				    django.jQuery.getJSON(query, function(data) {
+					var query =  "{% url dvbinfo.views.get_isdb_channels %}?city=" + city;
+					django.jQuery.getJSON(query, function(data) {
 						django.jQuery('select#id_chan').empty();
 						django.jQuery('select#id_chan').append('<option>---</option>');
-				        django.jQuery.each(data, function(key, value) {
+						django.jQuery.each(data, function(key, value) {
 				        	var option = '<option value="' + value.pk + '">' + value.fields.name + '</option>'; 
 				        	django.jQuery('select#id_chan').append(option);
 				        });
-				        django.jQuery('select#id_chan').removeAttr("disabled");
+						django.jQuery('select#id_chan').removeAttr("disabled");
 				        django.jQuery(':submit').removeAttr("disabled");
-				    });
-			   }
+					});
+				}
 			}
 			
-			function preview_values(chan)
+			function preview_values()
 			{
-				if (chan && !isNaN(chan)) {
+				var chan = django.jQuery('select#id_chan').val();
+				
+				if (chan) {
 					django.jQuery(':submit').attr("disabled", "disabled");
-					query =  "{% url dvbinfo.views.get_transponders %}?chan=" + chan;
+					var query =  "{% url dvbinfo.views.get_isdb_channel %}?chan=" + chan;
 					django.jQuery.getJSON(query, function(data) {
-						var json = data[0];
-						django.jQuery('input#id_freq').val(json.fields.frequency);
-						django.jQuery('input#id_sr').val(json.fields.symbol_rate);
-						django.jQuery('input#id_mod').val(json.fields.modulation);
-						django.jQuery('input#id_pol').val(json.fields.polarization);
+						django.jQuery('input#id_freq').val(data.frequency);
 						django.jQuery(':submit').removeAttr("disabled");
 					});
 				}
 			}
 		</script>
 		
-		<title>Selecione o satélite e canal desejado</title>
+		<title>Selecione o Estado/Cidade e o canal desejado</title>
 	</head>
 	<body>
 		<form action="" method="post">{% csrf_token %}
 			
 			<fieldset class="module aligned ">
 				
-				<h2>Selecione o satélite e canal desejado</h2>
+				<h2>Selecione o Estado/Cidade e o canal desejado</h2>
 	    		
 	    		{% for field in fields %}
 	    			<div class="form-row">

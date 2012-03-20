@@ -29,9 +29,11 @@ class Command(BaseCommand):
             sat_info = "%s\n%s\n%s\n%s\n%s" % (res[0][0],res[0][1],res[0][2],res[0][3],res[0][4])
         else:
             sat_info = ''
+        # Separate location degrees and direction
+        ((degrees, direction),) = re.findall(u'^(\d+\.?\d*) °([EWSNewsn])$', sat_location)
         # Create Satellite object
-        satellite, created = Satellite.objects.get_or_create(name=sat_name, location=sat_location, \
-                                info=sat_info, logo=sat_logo)
+        satellite, created = Satellite.objects.get_or_create(name=sat_name, azimuth_degrees=degrees, \
+                                azimuth_direction=direction, info=sat_info, logo=sat_logo)
         return satellite
 
     def _create_transponder(self, tr, band, satellite):
@@ -111,7 +113,7 @@ class Command(BaseCommand):
                 last_update = None
                 raise inst
         
-        channel, created = Channel.objects.get_or_create(name=name,idiom=idiom,category=category, \
+        channel, created = DvbsChannel.objects.get_or_create(name=name,idiom=idiom,category=category, \
                             logo=logo,definition=definition,transponder=transponder)
         channel.codec = codec; channel.crypto = crypto
         channel.last_info = last_info; channel.last_update = last_update
