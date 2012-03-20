@@ -16,7 +16,7 @@
 				django.jQuery('select#id_chan').change( function () {
 					preview_values(this.value);
 				});
-				django.jQuery('checkbox#id_fta').change( function () {
+				django.jQuery('input#id_fta').change( function () {
 					populate_channels(django.jQuery("select#id_sat").attr("value"));
 				});
 			});
