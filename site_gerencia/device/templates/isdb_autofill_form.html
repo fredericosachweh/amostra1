@@ -11,15 +11,9 @@
 				populate_channels();
 				preview_values();
 
-				django.jQuery('select#id_state').change( function () {
-					populate_cities();
-				});
-				django.jQuery('select#id_city').change( function () {
-					populate_channels();
-				});
-				django.jQuery('select#id_chan').change( function () {
-					preview_values();
-				});
+				django.jQuery('select#id_state').change(populate_cities);
+				django.jQuery('select#id_city').change(populate_channels);
+				django.jQuery('select#id_chan').change(preview_values);
 			});
 			
 			function populate_cities()

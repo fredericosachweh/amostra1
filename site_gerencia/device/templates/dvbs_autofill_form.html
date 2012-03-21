@@ -7,22 +7,17 @@
 		<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.init.js"></script>
 		<script type="text/javascript">
 			django.jQuery(document).ready(function() {
-				populate_channels(django.jQuery('select#id_sat').val());
-				preview_values(django.jQuery('select#id_chan').val());
+				populate_channels();
+				preview_values();
 				
-				django.jQuery('select#id_sat').change( function () {
-					populate_channels(this.value);
-				});
-				django.jQuery('select#id_chan').change( function () {
-					preview_values(this.value);
-				});
-				django.jQuery('input#id_fta').change( function () {
-					populate_channels(django.jQuery("select#id_sat").attr("value"));
-				});
+				django.jQuery('select#id_sat').change(populate_channels);
+				django.jQuery('select#id_chan').change(preview_values);
+				django.jQuery('input#id_fta').change(populate_channels);
 			});
 			
-			function populate_channels(sat)
+			function populate_channels()
 			{
+			    var sat = django.jQuery('select#id_sat').val();
 				if (sat) {
 					django.jQuery('select#id_chan').attr("disabled", "disabled");
 					django.jQuery(':submit').attr("disabled", "disabled");
@@ -42,8 +37,9 @@
 			   }
 			}
 			
-			function preview_values(chan)
+			function preview_values()
 			{
+			    var chan = django.jQuery('select#id_chan').val();
 				if (chan && !isNaN(chan)) {
 					django.jQuery(':submit').attr("disabled", "disabled");
 					query =  "{% url dvbinfo.views.get_transponders %}?chan=" + chan;
