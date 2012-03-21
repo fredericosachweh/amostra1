@@ -65,7 +65,7 @@ class AdminDvbTuner(admin.ModelAdmin):
     form = DvbTunerForm
 
 class AdminIsdbTuner(admin.ModelAdmin):
-    list_display = ('server', 'frequency')
+    list_display = ('frequency', 'server')
     form = IsdbTunerForm
 
 #admin.site.register(models.Channel)
