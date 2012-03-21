@@ -100,10 +100,16 @@ class VirtualChannel(models.Model):
     name = models.CharField(_(u'Nome'), max_length=200)
     epg = models.BooleanField(_(u'Guia de programação'))
     interactivity = models.BooleanField(_(u'Interatividade'))
-    physical_channel = models.ForeignKey(PhysicalChannel)
+    physical_channel = models.ForeignKey(PhysicalChannel, verbose_name=_(u'Canal físico'))
     
     def city(self):
         return self.physical_channel.city.name
+    city.short_description = _(u'Cidade')
     
     def state(self):
         return self.physical_channel.city.state.name
+    state.short_description = _(u'Estado')
+    
+    def frequency(self):
+        return self.physical_channel.frequency
+    frequency.short_description = _(u'Frequência')
