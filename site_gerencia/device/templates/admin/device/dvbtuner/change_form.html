@@ -6,7 +6,7 @@
 	
 	<script type="text/javascript">
 		django.jQuery(document).ready(function () {
-			populate_adapters(django.jQuery('select#id_server').val());
+			populate_adapters();
 			/* Insert the auto-fill hyperlink */
 			{% url device.views.auto_fill_tuner_form ttype='dvbs' as the_url %}
 			var hyperlink = django.jQuery('<br /><a href="{{ the_url }}">( Auto preencher )</a>');
@@ -15,13 +15,12 @@
 			hyperlink.click( function () {
 				return showAutoFillPopup(this);
 			});
-			django.jQuery('select#id_server').change( function() {
-				populate_adapters(this.value);
-			});
+			django.jQuery('select#id_server').change(populate_adapters);
 		});
 		/* Get free adapters list from server and populate the select field */ 
-		function populate_adapters(server_id)
+		function populate_adapters()
 		{
+		    var server_id = django.jQuery('select#id_server').val();
 			var field = django.jQuery('select#id_adapter');
 			field.attr("disabled", "disabled");
 			field.empty();
