@@ -77,5 +77,5 @@ class CanalCreationWizard(FormWizard):
         # Display success message and redirect to changelist:
         return self._model_admin.response_add(request, canal)
 
-create_canal_wizard = CanalCreationWizard([SelectInputServerForm,SelectInputTypeForm,])
+create_canal_wizard = CanalCreationWizard([])
 
