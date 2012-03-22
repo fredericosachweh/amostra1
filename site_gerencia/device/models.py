@@ -360,15 +360,15 @@ class DvbTuner(DigitalTuner):
         return '%s - %d %s %d' % (self.antenna,self.frequency,self.polarization,self.symbol_rate)
     
     MODULATION_CHOICES = (
-                          (u'QPSK', u'QPSK'),
-                          (u'8PSK', u'8PSK'),
-                          )
+        (u'QPSK', u'QPSK'),
+        (u'8PSK', u'8-PSK'),
+    )
     POLARIZATION_CHOICES = (
-                          (u'H', u'H'),
-                          (u'V', u'V'),
-                          (u'R', u'R'),
-                          (u'L', u'L'),
-                          )
+        (u'H', u'Horizontal (H)'),
+        (u'V', u'Vertical (V)'),
+        (u'R', u'Direita (R)'),
+        (u'L', u'Esquerda (L)'),
+    )
     
     symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'), help_text=u'Msym/s')
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)

@@ -5,13 +5,14 @@ from django.utils.translation import ugettext as _
 
 # DVB-S/S2 models
 
+
 class Satellite(models.Model):
 
     class Meta:
         ordering = ('azimuth_degrees', 'azimuth_direction')
         verbose_name = _(u'Satélite')
         verbose_name_plural = _(u'Satélites')
-		
+
     name = models.CharField(max_length=200)
     azimuth_degrees = models.FloatField()
     azimuth_direction = models.CharField(max_length=10)
@@ -20,6 +21,7 @@ class Satellite(models.Model):
     
     def __unicode__(self):
         return u'%d °%s - %s' % (self.azimuth_degrees, self.azimuth_direction, self.name)
+
 
 class Transponder(models.Model):
 
@@ -42,6 +44,7 @@ class Transponder(models.Model):
     def __unicode__(self):
         return self.name if self.name else self.dvbschannel_set.all()[0].name
 
+
 class DvbsChannel(models.Model):
 
     class Meta:
@@ -63,7 +66,9 @@ class DvbsChannel(models.Model):
     def __unicode__(self):
         return self.name
 
+
 # ISDB-Tb models
+
 
 class State(models.Model):
     name = models.CharField(_(u'Nome'), max_length=200)
@@ -71,13 +76,15 @@ class State(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class City(models.Model):
     name = models.CharField(_(u'Nome'), max_length=200)
     state = models.ForeignKey(State)
     
     def __unicode__(self):
         return self.name
-    
+
+
 class PhysicalChannel(models.Model):
     number = models.PositiveSmallIntegerField(_(u'Canal físico'))
     city = models.ForeignKey(City)
@@ -88,6 +95,7 @@ class PhysicalChannel(models.Model):
     
     def __unicode__(self):
         return str(self.number)
+
 
 class VirtualChannel(models.Model):
     
@@ -107,3 +115,4 @@ class VirtualChannel(models.Model):
     
     def state(self):
         return self.physical_channel.city.state.name
+

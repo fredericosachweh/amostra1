@@ -107,11 +107,16 @@ class Connection(object):
 
     def execute_with_timeout(self,command,timeout=10):
         """
-        Executa comando no servidor com timeout e retorna o stdout com o stderr
+        Executa comando no servidor com timeout e retorna o stdout concatenado
+        com o stderr
         
-        Estudar e possibilidade de usar epoll ou melhorar o select:
+        Estudar e possibilidade para melhorar a conexão:
+        EPoll:
         http://scotdoyle.com/python-epoll-howto.html
+        Select:
         http://www.doughellmann.com/PyMOTW/select/
+        twisted:
+        http://twistedmatrix.com/trac/
         """
         import socket
         import select
