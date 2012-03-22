@@ -213,7 +213,8 @@ class Server(models.Model):
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
         return resp
-        
+
+
 class DeviceIp(SourceRelation):
     """Campos para servidor de Device"""
     description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
@@ -221,7 +222,8 @@ class DeviceIp(SourceRelation):
         return '[%s] %s' %(self.server,self._type,self.description)
     def _type(self):
         return _(u'indefinido')
-        
+
+
 class DeviceServer(models.Model):
     """Relaciona IP com servidor de Device!"""
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
@@ -279,6 +281,10 @@ class Vlc(DeviceIp,DeviceServer):
 
     def switch_link(self):
         if self.status is True:
+            alive = self.server.process_alive(self.pid)
+        else:
+            alive = False
+        if alive:
             url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
             return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
         url = reverse('device.views.vlc_start',kwargs={'pk':self.id})
