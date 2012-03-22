@@ -3,7 +3,7 @@ from models import *
 
 class AdminVirtualChannel(admin.ModelAdmin):
     "ModelAdmin subclass for Brazillian digital TV channels"
-    list_display = ('name', 'physical_channel', 'number', 'city', 'state')
+    list_display = ('name', 'frequency', 'physical_channel', 'number', 'city', 'state')
     search_fields = ['name']
     list_filter = ('physical_channel__city__state',)
 
