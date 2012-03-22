@@ -387,10 +387,10 @@ class DvbTuner(DigitalTuner):
         (u'8PSK', u'8-PSK'),
     )
     POLARIZATION_CHOICES = (
-        (u'H', u'Horizontal (H)'),
-        (u'V', u'Vertical (V)'),
-        (u'R', u'Direita (R)'),
-        (u'L', u'Esquerda (L)'),
+        (u'H', _(u'Horizontal (H)')),
+        (u'V', _(u'Vertical (V)')),
+        (u'R', _(u'Direita (R)')),
+        (u'L', _(u'Esquerda (L)')),
     )
     
     symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'), help_text=u'Msym/s')
