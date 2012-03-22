@@ -177,6 +177,7 @@ class Server(models.Model):
         return w
 
     def execute_daemon(self,command):
+        "Excuta o processo em background (daemon)"
         try:
             s = self.connect()
             self.msg = 'OK'
@@ -189,6 +190,7 @@ class Server(models.Model):
         return pid
 
     def process_alive(self,pid):
+        "Verifica se o processo está em execução no servidor"
         for p in self.list_process():
             if p['pid'] == pid:
                 return True
@@ -209,6 +211,7 @@ class Server(models.Model):
         return ret
 
     def kill_process(self,pid):
+        "Mata um processo em execução"
         s = self.connect()
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
@@ -229,43 +232,21 @@ class DeviceServer(models.Model):
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
-#    def __unicode__(self):
-#        return '[%s] %s' % (self.server, self._type)
-    def _type(self):
-        return _(u'indefinido')
 
-class Vlc(DeviceIp,DeviceServer):
-    """VLC streaming device"""
-    class Meta:
-        verbose_name = _(u'Vídeo em loop')
-        verbose_name_plural = _(u'Vídeos em loop')
-    source = models.CharField(_(u'Origem'),max_length=255)
-    def __unicode__(self):
-        return '[%s] %s > %s' %(self.server,self.destine,self.description)
+    def _type(self):
+        return _(u'undefined')
 
     def start(self):
-        """Inicia processo do VLC"""
-        s = self.source.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
-        c = '/usr/bin/cvlc -I dummy -v -R %s ' \
-            '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
-            s,
-            self.destine.ip,
-            self.destine.port)
-        print c
-        c = self.server.execute_daemon(c)
-        self.status = True
-        self.pid = c
-        self.save()
-        return self.status
+        raise Exception('Must be overload')
 
     def stop(self):
-        """Interrompe processo do VLC"""
+        """Interrompe processo no servidor"""
         try:
             self.server.kill_process(self.pid)
             self.status = False
             self.pid = None
         except ValueError:
-            print('vlc execute error: %s'%ValueError)
+            print('Execute error: %s'%ValueError)
         self.save()
         return not self.status
 
@@ -279,12 +260,39 @@ class Vlc(DeviceIp,DeviceServer):
         return False
     link_status.boolean = True
 
-    def switch_link(self):
+    def running(self):
         if self.status is True:
             alive = self.server.process_alive(self.pid)
         else:
             alive = False
-        if alive:
+        return alive
+
+
+class Vlc(DeviceIp,DeviceServer):
+    """VLC streaming device"""
+    class Meta:
+        verbose_name = _(u'Vídeo em loop')
+        verbose_name_plural = _(u'Vídeos em loop')
+    source = models.CharField(_(u'Arquivo de origem'),max_length=255)
+    def __unicode__(self):
+        return '[%s] %s --> %s' %(self.server,self.description,self.destine)
+
+    def start(self):
+        """Inicia processo do VLC"""
+        s = self.source.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
+        c = '/usr/bin/cvlc -I dummy -v -R %s ' \
+            '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
+            s,
+            self.destine.ip,
+            self.destine.port)
+        c = self.server.execute_daemon(c)
+        self.status = True
+        self.pid = c
+        self.save()
+        return self.status
+
+    def switch_link(self):
+        if self.running():
             url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
             return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
         url = reverse('device.views.vlc_start',kwargs={'pk':self.id})
