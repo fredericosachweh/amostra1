@@ -4,3 +4,4 @@
 *.e4p
 stream/debug
 *.pid
+django_extensions
