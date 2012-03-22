@@ -60,6 +60,14 @@ class AdminIsdbTuner(admin.ModelAdmin):
     list_display = ('server', 'frequency')
     form = forms.IsdbTunerForm
 
+class AdminUnicastInput(admin.ModelAdmin):
+    list_display = ('port', 'interface', 'protocol','server')
+    form = forms.UnicastInputForm
+
+class AdminMulticastInput(admin.ModelAdmin):
+    list_display = ('ip', 'port', 'interface', 'server', 'protocol')
+    form = forms.MulticastInputForm
+
 #admin.site.register(models.Channel)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Vlc,AdminDevice)
@@ -73,5 +81,6 @@ admin.site.register(models.Destination)
 admin.site.register(models.Antenna)
 admin.site.register(models.DvbTuner, AdminDvbTuner)
 admin.site.register(models.IsdbTuner)
-
+admin.site.register(models.UnicastInput, AdminUnicastInput)
+admin.site.register(models.MulticastInput, AdminMulticastInput)
 

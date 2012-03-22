@@ -41,3 +41,27 @@ class IsdbTunerAutoFillForm(forms.Form):
     city = forms.ChoiceField(label=_(u'Cidade'))
     chan = forms.ChoiceField(label=_(u'Canal'))
     freq = forms.CharField(label=_(u'Frequência'))
+
+class UnicastInputForm(forms.ModelForm):
+    class Meta:
+        model = UnicastInput
+        widgets = {
+            'interface' : forms.Select(),
+            'protocol' : forms.RadioSelect(),
+        }
+
+class MulticastInputForm(forms.ModelForm):
+    class Meta:
+        model = MulticastInput
+        widgets = {
+            'interface' : forms.Select(),
+            'protocol' : forms.RadioSelect(),
+        }
+    
+    def clean_ip(self):
+        from django.core.exceptions import ValidationError
+        ip = self.cleaned_data['ip']
+        octet = int(ip.split('.')[0])
+        if octet < 224 or octet > 239:
+            raise ValidationError(_(u'Endereços multicast devem ter o primeiro octeto entre 224 e 239.'))
+        return ip

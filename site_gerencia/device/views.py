@@ -20,6 +20,15 @@ def server_status(request,pk=None):
     print 'server_status'
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
+def server_list_interfaces(request):
+    pk = request.GET.get('server')
+    server = get_object_or_404(models.Server,id=pk)
+    interfaces = server.list_interfaces()
+    response = '<option selected="selected" value="">---------</option>'
+    for i in interfaces:
+        response += ('<option value="%s">%s - %s</option>' % (i['ip'], i['dev'], i['ip']))
+    return HttpResponse(response)
+
 def vlc_start(request,pk=None):
     print 'vlc_start'
     o = get_object_or_404(models.Vlc,id=pk)

@@ -12,7 +12,7 @@ class UniqueIP(models.Model):
     """
     class Meta:
         unique_together = ( ('ip', 'port'), )
-    ip = models.IPAddressField(_(u'Endereço IP'), default='239.0.0.')
+    ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     #XXX: Validar IP + PORTA devem ser unico
     def __unicode__(self):
@@ -213,7 +213,17 @@ class Server(models.Model):
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
         return resp
-
+    
+    def list_interfaces(self):
+        "List server's configured network interfaces"
+        import re
+        result = self.execute('ip -f inet addr show')
+        response = []
+        for r in result:
+            match = re.findall(r'((\d{1,3}\.){3}\d{1,3}).* (.*)$', r.strip())
+            if match:
+                response.append({'ip' : match[0][0], 'dev' : match[0][2]})
+        return response
 
 class DeviceIp(SourceRelation):
     """Campos para servidor de Device"""
@@ -222,8 +232,7 @@ class DeviceIp(SourceRelation):
         return '[%s] %s' %(self.server,self._type,self.description)
     def _type(self):
         return _(u'indefinido')
-
-
+        
 class DeviceServer(models.Model):
     """Relaciona IP com servidor de Device!"""
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
@@ -281,10 +290,6 @@ class Vlc(DeviceIp,DeviceServer):
 
     def switch_link(self):
         if self.status is True:
-            alive = self.server.process_alive(self.pid)
-        else:
-            alive = False
-        if alive:
             url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
             return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
         url = reverse('device.views.vlc_start',kwargs={'pk':self.id})
@@ -335,6 +340,7 @@ class Dvblast(DeviceServer):
                 self.play()
 
 class Antenna(models.Model):
+    "A Parabolic Antenna for use with DVB-S/S2 tuners"
     class Meta:
         verbose_name = _(u'Antena parabólica')
         verbose_name_plural = _(u'Antenas parabólicas')
@@ -366,15 +372,15 @@ class DvbTuner(DigitalTuner):
         return '%s - %d %s %d' % (self.antenna,self.frequency,self.polarization,self.symbol_rate)
     
     MODULATION_CHOICES = (
-        (u'QPSK', u'QPSK'),
-        (u'8PSK', u'8-PSK'),
-    )
+                          (u'QPSK', u'QPSK'),
+                          (u'8PSK', u'8PSK'),
+                          )
     POLARIZATION_CHOICES = (
-        (u'H', u'Horizontal (H)'),
-        (u'V', u'Vertical (V)'),
-        (u'R', u'Direita (R)'),
-        (u'L', u'Esquerda (L)'),
-    )
+                          (u'H', u'H'),
+                          (u'V', u'V'),
+                          (u'R', u'R'),
+                          (u'L', u'L'),
+                          )
     
     symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'), help_text=u'Msym/s')
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
@@ -396,6 +402,35 @@ class IsdbTuner(DigitalTuner):
     
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'QAM')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
+
+class IPInput(DeviceServer):
+    "Generic IP input class"
+    class Meta:
+        abstract = True
+    
+    PROTOCOL_CHOICES = (
+                        (u'udp', u'UDP'),
+                        (u'rtp', u'RTP'),
+                        )
+    
+    interface = models.IPAddressField(_(u'Interface de rede'))
+    port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
+    protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
+                                choices=PROTOCOL_CHOICES, default=u'udp')
+
+class UnicastInput(IPInput):
+    "Unicast MPEG2TS IP input stream"
+    class Meta:
+        verbose_name = _(u'Entrada IP unicast')
+        verbose_name_plural = _(u'Entradas IP unicast')
+
+class MulticastInput(IPInput):
+    "Multicast MPEG2TS IP input stream"
+    class Meta:
+        verbose_name = _(u'Entrada IP multicast')
+        verbose_name_plural = _(u'Entradas IP multicast')
+    
+    ip = models.IPAddressField(_(u'Endereço IP multicast'))
 
 class DvbblastProgram(DeviceIp):
     class Meta:

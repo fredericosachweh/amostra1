@@ -6,6 +6,7 @@ from django.conf.urls.defaults import patterns
 urlpatterns = patterns('',
     (r'^$','device.views.home'),
     (r'^server/status/(?P<pk>\d+)/$','device.views.server_status'),
+    (r'^server/interfaces/$','device.views.server_list_interfaces'),
     (r'^vlc/start/(?P<pk>\d+)/$','device.views.vlc_start'),
     (r'^vlc/stop/(?P<pk>\d+)/$','device.views.vlc_stop'),
     (r'^multicat/start/(?P<pk>\d+)/$','device.views.multicat_start'),
