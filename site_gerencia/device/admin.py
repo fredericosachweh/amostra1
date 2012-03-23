@@ -80,7 +80,7 @@ admin.site.register(models.Source, AdminSource)
 admin.site.register(models.Destination)
 admin.site.register(models.Antenna)
 admin.site.register(models.DvbTuner, AdminDvbTuner)
-admin.site.register(models.IsdbTuner)
+admin.site.register(models.IsdbTuner, AdminIsdbTuner)
 admin.site.register(models.UnicastInput, AdminUnicastInput)
 admin.site.register(models.MulticastInput, AdminMulticastInput)
 
