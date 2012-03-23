@@ -4,7 +4,8 @@
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
-
+from django.db.models.signals import pre_save, pre_delete
+from django.dispatch import receiver
 
 class UniqueIP(models.Model):
     """
@@ -227,6 +228,23 @@ class Server(models.Model):
             if match:
                 response.append({'ip' : match[0][0], 'dev' : match[0][2]})
         return response
+    
+    def get_netdev(self, ip):
+        "Return a device provided his IP address"
+        for iface in self.list_interfaces():
+            if ip == iface['ip']:
+                return iface['dev']
+        return None
+    
+    def create_route(self, ip, dev):
+        "Create a new route on the server"
+        self.execute('route add -host %s dev %s' % (ip, dev))
+        # TODO: 'Then insert a new entry in the config file'
+    
+    def delete_route(self, ip, dev):
+        "Delete a route on the server"
+        self.execute('route del -host %s dev %s' % (ip, dev))
+        # TODO: 'Then remove the entry in the config file'
 
 class DeviceIp(SourceRelation):
     """Campos para servidor de Device"""
@@ -434,6 +452,19 @@ class UnicastInput(IPInput):
     class Meta:
         verbose_name = _(u'Entrada IP unicast')
         verbose_name_plural = _(u'Entradas IP unicast')
+    
+    def __unicode(self):
+        return '%d [%s]' % (self.port, self.interface)
+    
+    def validate_unique(self, exclude=None):
+        # unique_together = ('port', 'interface', 'server')
+        from django.core.exceptions import ValidationError
+        val = UnicastInput.objects.filter(port=self.port,
+                                          interface=self.interface,
+                                          server=self.server)
+        if val.exists() and val[0].pk != self.pk:
+            msg = _(u'Combinação já existente: %s e %d e %s' % (self.server.name, self.port, self.interface))
+            raise ValidationError({'__all__' : [msg]})
 
 class MulticastInput(IPInput):
     "Multicast MPEG2TS IP input stream"
@@ -441,7 +472,45 @@ class MulticastInput(IPInput):
         verbose_name = _(u'Entrada IP multicast')
         verbose_name_plural = _(u'Entradas IP multicast')
     
+    def __unicode__(self):
+        return '%s:%d [%s]' % (self.ip, self.port, self.interface)
+    
+    def validate_unique(self, exclude=None):
+        # unique_together = ('ip', 'server')
+        from django.core.exceptions import ValidationError
+        val = MulticastInput.objects.filter(ip=self.ip,
+                                          server=self.server)
+        if val.exists() and val[0].pk != self.pk:
+            msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
+            raise ValidationError({'__all__' : [msg]})
+    
     ip = models.IPAddressField(_(u'Endereço IP multicast'))
+
+@receiver(pre_save, sender=MulticastInput)
+def MulticastInput_pre_save(sender, instance, **kwargs):
+    "Signal to create the route"
+    server = instance.server
+    # If it already exists, delete 
+    try:
+        obj = MulticastInput.objects.get(pk=instance.pk)
+        ip = obj.ip
+        dev = server.get_netdev(obj.interface)
+        server.delete_route(ip, dev)
+    except MulticastInput.DoesNotExist:
+        pass
+    
+    # Create a new rote
+    ip = instance.ip
+    dev = server.get_netdev(instance.interface)
+    server.create_route(ip, dev)
+
+@receiver(pre_delete, sender=MulticastInput)
+def MulticastInput_pre_delete(sender, instance, **kwargs):
+    "Signal to delete the route"
+    server = instance.server
+    ip = instance.ip
+    dev = server.get_netdev(instance.interface)
+    server.delete_route(ip, dev)
 
 class DvbblastProgram(DeviceIp):
     class Meta:
