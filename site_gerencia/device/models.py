@@ -6,6 +6,9 @@ from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
 from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
+from django.conf import settings
+from django.utils.functional import lazy
+from django.forms import ChoiceField
 
 class UniqueIP(models.Model):
     """
@@ -13,7 +16,7 @@ class UniqueIP(models.Model):
     """
     class Meta:
         unique_together = ( ('ip', 'port'), )
-    ip = models.IPAddressField(_(u'Endereço IP'), default='239.0.0.')
+    ip = models.IPAddressField(_(u'Endereço IP'), default='239.100.100.')
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     #XXX: Validar IP + PORTA devem ser unico
     def __unicode__(self):
@@ -50,19 +53,6 @@ class Source(UniqueIP):
     in_use.boolean = True
 
 
-class SourceRelation(models.Model):
-    """
-    Modelo que cria relação única com a origem (Source), sempre que for relacionar
-    um Device ou qualquer gerador de fluxo de origem, extender este modelo.
-
-    Um fluxo de origem não pode ter mais que uma fonte, senão causará conflito.
-    """
-    class Meta:
-        verbose_name = _(u'Relação')
-        verbose_name_plural = _(u'ORelações')
-    destine = models.OneToOneField(Source)
-
-
 class Destination(UniqueIP):
     """
     Destino dos fluxos, aqui deve relacionar para vários channels e outros models
@@ -94,8 +84,23 @@ class Destination(UniqueIP):
 
 
 
+class SourceRelation(models.Model):
+    """
+    Modelo que cria relação única com a origem (Source), sempre que for relacionar
+    um Device ou qualquer gerador de fluxo de origem, extender este modelo.
+
+    Um fluxo de origem não pode ter mais que uma fonte, senão causará conflito.
+    """
+    class Meta:
+        verbose_name = _(u'Relação')
+        verbose_name_plural = _(u'ORelações')
+    destine = models.OneToOneField(Source)
+
+
 class Server(models.Model):
-    """Servidores e caracteristicas de conexão"""
+    """
+    Servidor e caracteristicas de conexão.
+    """
 
     class Meta:
         verbose_name = _(u'Servidor de Recursos')
@@ -137,7 +142,7 @@ class Server(models.Model):
         if str(self.server_type) == 'local' and str(self.host) != '127.0.0.1':
             raise ValidationError(_(u'Servidor DEMO só pode ser usado com IP local 127.0.0.1.'))
     
-    @property    
+    @property
     def is_local(self):
         return True if str(self.server_type) == 'local' else False
 
@@ -156,6 +161,9 @@ class Server(models.Model):
         except ValueError:
             self.status = False
             self.msg = ValueError
+        except:
+            self.status = False
+            self.msg = ''
         self.save()
         return s
 
@@ -171,8 +179,8 @@ class Server(models.Model):
             w = s.execute(command)
         except Exception as ex:
             self.msg = ex
-            print('command: [%s] %s'%(command,self.msg))
-        if not persist:
+            w = 'ERROR'
+        if not persist and self.status:
             s.close()
         self.save()
         return w
@@ -221,7 +229,7 @@ class Server(models.Model):
     def list_interfaces(self):
         "List server's configured network interfaces"
         import re
-        result = self.execute('ip -f inet addr show')
+        result = self.execute('/sbin/ip -f inet addr show')
         response = []
         for r in result:
             match = re.findall(r'((\d{1,3}\.){3}\d{1,3}).* (.*)$', r.strip())
@@ -238,24 +246,36 @@ class Server(models.Model):
     
     def create_route(self, ip, dev):
         "Create a new route on the server"
-        self.execute('route add -host %s dev %s' % (ip, dev))
+        self.execute('/sbin/route add -host %s dev %s' % (ip, dev))
         # TODO: 'Then insert a new entry in the config file'
     
     def delete_route(self, ip, dev):
         "Delete a route on the server"
-        self.execute('route del -host %s dev %s' % (ip, dev))
+        self.execute('/sbin/route del -host %s dev %s' % (ip, dev))
         # TODO: 'Then remove the entry in the config file'
+    
+    def list_dir(self,dir='/'):
+        "Lista o diretório no servidor retornando uma lista do conteúdo"
+        list = self.execute('/bin/ls %s/*.*' % dir)
+        return map(lambda x: x.strip('\n'), list)
+
 
 class DeviceIp(SourceRelation):
     """Campos para servidor de Device"""
     description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
     def __unicode__(self):
+        if hasattr(self, 'server') is False:
+            return ''
         return '[%s] %s' %(self.server,self._type,self.description)
     def _type(self):
         return _(u'indefinido')
-        
+
+
 class DeviceServer(models.Model):
-    """Relaciona IP com servidor de Device!"""
+    """
+    Aplicativo que roda em um determinado servidor.
+    O metodo start deve ser sobreescrito com o comando específico
+    """
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
@@ -295,13 +315,39 @@ class DeviceServer(models.Model):
         return alive
 
 
-class Vlc(DeviceIp,DeviceServer):
-    """VLC streaming device"""
+class Vlc(DeviceServer,DeviceIp):
+    """
+    VLC streaming device.
+    """
     class Meta:
         verbose_name = _(u'Vídeo em loop')
         verbose_name_plural = _(u'Vídeos em loop')
-    source = models.CharField(_(u'Arquivo de origem'),max_length=255)
+    
+    source = models.CharField(
+        _(u'Arquivo de origem'),
+        max_length=255,
+        blank=True,
+        null=True)
+    
+    file_list = None
+    def get_list_dir(self):
+        if self.server_id is None:
+            return []
+        if self.file_list is None and self.server.status is True:
+            self.file_list = []
+            d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
+            for f in d:
+                self.file_list.append((f,f))
+        return self.file_list
+    
+    def __init__(self,*args,**kwargs):
+        super(Vlc,self).__init__(*args,**kwargs)
+        self._meta.get_field_by_name('source')[0]._choices = lazy(self.get_list_dir, list)()
+        #print(self.get_list_dir())
+    
     def __unicode__(self):
+        if hasattr(self, 'server') is False:
+            return ''
         return '[%s] %s --> %s' %(self.server,self.description,self.destine)
 
     def start(self):
@@ -319,6 +365,8 @@ class Vlc(DeviceIp,DeviceServer):
         return self.status
 
     def switch_link(self):
+        if self.source is None or self.server_id is None:
+            return 'Desconfigurado'
         if self.running():
             url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
             return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
@@ -328,6 +376,7 @@ class Vlc(DeviceIp,DeviceServer):
 
 
 class Dvblast(DeviceServer):
+    "DEPRECATED: Não utilizado mais???"
     class Meta:
         verbose_name = _(u'DVBlast')
         verbose_name_plural = _(u'DVBlast')
@@ -355,19 +404,7 @@ class Dvblast(DeviceServer):
         pid = p.play_stream(self)
         self.pid = pid
         self.save()
-    def stop(self):
-        'Para o fluxo (mata o processo do multicat)'
-        from lib.player import Player
-        p = Player()
-        p.stop_stream(self)
-        self.pid = None
-        self.save()
-    def autostart(self):
-        if self.pid is not None:
-            from lib.player import Player
-            p = Player()
-            if p.is_playing(self) is False:
-                self.play()
+
 
 class Antenna(models.Model):
     class Meta:
@@ -386,11 +423,13 @@ class Antenna(models.Model):
     def __unicode__(self):
         return str(self.satellite)
 
+
 class DigitalTuner(DeviceServer):
     class Meta:
         abstract = True
     
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
+
 
 class DvbTuner(DigitalTuner):
     class Meta:
@@ -417,6 +456,7 @@ class DvbTuner(DigitalTuner):
     adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
 
+
 class IsdbTuner(DigitalTuner):
     class Meta:
         verbose_name = _(u'Sintonizador ISDB-Tb')
@@ -431,6 +471,7 @@ class IsdbTuner(DigitalTuner):
     
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'QAM')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
+
 
 class IPInput(DeviceServer):
     "Generic IP input class"
@@ -523,13 +564,19 @@ class DvbblastProgram(DeviceIp):
     def __unicode__(self):
         return self.name
 
+
+
+
+
+
 class Multicat(DeviceServer):
     """
+    DEPRECATED: Não utilizado mais
     Classe generica de fluxo via multicat
     
     Precisa ser implementado _input(self) e _output(self) para que os métodos de
     comando funcionem.
-    """ 
+    """
     class Meta:
         verbose_name = _(u'Instancia de Multicat')
         verbose_name_plural = _(u'Instancias de Multicat')
@@ -587,6 +634,7 @@ class Multicat(DeviceServer):
 
 class MulticatGeneric(Multicat):
     """
+    DEPRECATED: Não utilizado mais
     Classe para gerar fluxo pelo multicat de origem e destino qualquer
     """
     class Meta:
@@ -603,6 +651,7 @@ class MulticatGeneric(Multicat):
 
 class MulticatSource(Multicat,DeviceIp):
     """
+    DEPRECATED: Não utilizado mais
     Classe para gerar fluxo pelo multicat de origem customizada
     """
     class Meta:
@@ -620,6 +669,7 @@ class MulticatSource(Multicat,DeviceIp):
 
 class MulticatRedirect(Multicat,DeviceIp):
     """
+    DEPRECATED: Não utilizado mais
     Classe para gerar fluxo de redirecionamento via multicat
     """
     class Meta:
@@ -642,6 +692,7 @@ class MulticatRedirect(Multicat,DeviceIp):
 
 class MulticatRecorder(models.Model):
     """
+    DEPRECATED: Não utilizado mais
     Classe de gravação
     """
     class Meta:

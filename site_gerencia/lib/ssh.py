@@ -104,7 +104,6 @@ class Connection(object):
         pid = int(output[0].strip())
         return pid
 
-
     def execute_with_timeout(self,command,timeout=10):
         """
         Executa comando no servidor com timeout e retorna o stdout concatenado

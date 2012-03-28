@@ -49,6 +49,27 @@ class ConnectionTest(TestCase):
         c.execute_with_timeout('/usr/bin/dvblast -a 0 -f 3642000 -s 4370000',timeout=2)
 
 
+class ServerTest(TestCase):
+    
+    def setUp(self):
+        from models import Server
+        self.s = Server(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='nginx',
+            rsakey='~/.ssh/id_rsa_test'
+        )
+    
+    def test_list_dir(self):
+        dir = self.s.list_dir('/')
+        self.assertGreater( dir.count('boot') , 0 ,
+            'Deveria existir o diretório boot')
+        self.assertGreater( dir.count('bin') , 0 ,
+            'Deveria existir o diretório bin')
+        self.assertGreater( dir.count('usr') , 0 ,
+            'Deveria existir o diretório usr')
+
 class ProcessControlTest(TestCase):
 
     def setUp(self):
@@ -80,12 +101,39 @@ class ProcessControlTest(TestCase):
     def test_start_process(self):
         cmd = '/usr/bin/cvlc -I dummy -v -R \
 /mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
---sout "#std{access=udp,mux=ts,dst=224.1.1.5:5000}"'
+--sout "#std{access=udp,mux=ts,dst=239.1.1.5:5000}"'
         pid = self.s.execute_daemon(cmd)
         self.assertGreater(pid, 0, 'O processo deveria ser maios que zero')
         self.s.kill_process(pid)
         self.assertFalse(self.s.process_alive(pid),
             'O processo pid=%d deveria ter morrido.' % pid )
+
+
+class RouteDeviceTest(TestCase):
+
+    def setUp(self):
+        from models import Server
+        self.s = Server(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='root',
+            rsakey='~/.ssh/id_rsa_test'
+        )
+
+    def test_list_iface(self):
+        self.s.connect()
+        ifaces = self.s.list_interfaces()
+    
+    def test_local_dev(self):
+        self.s.connect()
+        iface = self.s.get_netdev('127.0.0.1')
+        self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
+    
+    def test_create_route(self):
+        self.s.connect()
+        self.s.create_route('239.0.1.10', 'p7p1')
+        self.s.delete_route('239.0.1.10', 'p7p1')
 
 #
 #class PlayerTest(TestCase):

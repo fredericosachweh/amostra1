@@ -54,6 +54,10 @@ else:
 # system time zone.
 TIME_ZONE = 'America/Sao_Paulo'
 
+# Novo no django 1.4
+USE_TZ = False
+WSGI_APPLICATION = 'wsgi.application'
+
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'pt-br'
@@ -180,7 +184,7 @@ INSTALLED_APPS = (
     # EPG
     'epg',
     # Utilitário
-    'django_extensions',
+    #'django_extensions',
     # App with info about possible frequencies to tune
     'dvbinfo',
 )
@@ -195,19 +199,27 @@ LOGIN_REQUIRED_URLS = (
     r'^/%sadmin/(.*)$',
 )
 
+
+## DEPRECATED:
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
 MULTICAST_COMMAND = '/usr/bin/multicat'
 MULTICAST_APP = 'multicat'
-
 DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
 DVBLAST_COMMAND = '/usr/bin/dvblast'
 #DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
 DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
 
+VIDEO_LOOP_DIR = '/home/videos'
+
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
+    try:
+        import django_extensions
+        INSTALLED_APPS += ('django_extensions',)
+    except ImportError:
+        pass
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
