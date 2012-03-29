@@ -29,6 +29,20 @@ class ConnectionTest(TestCase):
             '/var/lib/nginx\n',
             'O home deveria ser "/var/lib/nginx\n"'
         )
+    
+    def test_connection_failure(self):
+        from models import Server
+        srv = Server()
+        srv.name = 'local'
+        srv.host = '127.0.0.1'
+        srv.ssh_port = 2222
+        srv.username = 'nginx'
+        srv.rsakey = '~/.ssh/id_rsa_test'
+        srv.connect()
+        self.assertEqual(str(srv.msg),
+            'Unable to connect to 127.0.0.1: [Errno 111] Connection refused',
+            'Deveria dar erro de conexão')
+        self.assertFalse(srv.status, 'O status da conexão deveria ser False')
 
     def test_low_respose_command(self):
         "Test de comando demorado para executar"
@@ -46,7 +60,9 @@ class ConnectionTest(TestCase):
         c = Connection('172.17.0.2',
             username='helber',
             private_key='~/.ssh/id_rsa_cianet')
-        c.execute_with_timeout('/usr/bin/dvblast -a 0 -f 3642000 -s 4370000',timeout=2)
+        c.execute_with_timeout(
+            '/usr/bin/dvblast -a 0 -f 3642000 -s 4370000',
+            timeout=2)
 
 
 class ServerTest(TestCase):
@@ -62,12 +78,12 @@ class ServerTest(TestCase):
         )
     
     def test_list_dir(self):
-        dir = self.s.list_dir('/')
-        self.assertGreater( dir.count('boot') , 0 ,
+        l = self.s.list_dir('/')
+        self.assertGreater( l.count('boot') , 0 ,
             'Deveria existir o diretório boot')
-        self.assertGreater( dir.count('bin') , 0 ,
+        self.assertGreater( l.count('bin') , 0 ,
             'Deveria existir o diretório bin')
-        self.assertGreater( dir.count('usr') , 0 ,
+        self.assertGreater( l.count('usr') , 0 ,
             'Deveria existir o diretório usr')
 
 class ProcessControlTest(TestCase):

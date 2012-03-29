@@ -8,93 +8,32 @@ from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
 from django.conf import settings
 from django.utils.functional import lazy
-from django.forms import ChoiceField
 
 class UniqueIP(models.Model):
     """
     Classe para ser extendida, para que origem e destino nunca sejam iguais.
     """
     class Meta:
-        unique_together = ( ('ip', 'port'), )
-    ip = models.IPAddressField(_(u'Endereço IP'), default='239.100.100.')
+        #unique_together = ( ('ip', 'port'), )
+        verbose_name = _(u'Endereço de Fluxo')
+        verbose_name_plural = _(u'Endereços de Fluxo')
+    ip = models.IPAddressField(_(u'Endereço IP'),
+        default='239.1.1.',
+        unique=True)
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
-    #XXX: Validar IP + PORTA devem ser unico
+    sequential = models.PositiveSmallIntegerField(
+        _(u'Valor auxiliar para gerar o IP único'),
+        default=2)
+    
     def __unicode__(self):
         return '%s:%s' % (self.ip, self.port)
     
     def natural_key(self):
         return {'ip': self.ip,'port': self.port}
-
-
-class Source(UniqueIP):
-    """
-    Origem de fluxos, também são destino de devices, cuidar para que apenas 1
-    device utilize o fluxo de destino por vez, ou vai dar conflito
-    """
-    class Meta:
-        verbose_name = _(u'Origem de fluxo')
-        verbose_name_plural = _(u'Origens de fluxo')
-        
-    is_rtp = models.BooleanField(_(u'RTP'), default=False)
-    desc = models.CharField(_(u'Descrição'), max_length=100, blank=True)
     
-    def __unicode__(self):
-        rtp = '[RTP]' if self.is_rtp else ''
-        desc = '- %s'%(self.desc) if self.desc else ''
-        return '%s:%d %s %s' %(self.ip,self.port,rtp,desc)
-        #return '%s:%d' %(self.ip,self.port)
-    
-    def destinations(self):
-        return self.destination_set.all()
-    
-    def in_use(self):
-        return bool(self.sourcerelation)
-    
-    in_use.boolean = True
-
-
-class Destination(UniqueIP):
-    """
-    Destino dos fluxos, aqui deve relacionar para vários channels e outros models
-    que consomem fluxos.
-    """
-    class Meta:
-        verbose_name = _(u'Destino de fluxo')
-        verbose_name_plural = _(u'Destinos de fluxo')
-    source = models.ForeignKey(Source)
-    is_rtp = models.BooleanField(_(u'RTP'), default=False)
-    recovery_port = models.PositiveSmallIntegerField(
-        _(u'Porta de recuperação de pacotes'),
-        blank=True,
-        null=True)
-    desc = models.CharField(_(u'Descrição'),max_length=100,blank=True)
-    
-    def __unicode__(self):
-        rtp = '[RTP]' if self.is_rtp else ''
-        r_port = ' - (%s)' %(self.recovery_port) if self.recovery_port else ''
-        desc = '- %s'%(self.desc) if self.desc else ''
-        return '%s > %s:%d %s %s %s' %(
-            self.source,
-            self.ip,
-            self.port,
-            rtp,
-            r_port,
-            desc
-            )
-
-
-
-class SourceRelation(models.Model):
-    """
-    Modelo que cria relação única com a origem (Source), sempre que for relacionar
-    um Device ou qualquer gerador de fluxo de origem, extender este modelo.
-
-    Um fluxo de origem não pode ter mais que uma fonte, senão causará conflito.
-    """
-    class Meta:
-        verbose_name = _(u'Relação')
-        verbose_name_plural = _(u'ORelações')
-    destine = models.OneToOneField(Source)
+    def save(self,*args,**kwargs):
+        self.sequential += 1
+        super(UniqueIP,self).save(*args,**kwargs)
 
 
 class Server(models.Model):
@@ -161,20 +100,19 @@ class Server(models.Model):
         except ValueError:
             self.status = False
             self.msg = ValueError
-        except:
+        except Exception as ex:
             self.status = False
-            self.msg = ''
+            self.msg = ex
         self.save()
         return s
 
     def execute(self, command, persist = False):
         """Executa um comando no servidor"""
-        #stdin, stdout, stderr = None,None,None
         try:
             s = self.connect()
             self.msg = 'OK'
-        except:
-            pass
+        except Exception as ex:
+            self.msg = 'Can not connect:'+ex
         try:
             w = s.execute(command)
         except Exception as ex:
@@ -214,9 +152,11 @@ class Server(models.Model):
         ret = []
         for line in stdout[1:]:
             cmd = line.split()
-            ret.append(
-                {'pid': int(cmd[0]), 'name': cmd[1], 'command': ' '.join(cmd[2:])}
-                )
+            ret.append({
+                'pid': int(cmd[0]),
+                'name': cmd[1],
+                'command': ' '.join(cmd[2:])
+                })
         return ret
 
     def kill_process(self,pid):
@@ -254,21 +194,21 @@ class Server(models.Model):
         self.execute('/sbin/route del -host %s dev %s' % (ip, dev))
         # TODO: 'Then remove the entry in the config file'
     
-    def list_dir(self,dir='/'):
+    def list_dir(self,directory='/'):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
-        list = self.execute('/bin/ls %s/*.*' % dir)
-        return map(lambda x: x.strip('\n'), list)
+        ret = self.execute('/bin/ls %s' % directory)
+        return map(lambda x: x.strip('\n'), ret)
 
 
-class DeviceIp(SourceRelation):
-    """Campos para servidor de Device"""
-    description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
-    def __unicode__(self):
-        if hasattr(self, 'server') is False:
-            return ''
-        return '[%s] %s' %(self.server,self._type,self.description)
-    def _type(self):
-        return _(u'indefinido')
+#class DeviceIp(SourceRelation):
+#    """Campos para servidor de Device"""
+#    description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
+#    def __unicode__(self):
+#        if hasattr(self, 'server') is False:
+#            return ''
+#        return '[%s] %s' %(self.server,self._type,self.description)
+#    def _type(self):
+#        return _(u'indefinido')
 
 
 class DeviceServer(models.Model):
@@ -279,6 +219,7 @@ class DeviceServer(models.Model):
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
     status = models.BooleanField(_(u'Status'),default=False,editable=False)
     pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
+    description = models.CharField(_(u'Descrição'), max_length=250, blank=True)
 
     def _type(self):
         return _(u'undefined')
@@ -315,7 +256,7 @@ class DeviceServer(models.Model):
         return alive
 
 
-class Vlc(DeviceServer,DeviceIp):
+class Vlc(DeviceServer):
     """
     VLC streaming device.
     """
@@ -343,7 +284,6 @@ class Vlc(DeviceServer,DeviceIp):
     def __init__(self,*args,**kwargs):
         super(Vlc,self).__init__(*args,**kwargs)
         self._meta.get_field_by_name('source')[0]._choices = lazy(self.get_list_dir, list)()
-        #print(self.get_list_dir())
     
     def __unicode__(self):
         if hasattr(self, 'server') is False:
@@ -553,16 +493,18 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
     dev = server.get_netdev(instance.interface)
     server.delete_route(ip, dev)
 
-class DvbblastProgram(DeviceIp):
-    class Meta:
-        verbose_name = _(u'Programa DVB')
-        verbose_name_plural = _(u'Programas DVB')
-    name = models.CharField(_(u'Nome'),max_length=200)
-    channel_program = models.PositiveSmallIntegerField(_(u'Programa'))
-    channel_pid = models.PositiveSmallIntegerField(_(u'PID (Packet ID)'))
-    source = models.ForeignKey(Dvblast,related_name='source')
-    def __unicode__(self):
-        return self.name
+
+
+#class DvbblastProgram(DeviceIp):
+#    class Meta:
+#        verbose_name = _(u'Programa DVB')
+#        verbose_name_plural = _(u'Programas DVB')
+#    name = models.CharField(_(u'Nome'),max_length=200)
+#    channel_program = models.PositiveSmallIntegerField(_(u'Programa'))
+#    channel_pid = models.PositiveSmallIntegerField(_(u'PID (Packet ID)'))
+#    source = models.ForeignKey(Dvblast,related_name='source')
+#    def __unicode__(self):
+#        return self.name
 
 
 
@@ -632,88 +574,90 @@ class Multicat(DeviceServer):
         return '<a href="%s" id="multicat_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
     switch_link.allow_tags = True
 
-class MulticatGeneric(Multicat):
-    """
-    DEPRECATED: Não utilizado mais
-    Classe para gerar fluxo pelo multicat de origem e destino qualquer
-    """
-    class Meta:
-        verbose_name = _(u'Instancia de Multicat')
-        verbose_name_plural = _(u'Instancias de Multicat')
-    input  = models.CharField(_(u'Input Item'),max_length=255,blank=True)
-    destine = models.CharField(_(u'Destine Item'),max_length=255,blank=True)
-    def _input(self):
-        return u'%s' % (self.input)
-    def _output(self):
-        return u'%s' % (self.destine)
-    def __unicode__(self):
-        return u'%s %s' % (self.input, self.destine)
 
-class MulticatSource(Multicat,DeviceIp):
-    """
-    DEPRECATED: Não utilizado mais
-    Classe para gerar fluxo pelo multicat de origem customizada
-    """
-    class Meta:
-        verbose_name = _(u'Instancia de Multicat via IP')
-        verbose_name_plural = _(u'Instancias de Multicat via IP')
-    ip = models.IPAddressField(_(u'Endereço IP'),blank=True)
-    port = models.PositiveSmallIntegerField(_(u'Porta'),blank=True)
-    def _input(self):
-        return u'@%s:%s' % (self.ip, self.port)
-    def _output(self):
-        return u'%s:%s' % (self.target.ip, self.target.port)
-    def __unicode__(self):
-        return u'%s' % self.target
- 
-
-class MulticatRedirect(Multicat,DeviceIp):
-    """
-    DEPRECATED: Não utilizado mais
-    Classe para gerar fluxo de redirecionamento via multicat
-    """
-    class Meta:
-        verbose_name = _(u'Instancia de Redirecionamento Multicat')
-        verbose_name_plural = _(u'Instancias de Redirecionamento Multicat')
-    target = models.OneToOneField(Destination)
-    def _input(self):
-        return u'@%s:%s' % (self.target.source.ip, self.target.source.port)
-    def _output(self):
-        return u'%s:%s' % (self.target.ip, self.target.port)
-    def __unicode__(self):
-        return u'%s' % self.target
-    def switch_link(self):
-        if self.status is True:
-            url = reverse('device.views.multicat_redirect_stop',kwargs={'pk':self.id})
-            return '<a href="%s" id="multicat_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
-        url = reverse('device.views.multicat_redirect_start',kwargs={'pk':self.id})
-        return '<a href="%s" id="multicat_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
-    switch_link.allow_tags = True
-
-class MulticatRecorder(models.Model):
-    """
-    DEPRECATED: Não utilizado mais
-    Classe de gravação
-    """
-    class Meta:
-        verbose_name = _(u'Instancia de Multicat para gravação')
-        verbose_name_plural = _(u'Instancias de Multicat para gravação')
-    name = models.CharField(_(u'Nome'),max_length=200)
-    source = models.ForeignKey('Source')
-    rotate_time = models.PositiveIntegerField(_(u'Tempo de gravação em cada arquivo em segundos'))
-    keep_time = models.PositiveSmallIntegerField(_(u'Dias que as gravações estarão disponíveis'))
-    filename = models.CharField(_(u'Nome do arquivo'),max_length=200)
-    server = models.ForeignKey(Server)
-    pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
-    def status(self):
-        url = None
-        return '<a href="%s" id="record_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
-        #return '%s'%self.id
-    status.allow_tags = True
-    def play(self):
-        pass
-    def stop(self):
-        pass
-    def __unicode__(self):
-        return u'%s > %s' %(self.source,self.filename)
+#class MulticatGeneric(Multicat):
+#    """
+#    DEPRECATED: Não utilizado mais
+#    Classe para gerar fluxo pelo multicat de origem e destino qualquer
+#    """
+#    class Meta:
+#        verbose_name = _(u'Instancia de Multicat')
+#        verbose_name_plural = _(u'Instancias de Multicat')
+#    input  = models.CharField(_(u'Input Item'),max_length=255,blank=True)
+#    destine = models.CharField(_(u'Destine Item'),max_length=255,blank=True)
+#    def _input(self):
+#        return u'%s' % (self.input)
+#    def _output(self):
+#        return u'%s' % (self.destine)
+#    def __unicode__(self):
+#        return u'%s %s' % (self.input, self.destine)
+#
+#class MulticatSource(Multicat):
+#    """
+#    DEPRECATED: Não utilizado mais
+#    Classe para gerar fluxo pelo multicat de origem customizada
+#    """
+#    class Meta:
+#        verbose_name = _(u'Instancia de Multicat via IP')
+#        verbose_name_plural = _(u'Instancias de Multicat via IP')
+#    ip = models.IPAddressField(_(u'Endereço IP'),blank=True)
+#    port = models.PositiveSmallIntegerField(_(u'Porta'),blank=True)
+#    def _input(self):
+#        return u'@%s:%s' % (self.ip, self.port)
+#    def _output(self):
+#        return u'%s:%s' % (self.target.ip, self.target.port)
+#    def __unicode__(self):
+#        return u'%s' % self.target
+# 
+#
+#class MulticatRedirect(Multicat):
+#    """
+#    DEPRECATED: Não utilizado mais
+#    Classe para gerar fluxo de redirecionamento via multicat
+#    """
+#    class Meta:
+#        verbose_name = _(u'Instancia de Redirecionamento Multicat')
+#        verbose_name_plural = _(u'Instancias de Redirecionamento Multicat')
+#    target = models.OneToOneField(IPInput)
+#    def _input(self):
+#        return u'@%s:%s' % (self.target.source.ip, self.target.source.port)
+#    def _output(self):
+#        return u'%s:%s' % (self.target.ip, self.target.port)
+#    def __unicode__(self):
+#        return u'%s' % self.target
+#    def switch_link(self):
+#        if self.status is True:
+#            url = reverse('device.views.multicat_redirect_stop',kwargs={'pk':self.id})
+#            return '<a href="%s" id="multicat_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
+#        url = reverse('device.views.multicat_redirect_start',kwargs={'pk':self.id})
+#        return '<a href="%s" id="multicat_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+#    switch_link.allow_tags = True
+#
+#
+#class MulticatRecorder(models.Model):
+#    """
+#    DEPRECATED: Não utilizado mais
+#    Classe de gravação
+#    """
+#    class Meta:
+#        verbose_name = _(u'Instancia de Multicat para gravação')
+#        verbose_name_plural = _(u'Instancias de Multicat para gravação')
+#    name = models.CharField(_(u'Nome'),max_length=200)
+#    source = models.ForeignKey('Source')
+#    rotate_time = models.PositiveIntegerField(_(u'Tempo de gravação em cada arquivo em segundos'))
+#    keep_time = models.PositiveSmallIntegerField(_(u'Dias que as gravações estarão disponíveis'))
+#    filename = models.CharField(_(u'Nome do arquivo'),max_length=200)
+#    server = models.ForeignKey(Server)
+#    pid = models.PositiveSmallIntegerField(u'PID',blank=True,null=True)
+#    def status(self):
+#        url = None
+#        return '<a href="%s" id="record_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+#        #return '%s'%self.id
+#    status.allow_tags = True
+#    def play(self):
+#        pass
+#    def stop(self):
+#        pass
+#    def __unicode__(self):
+#        return u'%s > %s' %(self.source,self.filename)
 
