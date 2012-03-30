@@ -76,6 +76,7 @@ def programme_info(request):
     from epg.models import Guide
     from django.utils import simplejson
     
+    
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
     #Seta uma data passada por GET
     if request.GET.get('now') and len(request.GET.get('now')) == 14:
@@ -151,6 +152,50 @@ def programme_info(request):
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
 
+def get_date_server(request):
+    """
+    Usado pelo setupbox para pegar o programa que esta acontecendo
+    """
+    import datetime
+    from django.utils import simplejson
+    
+    
+    #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
+    #Seta uma data passada por GET
+    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+        nowStr = request.GET.get('now') 
+        yyyy = int(nowStr[0:4])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
+    else:
+        now = datetime.datetime.now()
+
+    nowStr =  '{:%Y%m%d%H%M%S}'.format(now)
+    nowY  = '{:%Y}'.format(now)
+    nowm  = '{:%m}'.format(now)
+    nowd  = '{:%d}'.format(now)
+    nowH  = '{:%H}'.format(now)
+    nowM  = '{:%M}'.format(now)
+    nowS  = '{:%S}'.format(now)
+    
+    json = simplejson.dumps( [{
+                               'now':nowStr,
+                               'Y':nowY,
+                               'm':nowm,
+                               'd':nowd,
+                               'H':nowH,
+                               'M':nowM,
+                               'S':nowS
+                               }])
+    
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json,content_type='application/json')    
+
 def guide_programmes(request):
     """
     Usado pelo setupbox para pegar o programa que esta acontecendo
@@ -160,8 +205,22 @@ def guide_programmes(request):
     from epg.models import Guide
     from django.utils import simplejson
     
-    now = datetime.datetime.now()
-        
+    
+    #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
+    #Seta uma data passada por GET
+    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+        nowStr = request.GET.get('now') 
+        yyyy = int(nowStr[0:4])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
+    else:
+        now = datetime.datetime.now()
+
     rangeTimeStart=now-timedelta(hours=12)
     rangeTimeStop=now+timedelta(hours=12)
     
@@ -430,8 +489,21 @@ def guide_mount_line_of_programe(request):
     from epg.models import Guide
     from django.utils import simplejson
     
-    #Setando a hora atual do servidor
-    now = datetime.datetime.now()
+    
+    #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
+    #Seta uma data passada por GET
+    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+        nowStr = request.GET.get('now') 
+        yyyy = int(nowStr[0:4])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
+    else:
+        now = datetime.datetime.now()
 
     #buscando um range de tempo para a busca
     hoursRangeStart = request.GET.get('r_start')
