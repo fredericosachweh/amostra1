@@ -367,6 +367,30 @@ class Dvblast(DeviceServer):
         self.pid = pid
         self.save()
 
+class Channel(models.Model):
+    class Meta:
+        verbose_name = _(u'Canal')
+        verbose_name_plural = _(u'Canais')
+    
+    def __unicode__(self):
+        return '%s -> %s' % (self.input, self.output)
+    
+    def play(self):
+        pass
+    
+    # Input
+    input_limit = models.Q(app_label = 'device', model = 'DemuxedInput') | \
+                models.Q(app_label = 'device', model = 'DvbTuner') | \
+                models.Q(app_label = 'device', model = 'IsdbTuner') | \
+                models.Q(app_label = 'device', model = 'UnicastInput') | \
+                models.Q(app_label = 'device', model = 'MulticastInput')
+    input_content_type = models.ForeignKey(ContentType, limit_choices_to = input_limit)
+    input_object_id = models.PositiveIntegerField()
+    input = generic.GenericForeignKey('input_content_type', 'input_object_id')
+    # Output
+    output = models.ForeignKey('MulticastOutput', null=True, blank=True)
+    # Recorder
+    recorder = models.ForeignKey('StreamRecorder', null=True, blank=True)
 
 class Antenna(models.Model):
     class Meta:
@@ -385,6 +409,24 @@ class Antenna(models.Model):
     def __unicode__(self):
         return str(self.satellite)
 
+class DemuxedInput(models.Model):
+    class Meta:
+        verbose_name = _(u'Entrada demultiplexada')
+        verbose_name_plural = _(u'Entradas demultiplexadas')
+    
+    def __unicode__(self):
+        return ('%s - %s') % (self.provider, self.service)
+    
+    sid = models.PositiveSmallIntegerField(_(u'Programa'))
+    provider = models.CharField(_(u'Provedor'), max_length=200, null=True, blank=True)
+    service = models.CharField(_(u'Serviço'), max_length=200, null=True, blank=True)
+
+class Demuxer(DeviceServer):
+    class Meta:
+        verbose_name = _(u'Demultiplexador MPEG2TS')
+        verbose_name_plural = _(u'Demultiplexadores MPEG2TS')
+    
+    demuxed_inputs = models.ManyToManyField(DemuxedInput, null=True, blank=True)
 
 class DigitalTuner(DeviceServer):
     class Meta:
@@ -456,7 +498,7 @@ class UnicastInput(IPInput):
         verbose_name = _(u'Entrada IP unicast')
         verbose_name_plural = _(u'Entradas IP unicast')
     
-    def __unicode(self):
+    def __unicode__(self):
         return '%d [%s]' % (self.port, self.interface)
     
     def validate_unique(self, exclude=None):
@@ -515,7 +557,40 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
     dev = server.get_netdev(instance.interface)
     server.delete_route(ip, dev)
 
+class IPOutput(DeviceServer):
+    "Generic IP output class"
+    class Meta:
+        abstract = True
+    
+    PROTOCOL_CHOICES = (
+                        (u'udp', u'UDP'),
+                        (u'rtp', u'RTP'),
+                        )
+    
+    interface = models.IPAddressField(_(u'Interface de rede'))
+    port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
+    protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
+                                choices=PROTOCOL_CHOICES, default=u'udp')
 
+class MulticastOutput(IPOutput):
+    "Multicast MPEG2TS IP output stream"
+    class Meta:
+        verbose_name = _(u'Saída IP multicast')
+        verbose_name_plural = _(u'Saídas IP multicast')
+    
+    def __unicode__(self):
+        return '%s:%d [%s]' % (self.ip, self.port, self.interface)
+    
+    def validate_unique(self, exclude=None):
+        # unique_together = ('ip', 'server')
+        from django.core.exceptions import ValidationError
+        val = MulticastOutput.objects.filter(ip=self.ip,
+                                          server=self.server)
+        if val.exists() and val[0].pk != self.pk:
+            msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
+            raise ValidationError({'__all__' : [msg]})
+    
+    ip = models.IPAddressField(_(u'Endereço IP multicast'))
 
 #class DvbblastProgram(DeviceIp):
 #    class Meta:
@@ -528,6 +603,12 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
 #    def __unicode__(self):
 #        return self.name
 
+class StreamRecorder(DeviceServer):
+    class Meta:
+        verbose_name = _(u'Gravador de fluxo')
+        verbose_name_plural = _(u'Gravadores de fluxo')
+    rotate = models.PositiveIntegerField()
+    folder = models.CharField(max_length=500)
 
 
 
