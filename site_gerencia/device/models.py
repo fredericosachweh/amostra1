@@ -182,9 +182,8 @@ class UniqueIP(models.Model):
     Classe para ser extendida, para que origem e destino nunca sejam iguais.
     """
     class Meta:
-        #unique_together = ( ('ip', 'port'), )
-        verbose_name = _(u'Endereço de Fluxo')
-        verbose_name_plural = _(u'Endereços de Fluxo')
+        verbose_name = _(u'Endereço de Fluxo Interno')
+        verbose_name_plural = _(u'Endereços de Fluxo Interno')
     ip = models.IPAddressField(_(u'Endereço IP'),
         unique=True,
         null=True
@@ -195,7 +194,7 @@ class UniqueIP(models.Model):
         default=2)
     
     ## Para o relacionamento genérico de origem
-    source = generic.GenericForeignKey('content_type', 'object_id')
+    sink = generic.GenericForeignKey('content_type', 'object_id')
     content_type = models.ForeignKey(ContentType,null=True)
     object_id = models.PositiveIntegerField(null=True)
     
@@ -279,12 +278,12 @@ class Vlc(DeviceServer):
         verbose_name = _(u'Vídeo em loop')
         verbose_name_plural = _(u'Vídeos em loop')
     
-    source = models.CharField(
+    sink = models.CharField(
         _(u'Arquivo de origem'),
         max_length=255,
         blank=True,
         null=True)
-    ip = generic.GenericRelation(UniqueIP)
+    src = generic.GenericRelation(UniqueIP)
     
     file_list = None
     def get_list_dir(self):
@@ -302,7 +301,7 @@ class Vlc(DeviceServer):
     def __init__(self,*args,**kwargs):
         super(Vlc,self).__init__(*args,**kwargs)
         if self.server_id is not None:
-            self._meta.get_field_by_name('source')[0]._choices = lazy(self.get_list_dir, list)()
+            self._meta.get_field_by_name('sink')[0]._choices = lazy(self.get_list_dir, list)()
     
     def __unicode__(self):
         if hasattr(self, 'server') is False:
@@ -312,9 +311,8 @@ class Vlc(DeviceServer):
 
     def start(self):
         """Inicia processo do VLC"""
-        ip = self.ip.get()
-        #print(ip)
-        s = self.source.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
+        ip = self.src.get()
+        s = self.sink.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
         c = '/usr/bin/cvlc -I dummy -v -R %s ' \
             '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             s,
@@ -327,7 +325,7 @@ class Vlc(DeviceServer):
         return self.status
 
     def switch_link(self):
-        if self.source is None or self.server_id is None:
+        if self.sink is None or self.server_id is None:
             return 'Desconfigurado'
         if self.running():
             url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
@@ -459,6 +457,7 @@ class DvbTuner(DigitalTuner):
     polarization = models.CharField(_(u'Polarização'), max_length=200, choices=POLARIZATION_CHOICES)
     adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
+    # /usr/bin/dvblast -a %s -m %s %(adapter.get_order(),psk_s)
 
 
 class IsdbTuner(DigitalTuner):
@@ -599,7 +598,7 @@ class MulticastOutput(IPOutput):
 #    name = models.CharField(_(u'Nome'),max_length=200)
 #    channel_program = models.PositiveSmallIntegerField(_(u'Programa'))
 #    channel_pid = models.PositiveSmallIntegerField(_(u'PID (Packet ID)'))
-#    source = models.ForeignKey(Dvblast,related_name='source')
+#    src = models.ForeignKey(Dvblast,related_name='source')
 #    def __unicode__(self):
 #        return self.name
 

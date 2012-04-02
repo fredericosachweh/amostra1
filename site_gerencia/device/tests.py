@@ -21,19 +21,14 @@ class GenericSourceTest(TestCase):
         s.connect()
         s.save()
         vlc = Vlc(server=s,description='VLC - generico')
-        vlc.source = '/home/videos/ros.avi'
+        vlc.sink = '/home/videos/ros.avi'
         vlc.save()
         ip = UniqueIP()
-        ip.source = vlc
+        ip.sink = vlc
         ip.ip = ip._gen_ip()
-        #print('object_id=%d' % ip.object_id)
-        #print(type(ip.content_type))
-        #print('content_type=%s' % ip.content_type.id)
         ip.save()
         nip = UniqueIP.objects.get(content_type=ip.content_type.id,object_id=vlc.pk)
-        #print('IP=%s' % nip )
-        #print('SOURCE=%s' % nip.source)
-        nip.source.start()
+        nip.sink.start()
         
 
 class UniqueIPTest(TestCase):
