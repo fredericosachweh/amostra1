@@ -56,7 +56,7 @@ TIME_ZONE = 'America/Sao_Paulo'
 
 # Novo no django 1.4
 USE_TZ = False
-WSGI_APPLICATION = 'wsgi.application'
+#WSGI_APPLICATION = 'wsgi.application'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -211,6 +211,8 @@ DVBLAST_APP = 'dvblast'
 DVBLAST_CONF_DIR = '/etc/dvblast'
 
 VIDEO_LOOP_DIR = '/home/videos'
+
+AUTO_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 

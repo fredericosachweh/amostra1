@@ -8,32 +8,8 @@ from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
 from django.conf import settings
 from django.utils.functional import lazy
-
-class UniqueIP(models.Model):
-    """
-    Classe para ser extendida, para que origem e destino nunca sejam iguais.
-    """
-    class Meta:
-        #unique_together = ( ('ip', 'port'), )
-        verbose_name = _(u'Endereço de Fluxo')
-        verbose_name_plural = _(u'Endereços de Fluxo')
-    ip = models.IPAddressField(_(u'Endereço IP'),
-        default='239.1.1.',
-        unique=True)
-    port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
-    sequential = models.PositiveSmallIntegerField(
-        _(u'Valor auxiliar para gerar o IP único'),
-        default=2)
-    
-    def __unicode__(self):
-        return '%s:%s' % (self.ip, self.port)
-    
-    def natural_key(self):
-        return {'ip': self.ip,'port': self.port}
-    
-    def save(self,*args,**kwargs):
-        self.sequential += 1
-        super(UniqueIP,self).save(*args,**kwargs)
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType, ContentTypeManager
 
 
 class Server(models.Model):
@@ -131,6 +107,7 @@ class Server(models.Model):
         except Exception as ex:
             self.msg = ex
             self.status = False
+        print('Executando em [%s] comando:%s' % (self,command))
         pid = s.execute_daemon(command)
         s.close()
         self.save()
@@ -200,15 +177,51 @@ class Server(models.Model):
         return map(lambda x: x.strip('\n'), ret)
 
 
-#class DeviceIp(SourceRelation):
-#    """Campos para servidor de Device"""
-#    description = models.CharField(_(u'Descrição'),blank=True,max_length=255)
-#    def __unicode__(self):
-#        if hasattr(self, 'server') is False:
-#            return ''
-#        return '[%s] %s' %(self.server,self._type,self.description)
-#    def _type(self):
-#        return _(u'indefinido')
+class UniqueIP(models.Model):
+    """
+    Classe para ser extendida, para que origem e destino nunca sejam iguais.
+    """
+    class Meta:
+        #unique_together = ( ('ip', 'port'), )
+        verbose_name = _(u'Endereço de Fluxo')
+        verbose_name_plural = _(u'Endereços de Fluxo')
+    ip = models.IPAddressField(_(u'Endereço IP'),
+        unique=True,
+        null=True
+        )
+    port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
+    sequential = models.PositiveSmallIntegerField(
+        _(u'Valor auxiliar para gerar o IP único'),
+        default=2)
+    
+    ## Para o relacionamento genérico de origem
+    source = generic.GenericForeignKey('content_type', 'object_id')
+    content_type = models.ForeignKey(ContentType,null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    
+    def __unicode__(self):
+        return '[%d] %s:%d' % (self.sequential,self.ip, self.port)
+    
+    def natural_key(self):
+        return {'ip': self.ip,'port': self.port}
+    
+    def save(self,*args,**kwargs):
+        if UniqueIP.objects.count() > 0:
+            anterior = UniqueIP.objects.latest('sequential')
+            proximo = anterior.sequential + 1
+            mod = proximo % 256
+            if mod == 255:
+                proximo += 3
+            if mod == 0:
+                proximo += 2
+            if mod == 1:
+                proximo += 1
+            self.sequential = proximo
+        super(UniqueIP,self).save(*args,**kwargs)
+    
+    def _gen_ip(self):
+        ip = settings.AUTO_IP_MASK % (self.sequential / 256 ,self.sequential % 256)
+        return ip
 
 
 class DeviceServer(models.Model):
@@ -255,7 +268,9 @@ class DeviceServer(models.Model):
             alive = False
         return alive
 
-
+#
+# file -> vlc -> output -> ip
+#
 class Vlc(DeviceServer):
     """
     VLC streaming device.
@@ -269,6 +284,7 @@ class Vlc(DeviceServer):
         max_length=255,
         blank=True,
         null=True)
+    ip = generic.GenericRelation(UniqueIP)
     
     file_list = None
     def get_list_dir(self):
@@ -279,25 +295,31 @@ class Vlc(DeviceServer):
             d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
             for f in d:
                 self.file_list.append((f,f))
+        if self.file_list is None:
+            return []
         return self.file_list
     
     def __init__(self,*args,**kwargs):
         super(Vlc,self).__init__(*args,**kwargs)
-        self._meta.get_field_by_name('source')[0]._choices = lazy(self.get_list_dir, list)()
+        if self.server_id is not None:
+            self._meta.get_field_by_name('source')[0]._choices = lazy(self.get_list_dir, list)()
     
     def __unicode__(self):
         if hasattr(self, 'server') is False:
-            return ''
-        return '[%s] %s --> %s' %(self.server,self.description,self.destine)
+            return self.description
+        
+        return '[%s] %s -->' %(self.server,self.description)
 
     def start(self):
         """Inicia processo do VLC"""
+        ip = self.ip.get()
+        #print(ip)
         s = self.source.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
         c = '/usr/bin/cvlc -I dummy -v -R %s ' \
             '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             s,
-            self.destine.ip,
-            self.destine.port)
+            ip.ip,
+            ip.port)
         c = self.server.execute_daemon(c)
         self.status = True
         self.pid = c

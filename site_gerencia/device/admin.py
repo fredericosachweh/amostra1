@@ -68,6 +68,7 @@ class AdminMulticastInput(admin.ModelAdmin):
     list_display = ('ip', 'port', 'interface', 'server', 'protocol')
     form = forms.MulticastInputForm
 
+admin.site.register(models.UniqueIP)
 #admin.site.register(models.Channel)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Vlc,AdminDevice)
