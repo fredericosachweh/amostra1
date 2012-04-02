@@ -107,7 +107,7 @@ class Server(models.Model):
         except Exception as ex:
             self.msg = ex
             self.status = False
-        print('Executando em [%s] comando:%s' % (self,command))
+        #print('Executando em [%s] comando:%s' % (self,command))
         pid = s.execute_daemon(command)
         s.close()
         self.save()

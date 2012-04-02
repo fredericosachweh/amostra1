@@ -31,8 +31,8 @@ class GenericSourceTest(TestCase):
         #print('content_type=%s' % ip.content_type.id)
         ip.save()
         nip = UniqueIP.objects.get(content_type=ip.content_type.id,object_id=vlc.pk)
-        print('IP=%s' % nip )
-        print('SOURCE=%s' % nip.source)
+        #print('IP=%s' % nip )
+        #print('SOURCE=%s' % nip.source)
         nip.source.start()
         
 
@@ -43,7 +43,7 @@ class UniqueIPTest(TestCase):
         for i in range(1024):
             ip1 = UniqueIP()
             ip1.save()
-            print(ip1._gen_ip())
+            #print(ip1._gen_ip())
 
 
 class ConnectionTest(TestCase):
