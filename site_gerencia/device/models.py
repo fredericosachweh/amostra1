@@ -111,7 +111,7 @@ class Server(models.Model):
         pid = s.execute_daemon(command)
         s.close()
         self.save()
-        return pid
+        return int(pid)
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
@@ -183,7 +183,12 @@ class Server(models.Model):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
         ret = self.execute('/bin/ls %s' % directory)
         return map(lambda x: x.strip('\n'), ret)
-
+    
+    def cat_file(self, path):
+        "Return the contents of a File given his path"
+        ret = self.execute('/bin/cat %s' % path)
+        content = u''.join(ret)
+        return content.strip()
 
 class NIC(models.Model):
     'Classe de manipulação da interface de rede e referencia do servidor'
@@ -213,10 +218,15 @@ class UniqueIP(models.Model):
         default=2)
 
     ## Para o relacionamento genérico de origem
-    sink = generic.GenericForeignKey('content_type', 'object_id')
-    content_type = models.ForeignKey(ContentType, null=True)
-    object_id = models.PositiveIntegerField(null=True)
-
+    sink = generic.GenericForeignKey('sink_content_type', 'sink_object_id')
+    sink_content_type = models.ForeignKey(ContentType,
+        null=True, related_name='sink_content_type_')
+    sink_object_id = models.PositiveIntegerField(null=True)
+    
+    source = generic.GenericForeignKey('source_content_type', 'source_object_id')
+    source_content_type = models.ForeignKey(ContentType,null=True)
+    source_object_id = models.PositiveIntegerField(null=True)
+    
     def __unicode__(self):
         return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
 
@@ -242,6 +252,9 @@ class UniqueIP(models.Model):
             self.sequential / 256,
             self.sequential % 256)
         return ip
+    
+    def start(self):
+        self.sink.start()
 
 
 class DeviceServer(models.Model):
@@ -259,7 +272,7 @@ class DeviceServer(models.Model):
         return _(u'undefined')
 
     def start(self):
-        raise Exception('Must be overload')
+        raise Exception('Must be overridden')
 
     def stop(self):
         """Interrompe processo no servidor"""
@@ -433,31 +446,34 @@ class Antenna(models.Model):
     def __unicode__(self):
         return str(self.satellite)
 
-class DemuxedInput(models.Model):
+class DemuxedService(models.Model):
     class Meta:
         verbose_name = _(u'Entrada demultiplexada')
         verbose_name_plural = _(u'Entradas demultiplexadas')
     
     def __unicode__(self):
-        return ('%s - %s') % (self.provider, self.service)
+        return ('%s - %s') % (self.provider, self.service_desc)
+    
+    def start(self):
+        self.sink.start()
     
     sid = models.PositiveSmallIntegerField(_(u'Programa'))
     provider = models.CharField(_(u'Provedor'), max_length=200, null=True, blank=True)
-    service = models.CharField(_(u'Serviço'), max_length=200, null=True, blank=True)
-
-class Demuxer(DeviceServer):
-    class Meta:
-        verbose_name = _(u'Demultiplexador MPEG2TS')
-        verbose_name_plural = _(u'Demultiplexadores MPEG2TS')
-    
-    demuxed_inputs = models.ManyToManyField(DemuxedInput, null=True, blank=True)
+    service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True, blank=True)
+    sources = generic.GenericRelation(UniqueIP,
+                                     content_type_field='sink_content_type',
+                                     object_id_field='sink_object_id')
+    # Sink
+    content_type = models.ForeignKey(ContentType, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    sink = generic.GenericForeignKey()
 
 class DigitalTuner(DeviceServer):
     class Meta:
         abstract = True
     
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
-
+    sources = generic.GenericRelation(DemuxedService)
 
 class DvbTuner(DigitalTuner):
     class Meta:
@@ -466,6 +482,57 @@ class DvbTuner(DigitalTuner):
     
     def __unicode__(self):
         return '%s - %d %s %d' % (self.antenna,self.frequency,self.polarization,self.symbol_rate)
+    
+    @property
+    def adapter_num(self):
+        files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
+        for file in files:
+            contents = self.server.cat_file(file)
+            if contents == self.adapter:
+                import re
+                m = re.match(r'/dev/dvb/adapter(\d+)\.mac', file)
+                return m.group(1)
+        # TODO: Should throw exception
+    
+    def _get_cmd(self):
+        c = '/usr/bin/dvblast'
+        # Get tuning parameters
+        if self.antenna.lnb_type == 'multiponto_c':
+            c += ' -f %d000' % (self.frequency - 600)
+        else:
+            c += ' -f %d000' % self.frequency
+            if self.polarization == 'V':
+                c += ' -v 13'
+            elif self.polarization == 'H':
+                c += ' -v 18'
+            else:
+                raise NotImplementedError
+        if self.modulation == '8PSK':
+            c += ' -m psk_8'
+        c += ' -s %d000 -F %s' % (self.symbol_rate, self.fec)
+        c += ' -a %s' % self.adapter_num
+        c += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
+        # Fill config file
+        conf = ''
+        for service in self.sources.all():
+            sid = service.sid
+            ip = service.sources.all()[0].ip
+            port = service.sources.all()[0].port
+            # Assume internal IPs always work with raw UDP
+            conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
+        
+        return c, conf
+    
+    def start(self):
+        "Starts a dvblast instance based on the current model's configuration"
+        cmd, conf = self._get_cmd()
+        # Write the config file to disk
+        self.server.execute('mkdir -p /etc/dvblast/channels.d/', persist=True)
+        self.server.execute('echo "%s" > /etc/dvblast/channels.d/%d.conf' % (conf, self.pk), persist=True)
+        # Start dvblast process
+        pid = self.server.execute_daemon(cmd)
+        self.pid = pid
+        self.save()
     
     MODULATION_CHOICES = (
         (u'QPSK', u'QPSK'),
@@ -477,14 +544,26 @@ class DvbTuner(DigitalTuner):
         (u'R', _(u'Direita (R)')),
         (u'L', _(u'Esquerda (L)')),
     )
+    FEC_CHOICES = (
+        (u'0', u'Off'),
+        (u'12', u'1/2'),
+        (u'23', u'2/3'),
+        (u'34', u'3/4'),
+        (u'35', u'3/5'),
+        (u'56', u'5/6'),
+        (u'78', u'7/8'),
+        (u'89', u'8/9'),
+        (u'910', u'9/10'),
+        (u'999', u'Auto'),
+    )
     
     symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'), help_text=u'Msym/s')
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
     polarization = models.CharField(_(u'Polarização'), max_length=200, choices=POLARIZATION_CHOICES)
+    fec = models.CharField(_(u'FEC'), max_length=200, choices=FEC_CHOICES, default=u'999')
     adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
     # /usr/bin/dvblast -a %s -m %s %(adapter.get_order(),psk_s)
-
 
 class IsdbTuner(DigitalTuner):
     class Meta:
@@ -501,7 +580,6 @@ class IsdbTuner(DigitalTuner):
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'QAM')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
 
-
 class IPInput(DeviceServer):
     "Generic IP input class"
     class Meta:
@@ -516,6 +594,7 @@ class IPInput(DeviceServer):
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')
+    sources = generic.GenericRelation(DemuxedService)
 
 class UnicastInput(IPInput):
     "Unicast MPEG2TS IP input stream"
@@ -596,6 +675,9 @@ class IPOutput(DeviceServer):
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')
+    sinks = generic.GenericRelation(UniqueIP,
+                                 content_type_field='source_content_type',
+                                 object_id_field='source_object_id')
 
 class MulticastOutput(IPOutput):
     "Multicast MPEG2TS IP output stream"
@@ -604,7 +686,7 @@ class MulticastOutput(IPOutput):
         verbose_name_plural = _(u'Saídas IP multicast')
     
     def __unicode__(self):
-        return '%s:%d [%s]' % (self.ip, self.port, self.interface)
+        return '%s:%d [%s]' % (self.ip_out, self.port, self.interface)
     
     def validate_unique(self, exclude=None):
         # unique_together = ('ip', 'server')
@@ -615,7 +697,10 @@ class MulticastOutput(IPOutput):
             msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
             raise ValidationError({'__all__' : [msg]})
     
-    ip = models.IPAddressField(_(u'Endereço IP multicast'))
+    def start(self):
+        self.sinks.all()[0].start()
+    
+    ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
 
 #class DvbblastProgram(DeviceIp):
 #    class Meta:
