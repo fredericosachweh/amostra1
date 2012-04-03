@@ -9,6 +9,21 @@ from django.test import TestCase
 
 class GenericSourceTest(TestCase):
     
+    def setUp(self):
+        from device.models import Server, Antenna
+        self.s = Server.objects.create(
+            name='local',
+            #host='127.0.0.1',
+            host='172.17.0.2',
+            ssh_port=22,
+            username='root',
+            password='cianet',
+        )
+        self.a = Antenna.objects.create(
+            satellite='StarOne C2',
+            lnb_type='multiponto_c',
+        )
+    
     def test_vlc_source(self):
         from device.models import Vlc, UniqueIP, Server
         s = Server(
@@ -30,6 +45,46 @@ class GenericSourceTest(TestCase):
         nip = UniqueIP.objects.get(content_type=ip.content_type.id,object_id=vlc.pk)
         nip.sink.start()
         
+    def test_dvbtuner(self):
+        from device.models import DvbTuner, DemuxedService, UniqueIP, MulticastOutput
+        tuner = DvbTuner.objects.create(
+            server = self.s,
+            antenna=self.a,
+            frequency=3990,
+            symbol_rate=7400,
+            modulation='8PSK',
+            polarization='H',
+            fec='34',
+            #adapter='00:00:00:00:00:00',
+            adapter='00:18:BD:5D:DE:14',
+        )
+        service = DemuxedService.objects.create(
+            sid=1,
+        )
+        # Connect tuner to service
+        tuner.sources.add(service)
+        out = MulticastOutput.objects.create(
+            server=self.s,
+            ip_out='239.0.1.3',
+            port=10000,
+            protocol='udp',
+            interface='127.0.0.1',
+        )
+        ip = UniqueIP.objects.create(
+            ip=UniqueIP()._gen_ip(),
+            port=20000,
+            source=service,
+            sink=out,
+        )
+        # Connect output to internal ip
+        out.sinks.add(ip)
+        # Connect service to internal ip
+        service.sources.add(ip)
+        
+        tuner.start()
+        self.assertTrue(tuner.server.process_alive(tuner.pid))
+        tuner.stop()
+        self.assertFalse(tuner.server.process_alive(tuner.pid))
 
 class UniqueIPTest(TestCase):
     
@@ -39,7 +94,6 @@ class UniqueIPTest(TestCase):
             ip1 = UniqueIP()
             ip1.save()
             #print(ip1._gen_ip())
-
 
 class ConnectionTest(TestCase):
     """
