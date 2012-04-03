@@ -10,7 +10,7 @@ from django.test import TestCase
 class GenericSourceTest(TestCase):
     
     def test_vlc_source(self):
-        from device.models import Vlc, UniqueIP, Server
+        from device.models import Vlc, UniqueIP, Server, NIC
         s = Server(
             name='local',
             host='127.0.0.1',
@@ -20,16 +20,19 @@ class GenericSourceTest(TestCase):
         )
         s.connect()
         s.save()
+        s.auto_create_nic()
+        nics = NIC.objects.filter(server=s)
         vlc = Vlc(server=s,description='VLC - generico')
         vlc.sink = '/home/videos/ros.avi'
         vlc.save()
         ip = UniqueIP()
         ip.sink = vlc
+        ip.nic = nics[1]
         ip.ip = ip._gen_ip()
         ip.save()
         nip = UniqueIP.objects.get(content_type=ip.content_type.id,object_id=vlc.pk)
         nip.sink.start()
-        
+
 
 class UniqueIPTest(TestCase):
     
@@ -37,7 +40,7 @@ class UniqueIPTest(TestCase):
         from device.models import UniqueIP
         for i in range(1024):
             ip1 = UniqueIP()
-            ip1.save()
+            #ip1.save()
             #print(ip1._gen_ip())
 
 
@@ -132,15 +135,6 @@ class ProcessControlTest(TestCase):
             rsakey='~/.ssh/id_rsa_test'
         )
 
-    def test_prepare_daemon(self):
-        import os
-        cmd = '/usr/bin/cvlc -I dummy -v -R \
-/mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
---sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"'
-        parsed = os.path.basename(cmd.split()[0])
-        self.assertEqual(parsed, 'cvlc', 'Deveria ser retornado o comando')
-        #fullcmd = '/usr/sbin/daemonize -p ~/%s-%s.pid %s' %(parsed,uid,cmd)
-
     def test_list_process(self):
         self.s.connect()
         procs = self.s.list_process()
@@ -153,7 +147,7 @@ class ProcessControlTest(TestCase):
 /mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
 --sout "#std{access=udp,mux=ts,dst=239.1.1.5:5000}"'
         pid = self.s.execute_daemon(cmd)
-        self.assertGreater(pid, 0, 'O processo deveria ser maios que zero')
+        self.assertGreater(pid, 0, 'O processo deveria ser maior que zero')
         self.s.kill_process(pid)
         self.assertFalse(self.s.process_alive(pid),
             'O processo pid=%d deveria ter morrido.' % pid )
@@ -173,14 +167,17 @@ class RouteDeviceTest(TestCase):
 
     def test_list_iface(self):
         self.s.connect()
-        ifaces = self.s.list_interfaces()
+        self.s.auto_create_nic()
+        ifaces = self.s._list_interfaces()
     
     def test_local_dev(self):
         self.s.connect()
+        self.s.auto_create_nic()
         iface = self.s.get_netdev('127.0.0.1')
-        self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
+        self.assertEqual(iface.name, 'lo', 'Deveria ser a interface de loopback')
     
     def test_create_route(self):
         self.s.connect()
+        self.s.auto_create_nic()
         self.s.create_route('239.0.1.10', 'p7p1')
         self.s.delete_route('239.0.1.10', 'p7p1')

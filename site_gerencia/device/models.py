@@ -23,7 +23,7 @@ class Server(models.Model):
 
     name = models.CharField(_(u'Nome'), max_length=200, unique=True)
     host = models.IPAddressField(_(u'Host'), blank=True, unique=True)
-    username = models.CharField(_(u'Usuário'), max_length=200 ,blank=True)
+    username = models.CharField(_(u'Usuário'), max_length=200, blank=True)
     password = models.CharField(_(u'Senha'), max_length=200, blank=True)
     rsakey = models.CharField(_(u'Chave RSA'),
         help_text='Exemplo: ~/.ssh/id_rsa',
@@ -34,29 +34,30 @@ class Server(models.Model):
     modified = models.DateTimeField(_(u'Última modificação'), auto_now=True)
     status = models.BooleanField(_(u'Status'), default=False)
     msg = models.TextField(_(u'Mensagem de retorno'), blank=True)
-    SERVER_TYPE_CHOICES=(
+    SERVER_TYPE_CHOICES = (
                          (u'local', _(u'Servidor local DEMO')),
                          (u'dvb', _(u'Sintonizador DVB')),
                          (u'recording', _(u'Servidor TVoD')),
                          )
-    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100, 
+    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
                                    choices=SERVER_TYPE_CHOICES)
 
     def __unicode__(self):
-        return '%s' %(self.name)
+        return '%s' % (self.name)
 
     def switch_link(self):
         url = reverse('device.views.server_status', kwargs={'pk': self.id})
         return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
 
     switch_link.allow_tags = True
-    
+
     def clean(self):
         from django.core.exceptions import ValidationError
-        
         if str(self.server_type) == 'local' and str(self.host) != '127.0.0.1':
-            raise ValidationError(_(u'Servidor DEMO só pode ser usado com IP local 127.0.0.1.'))
-    
+            raise ValidationError(_(
+                u'Servidor DEMO só pode ser usado com IP local 127.0.0.1.'
+                ))
+
     @property
     def is_local(self):
         return True if str(self.server_type) == 'local' else False
@@ -66,11 +67,11 @@ class Server(models.Model):
         from lib import ssh
         s = None
         try:
-            s = ssh.Connection(host = self.host,
-                port = self.ssh_port,
-                username = self.username,
-                password = self.password,
-                private_key = self.rsakey)
+            s = ssh.Connection(host=self.host,
+                port=self.ssh_port,
+                username=self.username,
+                password=self.password,
+                private_key=self.rsakey)
             self.status = True
             self.msg = 'OK'
         except ValueError:
@@ -82,13 +83,13 @@ class Server(models.Model):
         self.save()
         return s
 
-    def execute(self, command, persist = False):
+    def execute(self, command, persist=False):
         """Executa um comando no servidor"""
         try:
             s = self.connect()
             self.msg = 'OK'
         except Exception as ex:
-            self.msg = 'Can not connect:'+ex
+            self.msg = 'Can not connect:' + ex
         try:
             w = s.execute(command)
         except Exception as ex:
@@ -99,7 +100,7 @@ class Server(models.Model):
         self.save()
         return w
 
-    def execute_daemon(self,command):
+    def execute_daemon(self, command):
         "Excuta o processo em background (daemon)"
         try:
             s = self.connect()
@@ -107,13 +108,12 @@ class Server(models.Model):
         except Exception as ex:
             self.msg = ex
             self.status = False
-        #print('Executando em [%s] comando:%s' % (self,command))
         pid = s.execute_daemon(command)
         s.close()
         self.save()
         return pid
 
-    def process_alive(self,pid):
+    def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         for p in self.list_process():
             if p['pid'] == pid:
@@ -136,14 +136,27 @@ class Server(models.Model):
                 })
         return ret
 
-    def kill_process(self,pid):
-        "Mata um processo em execução"
+    def kill_process(self, pid):
+        u"Mata um processo em execução"
         s = self.connect()
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
         return resp
-    
-    def list_interfaces(self):
+
+    def auto_create_nic(self):
+        """
+        Auto create NIC (Network interfaces)
+        """
+        nics = []
+        for iface in self._list_interfaces():
+            nics.append(
+                NIC.objects.get_or_create(
+                    name=iface['dev'],
+                    ipv4=iface['ip'],
+                    server=self))
+        return nics
+
+    def _list_interfaces(self):
         "List server's configured network interfaces"
         import re
         result = self.execute('/sbin/ip -f inet addr show')
@@ -151,60 +164,66 @@ class Server(models.Model):
         for r in result:
             match = re.findall(r'((\d{1,3}\.){3}\d{1,3}).* (.*)$', r.strip())
             if match:
-                response.append({'ip' : match[0][0], 'dev' : match[0][2]})
+                response.append({'ip': match[0][0], 'dev': match[0][2]})
         return response
-    
+
     def get_netdev(self, ip):
-        "Return a device provided his IP address"
-        for iface in self.list_interfaces():
-            if ip == iface['ip']:
-                return iface['dev']
-        return None
-    
+        "Retorna o NIC que tem este ip neste servidor"
+        return NIC.objects.get(server=self, ipv4=ip)
+
     def create_route(self, ip, dev):
         "Create a new route on the server"
         self.execute('/sbin/route add -host %s dev %s' % (ip, dev))
-        # TODO: 'Then insert a new entry in the config file'
-    
+
     def delete_route(self, ip, dev):
         "Delete a route on the server"
         self.execute('/sbin/route del -host %s dev %s' % (ip, dev))
-        # TODO: 'Then remove the entry in the config file'
-    
-    def list_dir(self,directory='/'):
+
+    def list_dir(self, directory='/'):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
         ret = self.execute('/bin/ls %s' % directory)
         return map(lambda x: x.strip('\n'), ret)
 
 
+class NIC(models.Model):
+    'Classe de manipulação da interface de rede e referencia do servidor'
+    name = models.CharField(_(u'Interface de rede'), max_length=50)
+    server = models.ForeignKey(Server)
+    ipv4 = models.IPAddressField(_(u'Endereço ip v4 atual'))
+
+    def __unicode__(self):
+        return u'%s->%s(%s)' % (self.server, self.name, self.ipv4)
+
+
 class UniqueIP(models.Model):
     """
-    Classe para ser extendida, para que origem e destino nunca sejam iguais.
+    Classe de endereço ip externo (na rede dos clientes)
     """
     class Meta:
-        verbose_name = _(u'Endereço de Fluxo Interno')
-        verbose_name_plural = _(u'Endereços de Fluxo Interno')
+        verbose_name = _(u'Endereço de fluxo externo')
+        verbose_name_plural = _(u'Endereços de fluxo externo')
     ip = models.IPAddressField(_(u'Endereço IP'),
         unique=True,
         null=True
         )
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
+    nic = models.ForeignKey(NIC)
     sequential = models.PositiveSmallIntegerField(
         _(u'Valor auxiliar para gerar o IP único'),
         default=2)
-    
+
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey('content_type', 'object_id')
-    content_type = models.ForeignKey(ContentType,null=True)
+    content_type = models.ForeignKey(ContentType, null=True)
     object_id = models.PositiveIntegerField(null=True)
-    
+
     def __unicode__(self):
-        return '[%d] %s:%d' % (self.sequential,self.ip, self.port)
-    
+        return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
+
     def natural_key(self):
-        return {'ip': self.ip,'port': self.port}
-    
-    def save(self,*args,**kwargs):
+        return {'ip': self.ip, 'port': self.port}
+
+    def save(self, *args, **kwargs):
         if UniqueIP.objects.count() > 0:
             anterior = UniqueIP.objects.latest('sequential')
             proximo = anterior.sequential + 1
@@ -216,10 +235,12 @@ class UniqueIP(models.Model):
             if mod == 1:
                 proximo += 1
             self.sequential = proximo
-        super(UniqueIP,self).save(*args,**kwargs)
-    
+        super(UniqueIP, self).save(*args, **kwargs)
+
     def _gen_ip(self):
-        ip = settings.AUTO_IP_MASK % (self.sequential / 256 ,self.sequential % 256)
+        ip = settings.EXTERNAL_IP_MASK % (
+            self.sequential / 256,
+            self.sequential % 256)
         return ip
 
 
@@ -229,8 +250,9 @@ class DeviceServer(models.Model):
     O metodo start deve ser sobreescrito com o comando específico
     """
     server = models.ForeignKey(Server, verbose_name=_(u'Servidor de recursos'))
-    status = models.BooleanField(_(u'Status'),default=False,editable=False)
-    pid = models.PositiveSmallIntegerField(_(u'PID'),blank=True,null=True,editable=False)
+    status = models.BooleanField(_(u'Status'), default=False, editable=False)
+    pid = models.PositiveSmallIntegerField(_(u'PID'),
+        blank=True, null=True, editable=False)
     description = models.CharField(_(u'Descrição'), max_length=250, blank=True)
 
     def _type(self):
@@ -246,7 +268,7 @@ class DeviceServer(models.Model):
             self.status = False
             self.pid = None
         except ValueError:
-            print('Execute error: %s'%ValueError)
+            print('Execute error: %s' % ValueError)
         self.save()
         return not self.status
 
@@ -267,25 +289,25 @@ class DeviceServer(models.Model):
             alive = False
         return alive
 
-#
-# file -> vlc -> output -> ip
-#
+
 class Vlc(DeviceServer):
     """
     VLC streaming device.
+    file -> vlc -> output -> ip
     """
     class Meta:
         verbose_name = _(u'Vídeo em loop')
         verbose_name_plural = _(u'Vídeos em loop')
-    
+
     sink = models.CharField(
         _(u'Arquivo de origem'),
         max_length=255,
         blank=True,
         null=True)
     src = generic.GenericRelation(UniqueIP)
-    
+
     file_list = None
+
     def get_list_dir(self):
         if self.server_id is None:
             return []
@@ -293,21 +315,21 @@ class Vlc(DeviceServer):
             self.file_list = []
             d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
             for f in d:
-                self.file_list.append((f,f))
+                self.file_list.append((f, f))
         if self.file_list is None:
             return []
         return self.file_list
-    
-    def __init__(self,*args,**kwargs):
-        super(Vlc,self).__init__(*args,**kwargs)
+
+    def __init__(self, *args, **kwargs):
+        super(Vlc, self).__init__(*args, **kwargs)
         if self.server_id is not None:
-            self._meta.get_field_by_name('sink')[0]._choices = lazy(self.get_list_dir, list)()
+            self._meta.get_field_by_name('sink')[0]._choices = lazy(
+                self.get_list_dir, list)()
     
     def __unicode__(self):
         if hasattr(self, 'server') is False:
             return self.description
-        
-        return '[%s] %s -->' %(self.server,self.description)
+        return '[%s] %s -->' % (self.server, self.description)
 
     def start(self):
         """Inicia processo do VLC"""
@@ -328,10 +350,10 @@ class Vlc(DeviceServer):
         if self.sink is None or self.server_id is None:
             return 'Desconfigurado'
         if self.running():
-            url = reverse('device.views.vlc_stop',kwargs={'pk':self.id})
-            return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
-        url = reverse('device.views.vlc_start',kwargs={'pk':self.id})
-        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
+            url = reverse('device.views.vlc_stop',kwargs={'pk': self.id})
+            return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' % (url,self.id)
+        url = reverse('device.views.vlc_start',kwargs={'pk': self.id})
+        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>' % (url,self.id)
     switch_link.allow_tags = True
 
 
@@ -345,8 +367,10 @@ class Dvblast(DeviceServer):
     ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'))
     is_rtp = models.BooleanField(_(u'RTP'),default=False)
+
     def __unicode__(self):
         return '%s (%s:%s)' %(self.name,self.ip,self.port)
+
     def status(self):
         from lib.player import Player
         p = Player()
@@ -357,6 +381,7 @@ class Dvblast(DeviceServer):
         return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
         #return '%s'%self.id
     status.allow_tags = True
+
     def play(self):
         'Inicia o fluxo (inicia o processo do multicat)'
         from lib.player import Player
@@ -364,6 +389,7 @@ class Dvblast(DeviceServer):
         pid = p.play_stream(self)
         self.pid = pid
         self.save()
+
 
 class Channel(models.Model):
     class Meta:

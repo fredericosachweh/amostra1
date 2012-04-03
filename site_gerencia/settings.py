@@ -212,7 +212,8 @@ DVBLAST_CONF_DIR = '/etc/dvblast'
 
 VIDEO_LOOP_DIR = '/home/videos'
 
-AUTO_IP_MASK = '239.1.%d.%d'
+INTERNAL_IP_MASK = '239.1.%d.%d'
+EXTERNAL_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
