@@ -495,7 +495,7 @@ class DvbTuner(DigitalTuner):
         # TODO: Should throw exception
     
     def _get_cmd(self):
-        c = '/usr/bin/dvblast'
+        c = u'/usr/bin/dvblast'
         # Get tuning parameters
         if self.antenna.lnb_type == 'multiponto_c':
             c += ' -f %d000' % (self.frequency - 600)
@@ -513,7 +513,7 @@ class DvbTuner(DigitalTuner):
         c += ' -a %s' % self.adapter_num
         c += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
         # Fill config file
-        conf = ''
+        conf = u''
         for service in self.sources.all():
             sid = service.sid
             ip = service.sources.all()[0].ip

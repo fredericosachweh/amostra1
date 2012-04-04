@@ -19,6 +19,7 @@ class GenericSourceTest(TestCase):
             username='root',
             password='cianet',
         )
+        self.s.auto_create_nic()
         self.a = Antenna.objects.create(
             satellite='StarOne C2',
             lnb_type='multiponto_c',
@@ -49,7 +50,7 @@ class GenericSourceTest(TestCase):
         nip.sink.start()
 
     def test_dvbtuner(self):
-        from device.models import DvbTuner, DemuxedService, UniqueIP, MulticastOutput
+        from device.models import DvbTuner, DemuxedService, UniqueIP, MulticastOutput, NIC
         tuner = DvbTuner.objects.create(
             server = self.s,
             antenna=self.a,
@@ -78,17 +79,20 @@ class GenericSourceTest(TestCase):
             port=20000,
             source=service,
             sink=out,
+            nic=NIC.objects.filter(server=self.s)[0],
         )
         # Connect output to internal ip
         out.sinks.add(ip)
         # Connect service to internal ip
         service.sources.add(ip)
         
+        expected = (u'/usr/bin/dvblast -f 3390000 -m psk_8 -s 7400000 -F 34 -a 0 -c /etc/dvblast/channels.d/1.conf', u'239.1.0.2:20000/udp 1 1\n')
+        self.assertEqual(expected, tuner._get_cmd())
+        
         tuner.start()
         self.assertTrue(tuner.server.process_alive(tuner.pid))
         tuner.stop()
         self.assertFalse(tuner.server.process_alive(tuner.pid))
-
 
 class UniqueIPTest(TestCase):
     
