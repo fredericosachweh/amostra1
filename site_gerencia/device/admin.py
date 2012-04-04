@@ -52,7 +52,8 @@ class AdminSource(admin.ModelAdmin):
 
 
 class AdminDvbTuner(admin.ModelAdmin):
-    list_display = ('frequency', 'symbol_rate', 'polarization', 'modulation', 'server', 'adapter', 'antenna')
+    list_display = ('frequency', 'symbol_rate', 'polarization',
+                    'modulation', 'fec', 'server', 'adapter', 'antenna')
     form = forms.DvbTunerForm
 
 
@@ -85,6 +86,6 @@ admin.site.register(models.IsdbTuner, AdminIsdbTuner)
 admin.site.register(models.UnicastInput, AdminUnicastInput)
 admin.site.register(models.MulticastInput, AdminMulticastInput)
 admin.site.register(models.MulticastOutput)
-admin.site.register(models.DemuxedInput)
+admin.site.register(models.DemuxedService)
 admin.site.register(models.StreamRecorder)
 admin.site.register(models.Channel)

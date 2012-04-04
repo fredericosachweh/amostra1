@@ -40,17 +40,21 @@
 		
 		function showAutoFillPopup(link)
 		{
-			var win = window.open(link, 'name', 'height=370,width=400,resizable=yes,scrollbars=yes');
+			var win = window.open(link, 'name', 'height=400,width=400,resizable=yes,scrollbars=yes');
 			win.focus(); 
 			return false;
 		}
 		
-		function dismissAutoFillPopup(win, freq, sr, pol, mod)
+		function dismissAutoFillPopup(win, freq, sr, pol, mod, fec)
 		{
 			django.jQuery('input#id_frequency').val(freq);
 			django.jQuery('input#id_symbol_rate').val(sr);
 			django.jQuery('select#id_modulation').val(mod);
 			django.jQuery('select#id_polarization').val(pol);
+			// Remove the slash from FEC
+			fec = fec.replace(/\//, '');
+			if (isNaN(fec)) fec = '0';
+			django.jQuery('select#id_fec').val(fec);
 			win.close();
 		}
 	</script>

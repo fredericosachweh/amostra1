@@ -130,8 +130,8 @@ def auto_fill_tuner_form(request, ttype):
                                       context_instance=RequestContext(request))
     elif request.method == 'POST':
         if ttype == 'dvbs':
-            return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s", "%s", "%s", "%s");</script>' % \
-                                (request.POST['freq'],request.POST['sr'],request.POST['pol'],request.POST['mod']))
+            return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s", "%s", "%s", "%s", "%s");</script>' % \
+                                (request.POST['freq'],request.POST['sr'],request.POST['pol'],request.POST['mod'],request.POST['fec']))
         elif ttype == 'isdb':
             return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");</script>' % \
                                 (request.POST['freq']))

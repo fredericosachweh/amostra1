@@ -22,6 +22,7 @@ class DvbTunerAutoFillForm(forms.Form):
     sr = forms.CharField(label=_(u'Taxa de símbolos'))
     pol = forms.CharField(label=_(u'Polaridade'))
     mod = forms.CharField(label=_(u'Modulação'))
+    fec = forms.CharField(label=u'FEC')
 
 class IsdbTunerForm(forms.ModelForm):
     class Meta:
