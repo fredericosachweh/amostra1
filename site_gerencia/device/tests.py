@@ -8,7 +8,7 @@ from django.test import TestCase
 
 class CommandsGenerationTest(TestCase):
     def setUp(self):
-        from device.models import Server, Antenna, DvbTuner, \
+        from device.models import Server, Antenna, DvbTuner, IsdbTuner, \
             DemuxedService, UniqueIP, MulticastOutput, NIC, StreamRecorder
         server = Server.objects.create(
             name='local',
@@ -26,8 +26,8 @@ class CommandsGenerationTest(TestCase):
             satellite='StarOne C2',
             lnb_type='multiponto_c',
         )
-        tuner = DvbTuner.objects.create(
-            server = server,
+        dvbtuner = DvbTuner.objects.create(
+            server=server,
             antenna=antenna,
             frequency=3990,
             symbol_rate=7400,
@@ -36,17 +36,27 @@ class CommandsGenerationTest(TestCase):
             fec='34',
             adapter='00:00:00:00:00:00',
         )
+        isdbtuner = IsdbTuner.objects.create(
+            server=server,
+            frequency=587143,
+            bandwidth=6,
+            modulation='qam',
+        )
         service_a = DemuxedService.objects.create(
             sid=1,
-            sink=tuner,
+            sink=dvbtuner,
         )
         service_b = DemuxedService.objects.create(
             sid=2,
-            sink=tuner,
+            sink=dvbtuner,
         )
         service_c = DemuxedService.objects.create(
             sid=3,
-            sink=tuner,
+            sink=dvbtuner,
+        )
+        service_d = DemuxedService.objects.create(
+            sid=1,
+            sink=isdbtuner,
         )
         internal_a = UniqueIP.objects.create(
             port=20000,
@@ -58,7 +68,12 @@ class CommandsGenerationTest(TestCase):
             sink=service_b,
             nic=NIC.objects.filter(server=server)[0],
         )
-        ipout = MulticastOutput.objects.create(
+        internal_c = UniqueIP.objects.create(
+            port=20000,
+            sink=service_d,
+            nic=NIC.objects.filter(server=server)[0],
+        )
+        ipout_a = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.3',
             port=10000,
@@ -71,6 +86,14 @@ class CommandsGenerationTest(TestCase):
             rotate=60,
             folder='/tmp/recording',
             sink=internal_a,
+        )
+        ipout_b = MulticastOutput.objects.create(
+            server=server,
+            ip_out='239.0.1.4',
+            port=10000,
+            protocol='udp',
+            interface='127.0.0.1',
+            sink=internal_c,
         )
     
     def test_dvbtuner(self):
@@ -91,24 +114,43 @@ class CommandsGenerationTest(TestCase):
         
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
-        
+    
+    def test_isdbtuner(self):
+        from models import IsdbTuner
+        tuner = IsdbTuner.objects.get(pk=2)
+        expected_cmd = (
+            "/usr/bin/dvblast "
+            "-f 587143000 "
+            "-m qam_auto "
+            "-b 6 "
+            "-a 1 "
+            "-c /etc/dvblast/channels.d/2.conf "
+            "-r /var/run/dvblast/sockets/2.sock "
+            "&> /var/log/dvblast/2.log"
+        )
+        self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
+    
     def test_multicastoutput(self):
         from models import MulticastOutput
-        ipout = MulticastOutput.objects.get(pk=2)
+        ipout = MulticastOutput.objects.get(pk=3)
         expected_cmd = (
             "/usr/bin/multicat "
+            "-c /var/run/multicat/sockets/3.sock "
             "-u @239.1.0.2:20000 "
-            "-U 239.0.1.3:10000"
+            "-U 239.0.1.3:10000 "
+            "&> /var/log/multicat/3.log"
         )
         self.assertEqual(expected_cmd, ipout._get_cmd())
     
     def test_streamrecorder(self):
         from models import StreamRecorder
-        recorder = StreamRecorder.objects.get(pk=3)
+        recorder = StreamRecorder.objects.get(pk=4)
         expected_cmd = (
             "/usr/bin/multicat "
+            "-c /var/run/multicat/sockets/4.sock "
             "-u @239.1.0.2:20000 "
-            "/var/lib/multicat/recordings/3"
+            "/var/lib/multicat/recordings/4 "
+            "&> /var/log/multicat/4.log"
         )
         self.assertEqual(expected_cmd, recorder._get_cmd())
 

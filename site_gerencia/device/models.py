@@ -486,11 +486,11 @@ class DvbTuner(DigitalTuner):
     
     @property
     def adapter_num(self):
+        import re
         files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
         for file in files:
             contents = self.server.cat_file(file)
             if contents == self.adapter:
-                import re
                 m = re.match(r'/dev/dvb/adapter(\d+)\.mac', file)
                 return m.group(1)
         # TODO: Should throw exception
@@ -538,8 +538,11 @@ class DvbTuner(DigitalTuner):
         "Starts a dvblast instance based on the current model's configuration"
         cmd = self._get_cmd()
         conf = self._get_config()
-        # Write the config file to disk
+        # Create the necessary folders
         self.server.execute('mkdir -p /etc/dvblast/channels.d/', persist=True)
+        self.server.execute('mkdir -p /var/run/dvblast/sockets/', persist=True)
+        self.server.execute('mkdir -p /var/log/dvblast/', persist=True)
+        # Write the config file to disk
         self.server.execute('echo "%s" > /etc/dvblast/channels.d/%d.conf' % (conf, self.pk), persist=True)
         # Start dvblast process
         pid = self.server.execute_daemon(cmd)
@@ -575,7 +578,6 @@ class DvbTuner(DigitalTuner):
     fec = models.CharField(_(u'FEC'), max_length=200, choices=FEC_CHOICES, default=u'999')
     adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
-    # /usr/bin/dvblast -a %s -m %s %(adapter.get_order(),psk_s)
 
 class IsdbTuner(DigitalTuner):
     class Meta:
@@ -585,11 +587,45 @@ class IsdbTuner(DigitalTuner):
     def __unicode__(self):
         return str(self.frequency)
     
+    @property
+    def adapter_num(self):
+        raise NotImplementedError
+    
+    def _get_cmd(self, adapter_num=None):
+        cmd = u'/usr/bin/dvblast'
+        cmd += ' -f %d000' % self.frequency
+        if self.modulation == 'qam':
+            cmd += ' -m qam_auto'
+        cmd += ' -b %d' % self.bandwidth
+        if adapter_num is None:
+            cmd += ' -a %d' % self.adapter_num
+        else:
+            cmd += ' -a %d' % adapter_num
+        cmd += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
+        cmd += ' -r /var/run/dvblast/sockets/%d.sock' % self.pk
+        cmd += ' &> /var/log/dvblast/%d.log' % self.pk
+        
+        return cmd
+    
+    def start(self):
+        cmd = self._get_cmd()
+        conf = self._get_config()
+        # Create the necessary folders
+        self.server.execute('mkdir -p /etc/dvblast/channels.d/', persist=True)
+        self.server.execute('mkdir -p /var/run/dvblast/sockets/', persist=True)
+        self.server.execute('mkdir -p /var/log/dvblast/', persist=True)
+        # Write the config file to disk
+        self.server.execute('echo "%s" > /etc/dvblast/channels.d/%d.conf' % (conf, self.pk), persist=True)
+        # Start dvblast process
+        pid = self.server.execute_daemon(cmd)
+        self.pid = pid
+        self.save()
+    
     MODULATION_CHOICES = (
-                          (u'QAM', u'QAM'),
+                          (u'qam', u'QAM'),
                           )
     
-    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'QAM')
+    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'qam')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
 
 class IPInput(DeviceServer):
@@ -716,15 +752,23 @@ class MulticastOutput(IPOutput):
     
     def _get_cmd(self):
         cmd = u'/usr/bin/multicat'
+        cmd += ' -c /var/run/multicat/sockets/%d.sock' % self.pk
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         if self.protocol == 'udp':
             cmd += ' -U'
         cmd += ' %s:%d' % (self.ip_out, self.port)
+        cmd += ' &> /var/log/multicat/%d.log' % self.pk
         
         return cmd
     
     def start(self):
-        self.sinks.all()[0].start()
+        # Create the necessary folders
+        self.server.execute('mkdir -p /var/run/multicat/sockets/', persist=True)
+        self.server.execute('mkdir -p /var/log/multicat/', persist=True)
+        # Start multicat
+        self.server.execute_daemon(self._get_cmd())
+        self.pid = pid
+        self.save()
     
     ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
 
@@ -746,14 +790,23 @@ class StreamRecorder(OutputModel, DeviceServer):
         
     def _get_cmd(self):
         cmd = u'/usr/bin/multicat'
+        cmd += ' -c /var/run/multicat/sockets/%d.sock' % self.pk
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         # TODO: Retrieve this PATH from settings
         cmd += ' /var/lib/multicat/recordings/%d' % self.pk
+        cmd += ' &> /var/log/multicat/%d.log' % self.pk
         
         return cmd
     
     def start(self):
+        # Create the necessary folders
+        self.server.execute('mkdir -p /var/run/multicat/sockets/', persist=True)
+        self.server.execute('mkdir -p /var/lib/multicat/recordings/', persist=True)
+        self.server.execute('mkdir -p /var/log/multicat/', persist=True)
+        # Start multicat
         self.server.execute_daemon(self._get_cmd())
+        self.pid = pid
+        self.save()
     
     rotate = models.PositiveIntegerField()
     folder = models.CharField(max_length=500)
