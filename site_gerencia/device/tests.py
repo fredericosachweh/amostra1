@@ -6,24 +6,113 @@ Testes unitários
 
 from django.test import TestCase
 
-
-class GenericSourceTest(TestCase):
-    
+class CommandsGenerationTest(TestCase):
     def setUp(self):
-        from device.models import Server, Antenna
-        self.s = Server.objects.create(
+        from device.models import Server, Antenna, DvbTuner, \
+            DemuxedService, UniqueIP, MulticastOutput, NIC, StreamRecorder
+        server = Server.objects.create(
             name='local',
-            #host='127.0.0.1',
-            host='172.17.0.2',
+            host='127.0.0.1',
             ssh_port=22,
-            username='root',
-            password='cianet',
+            username='iptv',
+            password='iptv',
         )
-        self.s.auto_create_nic()
-        self.a = Antenna.objects.create(
+        nic = NIC.objects.create(
+            server=server,
+            name='eth0',
+            ipv4='192.168.0.10',
+        )
+        antenna = Antenna.objects.create(
             satellite='StarOne C2',
             lnb_type='multiponto_c',
         )
+        tuner = DvbTuner.objects.create(
+            server = server,
+            antenna=antenna,
+            frequency=3990,
+            symbol_rate=7400,
+            modulation='8PSK',
+            polarization='H',
+            fec='34',
+            adapter='00:00:00:00:00:00',
+        )
+        service_a = DemuxedService.objects.create(
+            sid=1,
+            sink=tuner,
+        )
+        service_b = DemuxedService.objects.create(
+            sid=2,
+            sink=tuner,
+        )
+        service_c = DemuxedService.objects.create(
+            sid=3,
+            sink=tuner,
+        )
+        internal_a = UniqueIP.objects.create(
+            port=20000,
+            sink=service_a,
+            nic=NIC.objects.filter(server=server)[0],
+        )
+        internal_b = UniqueIP.objects.create(
+            port=20000,
+            sink=service_b,
+            nic=NIC.objects.filter(server=server)[0],
+        )
+        ipout = MulticastOutput.objects.create(
+            server=server,
+            ip_out='239.0.1.3',
+            port=10000,
+            protocol='udp',
+            interface='127.0.0.1',
+            sink=internal_a,
+        )
+        recorder = StreamRecorder.objects.create(
+            server=server,
+            rotate=60,
+            folder='/tmp/recording',
+            sink=internal_a,
+        )
+    
+    def test_dvbtuner(self):
+        from models import DvbTuner
+        tuner = DvbTuner.objects.get(pk=1)
+        expected_cmd = (
+            "/usr/bin/dvblast "
+            "-f 3390000 "
+            "-m psk_8 "
+            "-s 7400000 "
+            "-F 34 "
+            "-a 0 "
+            "-c /etc/dvblast/channels.d/1.conf "
+            "-r /var/run/dvblast/sockets/1.sock "
+            "&> /var/log/dvblast/1.log"
+        )
+        self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=0))
+        
+        expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
+        self.assertEqual(expected_conf, tuner._get_config())
+        
+    def test_multicastoutput(self):
+        from models import MulticastOutput
+        ipout = MulticastOutput.objects.get(pk=2)
+        expected_cmd = (
+            "/usr/bin/multicat "
+            "-u @239.1.0.2:20000 "
+            "-U 239.0.1.3:10000"
+        )
+        self.assertEqual(expected_cmd, ipout._get_cmd())
+    
+    def test_streamrecorder(self):
+        from models import StreamRecorder
+        recorder = StreamRecorder.objects.get(pk=3)
+        expected_cmd = (
+            "/usr/bin/multicat "
+            "-u @239.1.0.2:20000 "
+            "/var/lib/multicat/recordings/3"
+        )
+        self.assertEqual(expected_cmd, recorder._get_cmd())
+
+class GenericSourceTest(TestCase):
     
     def test_vlc_source(self):
         from device.models import Vlc, UniqueIP, Server, NIC
@@ -48,51 +137,6 @@ class GenericSourceTest(TestCase):
         ip.save()
         nip = UniqueIP.objects.get(content_type=ip.content_type.id,object_id=vlc.pk)
         nip.sink.start()
-
-    def test_dvbtuner(self):
-        from device.models import DvbTuner, DemuxedService, UniqueIP, MulticastOutput, NIC
-        tuner = DvbTuner.objects.create(
-            server = self.s,
-            antenna=self.a,
-            frequency=3990,
-            symbol_rate=7400,
-            modulation='8PSK',
-            polarization='H',
-            fec='34',
-            #adapter='00:00:00:00:00:00',
-            adapter='00:18:BD:5D:DE:14',
-        )
-        service = DemuxedService.objects.create(
-            sid=1,
-        )
-        # Connect tuner to service
-        tuner.sources.add(service)
-        out = MulticastOutput.objects.create(
-            server=self.s,
-            ip_out='239.0.1.3',
-            port=10000,
-            protocol='udp',
-            interface='127.0.0.1',
-        )
-        ip = UniqueIP.objects.create(
-            ip=UniqueIP()._gen_ip(),
-            port=20000,
-            source=service,
-            sink=out,
-            nic=NIC.objects.filter(server=self.s)[0],
-        )
-        # Connect output to internal ip
-        out.sinks.add(ip)
-        # Connect service to internal ip
-        service.sources.add(ip)
-        
-        expected = (u'/usr/bin/dvblast -f 3390000 -m psk_8 -s 7400000 -F 34 -a 0 -c /etc/dvblast/channels.d/1.conf', u'239.1.0.2:20000/udp 1 1\n')
-        self.assertEqual(expected, tuner._get_cmd())
-        
-        tuner.start()
-        self.assertTrue(tuner.server.process_alive(tuner.pid))
-        tuner.stop()
-        self.assertFalse(tuner.server.process_alive(tuner.pid))
 
 class UniqueIPTest(TestCase):
     

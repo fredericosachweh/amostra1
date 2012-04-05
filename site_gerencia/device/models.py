@@ -223,9 +223,9 @@ class UniqueIP(models.Model):
         null=True, related_name='sink_content_type_')
     sink_object_id = models.PositiveIntegerField(null=True)
     
-    source = generic.GenericForeignKey('source_content_type', 'source_object_id')
-    source_content_type = models.ForeignKey(ContentType,null=True)
-    source_object_id = models.PositiveIntegerField(null=True)
+    #source = generic.GenericForeignKey('source_content_type', 'source_object_id')
+    #source_content_type = models.ForeignKey(ContentType,null=True)
+    #source_object_id = models.PositiveIntegerField(null=True)
     
     def __unicode__(self):
         return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
@@ -245,6 +245,7 @@ class UniqueIP(models.Model):
             if mod == 1:
                 proximo += 1
             self.sequential = proximo
+        self.ip = self._gen_ip()
         super(UniqueIP, self).save(*args, **kwargs)
 
     def _gen_ip(self):
@@ -452,7 +453,7 @@ class DemuxedService(models.Model):
         verbose_name_plural = _(u'Entradas demultiplexadas')
     
     def __unicode__(self):
-        return ('%s - %s') % (self.provider, self.service_desc)
+        return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
     
     def start(self):
         self.sink.start()
@@ -494,38 +495,49 @@ class DvbTuner(DigitalTuner):
                 return m.group(1)
         # TODO: Should throw exception
     
-    def _get_cmd(self):
-        c = u'/usr/bin/dvblast'
+    def _get_cmd(self, adapter_num=None):
         # Get tuning parameters
+        cmd = u'/usr/bin/dvblast'
         if self.antenna.lnb_type == 'multiponto_c':
-            c += ' -f %d000' % (self.frequency - 600)
+            cmd += ' -f %d000' % (self.frequency - 600)
         else:
-            c += ' -f %d000' % self.frequency
+            cmd += ' -f %d000' % self.frequency
             if self.polarization == 'V':
-                c += ' -v 13'
+                cmd += ' -v 13'
             elif self.polarization == 'H':
-                c += ' -v 18'
+                cmd += ' -v 18'
             else:
                 raise NotImplementedError
         if self.modulation == '8PSK':
-            c += ' -m psk_8'
-        c += ' -s %d000 -F %s' % (self.symbol_rate, self.fec)
-        c += ' -a %s' % self.adapter_num
-        c += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
+            cmd += ' -m psk_8'
+        cmd += ' -s %d000 -F %s' % (self.symbol_rate, self.fec)
+        if adapter_num is None:
+            cmd += ' -a %s' % self.adapter_num
+        else:
+            cmd += ' -a %s' % adapter_num
+        cmd += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
+        cmd += ' -r /var/run/dvblast/sockets/%d.sock' % self.pk
+        cmd += ' &> /var/log/dvblast/%d.log' % self.pk
+        
+        return cmd
+    
+    def _get_config(self):
         # Fill config file
         conf = u''
         for service in self.sources.all():
-            sid = service.sid
-            ip = service.sources.all()[0].ip
-            port = service.sources.all()[0].port
-            # Assume internal IPs always work with raw UDP
-            conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
+            if service.sources.count() > 0:
+                sid = service.sid
+                ip = service.sources.all()[0].ip
+                port = service.sources.all()[0].port
+                # Assume internal IPs always work with raw UDP
+                conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
         
-        return c, conf
+        return conf
     
     def start(self):
         "Starts a dvblast instance based on the current model's configuration"
-        cmd, conf = self._get_cmd()
+        cmd = self._get_cmd()
+        conf = self._get_config()
         # Write the config file to disk
         self.server.execute('mkdir -p /etc/dvblast/channels.d/', persist=True)
         self.server.execute('echo "%s" > /etc/dvblast/channels.d/%d.conf' % (conf, self.pk), persist=True)
@@ -661,7 +673,15 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
     dev = server.get_netdev(instance.interface)
     server.delete_route(ip, dev)
 
-class IPOutput(DeviceServer):
+class OutputModel(models.Model):
+    "Each model of output type should inherit this"
+    class Meta:
+        abstract = True
+    content_type = models.ForeignKey(ContentType, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    sink = generic.GenericForeignKey()
+
+class IPOutput(OutputModel, DeviceServer):
     "Generic IP output class"
     class Meta:
         abstract = True
@@ -675,9 +695,6 @@ class IPOutput(DeviceServer):
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')
-    sinks = generic.GenericRelation(UniqueIP,
-                                 content_type_field='source_content_type',
-                                 object_id_field='source_object_id')
 
 class MulticastOutput(IPOutput):
     "Multicast MPEG2TS IP output stream"
@@ -697,6 +714,15 @@ class MulticastOutput(IPOutput):
             msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
             raise ValidationError({'__all__' : [msg]})
     
+    def _get_cmd(self):
+        cmd = u'/usr/bin/multicat'
+        cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
+        if self.protocol == 'udp':
+            cmd += ' -U'
+        cmd += ' %s:%d' % (self.ip_out, self.port)
+        
+        return cmd
+    
     def start(self):
         self.sinks.all()[0].start()
     
@@ -713,16 +739,24 @@ class MulticastOutput(IPOutput):
 #    def __unicode__(self):
 #        return self.name
 
-class StreamRecorder(DeviceServer):
+class StreamRecorder(OutputModel, DeviceServer):
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
+        
+    def _get_cmd(self):
+        cmd = u'/usr/bin/multicat'
+        cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
+        # TODO: Retrieve this PATH from settings
+        cmd += ' /var/lib/multicat/recordings/%d' % self.pk
+        
+        return cmd
+    
+    def start(self):
+        self.server.execute_daemon(self._get_cmd())
+    
     rotate = models.PositiveIntegerField()
     folder = models.CharField(max_length=500)
-
-
-
-
 
 class Multicat(DeviceServer):
     """
