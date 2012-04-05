@@ -5,6 +5,7 @@ Testes unitários
 """
 
 from django.test import TestCase
+from django.conf import settings
 
 class CommandsGenerationTest(TestCase):
     def setUp(self):
@@ -100,16 +101,20 @@ class CommandsGenerationTest(TestCase):
         from models import DvbTuner
         tuner = DvbTuner.objects.get(pk=1)
         expected_cmd = (
-            "/usr/bin/dvblast "
+            "%s "
             "-f 3390000 "
             "-m psk_8 "
             "-s 7400000 "
             "-F 34 "
             "-a 0 "
-            "-c /etc/dvblast/channels.d/1.conf "
-            "-r /var/run/dvblast/sockets/1.sock "
-            "&> /var/log/dvblast/1.log"
-        )
+            "-c %s%d.conf "
+            "-r %s%d.sock "
+            "&> %s%d.log"
+        ) % (settings.DVBLAST_COMMAND, 
+             settings.DVBLAST_CONFS_DIR, tuner.pk,
+             settings.DVBLAST_SOCKETS_DIR, tuner.pk,
+             settings.DVBLAST_LOGS_DIR, tuner.pk,
+             )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=0))
         
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
@@ -119,39 +124,51 @@ class CommandsGenerationTest(TestCase):
         from models import IsdbTuner
         tuner = IsdbTuner.objects.get(pk=2)
         expected_cmd = (
-            "/usr/bin/dvblast "
+            "%s "
             "-f 587143000 "
             "-m qam_auto "
             "-b 6 "
             "-a 1 "
-            "-c /etc/dvblast/channels.d/2.conf "
-            "-r /var/run/dvblast/sockets/2.sock "
-            "&> /var/log/dvblast/2.log"
-        )
+            "-c %s%d.conf "
+            "-r %s%d.sock "
+            "&> %s%d.log"
+        ) % (settings.DVBLAST_COMMAND, 
+             settings.DVBLAST_CONFS_DIR, tuner.pk,
+             settings.DVBLAST_SOCKETS_DIR, tuner.pk,
+             settings.DVBLAST_LOGS_DIR, tuner.pk,
+             )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
     
     def test_multicastoutput(self):
         from models import MulticastOutput
         ipout = MulticastOutput.objects.get(pk=3)
         expected_cmd = (
-            "/usr/bin/multicat "
-            "-c /var/run/multicat/sockets/3.sock "
+            "%s "
+            "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
             "-U 239.0.1.3:10000 "
-            "&> /var/log/multicat/3.log"
-        )
+            "&> %s%d.log"
+        ) % (settings.MULTICAT_COMMAND, 
+             settings.MULTICAT_SOCKETS_DIR, ipout.pk,
+             settings.MULTICAT_LOGS_DIR, ipout.pk,
+             )
         self.assertEqual(expected_cmd, ipout._get_cmd())
     
     def test_streamrecorder(self):
         from models import StreamRecorder
         recorder = StreamRecorder.objects.get(pk=4)
         expected_cmd = (
-            "/usr/bin/multicat "
-            "-c /var/run/multicat/sockets/4.sock "
+            "%s "
+            "-r 97200000000 " # 27M * 60 * 60
+            "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
-            "/var/lib/multicat/recordings/4 "
-            "&> /var/log/multicat/4.log"
-        )
+            "%s%d "
+            "&> %s%d.log"
+        ) % (settings.MULTICAT_COMMAND, 
+             settings.MULTICAT_SOCKETS_DIR, recorder.pk,
+             settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
+             settings.MULTICAT_LOGS_DIR, recorder.pk,
+             )
         self.assertEqual(expected_cmd, recorder._get_cmd())
 
 class GenericSourceTest(TestCase):

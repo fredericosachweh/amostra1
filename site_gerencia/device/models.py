@@ -497,7 +497,7 @@ class DvbTuner(DigitalTuner):
     
     def _get_cmd(self, adapter_num=None):
         # Get tuning parameters
-        cmd = u'/usr/bin/dvblast'
+        cmd = u'%s' % settings.DVBLAST_COMMAND
         if self.antenna.lnb_type == 'multiponto_c':
             cmd += ' -f %d000' % (self.frequency - 600)
         else:
@@ -515,9 +515,9 @@ class DvbTuner(DigitalTuner):
             cmd += ' -a %s' % self.adapter_num
         else:
             cmd += ' -a %s' % adapter_num
-        cmd += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
-        cmd += ' -r /var/run/dvblast/sockets/%d.sock' % self.pk
-        cmd += ' &> /var/log/dvblast/%d.log' % self.pk
+        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
+        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
     
@@ -539,11 +539,12 @@ class DvbTuner(DigitalTuner):
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
-        self.server.execute('mkdir -p /etc/dvblast/channels.d/', persist=True)
-        self.server.execute('mkdir -p /var/run/dvblast/sockets/', persist=True)
-        self.server.execute('mkdir -p /var/log/dvblast/', persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR, persist=True)
         # Write the config file to disk
-        self.server.execute('echo "%s" > /etc/dvblast/channels.d/%d.conf' % (conf, self.pk), persist=True)
+        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
+                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
         # Start dvblast process
         pid = self.server.execute_daemon(cmd)
         self.pid = pid
@@ -592,7 +593,7 @@ class IsdbTuner(DigitalTuner):
         raise NotImplementedError
     
     def _get_cmd(self, adapter_num=None):
-        cmd = u'/usr/bin/dvblast'
+        cmd = u'%s' % settings.DVBLAST_COMMAND
         cmd += ' -f %d000' % self.frequency
         if self.modulation == 'qam':
             cmd += ' -m qam_auto'
@@ -601,9 +602,9 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % self.adapter_num
         else:
             cmd += ' -a %d' % adapter_num
-        cmd += ' -c /etc/dvblast/channels.d/%d.conf' % self.pk
-        cmd += ' -r /var/run/dvblast/sockets/%d.sock' % self.pk
-        cmd += ' &> /var/log/dvblast/%d.log' % self.pk
+        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
+        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
     
@@ -611,11 +612,12 @@ class IsdbTuner(DigitalTuner):
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
-        self.server.execute('mkdir -p /etc/dvblast/channels.d/', persist=True)
-        self.server.execute('mkdir -p /var/run/dvblast/sockets/', persist=True)
-        self.server.execute('mkdir -p /var/log/dvblast/', persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR, persist=True)
         # Write the config file to disk
-        self.server.execute('echo "%s" > /etc/dvblast/channels.d/%d.conf' % (conf, self.pk), persist=True)
+        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
+                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
         # Start dvblast process
         pid = self.server.execute_daemon(cmd)
         self.pid = pid
@@ -751,20 +753,20 @@ class MulticastOutput(IPOutput):
             raise ValidationError({'__all__' : [msg]})
     
     def _get_cmd(self):
-        cmd = u'/usr/bin/multicat'
-        cmd += ' -c /var/run/multicat/sockets/%d.sock' % self.pk
+        cmd = u'%s' % settings.MULTICAT_COMMAND
+        cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         if self.protocol == 'udp':
             cmd += ' -U'
         cmd += ' %s:%d' % (self.ip_out, self.port)
-        cmd += ' &> /var/log/multicat/%d.log' % self.pk
+        cmd += ' &> %s%d.log' % (settings.MULTICAT_LOGS_DIR, self.pk)
         
         return cmd
     
     def start(self):
         # Create the necessary folders
-        self.server.execute('mkdir -p /var/run/multicat/sockets/', persist=True)
-        self.server.execute('mkdir -p /var/log/multicat/', persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
         # Start multicat
         self.server.execute_daemon(self._get_cmd())
         self.pid = pid
@@ -789,20 +791,20 @@ class StreamRecorder(OutputModel, DeviceServer):
         verbose_name_plural = _(u'Gravadores de fluxo')
         
     def _get_cmd(self):
-        cmd = u'/usr/bin/multicat'
-        cmd += ' -c /var/run/multicat/sockets/%d.sock' % self.pk
+        cmd = u'%s' % settings.MULTICAT_COMMAND
+        cmd += ' -r %d' % (self.rotate * 60 * 27000000) # Convert to timestamps
+        cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
-        # TODO: Retrieve this PATH from settings
-        cmd += ' /var/lib/multicat/recordings/%d' % self.pk
-        cmd += ' &> /var/log/multicat/%d.log' % self.pk
+        cmd += ' %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk)
+        cmd += ' &> %s%d.log' % (settings.MULTICAT_LOGS_DIR, self.pk)
         
         return cmd
     
     def start(self):
         # Create the necessary folders
-        self.server.execute('mkdir -p /var/run/multicat/sockets/', persist=True)
-        self.server.execute('mkdir -p /var/lib/multicat/recordings/', persist=True)
-        self.server.execute('mkdir -p /var/log/multicat/', persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
+        self.server.execute('mkdir -p %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
         # Start multicat
         self.server.execute_daemon(self._get_cmd())
         self.pid = pid

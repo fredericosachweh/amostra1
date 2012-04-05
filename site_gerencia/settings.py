@@ -200,15 +200,16 @@ LOGIN_REQUIRED_URLS = (
 )
 
 
-## DEPRECATED:
-MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
-MULTICAST_COMMAND = '/usr/bin/multicat'
-MULTICAST_APP = 'multicat'
-DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
+# Auxiliar apps configuration
+MULTICAT_COMMAND = '/usr/bin/multicat'
+MULTICAT_LOGS_DIR = '/var/log/multicat/'
+MULTICAT_RECORDINGS_DIR = '/var/lib/multicat/recordings/'
+MULTICAT_SOCKETS_DIR = '/var/run/multicat/sockets/'
+
 DVBLAST_COMMAND = '/usr/bin/dvblast'
-#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
-DVBLAST_APP = 'dvblast'
-DVBLAST_CONF_DIR = '/etc/dvblast'
+DVBLAST_CONFS_DIR = '/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
 
 VIDEO_LOOP_DIR = '/home/videos'
 
