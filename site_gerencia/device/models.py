@@ -469,7 +469,25 @@ class DemuxedService(models.Model):
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
 
-class DigitalTuner(DeviceServer):
+class InputModel(models.Model):
+    "Each model of input type should inherit this"
+    class Meta:
+        abstract = True
+    
+    def _get_config(self):
+        # Fill config file
+        conf = u''
+        for service in self.sources.all():
+            if service.sources.count() > 0:
+                sid = service.sid
+                ip = service.sources.all()[0].ip
+                port = service.sources.all()[0].port
+                # Assume internal IPs always work with raw UDP
+                conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
+        
+        return conf
+
+class DigitalTuner(InputModel, DeviceServer):
     class Meta:
         abstract = True
     
@@ -520,19 +538,6 @@ class DvbTuner(DigitalTuner):
         cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
-    
-    def _get_config(self):
-        # Fill config file
-        conf = u''
-        for service in self.sources.all():
-            if service.sources.count() > 0:
-                sid = service.sid
-                ip = service.sources.all()[0].ip
-                port = service.sources.all()[0].port
-                # Assume internal IPs always work with raw UDP
-                conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
-        
-        return conf
     
     def start(self):
         "Starts a dvblast instance based on the current model's configuration"
@@ -649,7 +654,7 @@ class IsdbTuner(DigitalTuner):
     modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'qam')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
 
-class IPInput(DeviceServer):
+class IPInput(InputModel, DeviceServer):
     "Generic IP input class"
     class Meta:
         abstract = True
