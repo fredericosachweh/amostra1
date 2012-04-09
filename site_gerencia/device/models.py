@@ -41,6 +41,7 @@ class Server(models.Model):
                          )
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
                                    choices=SERVER_TYPE_CHOICES)
+    offline_mode = models.BooleanField(default=False)
 
     def __unicode__(self):
         return '%s' % (self.name)
@@ -65,6 +66,8 @@ class Server(models.Model):
     def connect(self):
         """Conecta-se ao servidor"""
         from lib import ssh
+        if self.offline_mode:
+            raise Exception("Shouldn't connect when offline mode is set")
         s = None
         try:
             s = ssh.Connection(host=self.host,
@@ -89,7 +92,7 @@ class Server(models.Model):
             s = self.connect()
             self.msg = 'OK'
         except Exception as ex:
-            self.msg = 'Can not connect:' + ex
+            self.msg = 'Can not connect:' + str(ex)
         try:
             w = s.execute(command)
         except Exception as ex:
@@ -169,7 +172,7 @@ class Server(models.Model):
 
     def get_netdev(self, ip):
         "Retorna o NIC que tem este ip neste servidor"
-        return NIC.objects.get(server=self, ipv4=ip)
+        return NIC.objects.get(server=self, ipv4=ip).name
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
@@ -667,6 +670,19 @@ class IPInput(InputModel, DeviceServer):
     class Meta:
         abstract = True
     
+    def start(self):
+        cmd = self._get_cmd()
+        conf = self._get_config()
+        # Create the necessary folders
+        self._create_folders()
+        # Write the config file to disk
+        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
+                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        # Start dvblast process
+        pid = self.server.execute_daemon(cmd)
+        self.pid = pid
+        self.save()
+    
     PROTOCOL_CHOICES = (
                         (u'udp', u'UDP'),
                         (u'rtp', u'RTP'),
@@ -707,19 +723,6 @@ class UnicastInput(IPInput):
         cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
             
         return cmd
-    
-    def start(self):
-        cmd = self._get_cmd()
-        conf = self._get_config()
-        # Create the necessary folders
-        self._create_folders()
-        # Write the config file to disk
-        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
-                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        # Start dvblast process
-        pid = self.server.execute_daemon(cmd)
-        self.pid = pid
-        self.save()
 
 class MulticastInput(IPInput):
     "Multicast MPEG2TS IP input stream"
@@ -739,6 +742,17 @@ class MulticastInput(IPInput):
             msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
             raise ValidationError({'__all__' : [msg]})
     
+    def _get_cmd(self):
+        cmd = u'%s' % settings.DVBLAST_COMMAND
+        cmd += ' -D @%s:%d' % (self.ip, self.port)
+        if self.protocol == 'udp':
+            cmd += '/udp'
+        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
+        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
+            
+        return cmd
+    
     ip = models.IPAddressField(_(u'Endereço IP multicast'))
 
 @receiver(pre_save, sender=MulticastInput)
@@ -749,14 +763,14 @@ def MulticastInput_pre_save(sender, instance, **kwargs):
     try:
         obj = MulticastInput.objects.get(pk=instance.pk)
         ip = obj.ip
-        dev = server.get_netdev(obj.interface)
+        dev = server.get_netdev(obj.interface.ipv4)
         server.delete_route(ip, dev)
     except MulticastInput.DoesNotExist:
         pass
     
     # Create a new rote
     ip = instance.ip
-    dev = server.get_netdev(instance.interface)
+    dev = server.get_netdev(instance.interface.ipv4)
     server.create_route(ip, dev)
 
 @receiver(pre_delete, sender=MulticastInput)

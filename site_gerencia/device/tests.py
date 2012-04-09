@@ -17,6 +17,7 @@ class CommandsGenerationTest(TestCase):
             ssh_port=22,
             username='iptv',
             password='iptv',
+            offline_mode=True,
         )
         # Input interface
         nic_a = NIC.objects.create(
@@ -56,6 +57,13 @@ class CommandsGenerationTest(TestCase):
             port=30000,
             protocol='udp',
         )
+        multicastin = MulticastInput.objects.create(
+            server=server,
+            interface=nic_a,
+            port=40000,
+            protocol='udp',
+            ip='224.0.0.1',
+        )
         service_a = DemuxedService.objects.create(
             sid=1,
             sink=dvbtuner,
@@ -79,6 +87,10 @@ class CommandsGenerationTest(TestCase):
         service_f = DemuxedService.objects.create(
             sid=2,
             sink=unicastin,
+        )
+        service_g = DemuxedService.objects.create(
+            sid=1024,
+            sink=multicastin,
         )
         internal_a = UniqueIP.objects.create(
             port=20000,
@@ -105,6 +117,11 @@ class CommandsGenerationTest(TestCase):
             sink=service_f,
             nic=NIC.objects.filter(server=server)[0],
         )
+        internal_f = UniqueIP.objects.create(
+            port=20000,
+            sink=service_g,
+            nic=NIC.objects.filter(server=server)[0],
+        )
         ipout_a = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.3',
@@ -116,7 +133,7 @@ class CommandsGenerationTest(TestCase):
         recorder_a = StreamRecorder.objects.create(
             server=server,
             rotate=60,
-            folder='/tmp/recording',
+            folder='/tmp/recording_a',
             sink=internal_a,
         )
         ipout_b = MulticastOutput.objects.create(
@@ -142,6 +159,12 @@ class CommandsGenerationTest(TestCase):
             protocol='udp',
             interface=nic_b,
             sink=internal_e,
+        )
+        recorder_a = StreamRecorder.objects.create(
+            server=server,
+            rotate=60,
+            folder='/tmp/recording_b',
+            sink=internal_f,
         )
     
     def test_dvbtuner(self):
@@ -205,6 +228,24 @@ class CommandsGenerationTest(TestCase):
         expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
     
+    def test_multicastinput(self):
+        multicastin = MulticastInput.objects.get(port=40000)
+        expected_cmd = (
+            "%s "
+            "-D @224.0.0.1:40000/udp "
+            "-c %s%d.conf "
+            "-r %s%d.sock "
+            "&> %s%d.log"
+        ) % (settings.DVBLAST_COMMAND, 
+             settings.DVBLAST_CONFS_DIR, multicastin.pk,
+             settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
+             settings.DVBLAST_LOGS_DIR, multicastin.pk,
+             )
+        self.assertEqual(expected_cmd, multicastin._get_cmd())
+        
+        expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
+        self.assertEqual(expected_conf, multicastin._get_config())
+    
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
         expected_cmd = (
@@ -220,7 +261,7 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(expected_cmd, ipout._get_cmd())
     
     def test_streamrecorder(self):
-        recorder = StreamRecorder.objects.get(folder='/tmp/recording')
+        recorder = StreamRecorder.objects.get(folder='/tmp/recording_a')
         expected_cmd = (
             "%s "
             "-r 97200000000 " # 27M * 60 * 60
