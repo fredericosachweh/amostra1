@@ -183,6 +183,9 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_LOGS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
+        
+        expected_conf = u'239.1.0.4:20000/udp 1 1\n'
+        self.assertEqual(expected_conf, tuner._get_config())
     
     def test_unicastinput(self):
         unicastin = UnicastInput.objects.get(port=30000)
@@ -198,6 +201,9 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_LOGS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
+        
+        expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
+        self.assertEqual(expected_conf, unicastin._get_config())
     
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
