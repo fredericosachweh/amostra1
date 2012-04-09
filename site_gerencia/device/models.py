@@ -590,7 +590,26 @@ class IsdbTuner(DigitalTuner):
     
     @property
     def adapter_num(self):
-        raise NotImplementedError
+        import re
+        # Get adapters list
+        files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
+        adapters = []
+        for file in files:
+            contents = self.server.cat_file(file)
+            if contents == 'PixelView':
+                m = re.match(r'/dev/dvb/adapter(\d+)\.mac', file)
+                adapters.append(m.group(1))
+        # Now exclude all used adapters from list
+        ps = self.server.execute('ps aux | grep %s' % settings.DVBLAST_COMMAND)
+        for line in ps:
+            m = re.match(r'-a (\d+)', line)
+            if m:
+                adapters.remove(m.group(1))
+        # At least one should be left
+        if len(adapters) > 0:
+            return adapters[0] # Return the first free one
+        else:
+            raise Exception("Tried to start a IsdbTuner but there's no device available")
     
     def _get_cmd(self, adapter_num=None):
         cmd = u'%s' % settings.DVBLAST_COMMAND
