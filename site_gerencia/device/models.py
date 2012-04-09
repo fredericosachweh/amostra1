@@ -486,6 +486,12 @@ class InputModel(models.Model):
                 conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
         
         return conf
+    
+    def _create_folders(self):
+        "Creates all the folders dvblast needs"
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
+        self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR)
 
 class DigitalTuner(InputModel, DeviceServer):
     class Meta:
@@ -595,6 +601,8 @@ class IsdbTuner(DigitalTuner):
     
     @property
     def adapter_num(self):
+        """TODO: Improve implementation. This one will cause a 
+        race condition if two instances hit start simultaneously"""
         import re
         # Get adapters list
         files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
@@ -664,7 +672,7 @@ class IPInput(InputModel, DeviceServer):
                         (u'rtp', u'RTP'),
                         )
     
-    interface = models.IPAddressField(_(u'Interface de rede'))
+    interface = models.ForeignKey(NIC, verbose_name=_(u'Interface de rede'))
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')
@@ -688,6 +696,30 @@ class UnicastInput(IPInput):
         if val.exists() and val[0].pk != self.pk:
             msg = _(u'Combinação já existente: %s e %d e %s' % (self.server.name, self.port, self.interface))
             raise ValidationError({'__all__' : [msg]})
+    
+    def _get_cmd(self):
+        cmd = u'%s' % settings.DVBLAST_COMMAND
+        cmd += ' -D @%s:%d' % (self.interface.ipv4, self.port)
+        if self.protocol == 'udp':
+            cmd += '/udp'
+        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
+        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
+            
+        return cmd
+    
+    def start(self):
+        cmd = self._get_cmd()
+        conf = self._get_config()
+        # Create the necessary folders
+        self._create_folders()
+        # Write the config file to disk
+        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
+                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        # Start dvblast process
+        pid = self.server.execute_daemon(cmd)
+        self.pid = pid
+        self.save()
 
 class MulticastInput(IPInput):
     "Multicast MPEG2TS IP input stream"
@@ -753,7 +785,7 @@ class IPOutput(OutputModel, DeviceServer):
                         (u'rtp', u'RTP'),
                         )
     
-    interface = models.IPAddressField(_(u'Interface de rede'))
+    interface = models.ForeignKey(NIC, verbose_name=_(u'Interface de rede'))
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')

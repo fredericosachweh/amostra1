@@ -7,10 +7,10 @@ Testes unitários
 from django.test import TestCase
 from django.conf import settings
 
+from device.models import *
+
 class CommandsGenerationTest(TestCase):
     def setUp(self):
-        from device.models import Server, Antenna, DvbTuner, IsdbTuner, \
-            DemuxedService, UniqueIP, MulticastOutput, NIC, StreamRecorder
         server = Server.objects.create(
             name='local',
             host='127.0.0.1',
@@ -18,10 +18,17 @@ class CommandsGenerationTest(TestCase):
             username='iptv',
             password='iptv',
         )
-        nic = NIC.objects.create(
+        # Input interface
+        nic_a = NIC.objects.create(
             server=server,
             name='eth0',
             ipv4='192.168.0.10',
+        )
+        # Output interface
+        nic_b = NIC.objects.create(
+            server=server,
+            name='eth1',
+            ipv4='10.0.1.10',
         )
         antenna = Antenna.objects.create(
             satellite='StarOne C2',
@@ -43,6 +50,12 @@ class CommandsGenerationTest(TestCase):
             bandwidth=6,
             modulation='qam',
         )
+        unicastin = UnicastInput.objects.create(
+            server=server,
+            interface=nic_a,
+            port=30000,
+            protocol='udp',
+        )
         service_a = DemuxedService.objects.create(
             sid=1,
             sink=dvbtuner,
@@ -59,6 +72,14 @@ class CommandsGenerationTest(TestCase):
             sid=1,
             sink=isdbtuner,
         )
+        service_e = DemuxedService.objects.create(
+            sid=1,
+            sink=unicastin,
+        )
+        service_f = DemuxedService.objects.create(
+            sid=2,
+            sink=unicastin,
+        )
         internal_a = UniqueIP.objects.create(
             port=20000,
             sink=service_a,
@@ -74,15 +95,25 @@ class CommandsGenerationTest(TestCase):
             sink=service_d,
             nic=NIC.objects.filter(server=server)[0],
         )
+        internal_d = UniqueIP.objects.create(
+            port=20000,
+            sink=service_e,
+            nic=NIC.objects.filter(server=server)[0],
+        )
+        internal_e = UniqueIP.objects.create(
+            port=20000,
+            sink=service_f,
+            nic=NIC.objects.filter(server=server)[0],
+        )
         ipout_a = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.3',
             port=10000,
             protocol='udp',
-            interface='127.0.0.1',
+            interface=nic_b,
             sink=internal_a,
         )
-        recorder = StreamRecorder.objects.create(
+        recorder_a = StreamRecorder.objects.create(
             server=server,
             rotate=60,
             folder='/tmp/recording',
@@ -93,12 +124,27 @@ class CommandsGenerationTest(TestCase):
             ip_out='239.0.1.4',
             port=10000,
             protocol='udp',
-            interface='127.0.0.1',
+            interface=nic_b,
             sink=internal_c,
+        )
+        ipout_c = MulticastOutput.objects.create(
+            server=server,
+            ip_out='239.0.1.5',
+            port=10000,
+            protocol='udp',
+            interface=nic_b,
+            sink=internal_d,
+        )
+        ipout_d = MulticastOutput.objects.create(
+            server=server,
+            ip_out='239.0.1.6',
+            port=10000,
+            protocol='udp',
+            interface=nic_b,
+            sink=internal_e,
         )
     
     def test_dvbtuner(self):
-        from models import DvbTuner
         tuner = DvbTuner.objects.get(pk=1)
         expected_cmd = (
             "%s "
@@ -121,7 +167,6 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(expected_conf, tuner._get_config())
     
     def test_isdbtuner(self):
-        from models import IsdbTuner
         tuner = IsdbTuner.objects.get(pk=2)
         expected_cmd = (
             "%s "
@@ -139,9 +184,23 @@ class CommandsGenerationTest(TestCase):
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
     
+    def test_unicastinput(self):
+        unicastin = UnicastInput.objects.get(port=30000)
+        expected_cmd = (
+            "%s "
+            "-D @192.168.0.10:30000/udp "
+            "-c %s%d.conf "
+            "-r %s%d.sock "
+            "&> %s%d.log"
+        ) % (settings.DVBLAST_COMMAND, 
+             settings.DVBLAST_CONFS_DIR, unicastin.pk,
+             settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
+             settings.DVBLAST_LOGS_DIR, unicastin.pk,
+             )
+        self.assertEqual(expected_cmd, unicastin._get_cmd())
+    
     def test_multicastoutput(self):
-        from models import MulticastOutput
-        ipout = MulticastOutput.objects.get(pk=3)
+        ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
         expected_cmd = (
             "%s "
             "-c %s%d.sock "
@@ -155,8 +214,7 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(expected_cmd, ipout._get_cmd())
     
     def test_streamrecorder(self):
-        from models import StreamRecorder
-        recorder = StreamRecorder.objects.get(pk=4)
+        recorder = StreamRecorder.objects.get(folder='/tmp/recording')
         expected_cmd = (
             "%s "
             "-r 97200000000 " # 27M * 60 * 60
@@ -170,6 +228,7 @@ class CommandsGenerationTest(TestCase):
              settings.MULTICAT_LOGS_DIR, recorder.pk,
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
+    
 
 class GenericSourceTest(TestCase):
     
