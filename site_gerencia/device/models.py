@@ -787,8 +787,7 @@ class MulticastOutput(IPOutput):
         self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
         self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
         # Start multicat
-        self.server.execute_daemon(self._get_cmd())
-        self.pid = pid
+        self.pid = self.server.execute_daemon(self._get_cmd())
         self.save()
     
     ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
@@ -825,8 +824,7 @@ class StreamRecorder(OutputModel, DeviceServer):
         self.server.execute('mkdir -p %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
         self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
         # Start multicat
-        self.server.execute_daemon(self._get_cmd())
-        self.pid = pid
+        self.pid = self.server.execute_daemon(self._get_cmd())
         self.save()
     
     rotate = models.PositiveIntegerField()
