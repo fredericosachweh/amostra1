@@ -282,15 +282,15 @@ class CommandsGenerationTest(TestCase):
     
 
 class GenericSourceTest(TestCase):
-    
+
     def test_vlc_source(self):
-        from device.models import Vlc, UniqueIP, Server, NIC
+        import getpass
         s = Server(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username='root',
-            rsakey='~/.ssh/id_rsa_test'
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa'
         )
         s.connect()
         s.save()
@@ -302,13 +302,13 @@ class GenericSourceTest(TestCase):
         ip = UniqueIP()
         ip.sink = vlc
         ip.nic = nics[1]
-        ip.ip = ip._gen_ip()
         ip.save()
-        nip = UniqueIP.objects.get(content_type=ip.content_type.id,object_id=vlc.pk)
+        nip = UniqueIP.objects.get(content_type=ip.content_type.id,
+            object_id=vlc.pk)
         nip.sink.start()
 
 class UniqueIPTest(TestCase):
-    
+
     def test_sequential(self):
         from device.models import UniqueIP
         for i in range(1024):
@@ -320,33 +320,34 @@ class ConnectionTest(TestCase):
     """
     Executa os testes de conexão com servidor local e remoto
     """
-    
+
     def test_connection(self):
         "Teste de conexão com o usuário nginx no servidor local"
-        from models import Server
+        import os
+        import getpass
         srv = Server()
         srv.name = 'local'
         srv.host = '127.0.0.1'
         srv.ssh_port = 22
-        srv.username = 'nginx'
-        #srv.password = 'iptv'
-        srv.rsakey = '~/.ssh/id_rsa_test'
+        srv.username = getpass.getuser()
+        srv.rsakey = '~/.ssh/id_rsa'
         srv.connect()
         ret = srv.execute('/bin/pwd')
         self.assertEqual(
             ret[0],
-            '/var/lib/nginx\n',
-            'O home deveria ser "/var/lib/nginx\n"'
+            '%s\n' % (os.environ.get('HOME')),
+            'O home deveria ser "%s\n"' % (os.environ.get('HOME'))
         )
     
     def test_connection_failure(self):
-        from models import Server
+        "Teste para conectar e falhar uma conexão (Porta errada)"
+        import getpass
         srv = Server()
         srv.name = 'local'
         srv.host = '127.0.0.1'
         srv.ssh_port = 2222
-        srv.username = 'nginx'
-        srv.rsakey = '~/.ssh/id_rsa_test'
+        srv.username = getpass.getuser()
+        srv.rsakey = '~/.ssh/id_rsa'
         srv.connect()
         self.assertEqual(str(srv.msg),
             'Unable to connect to 127.0.0.1: [Errno 111] Connection refused',
@@ -355,9 +356,13 @@ class ConnectionTest(TestCase):
     
     def test_low_respose_command(self):
         "Test de comando demorado para executar"
+        import os
+        import getpass
         from lib.ssh import Connection
-        conn = Connection('127.0.0.1',username='nginx',password='iptv')
-        t = conn.execute_with_timeout('/var/lib/nginx/test',timeout=2)
+        conn = Connection('127.0.0.1',
+            username=getpass.getuser(), private_key='~/.ssh/id_rsa')
+        test_command = '%s/device/helper/test' % (os.path.abspath('.'))
+        t = conn.execute_with_timeout(test_command,timeout=2)
         self.assertEqual(
             'Inicio\nP1**********Fim',
             t,
