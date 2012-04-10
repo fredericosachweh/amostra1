@@ -168,6 +168,9 @@ class CommandsGenerationTest(TestCase):
             sink=internal_f,
         )
     
+    def tearDown(self):
+        Server.objects.all().delete()
+    
     def test_dvbtuner(self):
         tuner = DvbTuner.objects.get(pk=1)
         expected_cmd = (

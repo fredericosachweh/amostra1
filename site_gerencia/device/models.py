@@ -799,7 +799,7 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
     "Signal to delete the route"
     server = instance.server
     ip = instance.ip
-    dev = server.get_netdev(instance.interface)
+    dev = server.get_netdev(instance.interface.ipv4)
     server.delete_route(ip, dev)
 
 class OutputModel(models.Model):
