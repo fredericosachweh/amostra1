@@ -524,8 +524,8 @@ class DigitalTuner(InputModel, DeviceServer):
         self.server.execute('echo "%s" > %s%d.conf' % (conf, 
                                 settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
         # Start dvblast process
-        pid = self.server.execute_daemon(cmd)
-        self.pid = pid
+        log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.save()
     
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
@@ -676,8 +676,8 @@ class IPInput(InputModel, DeviceServer):
         self.server.execute('echo "%s" > %s%d.conf' % (conf, 
                                 settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
         # Start dvblast process
-        pid = self.server.execute_daemon(cmd)
-        self.pid = pid
+        log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.save()
     
     PROTOCOL_CHOICES = (
@@ -802,7 +802,8 @@ class IPOutput(OutputModel, DeviceServer):
         # Create the necessary folders
         self._create_folders()
         # Start multicat
-        self.pid = self.server.execute_daemon(self._get_cmd())
+        log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(self._get_cmd(), log_path=log_path)
         self.save()
     
     PROTOCOL_CHOICES = (
@@ -860,6 +861,14 @@ class StreamRecorder(OutputModel, DeviceServer):
         cmd += ' &> %s%d.log' % (settings.MULTICAT_LOGS_DIR, self.pk)
         
         return cmd
+    
+    def start(self):
+        # Create the necessary folders
+        self._create_folders()
+        # Start multicat
+        log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(self._get_cmd(), log_path=log_path)
+        self.save()
     
     rotate = models.PositiveIntegerField()
     folder = models.CharField(max_length=500)
