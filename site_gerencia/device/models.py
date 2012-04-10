@@ -782,6 +782,13 @@ class OutputModel(models.Model):
     "Each model of output type should inherit this"
     class Meta:
         abstract = True
+    
+    def _create_folders(self):
+        "Creates all the folders multicat needs"
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
+        self.server.execute('mkdir -p %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
+    
     content_type = models.ForeignKey(ContentType, null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
@@ -790,6 +797,13 @@ class IPOutput(OutputModel, DeviceServer):
     "Generic IP output class"
     class Meta:
         abstract = True
+    
+    def start(self):
+        # Create the necessary folders
+        self._create_folders()
+        # Start multicat
+        self.pid = self.server.execute_daemon(self._get_cmd())
+        self.save()
     
     PROTOCOL_CHOICES = (
                         (u'udp', u'UDP'),
@@ -830,14 +844,6 @@ class MulticastOutput(IPOutput):
         
         return cmd
     
-    def start(self):
-        # Create the necessary folders
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
-        # Start multicat
-        self.pid = self.server.execute_daemon(self._get_cmd())
-        self.save()
-    
     ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
 
 class StreamRecorder(OutputModel, DeviceServer):
@@ -854,15 +860,6 @@ class StreamRecorder(OutputModel, DeviceServer):
         cmd += ' &> %s%d.log' % (settings.MULTICAT_LOGS_DIR, self.pk)
         
         return cmd
-    
-    def start(self):
-        # Create the necessary folders
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
-        self.server.execute('mkdir -p %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
-        # Start multicat
-        self.pid = self.server.execute_daemon(self._get_cmd())
-        self.save()
     
     rotate = models.PositiveIntegerField()
     folder = models.CharField(max_length=500)
