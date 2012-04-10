@@ -368,15 +368,6 @@ class ConnectionTest(TestCase):
             t,
             'Valor esperado diferente [%s]' % t
         )
-    
-    def test_scan_channel(self):
-        from lib.ssh import Connection
-        c = Connection('172.17.0.2',
-            username='helber',
-            private_key='~/.ssh/id_rsa_cianet')
-        c.execute_with_timeout(
-            '/usr/bin/dvblast -a 0 -f 3642000 -s 4370000',
-            timeout=2)
 
 class ServerTest(TestCase):
     
