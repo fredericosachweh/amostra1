@@ -514,6 +514,20 @@ class DigitalTuner(InputModel, DeviceServer):
     class Meta:
         abstract = True
     
+    def start(self):
+        "Starts a dvblast instance based on the current model's configuration"
+        cmd = self._get_cmd()
+        conf = self._get_config()
+        # Create the necessary folders
+        self._create_folders()
+        # Write the config file to disk
+        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
+                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        # Start dvblast process
+        pid = self.server.execute_daemon(cmd)
+        self.pid = pid
+        self.save()
+    
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
     sources = generic.GenericRelation(DemuxedService)
 
@@ -561,22 +575,6 @@ class DvbTuner(DigitalTuner):
         cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
-    
-    def start(self):
-        "Starts a dvblast instance based on the current model's configuration"
-        cmd = self._get_cmd()
-        conf = self._get_config()
-        # Create the necessary folders
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR, persist=True)
-        # Write the config file to disk
-        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
-                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        # Start dvblast process
-        pid = self.server.execute_daemon(cmd)
-        self.pid = pid
-        self.save()
     
     MODULATION_CHOICES = (
         (u'QPSK', u'QPSK'),
@@ -656,21 +654,6 @@ class IsdbTuner(DigitalTuner):
         cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
-    
-    def start(self):
-        cmd = self._get_cmd()
-        conf = self._get_config()
-        # Create the necessary folders
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR, persist=True)
-        # Write the config file to disk
-        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
-                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        # Start dvblast process
-        pid = self.server.execute_daemon(cmd)
-        self.pid = pid
-        self.save()
     
     MODULATION_CHOICES = (
                           (u'qam', u'QAM'),
