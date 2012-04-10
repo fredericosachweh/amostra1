@@ -181,12 +181,10 @@ class CommandsGenerationTest(TestCase):
             "-F 34 "
             "-a 0 "
             "-c %s%d.conf "
-            "-r %s%d.sock "
-            "&> %s%d.log"
+            "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND, 
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
-             settings.DVBLAST_LOGS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=0))
         
@@ -202,12 +200,10 @@ class CommandsGenerationTest(TestCase):
             "-b 6 "
             "-a 1 "
             "-c %s%d.conf "
-            "-r %s%d.sock "
-            "&> %s%d.log"
+            "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND, 
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
-             settings.DVBLAST_LOGS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
         
@@ -220,12 +216,10 @@ class CommandsGenerationTest(TestCase):
             "%s "
             "-D @192.168.0.10:30000/udp "
             "-c %s%d.conf "
-            "-r %s%d.sock "
-            "&> %s%d.log"
+            "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND, 
              settings.DVBLAST_CONFS_DIR, unicastin.pk,
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
-             settings.DVBLAST_LOGS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
         
@@ -238,12 +232,10 @@ class CommandsGenerationTest(TestCase):
             "%s "
             "-D @224.0.0.1:40000/udp "
             "-c %s%d.conf "
-            "-r %s%d.sock "
-            "&> %s%d.log"
+            "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND, 
              settings.DVBLAST_CONFS_DIR, multicastin.pk,
              settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
-             settings.DVBLAST_LOGS_DIR, multicastin.pk,
              )
         self.assertEqual(expected_cmd, multicastin._get_cmd())
         
@@ -256,11 +248,9 @@ class CommandsGenerationTest(TestCase):
             "%s "
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
-            "-U 239.0.1.3:10000 "
-            "&> %s%d.log"
+            "-U 239.0.1.3:10000"
         ) % (settings.MULTICAT_COMMAND, 
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
-             settings.MULTICAT_LOGS_DIR, ipout.pk,
              )
         self.assertEqual(expected_cmd, ipout._get_cmd())
     
@@ -271,12 +261,10 @@ class CommandsGenerationTest(TestCase):
             "-r 97200000000 " # 27M * 60 * 60
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
-            "%s%d "
-            "&> %s%d.log"
+            "%s%d"
         ) % (settings.MULTICAT_COMMAND, 
              settings.MULTICAT_SOCKETS_DIR, recorder.pk,
              settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
-             settings.MULTICAT_LOGS_DIR, recorder.pk,
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
     

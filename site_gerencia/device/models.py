@@ -572,7 +572,6 @@ class DvbTuner(DigitalTuner):
             cmd += ' -a %s' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
     
@@ -651,7 +650,6 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
         
         return cmd
     
@@ -717,7 +715,6 @@ class UnicastInput(IPInput):
             cmd += '/udp'
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
             
         return cmd
 
@@ -746,7 +743,6 @@ class MulticastInput(IPInput):
             cmd += '/udp'
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        cmd += ' &> %s%d.log' % (settings.DVBLAST_LOGS_DIR, self.pk)
             
         return cmd
     
@@ -841,7 +837,6 @@ class MulticastOutput(IPOutput):
         if self.protocol == 'udp':
             cmd += ' -U'
         cmd += ' %s:%d' % (self.ip_out, self.port)
-        cmd += ' &> %s%d.log' % (settings.MULTICAT_LOGS_DIR, self.pk)
         
         return cmd
     
@@ -858,7 +853,6 @@ class StreamRecorder(OutputModel, DeviceServer):
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         cmd += ' %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk)
-        cmd += ' &> %s%d.log' % (settings.MULTICAT_LOGS_DIR, self.pk)
         
         return cmd
     
