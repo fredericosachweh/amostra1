@@ -373,7 +373,6 @@ class ConnectionTest(TestCase):
 class ServerTest(TestCase):
     
     def setUp(self):
-        from models import Server
         import getpass
         server = Server.objects.create(
             name='local',
@@ -384,7 +383,6 @@ class ServerTest(TestCase):
         )
     
     def test_list_dir(self):
-        from models import Server
         server = Server.objects.get(pk=1)
         l = server.list_dir('/')
         self.assertGreater( l.count('boot') , 0 ,
@@ -404,7 +402,6 @@ class ServerTest(TestCase):
             'O primero processo deveria ter pid=1')
     
     def test_start_process(self):
-        from models import Server
         server = Server.objects.get(pk=1)
         cmd = '/bin/sleep 10'
         pid = server.execute_daemon(cmd)
@@ -416,14 +413,12 @@ class ServerTest(TestCase):
             'O processo pid=%d deveria ter morrido.' % pid)
     
     def test_list_ifaces(self):
-        from models import Server
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
         ifaces = server._list_interfaces()
     
     def test_local_dev(self):
-        from models import Server
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
@@ -431,7 +426,6 @@ class ServerTest(TestCase):
         self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
     
     def test_create_route(self):
-        from models import Server
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
