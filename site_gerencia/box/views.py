@@ -524,10 +524,14 @@ def guide_mount_line_of_programe(request):
     #canal
     channelEpgRunNow = request.GET.get('c')
     
+    #Y na lista de canais
+    countY = int( request.GET.get('y') )
+    
     guides = Guide.objects.filter(channel=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).distinct('start')
     
     arrGuideLine = []
     if(len(guides)> 0):
+        countX = 0
         for guide in guides:
             pro   = guide.programme
             programid = int( guide.programme_id )
@@ -555,9 +559,11 @@ def guide_mount_line_of_programe(request):
                 'sp':stopStr,
                 't':titlesStr,
                 'dcode':divCodePosition,
-                'd': int((int(duracao.total_seconds()) / 60 ))
+                'd': int((int(duracao.total_seconds()) / 60 )),
+                'x':countX,
+                'y':countY
                 })
-        
+            countX  += 1
     else:
         print("SEM PROGRAMACAO")
 
