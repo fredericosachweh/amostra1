@@ -294,6 +294,7 @@ class GenericSourceTest(TestCase):
         nip = UniqueIP.objects.get(content_type=ip.content_type.id,
             object_id=vlc.pk)
         nip.sink.start()
+        nip.sink.stop()
 
 class UniqueIPTest(TestCase):
 
