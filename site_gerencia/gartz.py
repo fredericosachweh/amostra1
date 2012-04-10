@@ -15,6 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
+    ('Eduardo Vieira', 'eduardo@cianet.ind.br'),
 	('Claudio Guirunas', 'claudio@cianet.ind.br'),
 )
 
@@ -152,8 +153,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'django.contrib.markup',
     # South http://south.aeracode.org/docs/
-    'south',
+    #'south',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
@@ -165,6 +167,17 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
+)
+
+
+LOGIN_URL = '/%saccounts/login' % ROOT_URL
+
+LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
+
+#^/canal/(add|remove|edit|delete)/(.*)$
+LOGIN_REQUIRED_URLS = (
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
 )
 
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
