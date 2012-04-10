@@ -11,12 +11,13 @@ from device.models import *
 
 class CommandsGenerationTest(TestCase):
     def setUp(self):
+        import getpass
         server = Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username='iptv',
-            password='iptv',
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
             offline_mode=True,
         )
         # Input interface
@@ -348,7 +349,7 @@ class ConnectionTest(TestCase):
             'Unable to connect to 127.0.0.1: [Errno 111] Connection refused',
             'Deveria dar erro de conexão')
         self.assertFalse(srv.status, 'O status da conexão deveria ser False')
-
+    
     def test_low_respose_command(self):
         "Test de comando demorado para executar"
         from lib.ssh import Connection
@@ -359,7 +360,7 @@ class ConnectionTest(TestCase):
             t,
             'Valor esperado diferente [%s]' % t
         )
-
+    
     def test_scan_channel(self):
         from lib.ssh import Connection
         c = Connection('172.17.0.2',
@@ -369,83 +370,79 @@ class ConnectionTest(TestCase):
             '/usr/bin/dvblast -a 0 -f 3642000 -s 4370000',
             timeout=2)
 
-
 class ServerTest(TestCase):
     
     def setUp(self):
         from models import Server
-        self.s = Server(
+        import getpass
+        server = Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username='nginx',
-            rsakey='~/.ssh/id_rsa_test'
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
         )
     
     def test_list_dir(self):
-        l = self.s.list_dir('/')
+        from models import Server
+        server = Server.objects.get(pk=1)
+        l = server.list_dir('/')
         self.assertGreater( l.count('boot') , 0 ,
             'Deveria existir o diretório boot')
         self.assertGreater( l.count('bin') , 0 ,
             'Deveria existir o diretório bin')
         self.assertGreater( l.count('usr') , 0 ,
             'Deveria existir o diretório usr')
-
-class ProcessControlTest(TestCase):
-
-    def setUp(self):
-        from models import Server
-        self.s = Server(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username='nginx',
-            rsakey='~/.ssh/id_rsa_test'
-        )
-
+    
     def test_list_process(self):
-        self.s.connect()
-        procs = self.s.list_process()
+        from models import Server
+        server = Server.objects.get(pk=1)
+        server.connect()
+        procs = server.list_process()
         self.assertEqual(procs[0]['pid'],
             1,
             'O primero processo deveria ter pid=1')
-
+    
     def test_start_process(self):
-        cmd = '/usr/bin/cvlc -I dummy -v -R \
-/mnt/projetos/gerais/videos/NovosOriginais/red_ridding_hood_4M.ts \
---sout "#std{access=udp,mux=ts,dst=239.1.1.5:5000}"'
-        pid = self.s.execute_daemon(cmd)
-        self.assertGreater(pid, 0, 'O processo deveria ser maior que zero')
-        self.s.kill_process(pid)
-        self.assertFalse(self.s.process_alive(pid),
-            'O processo pid=%d deveria ter morrido.' % pid )
-
-
-class RouteDeviceTest(TestCase):
-
-    def setUp(self):
         from models import Server
-        self.s = Server(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username='root',
-            rsakey='~/.ssh/id_rsa_test'
-        )
-
-    def test_list_iface(self):
-        self.s.connect()
-        self.s.auto_create_nic()
-        ifaces = self.s._list_interfaces()
+        server = Server.objects.get(pk=1)
+        cmd = '/bin/sleep 10'
+        pid = server.execute_daemon(cmd)
+        self.assertTrue(server.process_alive(pid),
+            'O processo pid=%d deveria estar vivo.' % pid)
+        self.assertGreater(pid, 0, 'O processo deveria ser maior que zero')
+        server.kill_process(pid)
+        self.assertFalse(server.process_alive(pid),
+            'O processo pid=%d deveria ter morrido.' % pid)
+    
+    def test_list_ifaces(self):
+        from models import Server
+        server = Server.objects.get(pk=1)
+        server.connect()
+        server.auto_create_nic()
+        ifaces = server._list_interfaces()
     
     def test_local_dev(self):
-        self.s.connect()
-        self.s.auto_create_nic()
-        iface = self.s.get_netdev('127.0.0.1')
-        self.assertEqual(iface.name, 'lo', 'Deveria ser a interface de loopback')
+        from models import Server
+        server = Server.objects.get(pk=1)
+        server.connect()
+        server.auto_create_nic()
+        iface = server.get_netdev('127.0.0.1')
+        self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
     
     def test_create_route(self):
-        self.s.connect()
-        self.s.auto_create_nic()
-        self.s.create_route('239.0.1.10', 'p7p1')
-        self.s.delete_route('239.0.1.10', 'p7p1')
+        from models import Server
+        server = Server.objects.get(pk=1)
+        server.connect()
+        server.auto_create_nic()
+        route = ('239.0.1.10', 'lo')
+        
+        server.create_route(*route)
+        routes = server.list_routes()
+        self.assertIn(route, routes,
+                'Route %s -> %s should exists' % route)
+        
+        server.delete_route(*route)
+        routes = server.list_routes()
+        self.assertNotIn(route, routes,
+                'Route %s -> %s should not exists' % route)

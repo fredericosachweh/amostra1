@@ -71,37 +71,43 @@ class Connection(object):
 
     def execute(self, command):
         """Execute the given commands on a remote machine."""
+        ret = {}
         channel = self._transport.open_session()
         channel.exec_command(command)
+        ret_code = channel.recv_exit_status()
+        ret['exit_code'] = ret_code
         output = channel.makefile('rb', -1).readlines()
         if output:
-            return output
+            ret['output'] = output
         else:
-            return channel.makefile_stderr('rb', -1).readlines()
+            ret['output'] = channel.makefile_stderr('rb', -1).readlines()
+        
+        return ret
 
-    def execute_daemon(self,command):
+    def execute_daemon(self, command, log_path=None):
         """
         Executa o comando em daemon e retorna o pid do processo
         Ex.:
-/usr/sbin/daemonize -p
-/home/helber/vlc.pid -o
-/home/helber/vlc.o -e
-/home/helber/vlc.e
-/usr/bin/cvlc -I dummy -v -R
-/home/videos/Novos/red_ridding_hood_4M.ts
---sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
+            /usr/sbin/daemonize -p
+            /home/helber/vlc.pid -o
+            /home/helber/vlc.o -e
+            /home/helber/vlc.e
+            /usr/bin/cvlc -I dummy -v -R
+            /home/videos/Novos/red_ridding_hood_4M.ts
+            --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         TODO: melhorar o local e nome do pidfile
         """
-        import datetime
-        appname = os.path.basename(command.split()[0])
-        uid = datetime.datetime.now().toordinal()
-        ## /usr/sbin/daemonize
-        fullcommand = '/usr/sbin/daemonize -p ~/%s-%s.pid -o ~/%s-%s.out %s' %(appname,uid,appname,uid,command)
+        ret = self.execute('/bin/mktemp')
+        pidfile_path = ret['output'][0].strip()
+        fullcommand = '/usr/sbin/daemonize -p %s ' % pidfile_path
+        if log_path:
+            fullcommand += '-o %s.out -e %s.err ' % (log_path, log_path)
+        fullcommand += '%s' % command.strip()
         self.execute(fullcommand)
-        pidcommand = "/bin/cat ~/%s-%s.pid" % (appname,uid)
+        pidcommand = "/bin/cat %s" % pidfile_path
         ## Buscando o pid
         output = self.execute(pidcommand)
-        pid = int(output[0].strip())
+        pid = int(output['output'][0].strip())
         return pid
 
     def execute_with_timeout(self,command,timeout=10):

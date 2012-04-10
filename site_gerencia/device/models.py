@@ -42,7 +42,13 @@ class Server(models.Model):
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
                                    choices=SERVER_TYPE_CHOICES)
     offline_mode = models.BooleanField(default=False)
-
+    
+    class ExecutionFailure(Exception):
+        def __init__(self, value):
+            self.parameter = value
+        def __str__(self):
+            return repr(self.parameter)
+    
     def __unicode__(self):
         return '%s' % (self.name)
 
@@ -93,14 +99,20 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
+        ret = {}
         try:
-            w = s.execute(command)
+            ret = s.execute(command)
+            w = ret['output']
         except Exception as ex:
             self.msg = ex
             w = 'ERROR'
         if not persist and self.status:
             s.close()
         self.save()
+        if ret.has_key('exit_code') and ret['exit_code'] is not 0:
+                raise Server.ExecutionFailure(
+                    'Command "%s" return status "%d" on server "%s": "%s"' %
+                    (command, ret['exit_code'], self, "".join(ret['output'])))
         return w
 
     def execute_daemon(self, command):
@@ -176,11 +188,20 @@ class Server(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
-        self.execute('/sbin/route add -host %s dev %s' % (ip, dev))
+        self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s' % (ip, dev))
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
-        self.execute('/sbin/route del -host %s dev %s' % (ip, dev))
+        self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s' % (ip, dev))
+    
+    def list_routes(self):
+        resp = []
+        routes = self.execute('/sbin/route -n')
+        for route in routes[2:]:
+            r = route.split()
+            resp.append((r[0], r[-1]))
+        
+        return resp
 
     def list_dir(self, directory='/'):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
