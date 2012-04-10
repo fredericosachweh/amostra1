@@ -242,15 +242,10 @@ class UniqueIP(models.Model):
         default=2)
 
     ## Para o relacionamento genérico de origem
-    sink = generic.GenericForeignKey('sink_content_type', 'sink_object_id')
-    sink_content_type = models.ForeignKey(ContentType,
-        null=True, related_name='sink_content_type_')
-    sink_object_id = models.PositiveIntegerField(null=True)
-    
-    #source = generic.GenericForeignKey('source_content_type', 'source_object_id')
-    #source_content_type = models.ForeignKey(ContentType,null=True)
-    #source_object_id = models.PositiveIntegerField(null=True)
-    
+    sink = generic.GenericForeignKey()
+    content_type = models.ForeignKey(ContentType, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+
     def __unicode__(self):
         return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
 
@@ -277,7 +272,7 @@ class UniqueIP(models.Model):
             self.sequential / 256,
             self.sequential % 256)
         return ip
-    
+
     def start(self):
         self.sink.start()
 
@@ -485,9 +480,7 @@ class DemuxedService(models.Model):
     sid = models.PositiveSmallIntegerField(_(u'Programa'))
     provider = models.CharField(_(u'Provedor'), max_length=200, null=True, blank=True)
     service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True, blank=True)
-    sources = generic.GenericRelation(UniqueIP,
-                                     content_type_field='sink_content_type',
-                                     object_id_field='sink_object_id')
+    sources = generic.GenericRelation(UniqueIP)
     # Sink
     content_type = models.ForeignKey(ContentType, null=True)
     object_id = models.PositiveIntegerField(null=True)
