@@ -167,6 +167,8 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
+    'tv',
+    'tastypie',
 )
 
 
@@ -213,6 +215,7 @@ if DEBUG == True:
     except ImportError:
         pass
 
+TASTYPIE_FULL_DEBUG = DEBUG
 
 
 

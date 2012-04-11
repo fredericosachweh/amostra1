@@ -11,6 +11,9 @@ from django.conf import settings
 from django.contrib import admin
 admin.autodiscover()
 
+#XXX: Remover daqui quando criar o módulo que busque pelas apps api e concatena urls
+from tv import api
+
 urlpatterns = patterns('',
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
@@ -31,8 +34,13 @@ urlpatterns = patterns('',
     (r'^%sstream/'%settings.ROOT_URL,include('stream.urls')),
     # EPG
     (r'^%sepg/'%settings.ROOT_URL,include('epg.urls')),
+    
+    #XXX: Varrer os apps em busca de api e concatenar os api.url da galera :)
+    # REST interface
+    (r'^%sapi/'%settings.ROOT_URL, include(api.api.urls)),
+    
     # REST interface for the EPG
-    (r'^%sapi/'%settings.ROOT_URL, include('api.urls')),
+    #(r'^%sapi/'%settings.ROOT_URL, include('api.urls')),
     # Devices em servidores
     (r'^%sdevice/'%settings.ROOT_URL,include('device.urls')),
     # Página inicial
