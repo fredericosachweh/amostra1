@@ -268,6 +268,34 @@ class CommandsGenerationTest(TestCase):
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
     
+    def test_connections(self):
+        # Test dvbtuner generic relation
+        dvbtuner = DvbTuner.objects.all()[0]
+        dvbtuner_type = ContentType.objects.get_for_model(DvbTuner)
+        self.assertItemsEqual(
+                    DemuxedService.objects.filter(content_type=dvbtuner_type),
+                    dvbtuner.src.all(),
+                    )
+        # Test unicast input generic relation
+        unicastin = UnicastInput.objects.all()[0]
+        unicastin_type = ContentType.objects.get_for_model(UnicastInput)
+        self.assertItemsEqual(
+                    DemuxedService.objects.filter(content_type=unicastin_type),
+                    unicastin.src.all(),
+                    )
+        # Test DemuxedServer and UniqueIP connections
+        service = DemuxedService.objects.all()[0]
+        internal = UniqueIP.objects.all()[0]
+        self.assertEqual(service, internal.sink)
+        self.assertEqual(internal, service.src.all()[0])
+        # Test connection between internal and output models
+        ipout = MulticastOutput.objects.all()[0]
+        recorder = StreamRecorder.objects.all()[0]
+        internal_src = internal.src
+        self.assertIn(ipout, internal_src)
+        self.assertIn(recorder, internal_src)
+        self.assertEqual(internal, ipout.sink)
+        self.assertEqual(internal, recorder.sink)
 
 class GenericSourceTest(TestCase):
 

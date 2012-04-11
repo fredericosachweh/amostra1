@@ -223,7 +223,6 @@ class NIC(models.Model):
     def __unicode__(self):
         return u'%s->%s(%s)' % (self.server, self.name, self.ipv4)
 
-
 class UniqueIP(models.Model):
     """
     Classe de endereço ip externo (na rede dos clientes)
@@ -240,7 +239,7 @@ class UniqueIP(models.Model):
     sequential = models.PositiveSmallIntegerField(
         _(u'Valor auxiliar para gerar o IP único'),
         default=2)
-
+    
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True)
@@ -248,7 +247,17 @@ class UniqueIP(models.Model):
 
     def __unicode__(self):
         return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
-
+    
+    @property
+    def src(self): 
+        from itertools import chain
+        uniqueip_type = ContentType.objects.get_for_model(UniqueIP)
+        ipout = MulticastOutput.objects.filter(content_type=uniqueip_type,
+                                               object_id=self.pk)
+        recorder = StreamRecorder.objects.filter(content_type=uniqueip_type,
+                                               object_id=self.pk)
+        return list(chain(ipout, recorder))
+    
     def natural_key(self):
         return {'ip': self.ip, 'port': self.port}
 
@@ -480,9 +489,12 @@ class DemuxedService(models.Model):
     sid = models.PositiveSmallIntegerField(_(u'Programa'))
     provider = models.CharField(_(u'Provedor'), max_length=200, null=True, blank=True)
     service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True, blank=True)
-    sources = generic.GenericRelation(UniqueIP)
-    # Sink
-    content_type = models.ForeignKey(ContentType, null=True)
+    src = generic.GenericRelation(UniqueIP)
+    # Sink (connect to a Tuner or IP input)
+    content_type = models.ForeignKey(ContentType,
+         limit_choices_to = {"model__in": ("DvbTuner", "IsdbTuner", 
+                                           "UnicastInput", "MulticastInput")},
+         null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
 
@@ -494,11 +506,11 @@ class InputModel(models.Model):
     def _get_config(self):
         # Fill config file
         conf = u''
-        for service in self.sources.all():
-            if service.sources.count() > 0:
+        for service in self.src.all():
+            if service.src.count() > 0:
                 sid = service.sid
-                ip = service.sources.all()[0].ip
-                port = service.sources.all()[0].port
+                ip = service.src.all()[0].ip
+                port = service.src.all()[0].port
                 # Assume internal IPs always work with raw UDP
                 conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
         
@@ -529,7 +541,7 @@ class DigitalTuner(InputModel, DeviceServer):
         self.save()
     
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
-    sources = generic.GenericRelation(DemuxedService)
+    src = generic.GenericRelation(DemuxedService)
 
 class DvbTuner(DigitalTuner):
     class Meta:
@@ -687,7 +699,7 @@ class IPInput(InputModel, DeviceServer):
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')
-    sources = generic.GenericRelation(DemuxedService)
+    src = generic.GenericRelation(DemuxedService)
 
 class UnicastInput(IPInput):
     "Unicast MPEG2TS IP input stream"
@@ -785,7 +797,9 @@ class OutputModel(models.Model):
         self.server.execute('mkdir -p %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
         self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
     
-    content_type = models.ForeignKey(ContentType, null=True)
+    content_type = models.ForeignKey(ContentType,
+                            limit_choices_to = {"model__in": ("UniqueIP",)},
+                            null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
 
