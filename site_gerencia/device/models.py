@@ -49,6 +49,9 @@ class Server(models.Model):
         def __str__(self):
             return repr(self.parameter)
     
+    class InvalidOperation(Exception):
+        pass
+    
     def __unicode__(self):
         return '%s' % (self.name)
 
@@ -73,7 +76,7 @@ class Server(models.Model):
         """Conecta-se ao servidor"""
         from lib import ssh
         if self.offline_mode:
-            raise Exception("Shouldn't connect when offline mode is set")
+            raise Server.InvalidOperation("Shouldn't connect when offline mode is set")
         s = None
         try:
             s = ssh.Connection(host=self.host,
@@ -111,7 +114,7 @@ class Server(models.Model):
         self.save()
         if ret.has_key('exit_code') and ret['exit_code'] is not 0:
                 raise Server.ExecutionFailure(
-                    'Command "%s" return status "%d" on server "%s": "%s"' %
+                    'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, "".join(ret['output'])))
         return w
 
@@ -123,6 +126,7 @@ class Server(models.Model):
         except Exception as ex:
             self.msg = ex
             self.status = False
+            raise ex
         pid = s.execute_daemon(command)
         s.close()
         self.save()
@@ -330,74 +334,6 @@ class DeviceServer(models.Model):
         else:
             alive = False
         return alive
-
-
-class Vlc(DeviceServer):
-    """
-    VLC streaming device.
-    file -> vlc -> output -> ip
-    """
-    class Meta:
-        verbose_name = _(u'Vídeo em loop')
-        verbose_name_plural = _(u'Vídeos em loop')
-
-    sink = models.CharField(
-        _(u'Arquivo de origem'),
-        max_length=255,
-        blank=True,
-        null=True)
-    src = generic.GenericRelation(UniqueIP)
-
-    file_list = None
-
-    def get_list_dir(self):
-        if self.server_id is None:
-            return []
-        if self.file_list is None and self.server.status is True:
-            self.file_list = []
-            d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
-            for f in d:
-                self.file_list.append((f, f))
-        if self.file_list is None:
-            return []
-        return self.file_list
-
-    def __init__(self, *args, **kwargs):
-        super(Vlc, self).__init__(*args, **kwargs)
-        if self.server_id is not None:
-            self._meta.get_field_by_name('sink')[0]._choices = lazy(
-                self.get_list_dir, list)()
-    
-    def __unicode__(self):
-        if hasattr(self, 'server') is False:
-            return self.description
-        return '[%s] %s -->' % (self.server, self.description)
-
-    def start(self):
-        """Inicia processo do VLC"""
-        ip = self.src.get()
-        s = self.sink.replace(' ','\ ').replace("'","\\'").replace('(','\(').replace(')','\)')
-        c = '/usr/bin/cvlc -I dummy -v -R %s ' \
-            '--sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
-            s,
-            ip.ip,
-            ip.port)
-        c = self.server.execute_daemon(c)
-        self.status = True
-        self.pid = c
-        self.save()
-        return self.status
-
-    def switch_link(self):
-        if self.sink is None or self.server_id is None:
-            return 'Desconfigurado'
-        if self.running():
-            url = reverse('device.views.vlc_stop',kwargs={'pk': self.id})
-            return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' % (url,self.id)
-        url = reverse('device.views.vlc_start',kwargs={'pk': self.id})
-        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>' % (url,self.id)
-    switch_link.allow_tags = True
-
 
 class Dvblast(DeviceServer):
     "DEPRECATED: Não utilizado mais???"
@@ -785,6 +721,77 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
     ip = instance.ip
     dev = server.get_netdev(instance.interface.ipv4)
     server.delete_route(ip, dev)
+
+class FileInput(DeviceServer):
+    """
+    VLC streaming device.
+    file -> vlc -> output -> ip
+    """
+    class Meta:
+        verbose_name = _(u'Arquivo de entrada')
+        verbose_name_plural = _(u'Arquivos de entrada')
+    
+    filename = models.CharField(
+        _(u'Arquivo de origem'),
+        max_length=255,
+        blank=True,
+        null=True)
+    repeat = models.BooleanField(_(u'Repetir indefinidamente'), default=True)
+    src = generic.GenericRelation(UniqueIP)
+    
+    file_list = None
+    
+    def get_list_dir(self):
+        if self.server_id is None:
+            return []
+        if self.file_list is None and self.server.status is True:
+            self.file_list = []
+            d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
+            for f in d:
+                self.file_list.append((f, f))
+        if self.file_list is None:
+            return []
+        return self.file_list
+    
+    def __init__(self, *args, **kwargs):
+        super(FileInput, self).__init__(*args, **kwargs)
+        if self.server_id is not None:
+            self._meta.get_field_by_name('filename')[0]._choices = lazy(
+                self.get_list_dir, list)()
+    
+    def __unicode__(self):
+        if hasattr(self, 'server') is False:
+            return self.description
+        return '[%s] %s -->' % (self.server, self.description)
+    
+    def _get_cmd(self):
+        ip = self.src.get()
+        cmd = u'%s' % settings.VLC_COMMAND
+        cmd += ' -I dummy -v'
+        if self.repeat:
+            cmd += ' -R'
+        cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
+        cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
+                                        ip.ip, ip.port)
+        
+        return cmd
+    
+    def start(self):
+        """Inicia processo do VLC"""
+        self.pid = self.server.execute_daemon(self._get_cmd())
+        self.status = True
+        self.save()
+        return self.status
+    
+    def switch_link(self):
+        if self.sink is None or self.server_id is None:
+            return 'Desconfigurado'
+        if self.running():
+            url = reverse('device.views.vlc_stop',kwargs={'pk': self.id})
+            return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' % (url,self.id)
+        url = reverse('device.views.vlc_start',kwargs={'pk': self.id})
+        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>' % (url,self.id)
+    switch_link.allow_tags = True
 
 class OutputModel(models.Model):
     "Each model of output type should inherit this"

@@ -211,7 +211,8 @@ DVBLAST_CONFS_DIR = '/etc/dvblast/'
 DVBLAST_LOGS_DIR = '/var/log/dvblast/'
 DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
 
-VIDEO_LOOP_DIR = '/home/videos'
+VLC_COMMAND = '/usr/bin/cvlc'
+VLC_VIDEOFILES_DIR = '/home/videos/'
 
 INTERNAL_IP_MASK = '239.1.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'

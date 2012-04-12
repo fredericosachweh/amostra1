@@ -65,6 +65,10 @@ class CommandsGenerationTest(TestCase):
             protocol='udp',
             ip='224.0.0.1',
         )
+        fileinput = FileInput.objects.create(
+            server=server,
+            filename='foobar.mkv',
+        )
         service_a = DemuxedService.objects.create(
             sid=1,
             sink=dvbtuner,
@@ -123,6 +127,11 @@ class CommandsGenerationTest(TestCase):
             sink=service_g,
             nic=NIC.objects.filter(server=server)[0],
         )
+        internal_g = UniqueIP.objects.create(
+            port=20000,
+            sink=fileinput,
+            nic=NIC.objects.filter(server=server)[0],
+        )
         ipout_a = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.3',
@@ -161,11 +170,19 @@ class CommandsGenerationTest(TestCase):
             interface=nic_b,
             sink=internal_e,
         )
-        recorder_a = StreamRecorder.objects.create(
+        recorder_b = StreamRecorder.objects.create(
             server=server,
             rotate=60,
             folder='/tmp/recording_b',
             sink=internal_f,
+        )
+        ipout_e = MulticastOutput.objects.create(
+            server=server,
+            ip_out='239.0.1.7',
+            port=10000,
+            protocol='udp',
+            interface=nic_b,
+            sink=internal_g,
         )
     
     def tearDown(self):
@@ -242,6 +259,17 @@ class CommandsGenerationTest(TestCase):
         expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
     
+    def test_fileinput(self):
+        fileinput = FileInput.objects.all()[0]
+        expected_cmd = (
+            '%s '
+            '-I dummy -v -R '
+            '"%sfoobar.mkv" '
+            '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
+        ) % (settings.VLC_COMMAND,
+             settings.VLC_VIDEOFILES_DIR)
+        self.assertEqual(expected_cmd, fileinput._get_cmd())
+    
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
         expected_cmd = (
@@ -296,33 +324,6 @@ class CommandsGenerationTest(TestCase):
         self.assertIn(recorder, internal_src)
         self.assertEqual(internal, ipout.sink)
         self.assertEqual(internal, recorder.sink)
-
-class GenericSourceTest(TestCase):
-
-    def test_vlc_source(self):
-        import getpass
-        s = Server(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username=getpass.getuser(),
-            rsakey='~/.ssh/id_rsa'
-        )
-        s.connect()
-        s.save()
-        s.auto_create_nic()
-        nics = NIC.objects.filter(server=s)
-        vlc = Vlc(server=s,description='VLC - generico')
-        vlc.sink = '/home/videos/ros.avi'
-        vlc.save()
-        ip = UniqueIP()
-        ip.sink = vlc
-        ip.nic = nics[1]
-        ip.save()
-        nip = UniqueIP.objects.get(content_type=ip.content_type.id,
-            object_id=vlc.pk)
-        nip.sink.start()
-        nip.sink.stop()
 
 class UniqueIPTest(TestCase):
 
