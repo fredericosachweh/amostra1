@@ -12,10 +12,12 @@ def home(request):
 def server_status(request,pk=None):
     device = get_object_or_404(models.Server,id=pk)
     device.connect()
-    whoami = device.execute('whoami')
-    whoami = '' if device.execute('whoami') == None else whoami[0]
-    device.status = (whoami.strip() == device.username.strip())
-    device.save()
+    #whoami = device.execute('whoami')
+    #whoami = '' if device.execute('whoami') == None else whoami[0]
+    #device.status = (whoami.strip() == device.username.strip())
+    #device.save()
+    print('Device:%s [%s]' %(device,device.status))
+    print 'server_status'
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
 def server_list_interfaces(request):
@@ -28,39 +30,15 @@ def server_list_interfaces(request):
 
 def vlc_start(request,pk=None):
     print 'vlc_start'
-    o = get_object_or_404(models.Vlc,id=pk)
+    o = get_object_or_404(models.FileInput,id=pk)
     o.start()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
 def vlc_stop(request,pk=None):
     print 'vlc_stop'
-    o = get_object_or_404(models.Vlc,id=pk)
+    o = get_object_or_404(models.FileInput,id=pk)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
-
-def multicat_start(request,pk=None):
-    print 'multicat_start'
-    o = get_object_or_404(models.MulticatGeneric,id=pk)
-    o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
-
-def multicat_stop(request,pk=None):
-    print 'multicat_stop'
-    o = get_object_or_404(models.MulticatGeneric,id=pk)
-    o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
-
-def multicat_redirect_start(request,pk=None):
-    print 'multicat_redirect_start'
-    o = get_object_or_404(models.MulticatRedirect,id=pk)
-    o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
-
-def multicat_redirect_stop(request,pk=None):
-    print 'multicat_redirect_stop'
-    o = get_object_or_404(models.MulticatRedirect,id=pk)
-    o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
 
 # View to return list of available DVB-S/S2 tuners
 def get_dvb_tuners(request):

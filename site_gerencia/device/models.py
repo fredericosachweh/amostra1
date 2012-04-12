@@ -86,9 +86,6 @@ class Server(models.Model):
                 private_key=self.rsakey)
             self.status = True
             self.msg = 'OK'
-        except ValueError:
-            self.status = False
-            self.msg = ValueError
         except Exception as ex:
             self.status = False
             self.msg = ex
@@ -102,13 +99,9 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
-        ret = {}
-        try:
-            ret = s.execute(command)
-            w = ret['output']
-        except Exception as ex:
-            self.msg = ex
-            w = 'ERROR'
+            self.save()
+            return 'Can not connect'
+        ret = s.execute(command)
         if not persist and self.status:
             s.close()
         self.save()
@@ -116,7 +109,7 @@ class Server(models.Model):
                 raise Server.ExecutionFailure(
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, "".join(ret['output'])))
-        return w
+        return ret['output']
 
     def execute_daemon(self, command):
         "Excuta o processo em background (daemon)"

@@ -73,6 +73,7 @@ class Connection(object):
         """Execute the given commands on a remote machine."""
         ret = {}
         channel = self._transport.open_session()
+        #channel.get_pty()
         channel.exec_command(command)
         ret_code = channel.recv_exit_status()
         ret['exit_code'] = ret_code
