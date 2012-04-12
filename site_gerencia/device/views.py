@@ -16,8 +16,6 @@ def server_status(request,pk=None):
     whoami = '' if device.execute('whoami') == None else whoami[0]
     device.status = (whoami.strip() == device.username.strip())
     device.save()
-    print('Device:%s [%s]' %(device,device.status))
-    print 'server_status'
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
 def server_list_interfaces(request):
