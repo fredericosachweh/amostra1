@@ -45,13 +45,13 @@ class ChannelAdmin(admin.ModelAdmin):
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
     #fields = ('numero','nome','descricao','logo','sigla','source', )
-    list_display  = ('image_thum', 'number', 'name', 'source', 'enabled', )
+    list_display  = ('image_thum', 'number', 'name', 'channelid', 'source', 'enabled', )
     list_display_links = ('image_thum', )
-    list_editable = ('number', 'source', 'name', )
+    list_editable = ('number', 'source', 'name', 'channelid', 'enabled', )
     #inline        = (Programa,)
     save_as       = True
     list_per_page = 10
-    search_fields = ['name', 'source']
+    search_fields = ['name', 'channelid', 'source']
     formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):

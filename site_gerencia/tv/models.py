@@ -31,7 +31,7 @@ class Channel(models.Model):
         upload_to = 'tv/channel/image/thumb',
         help_text = 'Imagem do canal'
     )
-    source      = models.ForeignKey(UniqueIP)
+    source      = models.OneToOneField(UniqueIP, unique=True, null=True, blank=True)
     updated     = models.DateTimeField(auto_now=True)
     enabled     = models.BooleanField(_(u'Disponível'), default=False)
     

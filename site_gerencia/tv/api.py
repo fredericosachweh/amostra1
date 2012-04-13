@@ -18,7 +18,7 @@ class ChannelResource(ModelResource):
     #source_data = fields.ForeignKey(stream_api.SourceResource, 'source', full=True)
     source = fields.CharField(blank=True)
     class Meta:
-        queryset = Channel.objects.all()
+        queryset = Channel.objects.filter(enabled=True, source__isnull=False)
         authorization = Authorization()
         excludes = ['enabled']
         allowed_methods = ['get']
