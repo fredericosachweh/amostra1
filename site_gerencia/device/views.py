@@ -23,7 +23,7 @@ def server_list_interfaces(request):
     server = get_object_or_404(models.Server,id=pk)
     response = '<option selected="selected" value="">---------</option>'
     for i in models.NIC.objects.filter(server=server):
-        response += ('<option value="%s">%s - %s</option>' % (i.ipv4, i.name, i.ipv4))
+        response += ('<option value="%s">%s - %s</option>' % (i.pk, i.name, i.ipv4))
     return HttpResponse(response)
 
 def vlc_start(request,pk=None):
