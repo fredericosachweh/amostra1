@@ -653,7 +653,8 @@ class UnicastInput(IPInput):
                                           interface=self.interface,
                                           server=self.server)
         if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %d e %s' % (self.server.name, self.port, self.interface))
+            msg = _(u'Combinação já existente: %s e %d e %s' % (
+                                self.server.name, self.port, self.interface))
             raise ValidationError({'__all__' : [msg]})
     
     def _get_cmd(self):
