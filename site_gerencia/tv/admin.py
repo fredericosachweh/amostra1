@@ -37,7 +37,7 @@ class ChannelAdmin(admin.ModelAdmin):
     """
     fieldsets = ((None, {
         'fields':( 
-            ('number', 'name', 'acronym', 'enabled'),
+            ('number', 'name', 'channelid', 'enabled'),
             'description', 'image', 
                 ('source'),
             ),

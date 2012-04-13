@@ -22,7 +22,7 @@ class Channel(models.Model):
     number      = models.PositiveSmallIntegerField(_('Numero'), unique=True)
     name        = models.CharField(_('Nome'), max_length=100)
     description = models.TextField(_('Descricao'))
-    acronym     = models.CharField(_('Sigla'), max_length=5)
+    channelid   = models.CharField(_('ID do Canal'), max_length=255)
     image       = models.ImageField(_('Logo'), 
         upload_to = 'tv/channel/image/tmp', 
         help_text = 'Imagem do canal'
