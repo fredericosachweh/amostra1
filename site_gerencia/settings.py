@@ -246,8 +246,8 @@ DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
 VLC_COMMAND = '/usr/bin/cvlc'
 VLC_VIDEOFILES_DIR = '/home/videos/'
 
-INTERNAL_IP_MASK = '239.1.%d.%d'
-EXTERNAL_IP_MASK = '239.10.%d.%d'
+INTERNAL_IP_MASK = '239.10.%d.%d'
+EXTERNAL_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
