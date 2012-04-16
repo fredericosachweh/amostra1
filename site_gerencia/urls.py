@@ -12,10 +12,10 @@ from django.contrib import admin
 admin.autodiscover()
 
 #XXX: Remover daqui quando criar o módulo que busque pelas apps api e concatena urls
-from tv import api as tv_api
-from stream import api as stream_api
+from tv  import api as tv_api
+from epg import api as epg_api
 
-apiUrls = tv_api.api.urls + stream_api.api.urls
+apiUrls = tv_api.api.urls + epg_api.api.urls
 
 urlpatterns = patterns('',
     # Uncomment the admin/doc line below to enable admin documentation:
