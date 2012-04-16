@@ -147,10 +147,34 @@ TEMPLATE_DIRS = (
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s\t%(asctime)s\t%(module)s\t%(process)d\
+\t%(thread)d\t%(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s\t%(message)s'
+        },
+    },
     'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
         'mail_admins': {
             'level': 'ERROR',
             'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'file.debug': {
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug.log',
+            'formatter': 'verbose'
+        },
+        'file.device.remotecall': {
+            'class': 'logging.FileHandler',
+            'filename': 'log/remote-call.log',
+            'formatter': 'verbose'
         }
     },
     'loggers': {
@@ -159,6 +183,14 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'device.view': {
+            'handlers': ['file.debug'],
+            'propagate': True
+        },
+        'device.remotecall': {
+            'handlers': ['file.device.remotecall'],
+            'propagate': True
+        }
     }
 }
 
@@ -215,20 +247,21 @@ VLC_COMMAND = '/usr/bin/cvlc'
 VLC_VIDEOFILES_DIR = '/home/videos/'
 
 INTERNAL_IP_MASK = '239.1.%d.%d'
-EXTERNAL_IP_MASK = '239.1.%d.%d'
+EXTERNAL_IP_MASK = '239.10.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
     try:
-        import django_extensions
-        INSTALLED_APPS += ('django_extensions',)
+        #import django_extensions
+        #INSTALLED_APPS += ('django_extensions',)
+        pass
     except ImportError:
         pass
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
-        INTERNAL_IPS = ('127.0.0.1',)
+        #INTERNAL_IPS = ('127.0.0.1',)
         DEBUG_TOOLBAR_PANELS = (
             'debug_toolbar.panels.version.VersionDebugPanel',
             'debug_toolbar.panels.timer.TimerDebugPanel',

@@ -328,11 +328,11 @@ class CommandsGenerationTest(TestCase):
 class UniqueIPTest(TestCase):
 
     def test_sequential(self):
-        from device.models import UniqueIP
+        srv = Server.objects.create(host='127.0.0.1', name='local', ssh_port=22)
+        nic = NIC.objects.create(server=srv, ipv4='127.0.0.1')
         for i in range(1024):
-            ip1 = UniqueIP()
-            #ip1.save()
-            #print(ip1._gen_ip())
+            ip1 = UniqueIP(nic=nic)
+            ip1.save()
 
 class ConnectionTest(TestCase):
     """
@@ -380,7 +380,7 @@ class ConnectionTest(TestCase):
         conn = Connection('127.0.0.1',
             username=getpass.getuser(), private_key='~/.ssh/id_rsa')
         test_command = '%s/device/helper/test' % (os.path.abspath('.'))
-        t = conn.execute_with_timeout(test_command,timeout=2)
+        t = conn.execute_with_timeout(test_command, timeout=2)
         self.assertEqual(
             'Inicio\nP1**********Fim',
             t,

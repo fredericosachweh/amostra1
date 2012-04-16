@@ -17,8 +17,8 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         ## inicia os vlcs (Temporário)
-        from device.models import Vlc, Server
-        vlcs = Vlc.objects.all()
-        for vlc in vlcs:
-            if vlc.status == True:
-                vlc.start()
+        from device.models import FileInput
+        files = FileInput.objects.all()
+        for fi in files:
+            if fi.status == True and fi.running() is False:
+                fi.start()

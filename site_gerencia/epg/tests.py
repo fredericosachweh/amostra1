@@ -331,7 +331,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 		c = Client()
 		test_cases = (
 		# First programme
-			{ 'expected' : [{'id' : 1, 'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},],
+			{ 'expected' : [{'id' : 1, 'start': '2012-01-16T00:05:00', 'programme_id': 1, 'stop': '2012-01-16T00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116004500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116004500'}),
 			  				('/tv/api/guide/', {'start' : '20120116000600', 'stop' : '20120116004400'}),
@@ -349,7 +349,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  )
 			},
 		# Second programme
-			{ 'expected' : [{'id' : 2, 'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
+			{ 'expected' : [{'id' : 2, 'start': '2012-01-16T01:45:00', 'programme_id': 2, 'stop': '2012-01-16T03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116014500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'start' : '20120116014500'}),
 			  				('/tv/api/guide/channels/2/', {}),
@@ -365,8 +365,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 			  )
 			},
 		# Both programmes
-			{ 'expected' : [{'id' : 1, 'start': '2012-01-16 00:05:00', 'programme_id': 1, 'stop': '2012-01-16 00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},
-							{'id' : 2, 'start': '2012-01-16 01:45:00', 'programme_id': 2, 'stop': '2012-01-16 03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
+			{ 'expected' : [{'id' : 1, 'start': '2012-01-16T00:05:00', 'programme_id': 1, 'stop': '2012-01-16T00:45:00', 'channel_id': 1, 'resource_uri' : '/tv/api/guide/1'},
+							{'id' : 2, 'start': '2012-01-16T01:45:00', 'programme_id': 2, 'stop': '2012-01-16T03:45:00', 'channel_id': 2, 'resource_uri' : '/tv/api/guide/2'},],
 			  'requests' : (('/tv/api/guide/', {'start' : '20120116000500', 'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116034500'}),
 			  				('/tv/api/guide/', {'stop' : '20120116034400'}),

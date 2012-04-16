@@ -5,6 +5,8 @@ from django.core.urlresolvers import reverse
 from django.template import RequestContext
 import models
 import forms
+import logging
+
 
 def home(request):
     return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
@@ -12,12 +14,17 @@ def home(request):
 def server_status(request,pk=None):
     device = get_object_or_404(models.Server,id=pk)
     device.connect()
-    #whoami = device.execute('whoami')
-    #whoami = '' if device.execute('whoami') == None else whoami[0]
-    #device.status = (whoami.strip() == device.username.strip())
-    #device.save()
-    print('Device:%s [%s]' %(device,device.status))
-    print 'server_status'
+    log = logging.getLogger('device.view')
+    log.warning('Aviso')
+    log.debug('LALALA')
+    log.error('EEELALALA')
+    log.debug('view:server_status(pk=%s)' % pk)
+    if device.status is False:
+        log.error(u'Cant connect with server:%s' % device)
+    else:
+        device.auto_create_nic()
+    log.info('Device:%s [%s]' %(device,device.status))
+    log.info('view:server_status(pk=%s)' % pk)
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
 def server_list_interfaces(request):
