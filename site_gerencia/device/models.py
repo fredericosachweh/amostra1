@@ -91,7 +91,8 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             log = logging.getLogger('device.remotecall')
-            log.error('[%s]:%s' % ( self, ex ) )
+            log.error('%s(%s:%s %s):%s' % ( self, self.host, self.ssh_port,
+                self.username, ex ) )
             self.status = False
             self.msg = ex
         self.save()
