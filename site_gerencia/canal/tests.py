@@ -32,8 +32,10 @@ class CanalTest(TestCase):
         """
         from models import Canal
         Canal.objects.all().delete()
-        from device.models import Source
-        source = Source.objects.create(ip='127.0.0.1',port=5000)
+        from device.models import UniqueIP, NIC, Server
+        srv = Server.objects.create(host='127.0.0.1',ssh_port=22)
+        nic = NIC.objects.create(server=srv,ipv4='127.0.0.1')
+        source = UniqueIP.objects.create(ip='127.0.0.1', port=5000, nic=nic)
         c = Client()
         logoa = open('canal/fixtures/test_files/a.png')
         url_add = reverse('canal.views.add')
@@ -80,9 +82,11 @@ class CanalTest(TestCase):
 
     def test_canal_service(self):
         from models import Canal
-        from device.models import Source
-        source1 = Source.objects.create(ip='127.0.0.1',port=5000)
-        source2 = Source.objects.create(ip='127.0.0.1',port=5001)
+        from device.models import UniqueIP, NIC, Server
+        srv = Server.objects.create(host='127.0.0.1',ssh_port=22)
+        nic = NIC.objects.create(server=srv,ipv4='127.0.0.1')
+        source1 = UniqueIP.objects.create(ip='127.0.0.1',port=5000,nic=nic)
+        source2 = UniqueIP.objects.create(ip='127.0.0.1',port=5001,nic=nic)
         Canal.objects.all().delete()
         #return
         c = Client()

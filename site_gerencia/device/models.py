@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+import logging
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
@@ -16,10 +17,6 @@ class Server(models.Model):
     """
     Servidor e caracteristicas de conexão.
     """
-
-    class Meta:
-        verbose_name = _(u'Servidor de Recursos')
-        verbose_name_plural = _(u'Servidores de Recursos')
 
     name = models.CharField(_(u'Nome'), max_length=200, unique=True)
     host = models.IPAddressField(_(u'Host'), blank=True, unique=True)
@@ -42,10 +39,16 @@ class Server(models.Model):
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
                                    choices=SERVER_TYPE_CHOICES)
     offline_mode = models.BooleanField(default=False)
-    
+
+    class Meta:
+        verbose_name = _(u'Servidor de Recursos')
+        verbose_name_plural = _(u'Servidores de Recursos')
+
     class ExecutionFailure(Exception):
+
         def __init__(self, value):
             self.parameter = value
+
         def __str__(self):
             return repr(self.parameter)
     
@@ -76,7 +79,8 @@ class Server(models.Model):
         """Conecta-se ao servidor"""
         from lib import ssh
         if self.offline_mode:
-            raise Server.InvalidOperation("Shouldn't connect when offline mode is set")
+            raise Server.InvalidOperation(
+                "Shouldn't connect when offline mode is set")
         s = None
         try:
             s = ssh.Connection(host=self.host,
@@ -86,10 +90,10 @@ class Server(models.Model):
                 private_key=self.rsakey)
             self.status = True
             self.msg = 'OK'
-        except ValueError:
-            self.status = False
-            self.msg = ValueError
         except Exception as ex:
+            log = logging.getLogger('device.remotecall')
+            log.error('%s(%s:%s %s):%s' % (self, self.host, self.ssh_port,
+                self.username, ex))
             self.status = False
             self.msg = ex
         self.save()
@@ -102,21 +106,19 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
-        ret = {}
-        try:
-            ret = s.execute(command)
-            w = ret['output']
-        except Exception as ex:
-            self.msg = ex
-            w = 'ERROR'
+            log = logging.getLogger('device.remotecall')
+            log.error('[%s]:%s' % (self, ex))
+            self.save()
+            return 'Can not connect'
+        ret = s.execute(command)
         if not persist and self.status:
             s.close()
         self.save()
-        if ret.has_key('exit_code') and ret['exit_code'] is not 0:
+        if ret.get('exit_code') and ret['exit_code'] is not 0:
                 raise Server.ExecutionFailure(
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, "".join(ret['output'])))
-        return w
+        return ret['output']
 
     def execute_daemon(self, command):
         "Excuta o processo em background (daemon)"
@@ -126,6 +128,8 @@ class Server(models.Model):
         except Exception as ex:
             self.msg = ex
             self.status = False
+            log = logging.getLogger('device.remotecall')
+            log.error('[%s]:%s' % (self, ex))
             raise ex
         pid = s.execute_daemon(command)
         s.close()
@@ -180,11 +184,15 @@ class Server(models.Model):
         """
         nics = []
         for iface in self._list_interfaces():
-            nics.append(
-                NIC.objects.get_or_create(
-                    name=iface['dev'],
-                    ipv4=iface['ip'],
-                    server=self))
+            nnics = NIC.objects.filter(name=iface['dev'], server=self).count()
+            if nnics == 0:
+                nic = NIC.objects.create(name=iface['dev'], server=self,
+                    ipv4=iface['ip'])
+            else:
+                nic = NIC.objects.get(name=iface['dev'], server=self)
+                nic.ipv4 = iface['ip']
+            nic.ipv4 = iface['ip']
+            nics.append(nic)
         return nics
 
     def _list_interfaces(self):
@@ -204,12 +212,14 @@ class Server(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
-        self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s' % (ip, dev))
+        self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s'
+            % (ip, dev))
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
-        self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s' % (ip, dev))
-    
+        self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
+            % (ip, dev))
+
     def list_routes(self):
         resp = []
         routes = self.execute('/sbin/route -n')
@@ -248,8 +258,7 @@ class UniqueIP(models.Model):
         verbose_name_plural = _(u'Endereços de fluxo externo')
     ip = models.IPAddressField(_(u'Endereço IP'),
         unique=True,
-        null=True
-        )
+        null=True)
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     nic = models.ForeignKey(NIC)
     sequential = models.PositiveSmallIntegerField(
@@ -265,7 +274,7 @@ class UniqueIP(models.Model):
         return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
     
     @property
-    def src(self): 
+    def src(self):
         from itertools import chain
         uniqueip_type = ContentType.objects.get_for_model(UniqueIP)
         ipout = MulticastOutput.objects.filter(content_type=uniqueip_type,
@@ -353,23 +362,24 @@ class Dvblast(DeviceServer):
         verbose_name = _(u'DVBlast')
         verbose_name_plural = _(u'DVBlast')
 
-    name = models.CharField(_(u'Nome'),max_length=200)
+    name = models.CharField(_(u'Nome'), max_length=200)
     ip = models.IPAddressField(_(u'Endereço IP'))
     port = models.PositiveSmallIntegerField(_(u'Porta'))
-    is_rtp = models.BooleanField(_(u'RTP'),default=False)
+    is_rtp = models.BooleanField(_(u'RTP'), default=False)
 
     def __unicode__(self):
-        return '%s (%s:%s)' %(self.name,self.ip,self.port)
+        return '%s (%s:%s)' % (self.name, self.ip, self.port)
 
     def status(self):
         from lib.player import Player
         p = Player()
         if p.is_playing(self) is True:
-            url = reverse('device.views.stop',kwargs={'streamid':self.id})
-            return '<a href="%s" id="stream_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' %(url,self.id)
-        url = reverse('device.views.play',kwargs={'streamid':self.id})
-        return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'%(url,self.id)
-        #return '%s'%self.id
+            url = reverse('device.views.stop', kwargs={'streamid': self.id})
+            return '<a href="%s" id="stream_id_%s" style="color:green;" >\
+Rodando</a>' % (url, self.id)
+        url = reverse('device.views.play', kwargs={'streamid': self.id})
+        return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'\
+            % (url, self.id)
     status.allow_tags = True
 
     def play(self):
@@ -385,26 +395,28 @@ class Channel(models.Model):
     class Meta:
         verbose_name = _(u'Canal')
         verbose_name_plural = _(u'Canais')
-    
-    def __unicode__(self):
-        return '%s -> %s' % (self.input, self.output)
-    
-    def play(self):
-        pass
-    
+
     # Input
-    input_limit = models.Q(app_label = 'device', model = 'DemuxedInput') | \
-                models.Q(app_label = 'device', model = 'DvbTuner') | \
-                models.Q(app_label = 'device', model = 'IsdbTuner') | \
-                models.Q(app_label = 'device', model = 'UnicastInput') | \
-                models.Q(app_label = 'device', model = 'MulticastInput')
-    input_content_type = models.ForeignKey(ContentType, limit_choices_to = input_limit)
+    input_limit = models.Q(app_label='device', model='DemuxedInput') | \
+                models.Q(app_label='device', model='DvbTuner') | \
+                models.Q(app_label='device', model='IsdbTuner') | \
+                models.Q(app_label='device', model='UnicastInput') | \
+                models.Q(app_label='device', model='MulticastInput')
+    input_content_type = models.ForeignKey(ContentType,
+        limit_choices_to=input_limit)
     input_object_id = models.PositiveIntegerField()
     input = generic.GenericForeignKey('input_content_type', 'input_object_id')
     # Output
     output = models.ForeignKey('MulticastOutput', null=True, blank=True)
     # Recorder
     recorder = models.ForeignKey('StreamRecorder', null=True, blank=True)
+
+    def __unicode__(self):
+        return '%s -> %s' % (self.input, self.output)
+
+    def play(self):
+        pass
+
 
 class Antenna(models.Model):
     class Meta:
@@ -418,33 +430,38 @@ class Antenna(models.Model):
             )
     
     satellite = models.CharField(_(u'Satélite'), max_length=200)
-    lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200, choices=LNBS)
-    
+    lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200,
+        choices=LNBS)
+
     def __unicode__(self):
         return str(self.satellite)
+
 
 class DemuxedService(models.Model):
     class Meta:
         verbose_name = _(u'Entrada demultiplexada')
         verbose_name_plural = _(u'Entradas demultiplexadas')
-    
-    def __unicode__(self):
-        return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
-    
-    def start(self):
-        self.sink.start()
-    
+
     sid = models.PositiveSmallIntegerField(_(u'Programa'))
-    provider = models.CharField(_(u'Provedor'), max_length=200, null=True, blank=True)
-    service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True, blank=True)
+    provider = models.CharField(_(u'Provedor'), max_length=200, null=True,
+        blank=True)
+    service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True,
+        blank=True)
     src = generic.GenericRelation(UniqueIP)
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
-         limit_choices_to = {"model__in": ("DvbTuner", "IsdbTuner", 
-                                           "UnicastInput", "MulticastInput")},
+        limit_choices_to={"model__in":
+            ("DvbTuner", "IsdbTuner", "UnicastInput", "MulticastInput")},
          null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
+
+    def __unicode__(self):
+        return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
+
+    def start(self):
+        self.sink.start()
+
 
 class InputModel(models.Model):
     "Each model of input type should inherit this"
@@ -537,7 +554,10 @@ class DigitalTunerHardware(models.Model):
 class DigitalTuner(InputModel, DeviceServer):
     class Meta:
         abstract = True
-    
+
+    frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
+    src = generic.GenericRelation(DemuxedService)
+
     def start(self):
         "Starts a dvblast instance based on the current model's configuration"
         cmd = self._get_cmd()
@@ -551,18 +571,49 @@ class DigitalTuner(InputModel, DeviceServer):
         log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.save()
-    
-    frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
-    src = generic.GenericRelation(DemuxedService)
 
 class DvbTuner(DigitalTuner):
     class Meta:
         verbose_name = _(u'Sintonizador DVB-S/S2')
         verbose_name_plural = _(u'Sintonizadores DVB-S/S2')
-    
+
+    MODULATION_CHOICES = (
+        (u'QPSK', u'QPSK'),
+        (u'8PSK', u'8-PSK'),
+    )
+    POLARIZATION_CHOICES = (
+        (u'H', _(u'Horizontal (H)')),
+        (u'V', _(u'Vertical (V)')),
+        (u'R', _(u'Direita (R)')),
+        (u'L', _(u'Esquerda (L)')),
+    )
+    FEC_CHOICES = (
+        (u'0', u'Off'),
+        (u'12', u'1/2'),
+        (u'23', u'2/3'),
+        (u'34', u'3/4'),
+        (u'35', u'3/5'),
+        (u'56', u'5/6'),
+        (u'78', u'7/8'),
+        (u'89', u'8/9'),
+        (u'910', u'9/10'),
+        (u'999', u'Auto'),
+    )
+    symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'),
+        help_text=u'Msym/s')
+    modulation = models.CharField(_(u'Modulação'),
+        max_length=200, choices=MODULATION_CHOICES)
+    polarization = models.CharField(_(u'Polarização'),
+        max_length=200, choices=POLARIZATION_CHOICES)
+    fec = models.CharField(_(u'FEC'),
+        max_length=200, choices=FEC_CHOICES, default=u'999')
+    adapter = models.CharField(_(u'Adaptador'), max_length=200)
+    antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
+
     def __unicode__(self):
-        return '%s - %d %s %d' % (self.antenna,self.frequency,self.polarization,self.symbol_rate)
-    
+        return '%s - %d %s %d' % (
+            self.antenna, self.frequency, self.polarization, self.symbol_rate)
+
     @property
     def adapter_num(self):
         try:
@@ -597,42 +648,22 @@ class DvbTuner(DigitalTuner):
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
         
         return cmd
-    
-    MODULATION_CHOICES = (
-        (u'QPSK', u'QPSK'),
-        (u'8PSK', u'8-PSK'),
-    )
-    POLARIZATION_CHOICES = (
-        (u'H', _(u'Horizontal (H)')),
-        (u'V', _(u'Vertical (V)')),
-        (u'R', _(u'Direita (R)')),
-        (u'L', _(u'Esquerda (L)')),
-    )
-    FEC_CHOICES = (
-        (u'0', u'Off'),
-        (u'12', u'1/2'),
-        (u'23', u'2/3'),
-        (u'34', u'3/4'),
-        (u'35', u'3/5'),
-        (u'56', u'5/6'),
-        (u'78', u'7/8'),
-        (u'89', u'8/9'),
-        (u'910', u'9/10'),
-        (u'999', u'Auto'),
-    )
-    
-    symbol_rate = models.PositiveIntegerField(_(u'Taxa de símbolos'), help_text=u'Msym/s')
-    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES)
-    polarization = models.CharField(_(u'Polarização'), max_length=200, choices=POLARIZATION_CHOICES)
-    fec = models.CharField(_(u'FEC'), max_length=200, choices=FEC_CHOICES, default=u'999')
-    adapter = models.CharField(_(u'Adaptador'), max_length=200)
-    antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
+
 
 class IsdbTuner(DigitalTuner):
     class Meta:
         verbose_name = _(u'Sintonizador ISDB-Tb')
         verbose_name_plural = _(u'Sintonizadores ISDB-Tb')
-    
+
+    MODULATION_CHOICES = (
+                          (u'qam', u'QAM'),
+                          )
+
+    modulation = models.CharField(_(u'Modulação'),
+        max_length=200, choices=MODULATION_CHOICES, default=u'qam')
+    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'),
+        null=True, help_text=u'MHz', default=6)
+
     def __unicode__(self):
         return str(self.frequency)
     
@@ -657,10 +688,11 @@ class IsdbTuner(DigitalTuner):
                 adapters.remove(m.group(1))
         # At least one should be left
         if len(adapters) > 0:
-            return adapters[0] # Return the first free one
+            return adapters[0]  # Return the first free one
         else:
-            raise Exception("Tried to start a IsdbTuner but there's no device available")
-    
+            raise Exception(
+                "Tried to start a IsdbTuner but there's no device available")
+
     def _get_cmd(self, adapter_num=None):
         cmd = u'%s' % settings.DVBLAST_COMMAND
         cmd += ' -f %d000' % self.frequency
@@ -675,52 +707,47 @@ class IsdbTuner(DigitalTuner):
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
         
         return cmd
-    
-    MODULATION_CHOICES = (
-                          (u'qam', u'QAM'),
-                          )
-    
-    modulation = models.CharField(_(u'Modulação'), max_length=200, choices=MODULATION_CHOICES, default=u'qam')
-    bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'), null=True, help_text=u'MHz', default=6)
+
 
 class IPInput(InputModel, DeviceServer):
     "Generic IP input class"
     class Meta:
         abstract = True
-    
-    def start(self):
-        cmd = self._get_cmd()
-        conf = self._get_config()
-        # Create the necessary folders
-        self._create_folders()
-        # Write the config file to disk
-        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
-                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        # Start dvblast process
-        log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
-        self.pid = self.server.execute_daemon(cmd, log_path=log_path)
-        self.save()
-    
+
     PROTOCOL_CHOICES = (
                         (u'udp', u'UDP'),
                         (u'rtp', u'RTP'),
                         )
-    
+
     interface = models.ForeignKey(NIC, verbose_name=_(u'Interface de rede'))
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
                                 choices=PROTOCOL_CHOICES, default=u'udp')
     src = generic.GenericRelation(DemuxedService)
 
+    def start(self):
+        cmd = self._get_cmd()
+        conf = self._get_config()
+        # Create the necessary folders
+        self._create_folders()
+        # Write the config file to disk
+        self.server.execute('echo "%s" > %s%d.conf' % (conf,
+            settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        # Start dvblast process
+        log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+        self.save()
+
+
 class UnicastInput(IPInput):
     "Unicast MPEG2TS IP input stream"
     class Meta:
         verbose_name = _(u'Entrada IP unicast')
         verbose_name_plural = _(u'Entradas IP unicast')
-    
+
     def __unicode__(self):
         return '%d [%s]' % (self.port, self.interface)
-    
+
     def validate_unique(self, exclude=None):
         # unique_together = ('port', 'interface', 'server')
         from django.core.exceptions import ValidationError
@@ -729,9 +756,9 @@ class UnicastInput(IPInput):
                                           server=self.server)
         if val.exists() and val[0].pk != self.pk:
             msg = _(u'Combinação já existente: %s e %d e %s' % (
-                                self.server.name, self.port, self.interface))
-            raise ValidationError({'__all__' : [msg]})
-    
+                self.server.name, self.port, self.interface))
+            raise ValidationError({'__all__': [msg]})
+
     def _get_cmd(self):
         cmd = u'%s' % settings.DVBLAST_COMMAND
         cmd += ' -D @%s:%d' % (self.interface.ipv4, self.port)
@@ -747,19 +774,22 @@ class MulticastInput(IPInput):
     class Meta:
         verbose_name = _(u'Entrada IP multicast')
         verbose_name_plural = _(u'Entradas IP multicast')
-    
+
+    ip = models.IPAddressField(_(u'Endereço IP multicast'))
+
     def __unicode__(self):
         return '%s:%d [%s]' % (self.ip, self.port, self.interface)
-    
+
     def validate_unique(self, exclude=None):
         # unique_together = ('ip', 'server')
         from django.core.exceptions import ValidationError
         val = MulticastInput.objects.filter(ip=self.ip,
                                           server=self.server)
         if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
-            raise ValidationError({'__all__' : [msg]})
-    
+            msg = _(u'Combinação já existente: %s e %s' % (
+                self.server.name, self.ip))
+            raise ValidationError({'__all__': [msg]})
+
     def _get_cmd(self):
         cmd = u'%s' % settings.DVBLAST_COMMAND
         cmd += ' -D @%s:%d' % (self.ip, self.port)
@@ -767,16 +797,15 @@ class MulticastInput(IPInput):
             cmd += '/udp'
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-            
+
         return cmd
-    
-    ip = models.IPAddressField(_(u'Endereço IP multicast'))
+
 
 @receiver(pre_save, sender=MulticastInput)
 def MulticastInput_pre_save(sender, instance, **kwargs):
     "Signal to create the route"
     server = instance.server
-    # If it already exists, delete 
+    # If it already exists, delete
     try:
         obj = MulticastInput.objects.get(pk=instance.pk)
         ip = obj.ip
@@ -784,11 +813,12 @@ def MulticastInput_pre_save(sender, instance, **kwargs):
         server.delete_route(ip, dev)
     except MulticastInput.DoesNotExist:
         pass
-    
+
     # Create a new rote
     ip = instance.ip
     dev = server.get_netdev(instance.interface.ipv4)
     server.create_route(ip, dev)
+
 
 @receiver(pre_delete, sender=MulticastInput)
 def MulticastInput_pre_delete(sender, instance, **kwargs):
@@ -798,6 +828,7 @@ def MulticastInput_pre_delete(sender, instance, **kwargs):
     dev = server.get_netdev(instance.interface.ipv4)
     server.delete_route(ip, dev)
 
+
 class FileInput(DeviceServer):
     """
     VLC streaming device.
@@ -806,7 +837,7 @@ class FileInput(DeviceServer):
     class Meta:
         verbose_name = _(u'Arquivo de entrada')
         verbose_name_plural = _(u'Arquivos de entrada')
-    
+
     filename = models.CharField(
         _(u'Arquivo de origem'),
         max_length=255,
@@ -816,7 +847,7 @@ class FileInput(DeviceServer):
     src = generic.GenericRelation(UniqueIP)
     
     file_list = None
-    
+
     def get_list_dir(self):
         if self.server_id is None:
             return []
@@ -829,17 +860,11 @@ class FileInput(DeviceServer):
             return []
         return self.file_list
     
-#    def __init__(self, *args, **kwargs):
-#        super(FileInput, self).__init__(*args, **kwargs)
-#        if self.server_id is not None:
-#            self._meta.get_field_by_name('filename')[0]._choices = lazy(
-#                self.get_list_dir, list)()
-    
     def __unicode__(self):
         if hasattr(self, 'server') is False:
             return self.description
         return '[%s] %s -->' % (self.server, self.description)
-    
+
     def _get_cmd(self):
         ip = self.src.get()
         cmd = u'%s' % settings.VLC_COMMAND
@@ -849,84 +874,96 @@ class FileInput(DeviceServer):
         cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
                                         ip.ip, ip.port)
-        
+
         return cmd
-    
+
     def start(self):
         """Inicia processo do VLC"""
         self.pid = self.server.execute_daemon(self._get_cmd())
         self.status = True
         self.save()
         return self.status
-    
+
     def switch_link(self):
         if self.sink is None or self.server_id is None:
             return 'Desconfigurado'
         if self.running():
-            url = reverse('device.views.vlc_stop',kwargs={'pk': self.id})
-            return '<a href="%s" id="vlc_id_%s" style="color:green;cursor:pointer;" >Rodando</a>' % (url,self.id)
-        url = reverse('device.views.vlc_start',kwargs={'pk': self.id})
-        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>' % (url,self.id)
+            url = reverse('device.views.vlc_stop', kwargs={'pk': self.id})
+            return '<a href="%s" id="vlc_id_%s" style="color:green;" >\
+Rodando</a>' % (url, self.id)
+        url = reverse('device.views.vlc_start', kwargs={'pk': self.id})
+        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>'\
+            % (url, self.id)
     switch_link.allow_tags = True
+
 
 class OutputModel(models.Model):
     "Each model of output type should inherit this"
     class Meta:
         abstract = True
-    
-    def _create_folders(self):
-        "Creates all the folders multicat needs"
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR, persist=True)
-        self.server.execute('mkdir -p %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR, persist=True)
-    
+
     content_type = models.ForeignKey(ContentType,
-                            limit_choices_to = {"model__in": ("UniqueIP",)},
-                            null=True)
+        limit_choices_to={"model__in": ("UniqueIP",)},
+        null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
+
+    def _create_folders(self):
+        "Creates all the folders multicat needs"
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR,
+            persist=True)
+        self.server.execute('mkdir -p %s%d' % (
+            settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR,
+            persist=True)
+
 
 class IPOutput(OutputModel, DeviceServer):
     "Generic IP output class"
     class Meta:
         abstract = True
-    
+
+    PROTOCOL_CHOICES = (
+                        (u'udp', u'UDP'),
+                        (u'rtp', u'RTP'),
+                        )
+
+    interface = models.ForeignKey(NIC, verbose_name=_(u'Interface de rede'))
+    port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
+    protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
+        choices=PROTOCOL_CHOICES, default=u'udp')
+
     def start(self):
         # Create the necessary folders
         self._create_folders()
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
-        self.pid = self.server.execute_daemon(self._get_cmd(), log_path=log_path)
+        self.pid = self.server.execute_daemon(self._get_cmd(),
+            log_path=log_path)
         self.save()
-    
-    PROTOCOL_CHOICES = (
-                        (u'udp', u'UDP'),
-                        (u'rtp', u'RTP'),
-                        )
-    
-    interface = models.ForeignKey(NIC, verbose_name=_(u'Interface de rede'))
-    port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
-    protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
-                                choices=PROTOCOL_CHOICES, default=u'udp')
+
 
 class MulticastOutput(IPOutput):
     "Multicast MPEG2TS IP output stream"
     class Meta:
         verbose_name = _(u'Saída IP multicast')
         verbose_name_plural = _(u'Saídas IP multicast')
-    
+
+    ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
+
     def __unicode__(self):
         return '%s:%d [%s]' % (self.ip_out, self.port, self.interface)
-    
+
     def validate_unique(self, exclude=None):
         # unique_together = ('ip', 'server')
         from django.core.exceptions import ValidationError
         val = MulticastOutput.objects.filter(ip=self.ip,
-                                          server=self.server)
+            server=self.server)
         if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %s' % (self.server.name, self.ip))
-            raise ValidationError({'__all__' : [msg]})
-    
+            msg = _(u'Combinação já existente: %s e %s' % (
+                self.server.name, self.ip))
+            raise ValidationError({'__all__': [msg]})
+
     def _get_cmd(self):
         cmd = u'%s' % settings.MULTICAT_COMMAND
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
@@ -934,31 +971,35 @@ class MulticastOutput(IPOutput):
         if self.protocol == 'udp':
             cmd += ' -U'
         cmd += ' %s:%d' % (self.ip_out, self.port)
-        
+
         return cmd
-    
-    ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
+
 
 class StreamRecorder(OutputModel, DeviceServer):
+    rotate = models.PositiveIntegerField()
+    folder = models.CharField(max_length=500)
+
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
-        
+
     def _get_cmd(self):
         cmd = u'%s' % settings.MULTICAT_COMMAND
-        cmd += ' -r %d' % (self.rotate * 60 * 27000000) # Convert to timestamps
+        #Convert to timestamps
+        cmd += ' -r %d' % (self.rotate * 60 * 27000000)
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         cmd += ' %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk)
         
         return cmd
-    
+
     def start(self):
         # Create the necessary folders
         self._create_folders()
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
-        self.pid = self.server.execute_daemon(self._get_cmd(), log_path=log_path)
+        self.pid = self.server.execute_daemon(self._get_cmd(),
+            log_path=log_path)
         self.save()
     
     rotate = models.PositiveIntegerField()

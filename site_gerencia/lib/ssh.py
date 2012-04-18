@@ -3,8 +3,10 @@
 """Friendly Python SSH2 interface."""
 
 import os
+import logging
 import tempfile
 import paramiko
+
 
 class Connection(object):
     """Connects and logs into the specified hostname.
@@ -17,6 +19,7 @@ class Connection(object):
                  password = None,
                  port = 22,
                  ):
+        log = logging.getLogger('device.remotecall')
         self._sftp_live = False
         self._sftp = None
         self._transport_live = False
@@ -34,9 +37,11 @@ class Connection(object):
         # Authenticate the transport.
         if password:
             # Using Password.
+            log.info('Connection using password')
             self._transport.connect(username = username, password = password )
         else:
             # Use Private Key.
+            log.info('Connection using rsa key')
             if not private_key:
                 # Try to use default key.
                 if os.path.exists(os.path.expanduser('~/.ssh/id_rsa')):
@@ -44,6 +49,7 @@ class Connection(object):
                 elif os.path.exists(os.path.expanduser('~/.ssh/id_dsa')):
                     private_key = '~/.ssh/id_dsa'
                 else:
+                    log.error('Need password or key to connect')
                     raise TypeError, "You have not specified a password or key."
             private_key_file = os.path.expanduser(private_key)
             rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
@@ -51,12 +57,16 @@ class Connection(object):
 
     def _sftp_connect(self):
         """Establish the SFTP connection."""
+        log = logging.getLogger('device.remotecall')
+        log.info('Connecting using SFTP')
         if not self._sftp_live:
             self._sftp = paramiko.SFTPClient.from_transport(self._transport)
             self._sftp_live = True
 
     def get(self, remotepath, localpath = None):
         """Copies a file between the remote host and the local host."""
+        log = logging.getLogger('device.remotecall')
+        log.info('geting file from remote:%s -> %s', remotepath, localpath)
         if not localpath:
             localpath = os.path.split(remotepath)[1]
         self._sftp_connect()
@@ -64,6 +74,8 @@ class Connection(object):
 
     def put(self, localpath, remotepath = None):
         """Copies a file between the local host and the remote host."""
+        log = logging.getLogger('device.remotecall')
+        log.info('sending file from local:%s -> %s', localpath, remotepath)
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
         self._sftp_connect()
@@ -71,17 +83,20 @@ class Connection(object):
 
     def execute(self, command):
         """Execute the given commands on a remote machine."""
+        log = logging.getLogger('device.remotecall')
         ret = {}
         channel = self._transport.open_session()
+        #channel.get_pty()
         channel.exec_command(command)
         ret_code = channel.recv_exit_status()
+        log.info('Return status [%s] command:%s', ret_code, command)
         ret['exit_code'] = ret_code
         output = channel.makefile('rb', -1).readlines()
         if output:
             ret['output'] = output
         else:
             ret['output'] = channel.makefile_stderr('rb', -1).readlines()
-        
+        #log.info('Status:%s Output:%s', ret['exit_code'], ret['output'][0:10])
         return ret
 
     def execute_daemon(self, command, log_path=None):
@@ -95,8 +110,8 @@ class Connection(object):
             /usr/bin/cvlc -I dummy -v -R
             /home/videos/Novos/red_ridding_hood_4M.ts
             --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
-        TODO: melhorar o local e nome do pidfile
         """
+        log = logging.getLogger('device.remotecall')
         ret = self.execute('/bin/mktemp')
         pidfile_path = ret['output'][0].strip()
         fullcommand = '/usr/sbin/daemonize -p %s ' % pidfile_path
@@ -108,13 +123,14 @@ class Connection(object):
         ## Buscando o pid
         output = self.execute(pidcommand)
         pid = int(output['output'][0].strip())
+        log.info('Daemon started with pid [%d] command:%s', pid, fullcommand)
         return pid
 
     def execute_with_timeout(self,command,timeout=10):
         """
         Executa comando no servidor com timeout e retorna o stdout concatenado
         com o stderr
-        
+
         Estudar e possibilidade para melhorar a conexão:
         EPoll:
         http://scotdoyle.com/python-epoll-howto.html
@@ -126,6 +142,7 @@ class Connection(object):
         import socket
         import select
         import time
+        log = logging.getLogger('device.remotecall')
         start = time.time()
         channel = self._transport.open_session()
         channel.settimeout(timeout)
@@ -152,24 +169,26 @@ class Connection(object):
                     pass
                 if time.time() - start > timeout:
                     channel.send_exit_status(15)
-                    kcommand = "kill -9 `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`"
+                    kcommand = "/bin/kill `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`"
                     try:
                         channel.get_transport().open_session().exec_command(\
                             kcommand % (command)
                         )
-                    except:
-                        pass
+                    except Exception as e:
+                        log.error('Execption on kill:%s', e)
                     channel.close()
                     run = False
                     break
-            except KeyboardInterrupt:
+            except KeyboardInterrupt as e:
                 channel.send_exit_status(9)
                 channel.close()
                 run = False
+                log.error('KeyboardInterrupt:%s', e)
                 break
-            except socket.timeout:
+            except socket.timeout as e:
                 channel.close()
                 run = False
+                log.error('Socket timeout:%s', e)
                 break
             if linha:
                 resp += linha
@@ -178,6 +197,7 @@ class Connection(object):
 
     def close(self):
         """Closes the connection and cleans up."""
+        log = logging.getLogger('device.remotecall')
         # Close SFTP Connection.
         if self._sftp_live:
             self._sftp.close()
@@ -189,9 +209,11 @@ class Connection(object):
 
     def __del__(self):
         """Attempt to clean up if not explicitly closed."""
+        log = logging.getLogger('device.remotecall')
         self.close()
 
     def genKey(self):
+        log = logging.getLogger('device.remotecall')
         return paramiko.RSAKey.generate(2048)
 
 

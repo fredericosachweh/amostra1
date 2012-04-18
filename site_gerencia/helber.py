@@ -176,18 +176,31 @@ INSTALLED_APPS = (
     'epg',
 )
 
-MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
-MULTICAST_COMMAND = '/usr/bin/multicat'
-MULTICAST_APP = 'multicat'
+# Auxiliar apps configuration
+MULTICAT_COMMAND = '/usr/bin/multicat'
+MULTICAT_LOGS_DIR = '/var/log/multicat/'
+MULTICAT_RECORDINGS_DIR = '/var/lib/multicat/recordings/'
+MULTICAT_SOCKETS_DIR = '/var/run/multicat/sockets/'
 
-DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
 DVBLAST_COMMAND = '/usr/bin/dvblast'
-#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
-DVBLAST_APP = 'dvblast'
-DVBLAST_CONF_DIR = '/etc/dvblast'
+DVBLAST_CONFS_DIR = '/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
+
+VLC_COMMAND = '/usr/bin/cvlc'
+VLC_VIDEOFILES_DIR = '/home/videos/'
+
+INTERNAL_IP_MASK = '239.10.%d.%d'
+EXTERNAL_IP_MASK = '239.1.%d.%d'
+
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
+    try:
+        import django_extensions
+        INSTALLED_APPS += ('django_extensions',)
+    except ImportError:
+        pass
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar

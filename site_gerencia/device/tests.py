@@ -213,7 +213,7 @@ class CommandsGenerationTest(TestCase):
             "-a 0 "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
@@ -232,7 +232,7 @@ class CommandsGenerationTest(TestCase):
             "-a 1 "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
@@ -248,7 +248,7 @@ class CommandsGenerationTest(TestCase):
             "-D @192.168.0.10:30000/udp "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, unicastin.pk,
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
              )
@@ -264,15 +264,15 @@ class CommandsGenerationTest(TestCase):
             "-D @224.0.0.1:40000/udp "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, multicastin.pk,
              settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
              )
         self.assertEqual(expected_cmd, multicastin._get_cmd())
-        
+
         expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
-    
+
     def test_fileinput(self):
         fileinput = FileInput.objects.all()[0]
         expected_cmd = (
@@ -513,11 +513,13 @@ class MySeleniumTests(LiveServerTestCase):
 class UniqueIPTest(TestCase):
 
     def test_sequential(self):
-        from device.models import UniqueIP
+        srv = Server.objects.create(host='127.0.0.1', name='local',
+            ssh_port=22)
+        nic = NIC.objects.create(server=srv, ipv4='127.0.0.1')
         for i in range(1024):
-            ip1 = UniqueIP()
-            #ip1.save()
-            #print(ip1._gen_ip())
+            ip1 = UniqueIP(nic=nic)
+            ip1.save()
+
 
 class ConnectionTest(TestCase):
     """
@@ -565,15 +567,16 @@ class ConnectionTest(TestCase):
         conn = Connection('127.0.0.1',
             username=getpass.getuser(), private_key='~/.ssh/id_rsa')
         test_command = '%s/device/helper/test' % (os.path.abspath('.'))
-        t = conn.execute_with_timeout(test_command,timeout=2)
+        t = conn.execute_with_timeout(test_command, timeout=2)
         self.assertEqual(
             'Inicio\nP1**********Fim',
             t,
             'Valor esperado diferente [%s]' % t
         )
 
+
 class ServerTest(TestCase):
-    
+
     def setUp(self):
         import getpass
         server = Server.objects.create(
@@ -583,17 +586,17 @@ class ServerTest(TestCase):
             username=getpass.getuser(),
             rsakey='~/.ssh/id_rsa',
         )
-    
+
     def test_list_dir(self):
         server = Server.objects.get(pk=1)
         l = server.list_dir('/')
-        self.assertGreater( l.count('boot') , 0 ,
+        self.assertGreater(l.count('boot'), 0,
             'Deveria existir o diretório boot')
-        self.assertGreater( l.count('bin') , 0 ,
+        self.assertGreater(l.count('bin'), 0,
             'Deveria existir o diretório bin')
-        self.assertGreater( l.count('usr') , 0 ,
+        self.assertGreater(l.count('usr'), 0,
             'Deveria existir o diretório usr')
-    
+
     def test_list_process(self):
         from models import Server
         server = Server.objects.get(pk=1)
@@ -602,7 +605,7 @@ class ServerTest(TestCase):
         self.assertEqual(procs[0]['pid'],
             1,
             'O primero processo deveria ter pid=1')
-    
+
     def test_start_process(self):
         server = Server.objects.get(pk=1)
         cmd = '/bin/sleep 10'
@@ -613,20 +616,20 @@ class ServerTest(TestCase):
         server.kill_process(pid)
         self.assertFalse(server.process_alive(pid),
             'O processo pid=%d deveria ter morrido.' % pid)
-    
+
     def test_list_ifaces(self):
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
         ifaces = server._list_interfaces()
-    
+
     def test_local_dev(self):
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
         iface = server.get_netdev('127.0.0.1')
         self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
-    
+
     def test_create_route(self):
         server = Server.objects.get(pk=1)
         server.connect()
@@ -642,3 +645,10 @@ class ServerTest(TestCase):
         routes = server.list_routes()
         self.assertNotIn(route, routes,
                 'Route %s -> %s should not exists' % route)
+
+
+class TestViews(TestCase):
+    """
+    Testes das views dos devices
+    """
+    pass

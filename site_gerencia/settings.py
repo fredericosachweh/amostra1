@@ -144,13 +144,39 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
+## Color: \033[35m \033[0m
+# \t%(module)s->%(funcName)s->%(lineno)d
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(name)s %(funcName)s\
+(%(filename)s:%(lineno)d)] \t%(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s\t%(message)s'
+        },
+    },
     'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
         'mail_admins': {
             'level': 'ERROR',
             'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'file.debug': {
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug.log',
+            'formatter': 'verbose'
+        },
+        'file.device.remotecall': {
+            'class': 'logging.FileHandler',
+            'filename': 'log/remote-call.log',
+            'formatter': 'verbose'
         }
     },
     'loggers': {
@@ -159,6 +185,14 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'device.view': {
+            'handlers': ['file.debug'],
+            'propagate': True
+        },
+        'device.remotecall': {
+            'handlers': ['file.device.remotecall'],
+            'propagate': True
+        }
     }
 }
 
@@ -183,8 +217,6 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
-    # Utilitário
-    #'django_extensions',
     # App with info about possible frequencies to tune
     'dvbinfo',
 )
@@ -214,12 +246,15 @@ DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
 VLC_COMMAND = '/usr/bin/cvlc'
 VLC_VIDEOFILES_DIR = '/home/videos/'
 
-INTERNAL_IP_MASK = '239.1.%d.%d'
+INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
+    ## Envia todas as mensagens de log para o console
+    #for logger in LOGGING['loggers']:
+    #    LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
         import django_extensions
         INSTALLED_APPS += ('django_extensions',)
