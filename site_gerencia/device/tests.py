@@ -4,10 +4,15 @@
 Testes unitários
 """
 
-from django.test import TestCase
+from django.test import TestCase, LiveServerTestCase
+from django.test.client import Client
+from django.test.client import RequestFactory
 from django.conf import settings
 
 from device.models import *
+
+from selenium.webdriver.firefox.webdriver import WebDriver
+from selenium.webdriver.support.wait import WebDriverWait
 
 class CommandsGenerationTest(TestCase):
     def setUp(self):
@@ -324,6 +329,153 @@ class CommandsGenerationTest(TestCase):
         self.assertIn(recorder, internal_src)
         self.assertEqual(internal, ipout.sink)
         self.assertEqual(internal, recorder.sink)
+
+class AdaptersManipulationTests(TestCase):
+    def setUp(self):
+        import getpass
+        server = Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
+        )
+        self.client = Client()
+        self.factory = RequestFactory()
+    
+    def tearDown(self):
+        Server.objects.all().delete()
+    
+    def test_update_by_post(self):
+        url = reverse('device.views.server_update_adapter',
+                      kwargs={'adapter_nr' : 0})
+        # Create a new adapter
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        # Delete it
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 200)
+
+class MySeleniumTests(LiveServerTestCase):
+    fixtures = ['user-data.json', 'default-server.json', 'antenna.json']
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.selenium = WebDriver()
+        super(MySeleniumTests, cls).setUpClass()
+    
+    @classmethod
+    def tearDownClass(cls):
+        super(MySeleniumTests, cls).tearDownClass()
+        cls.selenium.quit()
+    
+    def _login(self, username, password):
+        login_url = '%s%s' % (self.live_server_url,
+                                reverse('django.contrib.auth.views.login'))
+        self.selenium.get(login_url)
+        username_input = self.selenium.find_element_by_name("username")
+        username_input.send_keys(username)
+        password_input = self.selenium.find_element_by_name("password")
+        password_input.send_keys(password)
+        self.selenium.find_element_by_xpath('//input[@type="submit"]').click()
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+    
+    def _is_logged(self):
+        from django.contrib.auth.models import User
+        from django.contrib.sessions.models import Session
+        from datetime import datetime
+        admin = User.objects.get(username='admin')
+        # Query all non-expired sessions
+        sessions = Session.objects.filter(expire_date__gte=datetime.now())
+        for session in sessions:
+            data = session.get_decoded()
+            if data.get('_auth_user_id', None) == admin.id:
+                return True
+        return False
+    
+    def _select(self, id, choice):
+        field = self.selenium.find_element_by_id(id)
+        for option in field.find_elements_by_tag_name('option'):
+            if option.text == choice:
+                option.click() # select() in earlier versions of webdriver
+    
+    def _select_by_value(self, id, value):
+        field = self.selenium.find_element_by_id(id)
+        field.find_element_by_xpath("//option[@value='%s']" % value).click()
+    
+    def test_valid_login(self):
+        self.assertFalse(self._is_logged())
+        self._login('admin', 'cianet')
+        index_url = '%s%s' % (self.live_server_url, reverse('admin:index'))
+        self.assertEqual(index_url, self.selenium.current_url,
+                         "Could not login")
+        self.assertTrue(self._is_logged())
+    
+    def test_invalid_login(self):
+        self._login('admin', 'cianet123')
+        login_url = '%s%s' % (self.live_server_url,
+                                reverse('django.contrib.auth.views.login'))
+        self.assertEqual(login_url, self.selenium.current_url,
+                         "Login should have failed")
+    
+    def test_unicastinput(self):
+        fields = {'server' : 'local',
+                  'interface' : 1,
+        }
+        self._login('admin', 'cianet')
+        add_new_url = '%s%s' % (self.live_server_url,
+                                reverse('admin:device_unicastinput_add'))
+        self.selenium.get(add_new_url)
+        #self._select('id_server', 'local')
+        self._select_by_value('id_server', 1)
+        # Wait ajax to complete
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_xpath("//option[@value='2']"))
+        #self._select('id_interface', 'eth0 - 192.168.0.14')
+        self._select_by_value('id_interface', 2)
+        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+        result = UnicastInput.objects.get(pk=1)
+        self.assertEqual(1, result.server_id)
+        #self.assertDictEqual(fields, result.values()[0])
+        result.delete()
+    
+    def test_multicastinput(self):
+        self._login('admin', 'cianet')
+        add_new_url = '%s%s' % (self.live_server_url,
+                                reverse('admin:device_multicastinput_add'))
+        self.selenium.get(add_new_url)
+        self._select('id_server', 'local')
+        self._select('id_interface', 'eth0 - 192.168.0.14')
+        ip = self.selenium.find_element_by_name("ip")
+        ip.send_keys('239.0.1.1')
+        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+        result = MulticastInput.objects.get(pk=1)
+        result.delete()
+    
+    def test_dvbtuner(self):
+        self._login('admin', 'cianet')
+        add_new_url = '%s%s' % (self.live_server_url,
+                                reverse('admin:device_dvbtuner_add'))
+        self.selenium.get(add_new_url)
+        self._select('id_server', 'local')
+        freq = self.selenium.find_element_by_name("frequency")
+        freq.send_keys('3990')
+        sr = self.selenium.find_element_by_name("symbol_rate")
+        sr.send_keys('7400')
+        self._select('id_modulation', '8-PSK')
+        self._select('id_polarization', 'Vertical (V)')
+        self._select('id_fec', '3/4')
+        self._select('id_antenna', 'C2')
+        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+        result = DvbTuner.objects.get(pk=1)
+        result.delete()
 
 class UniqueIPTest(TestCase):
 

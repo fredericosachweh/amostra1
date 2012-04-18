@@ -161,7 +161,19 @@ class Server(models.Model):
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
         return resp
-
+    
+    def auto_detect_digital_tuners(self):
+        import re
+        resp = []
+        for device in self.list_dir('/dev/dvb/'):
+            adapter = DigitalTunerHardware(server=self)
+            match = re.match(r'^adapter(\d+)$', device)
+            adapter.adapter_nr = match.groups()[0]
+            adapter.grab_info()
+            adapter.save()
+            resp.append(adapter)
+        return resp
+    
     def auto_create_nic(self):
         """
         Auto create NIC (Network interfaces)
@@ -457,6 +469,70 @@ class InputModel(models.Model):
         self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
         self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
         self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR)
+
+class DigitalTunerHardware(models.Model):
+    
+    def __unicode__(self):
+        return '[%s:%s] Bus: %s, Adapter: %d, Driver: %s' % (self.id_vendor,
+            self.id_product, self.bus, self.adapter_nr, self.driver)
+    
+    def _read_mac_from_dvbworld(self):
+        if self.id_vendor == '04b4':
+            self.server.execute('/usr/bin/sudo /usr/bin/dvbnet -a %s -p 100'
+                            % self.adapter_nr, persist=True)
+            mac = self.server.execute('/sbin/ifconfig dvb%s_0 | '
+                            'grep -o -E "([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}"'
+                                % self.adapter_nr, persist=True)
+            self.server.execute('/usr/bin/sudo /usr/bin/dvbnet -d %s'
+                                % self.adapter_nr)
+            return " ".join(mac).strip()
+        else:
+            raise Exception('This adapter is not from DVBWorld: %s' % self)
+    
+    def grab_info(self):
+        "Connects to server and grab some information to fill in the object"
+        import re
+        udevadm = '/sbin/udevadm'
+        # Sanity check
+        if not self.server or not self.adapter_nr:
+            raise Exception('server and adapter_nr attributes '
+                                'must both be pre-defined.')
+        # Connect to server and obtain data
+        try:
+            self.server.execute('/bin/ls /dev/dvb/adapter%s' % self.adapter_nr,
+                                    persist=True)
+        except Server.ExecutionFailure: # The file don't exist
+            return
+        info = " ".join(
+            self.server.execute("%s info -a -p "
+            "$(%s info -q path -n /dev/dvb/adapter%s/frontend0)" % (
+            udevadm, udevadm, self.adapter_nr), persist=True
+            )
+        )
+        match = re.search(r'ATTRS\{idVendor\}=="([0-9a-fA-F]+)"', info)
+        self.id_vendor = match.groups()[0]
+        match = re.search(r'ATTRS\{idProduct\}=="([0-9a-fA-F]+)"', info)
+        self.id_product = match.groups()[0]
+        match = re.search(r'KERNELS=="(.*)"', info)
+        self.bus = match.groups()[0]
+        match = re.search(r'ATTRS\{devnum\}=="(\d+)"', info)
+        devnum = match.groups()[0]
+        ret = self.server.execute(
+            '/usr/bin/lsusb -t | /bin/grep "Dev %s"' % devnum)
+        match = re.search(r'Driver=(.*),', " ".join(ret))
+        self.driver = match.groups()[0]
+        
+        if self.id_vendor == '04b4':
+            self.uniqueid = self._read_mac_from_dvbworld()
+    
+    server = models.ForeignKey(Server)
+    id_vendor = models.CharField(max_length=100)
+    id_product = models.CharField(max_length=100)
+    bus = models.CharField(max_length=100)
+    driver = models.CharField(max_length=100)
+    last_update = models.DateTimeField(auto_now=True)
+    uniqueid = models.CharField(max_length=100, unique=True, null=True)
+    adapter_nr = models.PositiveSmallIntegerField(unique=True)
 
 class DigitalTuner(InputModel, DeviceServer):
     class Meta:

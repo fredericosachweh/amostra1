@@ -26,6 +26,25 @@ def server_list_interfaces(request):
         response += ('<option value="%s">%s - %s</option>' % (i.pk, i.name, i.ipv4))
     return HttpResponse(response)
 
+def server_update_adapter(request, adapter_nr=None):
+    # Identify server by its IP
+    remote_addr =  request.META.get('REMOTE_ADDR', None)
+    server = get_object_or_404(models.Server, host=remote_addr)
+    if request.method == 'POST':
+        try:
+            adapter = models.DigitalTunerHardware.objects.get(server=server,
+                                                        adapter_nr=adapter_nr)
+        except models.DigitalTunerHardware.DoesNotExist:
+            adapter = models.DigitalTunerHardware(server=server,
+                                                        adapter_nr=adapter_nr)
+        adapter.grab_info()
+        adapter.save()
+    elif request.method == 'DELETE':
+        adapter = get_object_or_404(models.DigitalTunerHardware,
+                                   server=server, adapter_nr=adapter_nr)
+        adapter.delete()
+    return HttpResponse()
+
 def vlc_start(request,pk=None):
     print 'vlc_start'
     o = get_object_or_404(models.Vlc,id=pk)
