@@ -829,11 +829,11 @@ class FileInput(DeviceServer):
             return []
         return self.file_list
     
-    def __init__(self, *args, **kwargs):
-        super(FileInput, self).__init__(*args, **kwargs)
-        if self.server_id is not None:
-            self._meta.get_field_by_name('filename')[0]._choices = lazy(
-                self.get_list_dir, list)()
+#    def __init__(self, *args, **kwargs):
+#        super(FileInput, self).__init__(*args, **kwargs)
+#        if self.server_id is not None:
+#            self._meta.get_field_by_name('filename')[0]._choices = lazy(
+#                self.get_list_dir, list)()
     
     def __unicode__(self):
         if hasattr(self, 'server') is False:
