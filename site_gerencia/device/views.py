@@ -1,6 +1,9 @@
-
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render_to_response
+# -*- encoding:utf-8 -*-
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
+from django.shortcuts import render_to_response
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 import models
@@ -9,57 +12,73 @@ import logging
 
 
 def home(request):
-    return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
+    return HttpResponseRedirect(reverse('admin:index'))
 
-def server_status(request,pk=None):
-    device = get_object_or_404(models.Server,id=pk)
-    device.connect()
+
+def server_status(request, pk=None):
+    server = get_object_or_404(models.Server, id=pk)
+    server.connect()
     log = logging.getLogger('device.view')
-    log.warning('Aviso')
-    log.debug('LALALA')
-    log.error('EEELALALA')
-    log.debug('view:server_status(pk=%s)' % pk)
-    if device.status is False:
-        log.error(u'Cant connect with server:%s' % device)
+    log.debug('server_status(pk=%s)', pk)
+    if server.status is False:
+        log.error(u'Cant connect with server:(%s) %s:%d %s',
+            server, server.host, server.ssh_port, server.msg)
     else:
-        device.auto_create_nic()
-    log.info('Device:%s [%s]' %(device,device.status))
-    log.info('view:server_status(pk=%s)' % pk)
+        server.auto_create_nic()
+    log.info('Server:%s [%s]', server, server.status)
+    log.info('server_status(pk=%s)', pk)
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
+
 def server_list_interfaces(request):
+    log = logging.getLogger('device.view')
     pk = request.GET.get('server')
-    server = get_object_or_404(models.Server,id=pk)
+    server = get_object_or_404(models.Server, id=pk)
+    log.debug('Listing NICs from server (pk=%s)', pk)
     response = '<option selected="selected" value="">---------</option>'
     for i in models.NIC.objects.filter(server=server):
-        response += ('<option value="%s">%s - %s</option>' % (i.ipv4, i.name, i.ipv4))
+        response += ('<option value="%s">%s - %s</option>' % (i.ipv4,
+            i.name, i.ipv4))
     return HttpResponse(response)
 
-def vlc_start(request,pk=None):
-    print 'vlc_start'
-    o = get_object_or_404(models.FileInput,id=pk)
+
+def file_start(request, pk=None):
+    log = logging.getLogger('device.view')
+    o = get_object_or_404(models.FileInput, id=pk)
+    log.info('Starting %s', o)
     o.start()
+    if o.status is True:
+        log.info('File started with pid:%d', o.pid)
+    else:
+        log.warning('File could not start:%s', o)
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
-def vlc_stop(request,pk=None):
-    print 'vlc_stop'
-    o = get_object_or_404(models.FileInput,id=pk)
+
+def file_stop(request, pk=None):
+    log = logging.getLogger('device.view')
+    o = get_object_or_404(models.FileInput, id=pk)
+    log.info('Stopping %s', o)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
-# View to return list of available DVB-S/S2 tuners
+
 def get_dvb_tuners(request):
+    'View to return list of available DVB-S/S2 tuners'
+    log = logging.getLogger('device.view')
     if request.method == 'GET' and request.GET.get('server'):
         server = get_object_or_404(models.Server, id=request.GET.get('server'))
         # Retrive list of devices MAC addresses
         import re
         macs = server.execute('cat /dev/dvb/adapter*.mac')
-        macs = map(lambda x: x.strip(), macs) # Strip \n
+        macs = map(lambda x: x.strip(), macs)  # Strip \n
         # Remove 'PixelView' entries from list
-        macs = [ mac for mac in macs if re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', mac) ]
-        if len(macs) and re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', macs[0]):
+        macs = [mac for mac in macs if re.match(
+            r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', mac)]
+        if len(macs)\
+            and re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', macs[0]):
             # Retrieve DvbTuner objects
-            tuners = models.DvbTuner.objects.filter(server=server).values_list('adapter')
+            tuners = models.DvbTuner.objects.filter(
+                server=server).values_list('adapter')
             tuners = [tuner[0] for tuner in tuners]
             # Filter already used macs
             macs = list(set(macs) - set(tuners))
@@ -67,102 +86,72 @@ def get_dvb_tuners(request):
             response = ''
             for mac in macs:
                 response += ('<option value=%s>%s</option>' % (mac, mac))
-            
             # Put in the currently selected mac address
             try:
-                query = models.DvbTuner.objects.get(server=server, id=request.GET.get('tuner'))
+                query = models.DvbTuner.objects.get(server=server,
+                    id=request.GET.get('tuner'))
                 mac = query.adapter
-                response += '<option selected="selected" value="%s">%s</option>' % (mac, mac)
-            except models.DvbTuner.DoesNotExist:
+                response += \
+                    '<option selected="selected" value="%s">%s</option>'\
+                    % (mac, mac)
+            except models.DvbTuner.DoesNotExist as ex:
+                log.error('DvbTuner does not exists:%s', ex)
                 pass
             return HttpResponse(response)
         else:
             return HttpResponse()
     else:
+        log.error('request must be GET with server parameter')
         return HttpResponseBadRequest()
 
-# View to return the number of available ISDB-Tb tuners
+
 def get_isdb_tuners(request):
+    log = logging.getLogger('device.view')
+    'View to return the number of available ISDB-Tb tuners'
     if request.method == 'GET' and request.GET.get('server'):
         server = get_object_or_404(models.Server, id=request.GET.get('server'))
         adapters = server.execute('cat /dev/dvb/adapter*.mac')
         adapters = map(lambda x: x.strip(), adapters)
         # Filter to type PixelView
-        adapters = [ adapter for adapter in adapters if adapter == 'PixelView' ]
+        adapters = [adapter for adapter in adapters if adapter == 'PixelView']
         a_count = len(adapters)
         # Fetch existent tuners
         t_count = models.IsdbTuner.objects.filter(server=server).count()
         # Return the difference
         diff = a_count - t_count
-        if request.GET.has_key('tuner'):
+        if request.GET.get('tuner') is not None:
             diff = diff + 1
         return HttpResponse(diff)
     else:
+        log.error('request must be GET with server parameter')
         return HttpResponseBadRequest()
-        
+
+
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
         if ttype == 'dvbs':
             return render_to_response('dvbs_autofill_form.html',
-                                      { 'fields' : forms.DvbTunerAutoFillForm },
-                                      context_instance=RequestContext(request))
+                {'fields': forms.DvbTunerAutoFillForm},
+                context_instance=RequestContext(request))
         elif ttype == 'isdb':
             return render_to_response('isdb_autofill_form.html',
-                                      { 'fields' : forms.IsdbTunerAutoFillForm },
-                                      context_instance=RequestContext(request))
+                {'fields': forms.IsdbTunerAutoFillForm},
+                context_instance=RequestContext(request))
     elif request.method == 'POST':
         if ttype == 'dvbs':
-            return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s", "%s", "%s", "%s", "%s");</script>' % \
-                                (request.POST['freq'],request.POST['sr'],request.POST['pol'],request.POST['mod'],request.POST['fec']))
+            return HttpResponse(\
+'<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s",\
+"%s","%s", "%s", "%s");</script>' % \
+(request.POST['freq'], request.POST['sr'], request.POST['pol'], \
+ request.POST['mod'], request.POST['fec']))
         elif ttype == 'isdb':
-            return HttpResponse('<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");</script>' % \
-                                (request.POST['freq']))
+            return HttpResponse(\
+'<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");\
+</script>' % \
+(request.POST['freq']))
 
-#def play(request,streamid=None):
-#    stream = get_object_or_404(Stream,id=streamid)
-#    stream.play()
-#    return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
-#
-#def stop(request,streamid=None):
-#    stream = get_object_or_404(Stream,id=streamid)
-#    stream.stop()
-#    return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
-#
-#def record(request,streamid=None,act=None):
-#    stream = get_object_or_404(Stream,id=streamid)
-#    stream.stop()
-#    return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
-#
-#def scan_dvb(request,dvbid=None):
-#    dvb = get_object_or_404(DVBSource,id=dvbid)
-#    import simplejson
-#    canais = dvb.scan_channels()
-#    enc = simplejson.encoder.JSONEncoder()
-#    resposta = enc.encode(canais)
-#    #print(resposta)
-#    return HttpResponse(resposta,mimetype='application/javascript')
-#
-#def fake_scan_dvb(request,dvbid=None):
-#    import simplejson
-#    if dvbid == 1:
-#        canais = {'program': '1', 'pid': '80'}
-#    else:
-#        canais = {'program': '1', 'pid': '32'}, {'program': '2', 'pid': '259'}
-#    enc = simplejson.encoder.JSONEncoder()
-#    resposta = enc.encode(canais)
-#    return HttpResponse(resposta,mimetype='application/javascript')
-#
-#def dvb_play(request,streamid=None):
-#    stream = get_object_or_404(DVBSource,id=streamid)
-#    stream.play()
-#    return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
-#
-#def dvb_stop(request,streamid=None):
-#    stream = get_object_or_404(DVBSource,id=streamid)
-#    stream.stop()
-#    return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
-#
-#
+
+### Deixado como exemplo de como executar o play do TVoD (catchuptv)
 #def tvod(request):
 #    from player import Player
 #    from django.conf import settings
@@ -174,8 +163,8 @@ def auto_fill_tuner_form(request, ttype):
 #    action = request.GET.get('action')
 #    # Grava:
 #    # multicat -r 97200000000 -u @239.0.1.1:10000 /ldslsdld/dsasd/ch_3
-#    # Roda unicast 5 min. 
-#    # multicat -U -k -$((60*5*27000000)) /ldslsdld/dsasd/ch_3 192.168.0.244:5000
+#    # Roda unicast 5 min.
+#    # multicat -U -k -$((60*5*27000000)) /xx/yy/ch_3 192.168.0.244:5000
 #    print('comando de tvod executado. seek: '+seek)
 #    if seek:
 #        seek = int(seek)
@@ -188,11 +177,12 @@ def auto_fill_tuner_form(request, ttype):
 #        resposta = '{"status":"OK","command":"stop"}'
 #        return HttpResponse(resposta,mimetype='application/javascript')
 #    if os.path.exists(channel) is False:
-#        resposta = '{"status":"ERROR","message":"channel record %s does not existis":"path":"%s"}' %(channel_number,channel)
+#        resposta = '{"status": "ERROR", "message": \
+#"channel record %s does not existis":"path":"%s"}' %(channel_number,channel)
 #        return HttpResponse(resposta,mimetype='application/javascript')
 #    p = Player()
 #    pid = p.direct_play(channel, ip, port, seek)
-#    resposta = '{"status":"OK","PID":"%s","seek":%s,"channel_path":"%s","destination":"%s"}' %(pid,seek,channel,'%s:%d'%(ip,port))
+#    resposta = '{"status":"OK","PID":"%s","seek":%s,"channel_path":"%s",\
+#"destination":"%s"}' %(pid,seek,channel,'%s:%d'%(ip,port))
 #    return HttpResponse(resposta,mimetype='application/javascript')
-#    
-
+#

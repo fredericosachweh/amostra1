@@ -9,6 +9,7 @@ from django.conf import settings
 
 from device.models import *
 
+
 class CommandsGenerationTest(TestCase):
     def setUp(self):
         import getpass
@@ -184,10 +185,10 @@ class CommandsGenerationTest(TestCase):
             interface=nic_b,
             sink=internal_g,
         )
-    
+
     def tearDown(self):
         Server.objects.all().delete()
-    
+
     def test_dvbtuner(self):
         tuner = DvbTuner.objects.get(pk=1)
         expected_cmd = (
@@ -199,15 +200,14 @@ class CommandsGenerationTest(TestCase):
             "-a 0 "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=0))
-        
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
-    
+
     def test_isdbtuner(self):
         tuner = IsdbTuner.objects.get(pk=2)
         expected_cmd = (
@@ -218,15 +218,14 @@ class CommandsGenerationTest(TestCase):
             "-a 1 "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
-        
         expected_conf = u'239.1.0.4:20000/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
-    
+
     def test_unicastinput(self):
         unicastin = UnicastInput.objects.get(port=30000)
         expected_cmd = (
@@ -234,15 +233,15 @@ class CommandsGenerationTest(TestCase):
             "-D @192.168.0.10:30000/udp "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, unicastin.pk,
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
-        
+
         expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
-    
+
     def test_multicastinput(self):
         multicastin = MulticastInput.objects.get(port=40000)
         expected_cmd = (
@@ -250,15 +249,15 @@ class CommandsGenerationTest(TestCase):
             "-D @224.0.0.1:40000/udp "
             "-c %s%d.conf "
             "-r %s%d.sock"
-        ) % (settings.DVBLAST_COMMAND, 
+        ) % (settings.DVBLAST_COMMAND,
              settings.DVBLAST_CONFS_DIR, multicastin.pk,
              settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
              )
         self.assertEqual(expected_cmd, multicastin._get_cmd())
-        
+
         expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
-    
+
     def test_fileinput(self):
         fileinput = FileInput.objects.all()[0]
         expected_cmd = (
@@ -269,7 +268,7 @@ class CommandsGenerationTest(TestCase):
         ) % (settings.VLC_COMMAND,
              settings.VLC_VIDEOFILES_DIR)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
-    
+
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
         expected_cmd = (
@@ -277,25 +276,25 @@ class CommandsGenerationTest(TestCase):
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
             "-U 239.0.1.3:10000"
-        ) % (settings.MULTICAT_COMMAND, 
+        ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
              )
         self.assertEqual(expected_cmd, ipout._get_cmd())
-    
+
     def test_streamrecorder(self):
         recorder = StreamRecorder.objects.get(folder='/tmp/recording_a')
         expected_cmd = (
             "%s "
-            "-r 97200000000 " # 27M * 60 * 60
+            "-r 97200000000 "  # 27M * 60 * 60
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
             "%s%d"
-        ) % (settings.MULTICAT_COMMAND, 
+        ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, recorder.pk,
              settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
-    
+
     def test_connections(self):
         # Test dvbtuner generic relation
         dvbtuner = DvbTuner.objects.all()[0]
@@ -325,14 +324,17 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(internal, ipout.sink)
         self.assertEqual(internal, recorder.sink)
 
+
 class UniqueIPTest(TestCase):
 
     def test_sequential(self):
-        srv = Server.objects.create(host='127.0.0.1', name='local', ssh_port=22)
+        srv = Server.objects.create(host='127.0.0.1', name='local',
+            ssh_port=22)
         nic = NIC.objects.create(server=srv, ipv4='127.0.0.1')
         for i in range(1024):
             ip1 = UniqueIP(nic=nic)
             ip1.save()
+
 
 class ConnectionTest(TestCase):
     """
@@ -356,7 +358,7 @@ class ConnectionTest(TestCase):
             '%s\n' % (os.environ.get('HOME')),
             'O home deveria ser "%s\n"' % (os.environ.get('HOME'))
         )
-    
+
     def test_connection_failure(self):
         "Teste para conectar e falhar uma conexão (Porta errada)"
         import getpass
@@ -371,7 +373,7 @@ class ConnectionTest(TestCase):
             'Unable to connect to 127.0.0.1: [Errno 111] Connection refused',
             'Deveria dar erro de conexão')
         self.assertFalse(srv.status, 'O status da conexão deveria ser False')
-    
+
     def test_low_respose_command(self):
         "Test de comando demorado para executar"
         import os
@@ -387,8 +389,9 @@ class ConnectionTest(TestCase):
             'Valor esperado diferente [%s]' % t
         )
 
+
 class ServerTest(TestCase):
-    
+
     def setUp(self):
         import getpass
         server = Server.objects.create(
@@ -398,17 +401,17 @@ class ServerTest(TestCase):
             username=getpass.getuser(),
             rsakey='~/.ssh/id_rsa',
         )
-    
+
     def test_list_dir(self):
         server = Server.objects.get(pk=1)
         l = server.list_dir('/')
-        self.assertGreater( l.count('boot') , 0 ,
+        self.assertGreater(l.count('boot'), 0,
             'Deveria existir o diretório boot')
-        self.assertGreater( l.count('bin') , 0 ,
+        self.assertGreater(l.count('bin'), 0,
             'Deveria existir o diretório bin')
-        self.assertGreater( l.count('usr') , 0 ,
+        self.assertGreater(l.count('usr'), 0,
             'Deveria existir o diretório usr')
-    
+
     def test_list_process(self):
         from models import Server
         server = Server.objects.get(pk=1)
@@ -417,7 +420,7 @@ class ServerTest(TestCase):
         self.assertEqual(procs[0]['pid'],
             1,
             'O primero processo deveria ter pid=1')
-    
+
     def test_start_process(self):
         server = Server.objects.get(pk=1)
         cmd = '/bin/sleep 10'
@@ -428,32 +431,37 @@ class ServerTest(TestCase):
         server.kill_process(pid)
         self.assertFalse(server.process_alive(pid),
             'O processo pid=%d deveria ter morrido.' % pid)
-    
+
     def test_list_ifaces(self):
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
         ifaces = server._list_interfaces()
-    
+
     def test_local_dev(self):
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
         iface = server.get_netdev('127.0.0.1')
         self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
-    
+
     def test_create_route(self):
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
         route = ('239.0.1.10', 'lo')
-        
         server.create_route(*route)
         routes = server.list_routes()
         self.assertIn(route, routes,
                 'Route %s -> %s should exists' % route)
-        
         server.delete_route(*route)
         routes = server.list_routes()
         self.assertNotIn(route, routes,
                 'Route %s -> %s should not exists' % route)
+
+
+class TestViews(TestCase):
+    """
+    Testes das views dos devices
+    """
+    pass

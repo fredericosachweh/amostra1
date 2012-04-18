@@ -37,16 +37,6 @@ class AdminStream(admin.ModelAdmin):
     list_display = ('__unicode__','status',)
 
 
-#class AdminDVBDestinationInline(admin.TabularInline):#StackedInline
-#    model = models.DvbblastProgram
-#    extra = 3
-
-
-#class AdminDVBSource(admin.ModelAdmin):
-#    inlines = [AdminDVBDestinationInline,]
-#    list_display = ('__unicode__','status',)
-
-
 class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__','in_use','destinations',)
 
@@ -70,16 +60,7 @@ class AdminMulticastInput(admin.ModelAdmin):
     form = forms.MulticastInputForm
 
 admin.site.register(models.UniqueIP)
-#admin.site.register(models.Channel)
 admin.site.register(models.Server,AdminServer)
-#admin.site.register(models.Vlc,AdminDevice)
-#admin.site.register(models.Dvblast)
-#admin.site.register(models.MulticatGeneric,AdminDevice)
-#admin.site.register(models.MulticatSource,AdminDevice)
-#admin.site.register(models.MulticatRedirect,AdminDevice)
-#admin.site.register(models.MulticatRecorder)
-#admin.site.register(models.Source, AdminSource)
-#admin.site.register(models.Destination)
 admin.site.register(models.Antenna)
 admin.site.register(models.DvbTuner, AdminDvbTuner)
 admin.site.register(models.IsdbTuner, AdminIsdbTuner)
@@ -89,4 +70,3 @@ admin.site.register(models.FileInput)
 admin.site.register(models.MulticastOutput)
 admin.site.register(models.DemuxedService)
 admin.site.register(models.StreamRecorder)
-#admin.site.register(models.Channel)

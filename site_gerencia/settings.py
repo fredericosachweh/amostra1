@@ -144,13 +144,15 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
+## Color: \033[35m \033[0m
+# \t%(module)s->%(funcName)s->%(lineno)d
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s\t%(asctime)s\t%(module)s\t%(process)d\
-\t%(thread)d\t%(message)s'
+            'format': '[%(asctime)s] [%(levelname)s] [%(name)s %(funcName)s\
+(%(filename)s:%(lineno)d)] \t%(message)s'
         },
         'simple': {
             'format': '%(levelname)s\t%(message)s'
@@ -215,8 +217,6 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
-    # Utilitário
-    #'django_extensions',
     # App with info about possible frequencies to tune
     'dvbinfo',
 )
@@ -252,16 +252,18 @@ EXTERNAL_IP_MASK = '239.1.%d.%d'
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
+    ## Envia todas as mensagens de log para o console
+    #for logger in LOGGING['loggers']:
+    #    LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
-        #import django_extensions
-        #INSTALLED_APPS += ('django_extensions',)
-        pass
+        import django_extensions
+        INSTALLED_APPS += ('django_extensions',)
     except ImportError:
         pass
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
-        #INTERNAL_IPS = ('127.0.0.1',)
+        INTERNAL_IPS = ('127.0.0.1',)
         DEBUG_TOOLBAR_PANELS = (
             'debug_toolbar.panels.version.VersionDebugPanel',
             'debug_toolbar.panels.timer.TimerDebugPanel',
