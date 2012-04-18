@@ -1,0 +1,16 @@
+[
+  {
+    "pk": 12,
+    "model": "device.digitaltunerhardware",
+    "fields": {
+      "id_vendor": "04b4",
+      "bus": "",
+      "adapter_nr": 0,
+      "driver": "",
+      "last_update": "2012-04-18T19:25:48",
+      "id_product": "",
+      "uniqueid": "00:00:00:00:00:00",
+      "server": 1
+    }
+  }
+]

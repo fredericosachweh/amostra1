@@ -1,0 +1,46 @@
+[
+  {
+    "pk": 1,
+    "model": "device.server",
+    "fields": {
+      "username": "eduardo",
+      "status": true,
+      "name": "local",
+      "server_type": "local",
+      "ssh_port": 22,
+      "rsakey": "~/.ssh/id_rsa",
+      "modified": "2012-04-13T14:57:12",
+      "host": "127.0.0.1",
+      "offline_mode": false,
+      "msg": "OK",
+      "password": ""
+    }
+  },
+  {
+    "pk": 1,
+    "model": "device.nic",
+    "fields": {
+      "ipv4": "127.0.0.1",
+      "name": "lo",
+      "server": 1
+    }
+  },
+  {
+    "pk": 2,
+    "model": "device.nic",
+    "fields": {
+      "ipv4": "192.168.0.14",
+      "name": "eth0",
+      "server": 1
+    }
+  },
+  {
+    "pk": 3,
+    "model": "device.nic",
+    "fields": {
+      "ipv4": "192.168.122.1",
+      "name": "virbr0",
+      "server": 1
+    }
+  }
+]
