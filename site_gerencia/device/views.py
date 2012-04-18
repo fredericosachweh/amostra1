@@ -34,7 +34,7 @@ def server_list_interfaces(request):
     log = logging.getLogger('device.view')
     pk = request.GET.get('server')
     server = get_object_or_404(models.Server, id=pk)
-    log.debug('Listing NICs from server (pk=%s)', pk)
+    log.info('Listing NICs from server (pk=%s)', pk)
     response = '<option selected="selected" value="">---------</option>'
     for i in models.NIC.objects.filter(server=server):
         response += ('<option value="%s">%s - %s</option>' % (i.ipv4,
