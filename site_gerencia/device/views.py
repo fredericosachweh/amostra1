@@ -45,6 +45,26 @@ def server_update_adapter(request, adapter_nr=None):
         adapter.delete()
     return HttpResponse()
 
+def server_list_tuners(request):
+    "Returns avaible DVBWorld devices on server, excluding already used"
+    pk = request.GET.get('server', None)
+    server = get_object_or_404(models.Server, pk=pk)
+    tuner_type = request.GET.get('type')
+    if tuner_type == 'dvb':
+        id_vendor = '04b4' # DVBWorld S/S2
+    elif tuner_type == 'isdb':
+        id_vendor = '1554' # PixelView SBTVD
+    else:
+        return HttpResponseBadRequest('Must specify the type of device')
+    adapters = models.DigitalTunerHardware.objects.filter(server=server,
+                                                        id_vendor=id_vendor)
+    response = '<option value="">---------</option>'
+    for adapter in adapters:
+        response += '<option value="%s">%s</option>' % (adapter.uniqueid,
+                                        'DVBWorld %s' % adapter.uniqueid)
+    
+    return HttpResponse(response)
+
 def vlc_start(request,pk=None):
     print 'vlc_start'
     o = get_object_or_404(models.Vlc,id=pk)

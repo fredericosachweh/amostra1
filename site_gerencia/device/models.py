@@ -565,14 +565,13 @@ class DvbTuner(DigitalTuner):
     
     @property
     def adapter_num(self):
-        import re
-        files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
-        for file in files:
-            contents = self.server.cat_file(file)
-            if contents == self.adapter:
-                m = re.match(r'/dev/dvb/adapter(\d+)\.mac', file)
-                return m.group(1)
-        # TODO: Should throw exception
+        try:
+            adapter = DigitalTunerHardware.objects.get(
+                                server=self.server, uniqueid=self.adapter)
+        except DigitalTunerHardware.DoesNotExist as ex:
+            # Log something and...
+            raise ex
+        return adapter.adapter_nr
     
     def _get_cmd(self, adapter_num=None):
         # Get tuning parameters

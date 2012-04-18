@@ -41,6 +41,11 @@ class CommandsGenerationTest(TestCase):
             satellite='StarOne C2',
             lnb_type='multiponto_c',
         )
+        dvbworld = DigitalTunerHardware.objects.create(
+            server=server,
+            uniqueid='00:00:00:00:00:00',
+            adapter_nr=0,
+        )
         dvbtuner = DvbTuner.objects.create(
             server=server,
             antenna=antenna,
@@ -49,7 +54,11 @@ class CommandsGenerationTest(TestCase):
             modulation='8PSK',
             polarization='H',
             fec='34',
-            adapter='00:00:00:00:00:00',
+            adapter=dvbworld.uniqueid,
+        )
+        pixelview = DigitalTunerHardware.objects.create(
+            server=server,
+            adapter_nr=1,
         )
         isdbtuner = IsdbTuner.objects.create(
             server=server,
@@ -194,7 +203,7 @@ class CommandsGenerationTest(TestCase):
         Server.objects.all().delete()
     
     def test_dvbtuner(self):
-        tuner = DvbTuner.objects.get(pk=1)
+        tuner = DvbTuner.objects.all()[0]
         expected_cmd = (
             "%s "
             "-f 3390000 "
@@ -208,7 +217,7 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_CONFS_DIR, tuner.pk,
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
-        self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=0))
+        self.assertEqual(expected_cmd, tuner._get_cmd())
         
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
@@ -355,9 +364,32 @@ class AdaptersManipulationTests(TestCase):
         # Delete it
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 200)
+    
+    def test_tuners_list_view(self):
+        url = reverse('device.views.server_list_tuners')
+        server = Server.objects.all()[0]
+        dvbworld = DigitalTunerHardware.objects.create(
+            server=server,
+            uniqueid='00:00:00:00:00:00',
+            id_vendor='04b4',
+            id_product='2104',
+            adapter_nr=0,
+        )
+        pixelview = DigitalTunerHardware.objects.create(
+            server=server,
+            id_vendor='1554',
+            id_product='5010',
+            adapter_nr=1,
+        )
+        response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
+        expected = '<option value="">---------</option>' \
+                   '<option value="00:00:00:00:00:00">' \
+                   'DVBWorld 00:00:00:00:00:00</option>'
+        self.assertEqual(expected, response.content)
 
 class MySeleniumTests(LiveServerTestCase):
-    fixtures = ['user-data.json', 'default-server.json', 'antenna.json']
+    fixtures = ['user-data.json', 'default-server.json',
+                'antenna.json', 'dvbworld.json']
     
     @classmethod
     def setUpClass(cls):
@@ -470,11 +502,12 @@ class MySeleniumTests(LiveServerTestCase):
         self._select('id_modulation', '8-PSK')
         self._select('id_polarization', 'Vertical (V)')
         self._select('id_fec', '3/4')
+        self._select('id_adapter', 'DVBWorld 00:00:00:00:00:00')
         self._select('id_antenna', 'C2')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = DvbTuner.objects.get(pk=1)
+        result = DvbTuner.objects.all()[0]
         result.delete()
 
 class UniqueIPTest(TestCase):
