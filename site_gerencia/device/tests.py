@@ -368,7 +368,7 @@ class AdaptersManipulationTests(TestCase):
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['user-data.json', 'default-server.json',
-                'antenna.json', 'dvbworld.json']
+                'antenna.json', 'dvbworld.json', 'pixelview.json']
     
     @classmethod
     def setUpClass(cls):
@@ -500,6 +500,23 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual(1, tuner.antenna.pk)
         self.assertEqual('34', tuner.fec)
         self.assertEqual('00:00:00:00:00:00', tuner.adapter)
+        tuner.delete()
+    
+    def test_isdbtuner(self):
+        self._login('admin', 'cianet')
+        add_new_url = '%s%s' % (self.live_server_url,
+                                reverse('admin:device_isdbtuner_add'))
+        self.selenium.get(add_new_url)
+        self._select('id_server', 'local')
+        freq = self.selenium.find_element_by_name("frequency")
+        freq.send_keys('587143')
+        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+        tuner = IsdbTuner.objects.get(pk=1)
+        self.assertEqual(587143, tuner.frequency)
+        self.assertEqual('qam', tuner.modulation)
+        self.assertEqual(6, tuner.bandwidth)
         tuner.delete()
 
 class UniqueIPTest(TestCase):
