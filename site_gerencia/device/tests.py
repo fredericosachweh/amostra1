@@ -659,7 +659,7 @@ class ServerTest(TestCase):
                    '<option value="2">br0 - 172.17.0.2</option>'
         self.assertEqual(expected, response.content)
     
-    def test_tuners_list_view(self):
+    def test_dvbtuners_list_view(self):
         url = reverse('device.views.server_list_dvbadapters')
         server = Server.objects.get(pk=1)
         dvbworld = DigitalTunerHardware.objects.create(
@@ -682,12 +682,6 @@ class ServerTest(TestCase):
             id_vendor='04b4',
             id_product='2104',
             adapter_nr=2,
-        )
-        DigitalTunerHardware.objects.create(
-            server=server,
-            id_vendor='1554',
-            id_product='5010',
-            adapter_nr=3,
         )
         expected = '<option value="">---------</option>' \
                    '<option value="00:00:00:00:00:00">' \
@@ -728,6 +722,45 @@ class ServerTest(TestCase):
         # With one created DvbTuner, while inserting another one
         self.assertEqual(expected, response.content,
             'The already used adapter should have been excluded')
+    
+    def test_available_isdbtuners_view(self):
+        url = reverse('device.views.server_available_isdbtuners')
+        server = Server.objects.get(pk=1)
+        # No installed adapters
+        response = self.client.get(url + '?server=%d' % server.pk)
+        self.assertEqual('0', response.content)
+        
+        DigitalTunerHardware.objects.create(
+            server=server,
+            id_vendor='1554',
+            id_product='5010',
+            adapter_nr=0,
+        )
+        DigitalTunerHardware.objects.create(
+            server=server,
+            id_vendor='1554',
+            id_product='5010',
+            adapter_nr=1,
+        )
+        
+        # Without any IsdbTuner created
+        response = self.client.get(url + '?server=%d' % server.pk)
+        self.assertEqual('2', response.content)
+        
+        IsdbTuner.objects.create(
+            server=server,
+            frequency=587143,
+            bandwidth=6,
+            modulation='qam',
+        )
+        
+        # While editing a created IsdbTuner
+        response = self.client.get(url + '?server=%d&tuner=1' % server.pk)
+        self.assertEqual('2', response.content)
+        
+        # Creating a new one
+        response = self.client.get(url + '?server=%d' % server.pk)
+        self.assertEqual('1', response.content)
 
 
 class TestViews(TestCase):

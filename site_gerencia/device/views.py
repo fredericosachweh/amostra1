@@ -82,13 +82,35 @@ def server_list_dvbadapters(request):
     # Populate the not used adapters left
     tuners = models.DvbTuner.objects.filter(server=server)
     adapters = models.DigitalTunerHardware.objects.filter(
-        server=server, id_vendor=id_vendor)
+        server=server, id_vendor='04b4') # DVBWorld S/S2
     for adapter in adapters:
         if not tuners.filter(adapter=adapter.uniqueid).exists():
             response += '<option value="%s">%s</option>' % (adapter.uniqueid,
                                             'DVBWorld %s' % adapter.uniqueid)
     
     return HttpResponse(response)
+
+def server_available_isdbtuners(request):
+    "Returns the number of non-used PixelView adapters"
+    pk = request.GET.get('server', None)
+    server = get_object_or_404(models.Server, pk=pk)
+    # Insert the currently selected
+    tuner_pk = request.GET.get('tuner')
+    if tuner_pk:
+        free_adapters = 1
+    else:
+        free_adapters = 0
+    # Sum the free adapters left
+    tuners = models.IsdbTuner.objects.filter(server=server).count()
+    adapters = models.DigitalTunerHardware.objects.filter(
+        server=server, id_vendor='1554').count()
+    # Sanity check
+    if tuners > adapters:
+        raise Exception(
+            'The total number of registered IsdbTuner objects '
+            'is greater that the number of plugged-in PixelView adapters')
+    
+    return HttpResponse(free_adapters + (adapters - tuners))
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')
