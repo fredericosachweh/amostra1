@@ -212,13 +212,24 @@ class Server(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
-        self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s'
-            % (ip, dev))
+        routes = self.list_routes()
+        # Skip if the route already exists
+        try:
+            routes.index((ip, dev))
+        except ValueError:
+            self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s'
+                % (ip, dev))
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
-        self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
-            % (ip, dev))
+        routes = self.list_routes()
+        # Skip if the route don't exist
+        try:
+            routes.index((ip, dev))
+            self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
+                % (ip, dev))
+        except:
+            pass
 
     def list_routes(self):
         resp = []
