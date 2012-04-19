@@ -464,15 +464,16 @@ class MySeleniumTests(LiveServerTestCase):
         # Wait ajax to complete
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_xpath("//option[@value='2']"))
-        #self._select('id_interface', 'eth0 - 192.168.0.14')
-        self._select_by_value('id_interface', 2)
+        self._select('id_interface', 'eth0 - 192.168.0.14')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = UnicastInput.objects.get(pk=1)
-        self.assertEqual(1, result.server_id)
-        #self.assertDictEqual(fields, result.values()[0])
-        result.delete()
+        unicastin = UnicastInput.objects.get(pk=1)
+        self.assertEqual(1, unicastin.server_id)
+        self.assertEqual(10000, unicastin.port)
+        self.assertEqual('192.168.0.14', unicastin.interface.ipv4)
+        self.assertEqual('udp', unicastin.protocol)
+        unicastin.delete()
     
     def test_multicastinput(self):
         self._login('admin', 'cianet')
@@ -486,8 +487,13 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = MulticastInput.objects.get(pk=1)
-        result.delete()
+        multicastin = MulticastInput.objects.get(pk=1)
+        self.assertEqual(1, multicastin.server_id)
+        self.assertEqual(10000, multicastin.port)
+        self.assertEqual('192.168.0.14', multicastin.interface.ipv4)
+        self.assertEqual('udp', multicastin.protocol)
+        self.assertEqual('239.0.1.1', multicastin.ip)
+        multicastin.delete()
     
     def test_dvbtuner(self):
         self._login('admin', 'cianet')
@@ -507,8 +513,15 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = DvbTuner.objects.all()[0]
-        result.delete()
+        tuner = DvbTuner.objects.get(pk=1)
+        self.assertEqual(3990, tuner.frequency)
+        self.assertEqual(7400, tuner.symbol_rate)
+        self.assertEqual('8PSK', tuner.modulation)
+        self.assertEqual('V', tuner.polarization)
+        self.assertEqual(1, tuner.antenna.pk)
+        self.assertEqual('34', tuner.fec)
+        self.assertEqual('00:00:00:00:00:00', tuner.adapter)
+        tuner.delete()
 
 class UniqueIPTest(TestCase):
 
