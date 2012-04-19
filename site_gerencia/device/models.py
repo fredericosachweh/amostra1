@@ -221,15 +221,26 @@ class Server(models.Model):
         "Create a new route on the server"
         log = logging.getLogger('debug')
         log.info('Creating route on %s dev= %s to %s', self, dev, ip)
-        self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s'
-            % (ip, dev))
+        routes = self.list_routes()
+        # Skip if the route already exists
+        try:
+            routes.index((ip, dev))
+        except ValueError:
+            self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s'
+                % (ip, dev))
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
         log = logging.getLogger('debug')
         log.info('Deleting route on %s dev= %s to %s', self, dev, ip)
-        self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
-            % (ip, dev))
+        routes = self.list_routes()
+        # Skip if the route don't exist
+        try:
+            routes.index((ip, dev))
+            self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
+                % (ip, dev))
+        except Exception as e:
+            log.error('Error deleting route on %s [%s %s]:%s', self, dev, ip, e)
 
     def list_routes(self):
         log = logging.getLogger('debug')
@@ -819,6 +830,8 @@ class MulticastInput(IPInput):
 def MulticastInput_pre_save(sender, instance, **kwargs):
     "Signal to create the route"
     server = instance.server
+    if server.offline_mode:
+        return
     # If it already exists, delete
     try:
         obj = MulticastInput.objects.get(pk=instance.pk)
@@ -838,6 +851,8 @@ def MulticastInput_pre_save(sender, instance, **kwargs):
 def MulticastInput_pre_delete(sender, instance, **kwargs):
     "Signal to delete the route"
     server = instance.server
+    if server.offline_mode:
+        return
     ip = instance.ip
     dev = server.get_netdev(instance.interface.ipv4)
     server.delete_route(ip, dev)

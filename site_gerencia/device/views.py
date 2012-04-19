@@ -33,6 +33,7 @@ def server_status(request, pk=None):
 def server_list_interfaces(request):
     log = logging.getLogger('device.view')
     pk = request.GET.get('server')
+    log.debug('Server com pk=%s', pk)
     server = get_object_or_404(models.Server, id=pk)
     log.info('Listing NICs from server (pk=%s)', pk)
     response = '<option selected="selected" value="">---------</option>'
@@ -60,7 +61,7 @@ def server_update_adapter(request, adapter_nr=None):
         adapter.delete()
     return HttpResponse()
 
-def server_list_tuners(request):
+def server_list_dvbadapters(request):
     "Returns avaible DVBWorld devices on server, excluding already used"
     pk = request.GET.get('server', None)
     server = get_object_or_404(models.Server, pk=pk)
@@ -71,12 +72,21 @@ def server_list_tuners(request):
         id_vendor = '1554' # PixelView SBTVD
     else:
         return HttpResponseBadRequest('Must specify the type of device')
-    adapters = models.DigitalTunerHardware.objects.filter(server=server,
-                                                        id_vendor=id_vendor)
     response = '<option value="">---------</option>'
+    # Insert the currently selected
+    tuner_pk = request.GET.get('tuner')
+    if tuner_pk:
+        tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
+        response += '<option value="%s">%s</option>' % (tuner.adapter,
+                                        'DVBWorld %s' % tuner.adapter)
+    # Populate the not used adapters left
+    tuners = models.DvbTuner.objects.filter(server=server)
+    adapters = models.DigitalTunerHardware.objects.filter(
+        server=server, id_vendor=id_vendor)
     for adapter in adapters:
-        response += '<option value="%s">%s</option>' % (adapter.uniqueid,
-                                        'DVBWorld %s' % adapter.uniqueid)
+        if not tuners.filter(adapter=adapter.uniqueid).exists():
+            response += '<option value="%s">%s</option>' % (adapter.uniqueid,
+                                            'DVBWorld %s' % adapter.uniqueid)
     
     return HttpResponse(response)
 

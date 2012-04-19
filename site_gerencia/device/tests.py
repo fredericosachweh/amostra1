@@ -364,28 +364,7 @@ class AdaptersManipulationTests(TestCase):
         # Delete it
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 200)
-    
-    def test_tuners_list_view(self):
-        url = reverse('device.views.server_list_tuners')
-        server = Server.objects.all()[0]
-        dvbworld = DigitalTunerHardware.objects.create(
-            server=server,
-            uniqueid='00:00:00:00:00:00',
-            id_vendor='04b4',
-            id_product='2104',
-            adapter_nr=0,
-        )
-        pixelview = DigitalTunerHardware.objects.create(
-            server=server,
-            id_vendor='1554',
-            id_product='5010',
-            adapter_nr=1,
-        )
-        response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
-        expected = '<option value="">---------</option>' \
-                   '<option value="00:00:00:00:00:00">' \
-                   'DVBWorld 00:00:00:00:00:00</option>'
-        self.assertEqual(expected, response.content)
+
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['user-data.json', 'default-server.json',
@@ -464,15 +443,16 @@ class MySeleniumTests(LiveServerTestCase):
         # Wait ajax to complete
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_xpath("//option[@value='2']"))
-        #self._select('id_interface', 'eth0 - 192.168.0.14')
-        self._select_by_value('id_interface', 2)
+        self._select('id_interface', 'eth0 - 192.168.0.14')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = UnicastInput.objects.get(pk=1)
-        self.assertEqual(1, result.server_id)
-        #self.assertDictEqual(fields, result.values()[0])
-        result.delete()
+        unicastin = UnicastInput.objects.get(pk=1)
+        self.assertEqual(1, unicastin.server_id)
+        self.assertEqual(10000, unicastin.port)
+        self.assertEqual('192.168.0.14', unicastin.interface.ipv4)
+        self.assertEqual('udp', unicastin.protocol)
+        unicastin.delete()
     
     def test_multicastinput(self):
         self._login('admin', 'cianet')
@@ -486,8 +466,13 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = MulticastInput.objects.get(pk=1)
-        result.delete()
+        multicastin = MulticastInput.objects.get(pk=1)
+        self.assertEqual(1, multicastin.server_id)
+        self.assertEqual(10000, multicastin.port)
+        self.assertEqual('192.168.0.14', multicastin.interface.ipv4)
+        self.assertEqual('udp', multicastin.protocol)
+        self.assertEqual('239.0.1.1', multicastin.ip)
+        multicastin.delete()
     
     def test_dvbtuner(self):
         self._login('admin', 'cianet')
@@ -507,8 +492,15 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        result = DvbTuner.objects.all()[0]
-        result.delete()
+        tuner = DvbTuner.objects.get(pk=1)
+        self.assertEqual(3990, tuner.frequency)
+        self.assertEqual(7400, tuner.symbol_rate)
+        self.assertEqual('8PSK', tuner.modulation)
+        self.assertEqual('V', tuner.polarization)
+        self.assertEqual(1, tuner.antenna.pk)
+        self.assertEqual('34', tuner.fec)
+        self.assertEqual('00:00:00:00:00:00', tuner.adapter)
+        tuner.delete()
 
 class UniqueIPTest(TestCase):
 
@@ -586,6 +578,7 @@ class ServerTest(TestCase):
             username=getpass.getuser(),
             rsakey='~/.ssh/id_rsa',
         )
+        self.client = Client()
 
     def test_list_dir(self):
         server = Server.objects.get(pk=1)
@@ -645,6 +638,96 @@ class ServerTest(TestCase):
         routes = server.list_routes()
         self.assertNotIn(route, routes,
                 'Route %s -> %s should not exists' % route)
+    
+    def test_list_interfaces_view(self):
+        server = Server.objects.get(pk=1)
+        NIC.objects.create(
+            server=server,
+            ipv4='192.168.0.10',
+            name='eth0'
+        )
+        NIC.objects.create(
+            server=server,
+            ipv4='172.17.0.2',
+            name='br0'
+        )
+        url = reverse('device.views.server_list_interfaces') + '?server=1'
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        expected = '<option selected="selected" value="">---------</option>' \
+                   '<option value="1">eth0 - 192.168.0.10</option>' \
+                   '<option value="2">br0 - 172.17.0.2</option>'
+        self.assertEqual(expected, response.content)
+    
+    def test_tuners_list_view(self):
+        url = reverse('device.views.server_list_dvbadapters')
+        server = Server.objects.get(pk=1)
+        dvbworld = DigitalTunerHardware.objects.create(
+            server=server,
+            uniqueid='00:00:00:00:00:00',
+            id_vendor='04b4',
+            id_product='2104',
+            adapter_nr=0,
+        )
+        DigitalTunerHardware.objects.create(
+            server=server,
+            uniqueid='00:00:00:00:00:01',
+            id_vendor='04b4',
+            id_product='2104',
+            adapter_nr=1,
+        )
+        DigitalTunerHardware.objects.create(
+            server=server,
+            uniqueid='00:00:00:00:00:02',
+            id_vendor='04b4',
+            id_product='2104',
+            adapter_nr=2,
+        )
+        DigitalTunerHardware.objects.create(
+            server=server,
+            id_vendor='1554',
+            id_product='5010',
+            adapter_nr=3,
+        )
+        expected = '<option value="">---------</option>' \
+                   '<option value="00:00:00:00:00:00">' \
+                   'DVBWorld 00:00:00:00:00:00</option>' \
+                   '<option value="00:00:00:00:00:01">' \
+                   'DVBWorld 00:00:00:00:00:01</option>' \
+                   '<option value="00:00:00:00:00:02">' \
+                   'DVBWorld 00:00:00:00:00:02</option>'
+        response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
+        # Without any DvbTuner created
+        self.assertEqual(expected, response.content)
+        
+        antenna = Antenna.objects.create(
+            satellite='StarOne C2',
+            lnb_type='multiponto_c',
+        )
+        dvbtuner = DvbTuner.objects.create(
+            server=server,
+            antenna=antenna,
+            frequency=3990,
+            symbol_rate=7400,
+            modulation='8PSK',
+            polarization='H',
+            fec='34',
+            adapter=dvbworld.uniqueid,
+        )
+        # Editing a created DvbTuner
+        response = self.client.get(url + '?server=%d&tuner=1&type=dvb'
+            % server.pk)
+        self.assertEqual(expected, response.content)
+        
+        expected = '<option value="">---------</option>' \
+                   '<option value="00:00:00:00:00:01">' \
+                   'DVBWorld 00:00:00:00:00:01</option>' \
+                   '<option value="00:00:00:00:00:02">' \
+                   'DVBWorld 00:00:00:00:00:02</option>'
+        response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
+        # With one created DvbTuner, while inserting another one
+        self.assertEqual(expected, response.content,
+            'The already used adapter should have been excluded')
 
 
 class TestViews(TestCase):

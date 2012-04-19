@@ -25,7 +25,7 @@
             field.attr("disabled", "disabled");
             field.empty();
             if (server_id) {
-                var query =  '{% url device.views.server_list_tuners %}';
+                var query =  '{% url device.views.server_list_dvbadapters %}';
                 query += '?server=' + server_id + '&type=dvb';
                 django.jQuery.get(query, function(data) {
                     if (data) field.append(data);
