@@ -82,13 +82,35 @@ def server_list_dvbadapters(request):
     # Populate the not used adapters left
     tuners = models.DvbTuner.objects.filter(server=server)
     adapters = models.DigitalTunerHardware.objects.filter(
-        server=server, id_vendor=id_vendor)
+        server=server, id_vendor='04b4') # DVBWorld S/S2
     for adapter in adapters:
         if not tuners.filter(adapter=adapter.uniqueid).exists():
             response += '<option value="%s">%s</option>' % (adapter.uniqueid,
                                             'DVBWorld %s' % adapter.uniqueid)
     
     return HttpResponse(response)
+
+def server_available_isdbtuners(request):
+    "Returns the number of non-used PixelView adapters"
+    pk = request.GET.get('server', None)
+    server = get_object_or_404(models.Server, pk=pk)
+    # Insert the currently selected
+    tuner_pk = request.GET.get('tuner')
+    if tuner_pk:
+        free_adapters = 1
+    else:
+        free_adapters = 0
+    # Sum the free adapters left
+    tuners = models.IsdbTuner.objects.filter(server=server).count()
+    adapters = models.DigitalTunerHardware.objects.filter(
+        server=server, id_vendor='1554').count()
+    # Sanity check
+    if tuners > adapters:
+        raise Exception(
+            'The total number of registered IsdbTuner objects '
+            'is greater that the number of plugged-in PixelView adapters')
+    
+    return HttpResponse(free_adapters + (adapters - tuners))
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')
@@ -132,73 +154,6 @@ def multicat_redirect_stop(request,pk=None):
     o = get_object_or_404(models.MulticatRedirect,id=pk)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
-
-# View to return list of available DVB-S/S2 tuners
-def get_dvb_tuners(request):
-    'View to return list of available DVB-S/S2 tuners'
-    log = logging.getLogger('device.view')
-    if request.method == 'GET' and request.GET.get('server'):
-        server = get_object_or_404(models.Server, id=request.GET.get('server'))
-        # Retrive list of devices MAC addresses
-        import re
-        macs = server.execute('cat /dev/dvb/adapter*.mac')
-        macs = map(lambda x: x.strip(), macs)  # Strip \n
-        # Remove 'PixelView' entries from list
-        macs = [mac for mac in macs if re.match(
-            r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', mac)]
-        if len(macs)\
-            and re.match(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$', macs[0]):
-            # Retrieve DvbTuner objects
-            tuners = models.DvbTuner.objects.filter(
-                server=server).values_list('adapter')
-            tuners = [tuner[0] for tuner in tuners]
-            # Filter already used macs
-            macs = list(set(macs) - set(tuners))
-            # Render html
-            response = ''
-            for mac in macs:
-                response += ('<option value=%s>%s</option>' % (mac, mac))
-            
-            # Put in the currently selected mac address
-            try:
-                query = models.DvbTuner.objects.get(server=server,
-                    id=request.GET.get('tuner'))
-                mac = query.adapter
-                response += \
-                    '<option selected="selected" value="%s">%s</option>'\
-                    % (mac, mac)
-            except models.DvbTuner.DoesNotExist as ex:
-                log.error('DvbTuner does not exists:%s', ex)
-                pass
-            return HttpResponse(response)
-        else:
-            return HttpResponse()
-    else:
-        log.error('request must be GET with server parameter')
-        return HttpResponseBadRequest()
-
-
-def get_isdb_tuners(request):
-    'View to return the number of available ISDB-Tb tuners'
-    log = logging.getLogger('device.view')
-    if request.method == 'GET' and request.GET.get('server'):
-        server = get_object_or_404(models.Server, id=request.GET.get('server'))
-        adapters = server.execute('cat /dev/dvb/adapter*.mac')
-        adapters = map(lambda x: x.strip(), adapters)
-        # Filter to type PixelView
-        adapters = [adapter for adapter in adapters if adapter == 'PixelView']
-        a_count = len(adapters)
-        # Fetch existent tuners
-        t_count = models.IsdbTuner.objects.filter(server=server).count()
-        # Return the difference
-        diff = a_count - t_count
-        if request.GET.get('tuner') is not None:
-            diff = diff + 1
-        return HttpResponse(diff)
-    else:
-        log.error('request must be GET with server parameter')
-        return HttpResponseBadRequest()
-
 
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':

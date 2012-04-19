@@ -26,10 +26,11 @@
 		{
 			var server_id = django.jQuery('select#id_server').val();
 			var field = django.jQuery('input#id_free_adapters');
+			field.val('0');
 			field.attr("disabled", "disabled");
 			field.empty();
 			if (server_id) {
-				var query =  '{% url device.views.get_isdb_tuners %}' + '?server=' + server_id;
+				var query =  '{% url device.views.server_available_isdbtuners %}' + '?server=' + server_id;
 				var tuner = "{{ original.pk }}";
 				if (tuner) {
 					query += '&tuner=' + tuner;

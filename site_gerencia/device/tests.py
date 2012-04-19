@@ -368,7 +368,7 @@ class AdaptersManipulationTests(TestCase):
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['user-data.json', 'default-server.json',
-                'antenna.json', 'dvbworld.json']
+                'antenna.json', 'dvbworld.json', 'pixelview.json']
     
     @classmethod
     def setUpClass(cls):
@@ -500,6 +500,23 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual(1, tuner.antenna.pk)
         self.assertEqual('34', tuner.fec)
         self.assertEqual('00:00:00:00:00:00', tuner.adapter)
+        tuner.delete()
+    
+    def test_isdbtuner(self):
+        self._login('admin', 'cianet')
+        add_new_url = '%s%s' % (self.live_server_url,
+                                reverse('admin:device_isdbtuner_add'))
+        self.selenium.get(add_new_url)
+        self._select('id_server', 'local')
+        freq = self.selenium.find_element_by_name("frequency")
+        freq.send_keys('587143')
+        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
+        WebDriverWait(self.selenium, 10).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+        tuner = IsdbTuner.objects.get(pk=1)
+        self.assertEqual(587143, tuner.frequency)
+        self.assertEqual('qam', tuner.modulation)
+        self.assertEqual(6, tuner.bandwidth)
         tuner.delete()
 
 class UniqueIPTest(TestCase):
@@ -659,7 +676,7 @@ class ServerTest(TestCase):
                    '<option value="2">br0 - 172.17.0.2</option>'
         self.assertEqual(expected, response.content)
     
-    def test_tuners_list_view(self):
+    def test_dvbtuners_list_view(self):
         url = reverse('device.views.server_list_dvbadapters')
         server = Server.objects.get(pk=1)
         dvbworld = DigitalTunerHardware.objects.create(
@@ -682,12 +699,6 @@ class ServerTest(TestCase):
             id_vendor='04b4',
             id_product='2104',
             adapter_nr=2,
-        )
-        DigitalTunerHardware.objects.create(
-            server=server,
-            id_vendor='1554',
-            id_product='5010',
-            adapter_nr=3,
         )
         expected = '<option value="">---------</option>' \
                    '<option value="00:00:00:00:00:00">' \
@@ -728,6 +739,45 @@ class ServerTest(TestCase):
         # With one created DvbTuner, while inserting another one
         self.assertEqual(expected, response.content,
             'The already used adapter should have been excluded')
+    
+    def test_available_isdbtuners_view(self):
+        url = reverse('device.views.server_available_isdbtuners')
+        server = Server.objects.get(pk=1)
+        # No installed adapters
+        response = self.client.get(url + '?server=%d' % server.pk)
+        self.assertEqual('0', response.content)
+        
+        DigitalTunerHardware.objects.create(
+            server=server,
+            id_vendor='1554',
+            id_product='5010',
+            adapter_nr=0,
+        )
+        DigitalTunerHardware.objects.create(
+            server=server,
+            id_vendor='1554',
+            id_product='5010',
+            adapter_nr=1,
+        )
+        
+        # Without any IsdbTuner created
+        response = self.client.get(url + '?server=%d' % server.pk)
+        self.assertEqual('2', response.content)
+        
+        IsdbTuner.objects.create(
+            server=server,
+            frequency=587143,
+            bandwidth=6,
+            modulation='qam',
+        )
+        
+        # While editing a created IsdbTuner
+        response = self.client.get(url + '?server=%d&tuner=1' % server.pk)
+        self.assertEqual('2', response.content)
+        
+        # Creating a new one
+        response = self.client.get(url + '?server=%d' % server.pk)
+        self.assertEqual('1', response.content)
 
 
 class TestViews(TestCase):
