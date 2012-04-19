@@ -11,40 +11,43 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from models import *
 
+class MetaDefault:
+    authorization = Authorization()
+    allowed_methods = ['get']
+
+
+
+class LangResource(ModelResource):
+    class Meta(MetaDefault):
+        queryset = Lang.objects.all()
+        
+
 class UrlResource(ModelResource):
-    class Meta:
+    class Meta(MetaDefault):
         queryset = Url.objects.all()
-        authorization = Authorization()
-        allowed_methods = []
-        include_resource_uri = False
 
 class IconResource(ModelResource):
-    class Meta:
+    class Meta(MetaDefault):
         queryset = Icon.objects.all()
-        authorization = Authorization()
-        allowed_methods = []
-        include_resource_uri = False
 
 class Display_NameResource(ModelResource):
-    class Meta:
+    lang = fields.ForeignKey(LangResource, 'lang')
+    class Meta(MetaDefault):
         queryset = Display_Name.objects.all()
-        authorization = Authorization()
-        allowed_methods = []
-        include_resource_uri = False
 
 class ChannelResource(ModelResource):
     display_names = fields.ToManyField(Display_NameResource, 'display_names', full=True)
     icons = fields.ToManyField(IconResource, 'icons', full=True)
     urls = fields.ToManyField(UrlResource, 'urls', full=True)
-    class Meta:
+    class Meta(MetaDefault):
         #XXX: Filtrar apenas canais que sejam relacionados com canais da operadora
         queryset = Channel.objects.all()
-        authorization = Authorization()
-        allowed_methods = ['get']
         filtering = {
             "channelid": ALL
         }
 
 api = Api(api_name='epg')
-api.register(Display_NameResource())
 api.register(ChannelResource())
+api.register(LangResource())
+api.register(IconResource())
+api.register(Display_NameResource())
