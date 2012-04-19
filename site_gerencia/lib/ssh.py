@@ -93,9 +93,10 @@ class Connection(object):
         ret['exit_code'] = ret_code
         output = channel.makefile('rb', -1).readlines()
         if output:
-            ret['output'] = output
+            ret['output'] = unicode(output)
         else:
-            ret['output'] = channel.makefile_stderr('rb', -1).readlines()
+            ret['output'] = unicode(
+                channel.makefile_stderr('rb', -1).readlines())
         #log.info('Status:%s Output:%s', ret['exit_code'], ret['output'][0:10])
         return ret
 
