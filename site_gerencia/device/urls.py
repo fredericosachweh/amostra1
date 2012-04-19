@@ -16,8 +16,6 @@ urlpatterns = patterns('',
     (r'^multicat/stop/(?P<pk>\d+)/$','device.views.multicat_stop'),
     (r'^multicatredirect/start/(?P<pk>\d+)/$','device.views.multicat_redirect_start'),
     (r'^multicatredirect/stop/(?P<pk>\d+)/$','device.views.multicat_redirect_stop'),
-    #(r'^dvbtuners/$', 'device.views.get_dvb_tuners'),
-    #(r'^isdbtuners/$', 'device.views.get_isdb_tuners'),
     (r'^autofilltuner/(?P<ttype>[a-z]+)/$',
         'device.views.auto_fill_tuner_form'),
 )
