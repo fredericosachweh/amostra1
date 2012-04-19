@@ -144,6 +144,8 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
+IPTV_LOG_DIR = '/var/log/iptv'
+
 ## Color: \033[35m \033[0m
 # \t%(module)s->%(funcName)s->%(lineno)d
 LOGGING = {
@@ -170,12 +172,12 @@ LOGGING = {
         },
         'file.debug': {
             'class': 'logging.FileHandler',
-            'filename': 'log/debug.log',
+            'filename': '%s/debug.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
         'file.device.remotecall': {
             'class': 'logging.FileHandler',
-            'filename': 'log/remote-call.log',
+            'filename': '%s/remote-call.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         }
     },
@@ -184,6 +186,10 @@ LOGGING = {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
+        },
+        'debug': {
+            'handlers': ['file.debug'],
+            'propagate': True
         },
         'device.view': {
             'handlers': ['file.debug'],
@@ -253,8 +259,8 @@ CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
     ## Envia todas as mensagens de log para o console
-    #for logger in LOGGING['loggers']:
-    #    LOGGING['loggers'][logger]['handlers'] = ['console']
+    for logger in LOGGING['loggers']:
+        LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
         import django_extensions
         INSTALLED_APPS += ('django_extensions',)

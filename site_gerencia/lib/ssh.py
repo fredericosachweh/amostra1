@@ -93,10 +93,10 @@ class Connection(object):
         ret['exit_code'] = ret_code
         output = channel.makefile('rb', -1).readlines()
         if output:
-            ret['output'] = output
+            ret['output'] = map(lambda x: unicode(x, 'utf-8'), output)
         else:
-            ret['output'] = channel.makefile_stderr('rb', -1).readlines()
-        #log.info('Status:%s Output:%s', ret['exit_code'], ret['output'][0:10])
+            ret['output'] = map(lambda x: unicode(x, 'utf-8'),
+                channel.makefile_stderr('rb', -1).readlines())
         return ret
 
     def execute_daemon(self, command, log_path=None):
