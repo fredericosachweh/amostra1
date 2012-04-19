@@ -51,10 +51,10 @@ class Server(models.Model):
 
         def __str__(self):
             return repr(self.parameter)
-    
+
     class InvalidOperation(Exception):
         pass
-    
+
     def __unicode__(self):
         return '%s' % (self.name)
 
@@ -116,8 +116,8 @@ class Server(models.Model):
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0:
                 raise Server.ExecutionFailure(
-                    'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, "".join(ret['output'])))
+                    u'Command "%s" returned status "%d" on server "%s": "%s"' %
+                    (command, ret['exit_code'], self, u"".join(ret['output'])))
         return ret['output']
 
     def execute_daemon(self, command):
@@ -138,9 +138,12 @@ class Server(models.Model):
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
+        log = logging.getLogger('debug')
         for p in self.list_process():
             if p['pid'] == pid:
+                log.info('Process [%d] live on [%s] = True', pid, self)
                 return True
+        log.info('Process [%d] live on [%s] = False', pid, self)
         return False
 
     def list_process(self):
@@ -165,7 +168,7 @@ class Server(models.Model):
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
         return resp
-    
+
     def auto_detect_digital_tuners(self):
         import re
         resp = []
@@ -177,20 +180,24 @@ class Server(models.Model):
             adapter.save()
             resp.append(adapter)
         return resp
-    
+
     def auto_create_nic(self):
         """
         Auto create NIC (Network interfaces)
         """
+        log = logging.getLogger('debug')
+        log.info('Auto create NIC on %s', self)
         nics = []
         for iface in self._list_interfaces():
             nnics = NIC.objects.filter(name=iface['dev'], server=self).count()
             if nnics == 0:
                 nic = NIC.objects.create(name=iface['dev'], server=self,
                     ipv4=iface['ip'])
+                log.info('    New NIC found %s', nic)
             else:
                 nic = NIC.objects.get(name=iface['dev'], server=self)
                 nic.ipv4 = iface['ip']
+                log.info('    Existing NIC %s', nic)
             nic.ipv4 = iface['ip']
             nics.append(nic)
         return nics
@@ -212,28 +219,35 @@ class Server(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
+        log = logging.getLogger('debug')
+        log.info('Creating route on %s dev= %s to %s', self, dev, ip)
         self.execute('/usr/bin/sudo /sbin/route add -host %s dev %s'
             % (ip, dev))
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
+        log = logging.getLogger('debug')
+        log.info('Deleting route on %s dev= %s to %s', self, dev, ip)
         self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
             % (ip, dev))
 
     def list_routes(self):
+        log = logging.getLogger('debug')
+        log.info('Listing routes on %s', self)
         resp = []
         routes = self.execute('/sbin/route -n')
         for route in routes[2:]:
             r = route.split()
             resp.append((r[0], r[-1]))
-        
         return resp
 
     def list_dir(self, directory='/'):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
+        log = logging.getLogger('debug')
+        log.info('Listing dir on %s dir=%s', self, dir)
         ret = self.execute('/bin/ls %s' % directory)
         return map(lambda x: x.strip('\n'), ret)
-    
+
     def cat_file(self, path):
         "Return the contents of a File given his path"
         ret = self.execute('/bin/cat %s' % path)
@@ -264,7 +278,7 @@ class UniqueIP(models.Model):
     sequential = models.PositiveSmallIntegerField(
         _(u'Valor auxiliar para gerar o IP único'),
         default=2)
-    
+
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True)
@@ -272,7 +286,7 @@ class UniqueIP(models.Model):
 
     def __unicode__(self):
         return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
-    
+
     @property
     def src(self):
         from itertools import chain
@@ -282,7 +296,7 @@ class UniqueIP(models.Model):
         recorder = StreamRecorder.objects.filter(content_type=uniqueip_type,
                                                object_id=self.pk)
         return list(chain(ipout, recorder))
-    
+
     def natural_key(self):
         return {'ip': self.ip, 'port': self.port}
 
@@ -422,13 +436,13 @@ class Antenna(models.Model):
     class Meta:
         verbose_name = _(u'Antena parabólica')
         verbose_name_plural = _(u'Antenas parabólicas')
-    
+
     LNBS = (
             (u'normal_c', u'C Normal'),
             (u'multiponto_c', u'C Multiponto'),
             (u'universal_ku', u'Ku Universal'),
             )
-    
+
     satellite = models.CharField(_(u'Satélite'), max_length=200)
     lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200,
         choices=LNBS)
@@ -467,7 +481,7 @@ class InputModel(models.Model):
     "Each model of input type should inherit this"
     class Meta:
         abstract = True
-    
+
     def _get_config(self):
         # Fill config file
         conf = u''
@@ -478,9 +492,9 @@ class InputModel(models.Model):
                 port = service.src.all()[0].port
                 # Assume internal IPs always work with raw UDP
                 conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
-        
+
         return conf
-    
+
     def _create_folders(self):
         "Creates all the folders dvblast needs"
         self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
@@ -488,11 +502,11 @@ class InputModel(models.Model):
         self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR)
 
 class DigitalTunerHardware(models.Model):
-    
+
     def __unicode__(self):
         return '[%s:%s] Bus: %s, Adapter: %d, Driver: %s' % (self.id_vendor,
             self.id_product, self.bus, self.adapter_nr, self.driver)
-    
+
     def _read_mac_from_dvbworld(self):
         if self.id_vendor == '04b4':
             self.server.execute('/usr/bin/sudo /usr/bin/dvbnet -a %s -p 100'
@@ -505,7 +519,7 @@ class DigitalTunerHardware(models.Model):
             return " ".join(mac).strip()
         else:
             raise Exception('This adapter is not from DVBWorld: %s' % self)
-    
+
     def grab_info(self):
         "Connects to server and grab some information to fill in the object"
         import re
@@ -538,10 +552,10 @@ class DigitalTunerHardware(models.Model):
             '/usr/bin/lsusb -t | /bin/grep "Dev %s"' % devnum)
         match = re.search(r'Driver=(.*),', " ".join(ret))
         self.driver = match.groups()[0]
-        
+
         if self.id_vendor == '04b4':
             self.uniqueid = self._read_mac_from_dvbworld()
-    
+
     server = models.ForeignKey(Server)
     id_vendor = models.CharField(max_length=100)
     id_product = models.CharField(max_length=100)
@@ -565,7 +579,7 @@ class DigitalTuner(InputModel, DeviceServer):
         # Create the necessary folders
         self._create_folders()
         # Write the config file to disk
-        self.server.execute('echo "%s" > %s%d.conf' % (conf, 
+        self.server.execute('echo "%s" > %s%d.conf' % (conf,
                                 settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
         # Start dvblast process
         log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
@@ -623,7 +637,7 @@ class DvbTuner(DigitalTuner):
             # Log something and...
             raise ex
         return adapter.adapter_nr
-    
+
     def _get_cmd(self, adapter_num=None):
         # Get tuning parameters
         cmd = u'%s' % settings.DVBLAST_COMMAND
@@ -646,7 +660,7 @@ class DvbTuner(DigitalTuner):
             cmd += ' -a %s' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        
+
         return cmd
 
 
@@ -666,10 +680,10 @@ class IsdbTuner(DigitalTuner):
 
     def __unicode__(self):
         return str(self.frequency)
-    
+
     @property
     def adapter_num(self):
-        """TODO: Improve implementation. This one will cause a 
+        """TODO: Improve implementation. This one will cause a
         race condition if two instances hit start simultaneously"""
         import re
         # Get adapters list
@@ -705,7 +719,7 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        
+
         return cmd
 
 
@@ -766,7 +780,7 @@ class UnicastInput(IPInput):
             cmd += '/udp'
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-            
+
         return cmd
 
 class MulticastInput(IPInput):
@@ -845,7 +859,7 @@ class FileInput(DeviceServer):
         null=True)
     repeat = models.BooleanField(_(u'Repetir indefinidamente'), default=True)
     src = generic.GenericRelation(UniqueIP)
-    
+
     file_list = None
 
     def get_list_dir(self):
@@ -859,7 +873,7 @@ class FileInput(DeviceServer):
         if self.file_list is None:
             return []
         return self.file_list
-    
+
     def __unicode__(self):
         if hasattr(self, 'server') is False:
             return self.description
@@ -990,7 +1004,7 @@ class StreamRecorder(OutputModel, DeviceServer):
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         cmd += ' %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk)
-        
+
         return cmd
 
     def start(self):
@@ -1001,6 +1015,6 @@ class StreamRecorder(OutputModel, DeviceServer):
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
         self.save()
-    
+
     rotate = models.PositiveIntegerField()
     folder = models.CharField(max_length=500)
