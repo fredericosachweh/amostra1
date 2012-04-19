@@ -816,6 +816,8 @@ class MulticastInput(IPInput):
 def MulticastInput_pre_save(sender, instance, **kwargs):
     "Signal to create the route"
     server = instance.server
+    if server.offline_mode:
+        return
     # If it already exists, delete
     try:
         obj = MulticastInput.objects.get(pk=instance.pk)
@@ -835,6 +837,8 @@ def MulticastInput_pre_save(sender, instance, **kwargs):
 def MulticastInput_pre_delete(sender, instance, **kwargs):
     "Signal to delete the route"
     server = instance.server
+    if server.offline_mode:
+        return
     ip = instance.ip
     dev = server.get_netdev(instance.interface.ipv4)
     server.delete_route(ip, dev)
