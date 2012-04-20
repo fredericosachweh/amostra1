@@ -1,11 +1,9 @@
 # -*- encoding:utf-8 -*-
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-from django.http import HttpResponseBadRequest
-from django.shortcuts import get_object_or_404
-from django.shortcuts import render_to_response
+from django.http import HttpResponse, HttpResponseRedirect, \
+                        HttpResponseBadRequest, HttpResponseServerError
+from django.shortcuts import get_object_or_404, render_to_response, render
 from django.core.urlresolvers import reverse
-from django.template import RequestContext
+from django.template import RequestContext, loader
 import models
 import forms
 import logging
@@ -111,6 +109,28 @@ def server_available_isdbtuners(request):
             'is greater that the number of plugged-in PixelView adapters')
     
     return HttpResponse(free_adapters + (adapters - tuners))
+
+def dvbtuner_start(request, pk):
+    tuner = get_object_or_404(models.DvbTuner, id=pk)
+    try:
+        tuner.start()
+    except Exception as ex:
+        response = '%s: %s' % (ex.__class__.__name__, ex)
+        t = loader.get_template('device_500.html')
+        c = RequestContext(request, {'error' : response})
+        return HttpResponseServerError(t.render(c))
+    return HttpResponseRedirect(request.get_full_path())
+
+def dvbtuner_stop(request, pk):
+    tuner = get_object_or_404(models.DvbTuner, id=pk)
+    try:
+        tuner.stop()
+    except Exception as ex:
+        response = '%s: %s' % (ex.__class__.__name__, ex)
+        t = loader.get_template('device_500.html')
+        c = RequestContext(request, {'error' : response})
+        return HttpResponseServerError(t.render(c))
+    return HttpResponseRedirect(request.get_full_path())
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')

@@ -43,7 +43,8 @@ class AdminSource(admin.ModelAdmin):
 
 class AdminDvbTuner(admin.ModelAdmin):
     list_display = ('frequency', 'symbol_rate', 'polarization',
-                    'modulation', 'fec', 'server', 'adapter', 'antenna')
+                    'modulation', 'fec', 'server', 'adapter',
+                    'antenna', 'switch_link')
     form = forms.DvbTunerForm
 
 

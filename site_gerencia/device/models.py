@@ -645,6 +645,20 @@ class DvbTuner(DigitalTuner):
     adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
 
+    def switch_link(self):
+        if self.src is None:
+            return _(u'Desconfigurado')
+        if self.running():
+            url = reverse('device.views.dvbtuner_stop', kwargs={'pk': self.id})
+            return '<a href="%s" id="dvbtuner_id_%s" style="color:green;">' \
+                   'Rodando</a>' % (url, self.id)
+        url = reverse('device.views.dvbtuner_start', kwargs={'pk': self.id})
+        return '<a href="%s" id="dvbtuner_id_%s" style="color:red;">Parado</a>' \
+            % (url, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
+
     def __unicode__(self):
         return '%s - %d %s %d' % (
             self.antenna, self.frequency, self.polarization, self.symbol_rate)
