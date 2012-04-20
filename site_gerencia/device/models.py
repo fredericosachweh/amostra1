@@ -45,12 +45,7 @@ class Server(models.Model):
         verbose_name_plural = _(u'Servidores de Recursos')
 
     class ExecutionFailure(Exception):
-
-        def __init__(self, value):
-            self.parameter = value
-
-        def __str__(self):
-            return repr(self.parameter)
+        pass
 
     class InvalidOperation(Exception):
         pass
@@ -347,14 +342,25 @@ class DeviceServer(models.Model):
         blank=True, null=True, editable=False)
     description = models.CharField(_(u'Descrição'), max_length=250, blank=True)
 
+    class AlreadyRunning(Exception):
+        pass
+
+    class NotRunning(Exception):
+        pass
+
     def _type(self):
         return _(u'undefined')
 
     def start(self):
-        raise Exception('Must be overridden')
+        if self.running():
+            raise DeviceServer.AlreadyRunning('Tried to start an already ' \
+                                          'running device: "%s"' % self)
 
     def stop(self):
         """Interrompe processo no servidor"""
+        if not self.running():
+            raise DeviceServer.NotRunning('Tried to stop a device ' \
+                                          'that is not running: "%s"' % self)
         try:
             self.server.kill_process(self.pid)
             self.status = False
@@ -583,8 +589,12 @@ class DigitalTuner(InputModel, DeviceServer):
     frequency = models.PositiveIntegerField(_(u'Frequência'), help_text=u'MHz')
     src = generic.GenericRelation(DemuxedService)
 
+    class AdapterNotInstalled(Exception):
+        pass
+
     def start(self):
         "Starts a dvblast instance based on the current model's configuration"
+        DeviceServer.start(self)
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
@@ -646,7 +656,9 @@ class DvbTuner(DigitalTuner):
                                 server=self.server, uniqueid=self.adapter)
         except DigitalTunerHardware.DoesNotExist as ex:
             # Log something and...
-            raise ex
+            raise DvbTuner.AdapterNotInstalled(
+                _(u'The DVBWorld tuner "%s" is not ' \
+                  u'installed on server "%s"' % (self.adapter, self.server)))
         return adapter.adapter_nr
 
     def _get_cmd(self, adapter_num=None):
@@ -671,7 +683,7 @@ class DvbTuner(DigitalTuner):
             cmd += ' -a %s' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-
+        
         return cmd
 
 
