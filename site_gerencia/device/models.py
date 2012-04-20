@@ -462,7 +462,8 @@ class Antenna(models.Model):
 
     satellite = models.CharField(_(u'Satélite'), max_length=200)
     lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200,
-        choices=LNBS)
+        choices=LNBS, help_text=_(u'Verificar o tipo de LNBf escrito ' \
+                                  u'no cabeçote da antena'))
 
     def __unicode__(self):
         return str(self.satellite)
@@ -702,6 +703,7 @@ class DvbTuner(DigitalTuner):
 
 
 class IsdbTuner(DigitalTuner):
+    "http://pt.wikipedia.org/wiki/SBTVD"
     class Meta:
         verbose_name = _(u'Sintonizador ISDB-Tb')
         verbose_name_plural = _(u'Sintonizadores ISDB-Tb')
