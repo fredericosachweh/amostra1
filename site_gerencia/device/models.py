@@ -621,6 +621,7 @@ class DigitalTuner(InputModel, DeviceServer):
         # Start dvblast process
         log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+        self.status = True
         self.save()
 
 class DvbTuner(DigitalTuner):

@@ -119,7 +119,10 @@ def dvbtuner_start(request, pk):
         t = loader.get_template('device_500.html')
         c = RequestContext(request, {'error' : response})
         return HttpResponseServerError(t.render(c))
-    return HttpResponseRedirect(request.get_full_path())
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_dvbtuner_changelist')
+    return HttpResponseRedirect(url)
 
 def dvbtuner_stop(request, pk):
     tuner = get_object_or_404(models.DvbTuner, id=pk)
@@ -130,7 +133,10 @@ def dvbtuner_stop(request, pk):
         t = loader.get_template('device_500.html')
         c = RequestContext(request, {'error' : response})
         return HttpResponseServerError(t.render(c))
-    return HttpResponseRedirect(request.get_full_path())
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_dvbtuner_changelist')
+    return HttpResponseRedirect(url)
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')
