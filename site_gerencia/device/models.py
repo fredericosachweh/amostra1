@@ -114,7 +114,7 @@ class Server(models.Model):
                     (command, ret['exit_code'], self, u"".join(ret['output'])))
         return ret['output']
 
-    def execute_daemon(self, command):
+    def execute_daemon(self, command, log_path=None):
         "Excuta o processo em background (daemon)"
         try:
             s = self.connect()
@@ -125,7 +125,13 @@ class Server(models.Model):
             log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             raise ex
-        pid = s.execute_daemon(command)
+        ret = s.execute_daemon(command, log_path)
+        exit_code = ret.get('exit_code') 
+        if exit_code is not 0:
+            raise Server.ExecutionFailure(
+                    u'Command "%s" returned status "%d" on server "%s": "%s"' %
+                    (command, ret['exit_code'], self, u"".join(ret['output'])))
+        pid = ret['pid']
         s.close()
         self.save()
         return int(pid)
@@ -461,7 +467,8 @@ class Antenna(models.Model):
 
     satellite = models.CharField(_(u'Satélite'), max_length=200)
     lnb_type = models.CharField(_(u'Tipo de LNB'), max_length=200,
-        choices=LNBS)
+        choices=LNBS, help_text=_(u'Verificar o tipo de LNBf escrito ' \
+                                  u'no cabeçote da antena'))
 
     def __unicode__(self):
         return str(self.satellite)
@@ -513,9 +520,18 @@ class InputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders dvblast needs"
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_CONFS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_SOCKETS_DIR, persist=True)
-        self.server.execute('mkdir -p %s' % settings.DVBLAST_LOGS_DIR)
+        
+        def create_folder(path):
+            try:
+                self.server.execute('mkdir -p %s' % path)
+            except Exception as ex:
+                log = logging.getLogger('debug')
+                log.error(str(ex))
+        
+        create_folder(settings.DVBLAST_CONFS_DIR)
+        create_folder(settings.DVBLAST_SOCKETS_DIR)
+        create_folder(settings.DVBLAST_LOGS_DIR)
+
 
 class DigitalTunerHardware(models.Model):
 
@@ -604,6 +620,7 @@ class DigitalTuner(InputModel, DeviceServer):
         # Start dvblast process
         log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+        self.status = True
         self.save()
 
 class DvbTuner(DigitalTuner):
@@ -701,6 +718,7 @@ class DvbTuner(DigitalTuner):
 
 
 class IsdbTuner(DigitalTuner):
+    "http://pt.wikipedia.org/wiki/SBTVD"
     class Meta:
         verbose_name = _(u'Sintonizador ISDB-Tb')
         verbose_name_plural = _(u'Sintonizadores ISDB-Tb')
@@ -968,8 +986,7 @@ class OutputModel(models.Model):
             persist=True)
         self.server.execute('mkdir -p %s%d' % (
             settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR,
-            persist=True)
+        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR)
 
 
 class IPOutput(OutputModel, DeviceServer):

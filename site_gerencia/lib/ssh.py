@@ -118,13 +118,15 @@ class Connection(object):
         if log_path:
             fullcommand += '-o %s.out -e %s.err ' % (log_path, log_path)
         fullcommand += '%s' % command.strip()
-        self.execute(fullcommand)
+        ret = self.execute(fullcommand)
         pidcommand = "/bin/cat %s" % pidfile_path
         ## Buscando o pid
         output = self.execute(pidcommand)
-        pid = int(output['output'][0].strip())
-        log.info('Daemon started with pid [%d] command:%s', pid, fullcommand)
-        return pid
+        if len(output['output']):
+            pid = int(output['output'][0].strip())
+            log.info('Daemon started with pid [%d] command:%s', pid, fullcommand)
+            ret['pid'] = pid
+        return ret
 
     def execute_with_timeout(self,command,timeout=10):
         """
