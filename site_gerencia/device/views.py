@@ -151,30 +151,6 @@ def file_stop(request, pk=None):
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
-def multicat_start(request,pk=None):
-    print 'multicat_start'
-    o = get_object_or_404(models.MulticatGeneric,id=pk)
-    o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
-
-def multicat_stop(request,pk=None):
-    print 'multicat_stop'
-    o = get_object_or_404(models.MulticatGeneric,id=pk)
-    o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
-
-def multicat_redirect_start(request,pk=None):
-    print 'multicat_redirect_start'
-    o = get_object_or_404(models.MulticatRedirect,id=pk)
-    o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
-
-def multicat_redirect_stop(request,pk=None):
-    print 'multicat_redirect_stop'
-    o = get_object_or_404(models.MulticatRedirect,id=pk)
-    o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
-
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
         if ttype == 'dvbs':

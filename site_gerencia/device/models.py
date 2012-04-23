@@ -8,9 +8,8 @@ from django.core.urlresolvers import reverse
 from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
 from django.conf import settings
-from django.utils.functional import lazy
 from django.contrib.contenttypes import generic
-from django.contrib.contenttypes.models import ContentType, ContentTypeManager
+from django.contrib.contenttypes.models import ContentType
 
 
 class Server(models.Model):
@@ -668,7 +667,7 @@ class DvbTuner(DigitalTuner):
         try:
             adapter = DigitalTunerHardware.objects.get(
                                 server=self.server, uniqueid=self.adapter)
-        except DigitalTunerHardware.DoesNotExist as ex:
+        except DigitalTunerHardware.DoesNotExist:
             # Log something and...
             raise DvbTuner.AdapterNotInstalled(
                 _(u'The DVBWorld tuner "%s" is not ' \
@@ -726,10 +725,10 @@ class IsdbTuner(DigitalTuner):
         # Get adapters list
         files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
         adapters = []
-        for file in files:
-            contents = self.server.cat_file(file)
+        for f in files:
+            contents = self.server.cat_file(f)
             if contents == 'PixelView':
-                m = re.match(r'/dev/dvb/adapter(\d+)\.mac', file)
+                m = re.match(r'/dev/dvb/adapter(\d+)\.mac', f)
                 adapters.append(m.group(1))
         # Now exclude all used adapters from list
         ps = self.server.execute('ps aux | grep %s' % settings.DVBLAST_COMMAND)
