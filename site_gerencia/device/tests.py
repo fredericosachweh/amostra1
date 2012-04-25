@@ -364,6 +364,39 @@ class AdaptersManipulationTests(TestCase):
         # Delete it
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 200)
+        
+    def test_isdb_adapter_nr(self):
+        server = Server.objects.get(pk=1)
+        DigitalTunerHardware.objects.create(
+            server=server,
+            adapter_nr=2,
+            id_vendor='1554',
+        )
+        DigitalTunerHardware.objects.create(
+            server=server,
+            adapter_nr=4,
+            id_vendor='1554',
+        )
+        isdbtuner_a = IsdbTuner.objects.create(
+            server=server,
+            frequency=569143,
+        )
+        isdbtuner_b = IsdbTuner.objects.create(
+            server=server,
+            frequency=575143,
+        )
+        isdbtuner_c = IsdbTuner.objects.create(
+            server=server,
+            frequency=587143,
+        )
+        # Takes the first adapter
+        isdbtuner_a.start()
+        self.assertEqual(2, isdbtuner_a.adapter)
+        # Takes the second
+        isdbtuner_b.start()
+        self.assertEqual(4, isdbtuner_b.adapter)
+        # This will raise an exception because there's no adapters left
+        self.assertRaises(IsdbTuner.AdapterNotInstalled, isdbtuner_c.start)
 
 
 class MySeleniumTests(LiveServerTestCase):
