@@ -398,11 +398,11 @@ class DeviceServer(models.Model):
         if self.src is None:
             return _(u'Desconfigurado')
         if self.running():
-            url = reverse('device.views.%s_stop' % module_name,
+            url = reverse('%s_stop' % module_name,
                 kwargs={'pk': self.id})
             return '<a href="%s" id="%s_id_%s" style="color:green;">' \
                    'Rodando</a>' % (url, module_name, self.id)
-        url = reverse('device.views.%s_start' % module_name,
+        url = reverse('%s_start' % module_name,
             kwargs={'pk': self.id})
         return '<a href="%s" id="%s_id_%s" style="color:red;">Parado</a>' \
             % (url, module_name, self.id)
