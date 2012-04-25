@@ -924,20 +924,6 @@ class FileInput(DeviceServer):
     repeat = models.BooleanField(_(u'Repetir indefinidamente'), default=True)
     src = generic.GenericRelation(UniqueIP)
 
-    file_list = None
-
-    def get_list_dir(self):
-        if self.server_id is None:
-            return []
-        if self.file_list is None and self.server.status is True:
-            self.file_list = []
-            d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
-            for f in d:
-                self.file_list.append((f, f))
-        if self.file_list is None:
-            return []
-        return self.file_list
-
     def __unicode__(self):
         if hasattr(self, 'server') is False:
             return self.description
@@ -952,7 +938,7 @@ class FileInput(DeviceServer):
         cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
                                         ip.ip, ip.port)
-
+        
         return cmd
 
     def start(self):
