@@ -61,5 +61,9 @@ class Command(BaseCommand):
                             name = n.text.replace('*','')
                             self.stdout.write('         %s\n' % name)
                             P, created = PhysicalChannel.objects.get_or_create(number=p.text, city=C)
-                            V, created = VirtualChannel.objects.get_or_create(number=v.text, name=name, epg=epg,
-                                                                              physical_channel=P)
+                            try:
+                                float(v.text)
+                                V, created = VirtualChannel.objects.get_or_create(number=v.text, name=name, epg=epg,
+                                                                                  physical_channel=P)
+                            except:
+                                pass

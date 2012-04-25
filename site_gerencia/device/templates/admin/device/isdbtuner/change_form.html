@@ -12,7 +12,7 @@
 			/* Insert the auto-fill hyperlink */
 			{% url device.views.auto_fill_tuner_form ttype='isdb' as the_url %}
 			var hyperlink = django.jQuery('<br /><a href="{{ the_url }}">( Auto preencher )</a>');
-			hyperlink.appendTo(django.jQuery('div.form-row.frequency p.help'));
+			hyperlink.appendTo(django.jQuery('div.form-row.field-frequency p.help'));
 			/* Insert the onchange callbacks */
 			hyperlink.click( function () {
 				return showAutoFillPopup(this);
