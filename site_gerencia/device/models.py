@@ -267,6 +267,7 @@ class Server(models.Model):
         content = u''.join(ret)
         return content.strip()
 
+
 class NIC(models.Model):
     'Classe de manipulação da interface de rede e referencia do servidor'
     name = models.CharField(_(u'Interface de rede'), max_length=50)
