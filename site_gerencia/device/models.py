@@ -948,18 +948,6 @@ class FileInput(DeviceServer):
         self.save()
         return self.status
 
-    def switch_link(self):
-        if self.sink is None or self.server_id is None:
-            return 'Desconfigurado'
-        if self.running():
-            url = reverse('device.views.vlc_stop', kwargs={'pk': self.id})
-            return '<a href="%s" id="vlc_id_%s" style="color:green;" >\
-Rodando</a>' % (url, self.id)
-        url = reverse('device.views.vlc_start', kwargs={'pk': self.id})
-        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>'\
-            % (url, self.id)
-    switch_link.allow_tags = True
-
 
 class OutputModel(models.Model):
     "Each model of output type should inherit this"
