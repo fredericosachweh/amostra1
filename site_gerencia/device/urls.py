@@ -19,6 +19,9 @@ urlpatterns = patterns('',
     # UnicastInput
     (r'^unicastinput/start/(?P<pk>\d+)/$','device.views.unicastinput_start'),
     (r'^unicastinput/stop/(?P<pk>\d+)/$','device.views.unicastinput_stop'),
+    # MulticastInput
+    (r'^multicastinput/start/(?P<pk>\d+)/$','device.views.multicastinput_start'),
+    (r'^multicastinput/stop/(?P<pk>\d+)/$','device.views.multicastinput_stop'),
     
     (r'^file/start/(?P<pk>\d+)/$', 'device.views.file_start'),
     (r'^file/stop/(?P<pk>\d+)/$', 'device.views.file_stop'),

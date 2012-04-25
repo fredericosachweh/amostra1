@@ -186,10 +186,20 @@ def isdbtuner_stop(request, pk):
     return HttpResponseRedirect(url)
 
 def unicastinput_start(request, pk):
-    return deviceserver_switch_link(request, 'start', models.UnicastInput, pk)
+    return deviceserver_switch_link(request, 'start',
+        models.UnicastInput, pk)
 
 def unicastinput_stop(request, pk):
-    return deviceserver_switch_link(request, 'stop', models.UnicastInput, pk)
+    return deviceserver_switch_link(request, 'stop',
+        models.UnicastInput, pk)
+
+def multicastinput_start(request, pk):
+    return deviceserver_switch_link(request, 'start',
+        models.MulticastInput, pk)
+
+def multicastinput_stop(request, pk):
+    return deviceserver_switch_link(request, 'stop',
+        models.MulticastInput, pk)
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')
