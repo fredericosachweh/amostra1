@@ -546,7 +546,7 @@ class InputModel(models.Model):
                 self.server.execute('mkdir -p %s' % path)
             except Exception as ex:
                 log = logging.getLogger('debug')
-                log.error(str(ex))
+                log.error(unicode(ex))
 
         create_folder(settings.DVBLAST_CONFS_DIR)
         create_folder(settings.DVBLAST_SOCKETS_DIR)
@@ -1034,6 +1034,11 @@ class StreamRecorder(OutputModel, DeviceServer):
         verbose_name_plural = _(u'Gravadores de fluxo')
 
     def _get_cmd(self):
+        # Create the necessary folders
+        self._create_folders()
+        # Create folder to store record files
+        self.server.execute('mkdir -p %s/%s' % (settings.CHANNEL_RECORD_DIR, 
+            self.id))
         cmd = u'%s' % settings.MULTICAT_COMMAND
         #Convert to timestamps
         cmd += ' -r %d' % (self.rotate * 60 * 27000000)

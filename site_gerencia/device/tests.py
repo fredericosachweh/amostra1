@@ -15,6 +15,7 @@ from device.models import *
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 
+
 class CommandsGenerationTest(TestCase):
     def setUp(self):
         import getpass
@@ -821,7 +822,9 @@ class ServerTest(TestCase):
 
 
 class TestViews(TestCase):
-    "Testes das views dos devices"
+    """
+    Unit test for device views
+    """
 
     def setUp(self):
         import getpass
@@ -835,22 +838,28 @@ class TestViews(TestCase):
         )
         server.save()
         # Input interface
-        nic_a = NIC.objects.create(
+        NIC.objects.create(
             server=server,
             name='eth0',
             ipv4='192.168.0.10',
         )
         # Output interface
-        nic_b = NIC.objects.create(
+        NIC.objects.create(
             server=server,
             name='eth1',
             ipv4='10.0.1.10',
         )
-        nic_a.save()
-        nic_b.save()
+
+    def test_server_status(self):
+        server = Server.objects.get(pk=1)
         c = Client()
         url = reverse('device.views.server_status', kwargs={'pk':server.pk})
         response = c.get(url, follow=True)
+        self.assertRedirects(response,
+            'http://testserver/tv/administracao/device/server/', 302)
+        urlnotfound = reverse('device.views.server_status', kwargs={'pk':2})
+        response = c.get(urlnotfound, follow=True)
+        self.assertEqual(response.status_code, 404, 'Deveria ser 404')
 
     def test_fileinput_scanfolder(self):
         import re
@@ -868,4 +877,11 @@ class TestViews(TestCase):
         expected = u'<option value="%s">%s</option>' % (
             full_path, file_name)
         self.assertIn(expected, options)
+
+
+class TestRecord(TestCase):
+    """
+    Test record stream on remote server
+    """
+    #recorder = StreamRecorder.objects.create()
 
