@@ -397,7 +397,8 @@ class DeviceServer(models.Model):
 
     def switch_link(self):
         module_name = self._meta.module_name
-        if self.src is None:
+        if (hasattr(self, 'src') and self.src is None) or \
+           (hasattr(self, 'sink') and self.sink is None):
             return _(u'Desconfigurado')
         if self.running():
             url = reverse('%s_stop' % module_name,
@@ -1008,7 +1009,7 @@ class MulticastOutput(IPOutput):
     def validate_unique(self, exclude=None):
         # unique_together = ('ip', 'server')
         from django.core.exceptions import ValidationError
-        val = MulticastOutput.objects.filter(ip=self.ip,
+        val = MulticastOutput.objects.filter(ip_out=self.ip_out,
             server=self.server)
         if val.exists() and val[0].pk != self.pk:
             msg = _(u'Combinação já existente: %s e %s' % (
@@ -1022,7 +1023,7 @@ class MulticastOutput(IPOutput):
         if self.protocol == 'udp':
             cmd += ' -U'
         cmd += ' %s:%d' % (self.ip_out, self.port)
-
+        
         return cmd
 
 
