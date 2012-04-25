@@ -876,6 +876,7 @@ class TestViews(TestCase):
         file_name = match.groups(0)[0]
         expected = u'<option value="%s">%s</option>' % (
             full_path, file_name)
+        server.execute('/bin/rm -f %s' % full_path)
         self.assertIn(expected, options)
 
 

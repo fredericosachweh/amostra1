@@ -74,3 +74,8 @@ class FileInputForm(forms.ModelForm):
         widgets = {
             'filename' : forms.Select(),
         }
+
+class MulticastOutputForm(forms.ModelForm):
+    class Meta:
+        model = MulticastOutput
+        exclude = ('content_type', 'object_id')
