@@ -9,6 +9,7 @@ from django.contrib import admin
 import models
 import forms
 
+
 class AdminServer(admin.ModelAdmin):
     readonly_fields = ('status','modified','msg',)
     list_display = ('__unicode__','server_type','status','msg','switch_link',)
@@ -30,7 +31,8 @@ class AdminServer(admin.ModelAdmin):
 
 
 class AdminDevice(admin.ModelAdmin):
-    list_display = ('__unicode__','status','link_status','server_status','switch_link',)
+    list_display = ('__unicode__','status','link_status','server_status',
+        'switch_link')
 
 
 class AdminStream(admin.ModelAdmin):
@@ -52,13 +54,17 @@ class AdminIsdbTuner(admin.ModelAdmin):
     list_display = ('server', 'frequency', 'switch_link')
     form = forms.IsdbTunerForm
 
+
 class AdminUnicastInput(admin.ModelAdmin):
-    list_display = ('port', 'interface', 'protocol','server')
+    list_display = ('port', 'interface', 'protocol','server', 'switch_link')
     form = forms.UnicastInputForm
 
+
 class AdminMulticastInput(admin.ModelAdmin):
-    list_display = ('ip', 'port', 'interface', 'server', 'protocol')
+    list_display = ('ip', 'port', 'interface', 'server', 'protocol',
+        'switch_link')
     form = forms.MulticastInputForm
+
 
 admin.site.register(models.UniqueIP)
 admin.site.register(models.Server,AdminServer)

@@ -110,6 +110,25 @@ def server_available_isdbtuners(request):
     
     return HttpResponse(free_adapters + (adapters - tuners))
 
+def deviceserver_switch_link(request, method, klass, pk):
+    device = get_object_or_404(klass, id=pk)
+    try:
+        if method == 'start':
+            device.start()
+        elif method == 'stop':
+            device.stop()
+        else:
+            raise NotImplementedError()
+    except Exception as ex:
+        response = '%s: %s' % (ex.__class__.__name__, ex)
+        t = loader.get_template('device_500.html')
+        c = RequestContext(request, {'error' : response})
+        return HttpResponseServerError(t.render(c))
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
+    return HttpResponseRedirect(url)
+
 def dvbtuner_start(request, pk):
     tuner = get_object_or_404(models.DvbTuner, id=pk)
     try:
@@ -165,6 +184,12 @@ def isdbtuner_stop(request, pk):
     if url is None:
         url = reverse('admin:device_isdbtuner_changelist')
     return HttpResponseRedirect(url)
+
+def unicastinput_start(request, pk):
+    return deviceserver_switch_link(request, 'start', models.UnicastInput, pk)
+
+def unicastinput_stop(request, pk):
+    return deviceserver_switch_link(request, 'stop', models.UnicastInput, pk)
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')
