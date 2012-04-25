@@ -176,10 +176,11 @@ class Server(models.Model):
         for device in self.list_dir('/dev/dvb/'):
             adapter = DigitalTunerHardware(server=self)
             match = re.match(r'^adapter(\d+)$', device)
-            adapter.adapter_nr = match.groups()[0]
-            adapter.grab_info()
-            adapter.save()
-            resp.append(adapter)
+            if match:
+                adapter.adapter_nr = match.groups()[0]
+                adapter.grab_info()
+                adapter.save()
+                resp.append(adapter)
         return resp
 
     def auto_create_nic(self):
@@ -265,6 +266,7 @@ class Server(models.Model):
         ret = self.execute('/bin/cat %s' % path)
         content = u''.join(ret)
         return content.strip()
+
 
 class NIC(models.Model):
     'Classe de manipulação da interface de rede e referencia do servidor'
@@ -554,8 +556,9 @@ class InputModel(models.Model):
 class DigitalTunerHardware(models.Model):
 
     def __unicode__(self):
-        return '[%s:%s] Bus: %s, Adapter: %d, Driver: %s' % (self.id_vendor,
-            self.id_product, self.bus, self.adapter_nr, self.driver)
+        return '[%s:%s] Bus: %s, Adapter: %s, Driver: %s, ID: %s' % (
+            self.id_vendor, self.id_product, self.bus,
+            self.adapter_nr, self.driver, self.uniqueid)
 
     def _read_mac_from_dvbworld(self):
         if self.id_vendor == '04b4':
@@ -921,20 +924,6 @@ class FileInput(DeviceServer):
     repeat = models.BooleanField(_(u'Repetir indefinidamente'), default=True)
     src = generic.GenericRelation(UniqueIP)
 
-    file_list = None
-
-    def get_list_dir(self):
-        if self.server_id is None:
-            return []
-        if self.file_list is None and self.server.status is True:
-            self.file_list = []
-            d = self.server.list_dir(settings.VIDEO_LOOP_DIR)
-            for f in d:
-                self.file_list.append((f, f))
-        if self.file_list is None:
-            return []
-        return self.file_list
-
     def __unicode__(self):
         if hasattr(self, 'server') is False:
             return self.description
@@ -949,7 +938,7 @@ class FileInput(DeviceServer):
         cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
                                         ip.ip, ip.port)
-
+        
         return cmd
 
     def start(self):
@@ -958,18 +947,6 @@ class FileInput(DeviceServer):
         self.status = True
         self.save()
         return self.status
-
-    def switch_link(self):
-        if self.sink is None or self.server_id is None:
-            return 'Desconfigurado'
-        if self.running():
-            url = reverse('device.views.vlc_stop', kwargs={'pk': self.id})
-            return '<a href="%s" id="vlc_id_%s" style="color:green;" >\
-Rodando</a>' % (url, self.id)
-        url = reverse('device.views.vlc_start', kwargs={'pk': self.id})
-        return '<a href="%s" id="vlc_id_%s" style="color:red;" >Parado</a>'\
-            % (url, self.id)
-    switch_link.allow_tags = True
 
 
 class OutputModel(models.Model):

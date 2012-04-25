@@ -1,0 +1,34 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+
+    {{ block.super }}
+
+    <script type="text/javascript">
+        django.jQuery(document).ready(function () {
+            populate_adapters();
+            /* Insert the onchange callbacks */
+            django.jQuery('select#id_server').change(populate_adapters);
+        });
+        /* Get free adapters list from server and populate the select field */ 
+        function populate_adapters()
+        {
+            var server_id = django.jQuery('select#id_server').val();
+            var field = django.jQuery('select#id_filename');
+            field.attr("disabled", "disabled");
+            field.empty();
+            if (server_id) {
+                var query =  '{% url device.views.server_fileinput_scanfolder %}';
+                query += '?server=' + server_id;
+                django.jQuery.get(query, function(data) {
+                    if (data) field.append(data);
+                    // Pre select the last chosen value
+                    var adapter = '{{ original.adapter }}';
+                    if (adapter) field.val(adapter);
+                    field.removeAttr("disabled");
+              	});
+            }
+        }
+    </script>
+
+{% endblock %}

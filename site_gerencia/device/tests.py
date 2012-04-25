@@ -340,6 +340,7 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(internal, ipout.sink)
         self.assertEqual(internal, recorder.sink)
 
+
 class AdaptersManipulationTests(TestCase):
     def setUp(self):
         import getpass
@@ -365,7 +366,7 @@ class AdaptersManipulationTests(TestCase):
         # Delete it
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 200)
-        
+
     def test_isdb_adapter_nr(self):
         server = Server.objects.get(pk=1)
         DigitalTunerHardware.objects.create(
@@ -820,10 +821,9 @@ class ServerTest(TestCase):
 
 
 class TestViews(TestCase):
-    """
-    Testes das views dos devices
-    """
-    def test_server_status(self):
+    "Testes das views dos devices"
+
+    def setUp(self):
         import getpass
         server = Server.objects.create(
             name='local',
@@ -851,4 +851,21 @@ class TestViews(TestCase):
         c = Client()
         url = reverse('device.views.server_status', kwargs={'pk':server.pk})
         response = c.get(url, follow=True)
-        print(response.redirect_chain)
+
+    def test_fileinput_scanfolder(self):
+        import re
+        server = Server.objects.get(pk=1)
+        # Create a temporary file inside the videos folder
+        out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)
+        # Make sure the file name is returned on the list
+        url = reverse('device.views.server_fileinput_scanfolder')
+        response = self.client.get(url + '?server=%d' % server.pk)
+        options = unicode(response.content, 'utf-8').split(u'\n')
+        full_path = u" ".join(out).strip()
+        match = re.match(r'^%s(.*)$' %
+            re.escape(settings.VLC_VIDEOFILES_DIR), full_path)
+        file_name = match.groups(0)[0]
+        expected = u'<option value="%s">%s</option>' % (
+            full_path, file_name)
+        self.assertIn(expected, options)
+

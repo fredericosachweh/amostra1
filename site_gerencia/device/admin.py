@@ -66,6 +66,11 @@ class AdminMulticastInput(admin.ModelAdmin):
     form = forms.MulticastInputForm
 
 
+class AdminFileInput(admin.ModelAdmin):
+    list_display = ('filename', 'server', 'repeat', 'switch_link')
+    form = forms.FileInputForm
+
+
 admin.site.register(models.UniqueIP)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Antenna)
@@ -73,7 +78,7 @@ admin.site.register(models.DvbTuner, AdminDvbTuner)
 admin.site.register(models.IsdbTuner, AdminIsdbTuner)
 admin.site.register(models.UnicastInput, AdminUnicastInput)
 admin.site.register(models.MulticastInput, AdminMulticastInput)
-admin.site.register(models.FileInput)
+admin.site.register(models.FileInput, AdminFileInput)
 admin.site.register(models.MulticastOutput)
 admin.site.register(models.DemuxedService)
 admin.site.register(models.StreamRecorder)

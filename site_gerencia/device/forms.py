@@ -67,3 +67,10 @@ class MulticastInputForm(forms.ModelForm):
         if octet < 224 or octet > 239:
             raise ValidationError(_(u'Endereços multicast devem ter o primeiro octeto entre 224 e 239.'))
         return ip
+
+class FileInputForm(forms.ModelForm):
+    class Meta:
+        model = FileInput
+        widgets = {
+            'filename' : forms.Select(),
+        }

@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponseRedirect, \
 from django.shortcuts import get_object_or_404, render_to_response, render
 from django.core.urlresolvers import reverse
 from django.template import RequestContext, loader
+from django.conf import settings
 import models
 import forms
 import logging
@@ -109,6 +110,15 @@ def server_available_isdbtuners(request):
             'is greater that the number of plugged-in PixelView adapters')
     
     return HttpResponse(free_adapters + (adapters - tuners))
+
+def server_fileinput_scanfolder(request):
+    pk = request.GET.get('server')
+    server = get_object_or_404(models.Server, id=pk)
+    list = u''
+    for file in server.list_dir(settings.VLC_VIDEOFILES_DIR):
+        list += u'<option value="%s%s">%s</option>\n' % (
+            settings.VLC_VIDEOFILES_DIR, file, file)
+    return HttpResponse(list)
 
 def deviceserver_switchlink(request, method, klass, pk):
     device = get_object_or_404(klass, id=pk)
