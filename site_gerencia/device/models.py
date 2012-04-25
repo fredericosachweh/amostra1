@@ -127,7 +127,7 @@ class Server(models.Model):
             log.error('[%s]:%s' % (self, ex))
             raise ex
         ret = s.execute_daemon(command, log_path)
-        exit_code = ret.get('exit_code') 
+        exit_code = ret.get('exit_code')
         if exit_code is not 0:
             raise Server.ExecutionFailure(
                     u'Command "%s" returned status "%d" on server "%s": "%s"' %
@@ -538,14 +538,14 @@ class InputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders dvblast needs"
-        
+
         def create_folder(path):
             try:
                 self.server.execute('mkdir -p %s' % path)
             except Exception as ex:
                 log = logging.getLogger('debug')
                 log.error(str(ex))
-        
+
         create_folder(settings.DVBLAST_CONFS_DIR)
         create_folder(settings.DVBLAST_SOCKETS_DIR)
         create_folder(settings.DVBLAST_LOGS_DIR)
@@ -688,7 +688,7 @@ class DvbTuner(DigitalTuner):
         try:
             adapter = DigitalTunerHardware.objects.get(
                                 server=self.server, uniqueid=self.adapter)
-        except DigitalTunerHardware.DoesNotExist as ex:
+        except DigitalTunerHardware.DoesNotExist:
             # Log something and...
             raise DvbTuner.AdapterNotInstalled(
                 _(u'The DVBWorld tuner "%s" is not ' \
@@ -717,7 +717,7 @@ class DvbTuner(DigitalTuner):
             cmd += ' -a %s' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        
+
         return cmd
 
 
@@ -758,7 +758,7 @@ class IsdbTuner(DigitalTuner):
                 if not IsdbTuner.objects.filter(server=self.server,
                         adapter=adapter.adapter_nr).exists():
                     return adapter.adapter_nr
-        
+
         raise IsdbTuner.AdapterNotInstalled(
             _(u'There is no PixelView tuner available ' \
               u'on server "%s"' % self.server))
@@ -775,7 +775,7 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-        
+
         return cmd
 
 
@@ -1045,7 +1045,6 @@ class MulticastOutput(IPOutput):
         if self.protocol == 'udp':
             cmd += ' -U'
         cmd += ' %s:%d' % (self.ip_out, self.port)
-
         return cmd
 
 
@@ -1064,7 +1063,6 @@ class StreamRecorder(OutputModel, DeviceServer):
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
         cmd += ' %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk)
-
         return cmd
 
     def start(self):
@@ -1076,5 +1074,3 @@ class StreamRecorder(OutputModel, DeviceServer):
             log_path=log_path)
         self.save()
 
-    rotate = models.PositiveIntegerField()
-    folder = models.CharField(max_length=500)

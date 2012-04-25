@@ -4,7 +4,8 @@
 Testes unitários
 """
 
-from django.test import TestCase, LiveServerTestCase
+from django.test import TestCase
+from django.test import LiveServerTestCase
 from django.test.client import Client
 from django.test.client import RequestFactory
 from django.conf import settings
@@ -198,10 +199,10 @@ class CommandsGenerationTest(TestCase):
             interface=nic_b,
             sink=internal_g,
         )
-    
+
     def tearDown(self):
         Server.objects.all().delete()
-    
+
     def test_dvbtuner(self):
         tuner = DvbTuner.objects.all()[0]
         expected_cmd = (
@@ -218,10 +219,10 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd())
-        
+
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
-    
+
     def test_isdbtuner(self):
         tuner = IsdbTuner.objects.get(pk=2)
         expected_cmd = (
@@ -237,10 +238,10 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
-        
+
         expected_conf = u'239.1.0.4:20000/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
-    
+
     def test_unicastinput(self):
         unicastin = UnicastInput.objects.get(port=30000)
         expected_cmd = (
@@ -253,10 +254,10 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
-        
+
         expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
-    
+
     def test_multicastinput(self):
         multicastin = MulticastInput.objects.get(port=40000)
         expected_cmd = (
@@ -283,7 +284,7 @@ class CommandsGenerationTest(TestCase):
         ) % (settings.VLC_COMMAND,
              settings.VLC_VIDEOFILES_DIR)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
-    
+
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
         expected_cmd = (
@@ -291,11 +292,11 @@ class CommandsGenerationTest(TestCase):
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
             "-U 239.0.1.3:10000"
-        ) % (settings.MULTICAT_COMMAND, 
+        ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
              )
         self.assertEqual(expected_cmd, ipout._get_cmd())
-    
+
     def test_streamrecorder(self):
         recorder = StreamRecorder.objects.get(folder='/tmp/recording_a')
         expected_cmd = (
@@ -304,12 +305,12 @@ class CommandsGenerationTest(TestCase):
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
             "%s%d"
-        ) % (settings.MULTICAT_COMMAND, 
+        ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, recorder.pk,
              settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
-    
+
     def test_connections(self):
         # Test dvbtuner generic relation
         dvbtuner = DvbTuner.objects.all()[0]
@@ -351,10 +352,10 @@ class AdaptersManipulationTests(TestCase):
         )
         self.client = Client()
         self.factory = RequestFactory()
-    
+
     def tearDown(self):
         Server.objects.all().delete()
-    
+
     def test_update_by_post(self):
         url = reverse('device.views.server_update_adapter',
                       kwargs={'adapter_nr' : 0})
@@ -402,17 +403,17 @@ class AdaptersManipulationTests(TestCase):
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['user-data.json', 'default-server.json',
                 'antenna.json', 'dvbworld.json', 'pixelview.json']
-    
+
     @classmethod
     def setUpClass(cls):
         cls.selenium = WebDriver()
         super(MySeleniumTests, cls).setUpClass()
-    
+
     @classmethod
     def tearDownClass(cls):
         super(MySeleniumTests, cls).tearDownClass()
         cls.selenium.quit()
-    
+
     def _login(self, username, password):
         login_url = '%s%s' % (self.live_server_url,
                                 reverse('django.contrib.auth.views.login'))
@@ -424,7 +425,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_xpath('//input[@type="submit"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-    
+
     def _is_logged(self):
         from django.contrib.auth.models import User
         from django.contrib.sessions.models import Session
@@ -437,17 +438,17 @@ class MySeleniumTests(LiveServerTestCase):
             if data.get('_auth_user_id', None) == admin.id:
                 return True
         return False
-    
+
     def _select(self, id, choice):
         field = self.selenium.find_element_by_id(id)
         for option in field.find_elements_by_tag_name('option'):
             if option.text == choice:
                 option.click() # select() in earlier versions of webdriver
-    
+
     def _select_by_value(self, id, value):
         field = self.selenium.find_element_by_id(id)
         field.find_element_by_xpath("//option[@value='%s']" % value).click()
-    
+
     def test_valid_login(self):
         self.assertFalse(self._is_logged())
         self._login('admin', 'cianet')
@@ -455,14 +456,14 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual(index_url, self.selenium.current_url,
                          "Could not login")
         self.assertTrue(self._is_logged())
-    
+
     def test_invalid_login(self):
         self._login('admin', 'cianet123')
         login_url = '%s%s' % (self.live_server_url,
                                 reverse('django.contrib.auth.views.login'))
         self.assertEqual(login_url, self.selenium.current_url,
                          "Login should have failed")
-    
+
     def test_unicastinput(self):
         fields = {'server' : 'local',
                   'interface' : 1,
@@ -486,8 +487,13 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual('192.168.0.14', unicastin.interface.ipv4)
         self.assertEqual('udp', unicastin.protocol)
         unicastin.delete()
-    
+
     def test_multicastinput(self):
+        import getpass
+        myuser = getpass.getuser()
+        servers = Server.objects.all()
+        servers.update(username=myuser)
+
         self._login('admin', 'cianet')
         add_new_url = '%s%s' % (self.live_server_url,
                                 reverse('admin:device_multicastinput_add'))
@@ -506,7 +512,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual('udp', multicastin.protocol)
         self.assertEqual('239.0.1.1', multicastin.ip)
         multicastin.delete()
-    
+
     def test_dvbtuner(self):
         self._login('admin', 'cianet')
         add_new_url = '%s%s' % (self.live_server_url,
@@ -534,7 +540,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual('34', tuner.fec)
         self.assertEqual('00:00:00:00:00:00', tuner.adapter)
         tuner.delete()
-    
+
     def test_isdbtuner(self):
         self._login('admin', 'cianet')
         add_new_url = '%s%s' % (self.live_server_url,
@@ -585,7 +591,7 @@ class ConnectionTest(TestCase):
             '%s\n' % (os.environ.get('HOME')),
             'O home deveria ser "%s\n"' % (os.environ.get('HOME'))
         )
-    
+
     def test_connection_failure(self):
         "Teste para conectar e falhar uma conexão (Porta errada)"
         import getpass
@@ -600,7 +606,7 @@ class ConnectionTest(TestCase):
             'Unable to connect to 127.0.0.1: [Errno 111] Connection refused',
             'Deveria dar erro de conexão')
         self.assertFalse(srv.status, 'O status da conexão deveria ser False')
-    
+
     def test_low_respose_command(self):
         "Test de comando demorado para executar"
         import os
@@ -678,17 +684,17 @@ class ServerTest(TestCase):
         server.connect()
         server.auto_create_nic()
         route = ('239.0.1.10', 'lo')
-        
+
         server.create_route(*route)
         routes = server.list_routes()
         self.assertIn(route, routes,
                 'Route %s -> %s should exists' % route)
-        
+
         server.delete_route(*route)
         routes = server.list_routes()
         self.assertNotIn(route, routes,
                 'Route %s -> %s should not exists' % route)
-    
+
     def test_list_interfaces_view(self):
         server = Server.objects.get(pk=1)
         NIC.objects.create(
@@ -708,7 +714,7 @@ class ServerTest(TestCase):
                    '<option value="1">eth0 - 192.168.0.10</option>' \
                    '<option value="2">br0 - 172.17.0.2</option>'
         self.assertEqual(expected, response.content)
-    
+
     def test_dvbtuners_list_view(self):
         url = reverse('device.views.server_list_dvbadapters')
         server = Server.objects.get(pk=1)
@@ -743,7 +749,7 @@ class ServerTest(TestCase):
         response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
         # Without any DvbTuner created
         self.assertEqual(expected, response.content)
-        
+
         antenna = Antenna.objects.create(
             satellite='StarOne C2',
             lnb_type='multiponto_c',
@@ -762,7 +768,7 @@ class ServerTest(TestCase):
         response = self.client.get(url + '?server=%d&tuner=1&type=dvb'
             % server.pk)
         self.assertEqual(expected, response.content)
-        
+
         expected = '<option value="">---------</option>' \
                    '<option value="00:00:00:00:00:01">' \
                    'DVBWorld 00:00:00:00:00:01</option>' \
@@ -772,14 +778,14 @@ class ServerTest(TestCase):
         # With one created DvbTuner, while inserting another one
         self.assertEqual(expected, response.content,
             'The already used adapter should have been excluded')
-    
+
     def test_available_isdbtuners_view(self):
         url = reverse('device.views.server_available_isdbtuners')
         server = Server.objects.get(pk=1)
         # No installed adapters
         response = self.client.get(url + '?server=%d' % server.pk)
         self.assertEqual('0', response.content)
-        
+
         DigitalTunerHardware.objects.create(
             server=server,
             id_vendor='1554',
@@ -792,22 +798,22 @@ class ServerTest(TestCase):
             id_product='5010',
             adapter_nr=1,
         )
-        
+
         # Without any IsdbTuner created
         response = self.client.get(url + '?server=%d' % server.pk)
         self.assertEqual('2', response.content)
-        
+
         IsdbTuner.objects.create(
             server=server,
             frequency=587143,
             bandwidth=6,
             modulation='qam',
         )
-        
+
         # While editing a created IsdbTuner
         response = self.client.get(url + '?server=%d&tuner=1' % server.pk)
         self.assertEqual('2', response.content)
-        
+
         # Creating a new one
         response = self.client.get(url + '?server=%d' % server.pk)
         self.assertEqual('1', response.content)
@@ -817,4 +823,32 @@ class TestViews(TestCase):
     """
     Testes das views dos devices
     """
-    pass
+    def test_server_status(self):
+        import getpass
+        server = Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
+            offline_mode=False,
+        )
+        server.save()
+        # Input interface
+        nic_a = NIC.objects.create(
+            server=server,
+            name='eth0',
+            ipv4='192.168.0.10',
+        )
+        # Output interface
+        nic_b = NIC.objects.create(
+            server=server,
+            name='eth1',
+            ipv4='10.0.1.10',
+        )
+        nic_a.save()
+        nic_b.save()
+        c = Client()
+        url = reverse('device.views.server_status', kwargs={'pk':server.pk})
+        response = c.get(url, follow=True)
+        print(response.redirect_chain)
