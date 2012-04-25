@@ -176,10 +176,11 @@ class Server(models.Model):
         for device in self.list_dir('/dev/dvb/'):
             adapter = DigitalTunerHardware(server=self)
             match = re.match(r'^adapter(\d+)$', device)
-            adapter.adapter_nr = match.groups()[0]
-            adapter.grab_info()
-            adapter.save()
-            resp.append(adapter)
+            if match:
+                adapter.adapter_nr = match.groups()[0]
+                adapter.grab_info()
+                adapter.save()
+                resp.append(adapter)
         return resp
 
     def auto_create_nic(self):
@@ -554,8 +555,9 @@ class InputModel(models.Model):
 class DigitalTunerHardware(models.Model):
 
     def __unicode__(self):
-        return '[%s:%s] Bus: %s, Adapter: %d, Driver: %s' % (self.id_vendor,
-            self.id_product, self.bus, self.adapter_nr, self.driver)
+        return '[%s:%s] Bus: %s, Adapter: %s, Driver: %s, ID: %s' % (
+            self.id_vendor, self.id_product, self.bus,
+            self.adapter_nr, self.driver, self.uniqueid)
 
     def _read_mac_from_dvbworld(self):
         if self.id_vendor == '04b4':
