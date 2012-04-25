@@ -393,6 +393,23 @@ class DeviceServer(models.Model):
             alive = False
         return alive
 
+    def switch_link(self):
+        module_name = self._meta.module_name
+        if self.src is None:
+            return _(u'Desconfigurado')
+        if self.running():
+            url = reverse('device.views.%s_stop' % module_name,
+                kwargs={'pk': self.id})
+            return '<a href="%s" id="%s_id_%s" style="color:green;">' \
+                   'Rodando</a>' % (url, module_name, self.id)
+        url = reverse('device.views.%s_start' % module_name,
+            kwargs={'pk': self.id})
+        return '<a href="%s" id="%s_id_%s" style="color:red;">Parado</a>' \
+            % (url, module_name, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
+
 class Dvblast(DeviceServer):
     "DEPRECATED: Não utilizado mais???"
     class Meta:
@@ -596,7 +613,7 @@ class DigitalTunerHardware(models.Model):
     driver = models.CharField(max_length=100)
     last_update = models.DateTimeField(auto_now=True)
     uniqueid = models.CharField(max_length=100, unique=True, null=True)
-    adapter_nr = models.PositiveSmallIntegerField(unique=True)
+    adapter_nr = models.PositiveSmallIntegerField()
 
 class DigitalTuner(InputModel, DeviceServer):
     class Meta:
@@ -662,20 +679,6 @@ class DvbTuner(DigitalTuner):
     adapter = models.CharField(_(u'Adaptador'), max_length=200)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
 
-    def switch_link(self):
-        if self.src is None:
-            return _(u'Desconfigurado')
-        if self.running():
-            url = reverse('device.views.dvbtuner_stop', kwargs={'pk': self.id})
-            return '<a href="%s" id="dvbtuner_id_%s" style="color:green;">' \
-                   'Rodando</a>' % (url, self.id)
-        url = reverse('device.views.dvbtuner_start', kwargs={'pk': self.id})
-        return '<a href="%s" id="dvbtuner_id_%s" style="color:red;">Parado</a>' \
-            % (url, self.id)
-
-    switch_link.allow_tags = True
-    switch_link.short_description = u'Status'
-
     def __unicode__(self):
         return '%s - %d %s %d' % (
             self.antenna, self.frequency, self.polarization, self.symbol_rate)
@@ -725,42 +728,40 @@ class IsdbTuner(DigitalTuner):
         verbose_name_plural = _(u'Sintonizadores ISDB-Tb')
 
     MODULATION_CHOICES = (
-                          (u'qam', u'QAM'),
-                          )
+        (u'qam', u'QAM'),
+    )
 
     modulation = models.CharField(_(u'Modulação'),
         max_length=200, choices=MODULATION_CHOICES, default=u'qam')
     bandwidth = models.PositiveSmallIntegerField(_(u'Largura de banda'),
         null=True, help_text=u'MHz', default=6)
+    adapter = models.PositiveSmallIntegerField(null=True)
 
     def __unicode__(self):
         return str(self.frequency)
 
+    def start(self):
+        self.adapter = self.adapter_num
+        super(IsdbTuner, self).start()
+
+    def stop(self):
+        self.adapter = None
+        super(IsdbTuner, self).stop()
+
     @property
     def adapter_num(self):
-        """TODO: Improve implementation. This one will cause a
-        race condition if two instances hit start simultaneously"""
-        import re
-        # Get adapters list
-        files = self.server.execute('/bin/find /dev/dvb/ -name adapter*.mac -type f', persist=True)
-        adapters = []
-        for file in files:
-            contents = self.server.cat_file(file)
-            if contents == 'PixelView':
-                m = re.match(r'/dev/dvb/adapter(\d+)\.mac', file)
-                adapters.append(m.group(1))
-        # Now exclude all used adapters from list
-        ps = self.server.execute('ps aux | grep %s' % settings.DVBLAST_COMMAND)
-        for line in ps:
-            m = re.match(r'-a (\d+)', line)
-            if m:
-                adapters.remove(m.group(1))
-        # At least one should be left
-        if len(adapters) > 0:
-            return adapters[0]  # Return the first free one
-        else:
-            raise Exception(
-                "Tried to start a IsdbTuner but there's no device available")
+        "Return an adapter number that is not being used at the moment"
+        adapters = DigitalTunerHardware.objects.filter(
+            server=self.server, id_vendor='1554')
+        if adapters.count() > 0:
+            for adapter in adapters:
+                if not IsdbTuner.objects.filter(server=self.server,
+                        adapter=adapter.adapter_nr).exists():
+                    return adapter.adapter_nr
+        
+        raise IsdbTuner.AdapterNotInstalled(
+            _(u'There is no PixelView tuner available ' \
+              u'on server "%s"' % self.server))
 
     def _get_cmd(self, adapter_num=None):
         cmd = u'%s' % settings.DVBLAST_COMMAND
@@ -774,7 +775,7 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % adapter_num
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-
+        
         return cmd
 
 

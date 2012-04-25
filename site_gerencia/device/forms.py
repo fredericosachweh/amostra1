@@ -27,6 +27,7 @@ class DvbTunerAutoFillForm(forms.Form):
 class IsdbTunerForm(forms.ModelForm):
     class Meta:
         model = IsdbTuner
+        exclude = ('adapter',)
     
     def clean_free_adapters(self):
         fa = int(self.cleaned_data['free_adapters'])

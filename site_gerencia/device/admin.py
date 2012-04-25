@@ -49,7 +49,7 @@ class AdminDvbTuner(admin.ModelAdmin):
 
 
 class AdminIsdbTuner(admin.ModelAdmin):
-    list_display = ('server', 'frequency')
+    list_display = ('server', 'frequency', 'switch_link')
     form = forms.IsdbTunerForm
 
 class AdminUnicastInput(admin.ModelAdmin):
