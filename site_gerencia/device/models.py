@@ -1026,12 +1026,12 @@ class MulticastOutput(IPOutput):
         return cmd
 
 ## Gravação:
-# RT=$((60*60*27000000)) #rotate
+# RT=$((60*60*27000000)) #rotate (minutos)
 # FOLDER=ch_53
 # MULTICAT -r $RT -u @239.0.1.1:10000 $FOLDER
 
 ## Recuperação:
-# TIME_SHIFT=-$((60*5*27000000))
+# TIME_SHIFT=-$((60*5*27000000)) # (minutos)
 # FOLDER=ch_53
 # MULTICAT -U -k $TIME_SHIFT $FOLDER 192.168.0.244:5000
 
@@ -1039,7 +1039,7 @@ class StreamRecorder(OutputModel, DeviceServer):
     """
     Serviço de gravação dos fluxos multimidia.
     """
-    rotate = models.PositiveIntegerField(_(u'Tempo em segundos do arquivo'))
+    rotate = models.PositiveIntegerField(_(u'Tempo em minutos do arquivo'))
     folder = models.CharField(_(u'Diretório destino'),max_length=500,
         default=settings.CHANNEL_RECORD_DIR, db_index=True)
     keep_time = models.PositiveIntegerField(_(u'Tempo que permanece gravado'))
@@ -1063,14 +1063,17 @@ class StreamRecorder(OutputModel, DeviceServer):
         # Create the necessary folders
         self._create_folders()
         # Create folder to store record files
-        self.server.execute('mkdir -p %s/%s' % (settings.CHANNEL_RECORD_DIR,
-            self.id))
-        cmd = u'%s' % settings.MULTICAT_COMMAND
-        #Convert to timestamps
-        cmd += ' -r %d' % (self.rotate * 60 * 27000000)
-        cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
-        cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
-        cmd += ' %s%d' % (settings.MULTICAT_RECORDINGS_DIR, self.pk)
+        self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
+        cmd = u'%s -r %d -c %s%d.sock -u @%s:%d %s/%d' % (
+            settings.MULTICAT_COMMAND,
+            (self.rotate * 60 * 27000000),
+            settings.MULTICAT_SOCKETS_DIR,
+            self.pk,
+            self.sink.ip,
+            self.sink.port,
+            self.folder,
+            self.pk
+            )
         return cmd
 
     def start(self):
