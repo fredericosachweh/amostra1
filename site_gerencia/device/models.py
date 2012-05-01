@@ -8,9 +8,8 @@ from django.core.urlresolvers import reverse
 from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
 from django.conf import settings
-from django.utils.functional import lazy
 from django.contrib.contenttypes import generic
-from django.contrib.contenttypes.models import ContentType, ContentTypeManager
+from django.contrib.contenttypes.models import ContentType
 
 
 class Server(models.Model):
@@ -326,7 +325,8 @@ class UniqueIP(models.Model):
             if mod == 1:
                 proximo += 1
             self.sequential = proximo
-        self.ip = self._gen_ip()
+        if self.ip is None:
+            self.ip = self._gen_ip()
         super(UniqueIP, self).save(*args, **kwargs)
 
     def _gen_ip(self):
@@ -936,10 +936,10 @@ class FileInput(DeviceServer):
         cmd += ' -I dummy -v'
         if self.repeat:
             cmd += ' -R'
-        cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
+        #cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
+        cmd += ' "%s"' % (self.filename)
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
-                                        ip.ip, ip.port)
-        
+            ip.ip, ip.port)
         return cmd
 
     def start(self):
@@ -1025,20 +1025,45 @@ class MulticastOutput(IPOutput):
         cmd += ' %s:%d' % (self.ip_out, self.port)
         return cmd
 
+## Gravação:
+# RT=$((60*60*27000000)) #rotate
+# FOLDER=ch_53
+# MULTICAT -r $RT -u @239.0.1.1:10000 $FOLDER
+
+## Recuperação:
+# TIME_SHIFT=-$((60*5*27000000))
+# FOLDER=ch_53
+# MULTICAT -U -k $TIME_SHIFT $FOLDER 192.168.0.244:5000
 
 class StreamRecorder(OutputModel, DeviceServer):
-    rotate = models.PositiveIntegerField()
-    folder = models.CharField(max_length=500)
+    """
+    Serviço de gravação dos fluxos multimidia.
+    """
+    rotate = models.PositiveIntegerField(_(u'Tempo em segundos do arquivo'))
+    folder = models.CharField(_(u'Diretório destino'),max_length=500,
+        default=settings.CHANNEL_RECORD_DIR, db_index=True)
+    keep_time = models.PositiveIntegerField(_(u'Tempo que permanece gravado'))
+    start_time = models.DateTimeField(_(u'Hora inicial da gravação'), null=True,
+        default=None)
 
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
 
+    def validate_unique(self, exclude=None):
+        from django.core.exceptions import ValidationError
+        val = StreamRecorder.objects.filter(folder=self.folder,
+            server=self.server)
+        if val.exists() and val[0].pk != self.pk:
+            msg = _(u'Combinação já existente: %s e %s' % (
+                self.server.name, self.folder))
+            raise ValidationError({'__all__': [msg]})
+
     def _get_cmd(self):
         # Create the necessary folders
         self._create_folders()
         # Create folder to store record files
-        self.server.execute('mkdir -p %s/%s' % (settings.CHANNEL_RECORD_DIR, 
+        self.server.execute('mkdir -p %s/%s' % (settings.CHANNEL_RECORD_DIR,
             self.id))
         cmd = u'%s' % settings.MULTICAT_COMMAND
         #Convert to timestamps
@@ -1049,11 +1074,14 @@ class StreamRecorder(OutputModel, DeviceServer):
         return cmd
 
     def start(self):
-        # Create the necessary folders
+        # Create destination folder
+        # Create the necessary log folders
         self._create_folders()
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
+        if self.status is True:
+            import datetime
+            self.start_time = datetime.datetime.now()
         self.save()
-

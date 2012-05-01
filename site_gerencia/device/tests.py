@@ -161,6 +161,7 @@ class CommandsGenerationTest(TestCase):
             rotate=60,
             folder='/tmp/recording_a',
             sink=internal_a,
+            keep_time=168
         )
         ipout_b = MulticastOutput.objects.create(
             server=server,
@@ -191,6 +192,7 @@ class CommandsGenerationTest(TestCase):
             rotate=60,
             folder='/tmp/recording_b',
             sink=internal_f,
+            keep_time=130,
         )
         ipout_e = MulticastOutput.objects.create(
             server=server,
@@ -205,7 +207,7 @@ class CommandsGenerationTest(TestCase):
         Server.objects.all().delete()
 
     def test_dvbtuner(self):
-        tuner = DvbTuner.objects.all()[0]
+        tuner = DvbTuner.objects.get(pk=1)
         expected_cmd = (
             "%s "
             "-f 3390000 "
@@ -280,10 +282,9 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = (
             '%s '
             '-I dummy -v -R '
-            '"%sfoobar.mkv" '
+            '"foobar.mkv" '
             '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
-        ) % (settings.VLC_COMMAND,
-             settings.VLC_VIDEOFILES_DIR)
+        ) % (settings.VLC_COMMAND)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
 
     def test_multicastoutput(self):
@@ -885,4 +886,5 @@ class TestRecord(TestCase):
     Test record stream on remote server
     """
     #recorder = StreamRecorder.objects.create()
+    pass
 

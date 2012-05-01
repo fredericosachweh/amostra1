@@ -6,6 +6,7 @@ Modulo administrativo do controle de midias e gravacoes
 """
 
 from django.contrib import admin
+from django.contrib.contenttypes import generic
 import models
 import forms
 
@@ -66,9 +67,15 @@ class AdminMulticastInput(admin.ModelAdmin):
     form = forms.MulticastInputForm
 
 
+class UniqueIPInline(generic.GenericTabularInline):
+    model = models.UniqueIP
+
+
 class AdminFileInput(admin.ModelAdmin):
+    inlines = [UniqueIPInline,]
     list_display = ('filename', 'server', 'repeat', 'switch_link')
     form = forms.FileInputForm
+
 
 class AdminMulticastOutput(admin.ModelAdmin):
     list_display = ('ip_out', 'port', 'protocol',
