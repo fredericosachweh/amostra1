@@ -38,6 +38,9 @@ urlpatterns = patterns('',
     # EPG
     (r'^%sepg/'%settings.ROOT_URL,include('epg.urls')),
     
+    # LOG
+    (r'^%slog/'%settings.ROOT_URL,include('log.urls')),
+    
     #XXX: Varrer os apps em busca de api e concatenar os api.url da galera :)
     # REST interface
     (r'^%sapi/'%settings.ROOT_URL, include(apiUrls)),
