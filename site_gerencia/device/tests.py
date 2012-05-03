@@ -300,16 +300,17 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(expected_cmd, ipout._get_cmd())
 
     def test_streamrecorder(self):
-        recorder = StreamRecorder.objects.get(folder='/tmp/recording_a')
+        folder='/tmp/recording_a'
+        recorder = StreamRecorder.objects.get(folder=folder)
         expected_cmd = (
             "%s "
             "-r 97200000000 " # 27M * 60 * 60
             "-c %s%d.sock "
             "-u @239.1.0.2:20000 "
-            "%s%d"
+            "%s/%d"
         ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, recorder.pk,
-             settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
+             folder, recorder.pk,
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
 

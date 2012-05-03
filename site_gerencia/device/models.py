@@ -466,6 +466,7 @@ class Channel(models.Model):
     # Output
     output = models.ForeignKey('MulticastOutput', null=True, blank=True)
     # Recorder
+    ## TODO: Este cara pode ser multiplo pro mesmo canal
     recorder = models.ForeignKey('StreamRecorder', null=True, blank=True)
 
     def __unicode__(self):
