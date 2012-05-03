@@ -71,26 +71,27 @@ class AdminDvbTuner(admin.ModelAdmin):
     actions = [start_device, stop_device, scan_device]
     list_display = ('frequency', 'symbol_rate', 'polarization',
                     'modulation', 'fec', 'server', 'adapter',
-                    'antenna', 'switch_link')
+                    'antenna', 'tuned', 'switch_link')
     form = forms.DvbTunerForm
 
 
 class AdminIsdbTuner(admin.ModelAdmin):
     actions = [start_device, stop_device, scan_device]
-    list_display = ('server', 'frequency', 'switch_link')
+    list_display = ('server', 'frequency', 'tuned', 'switch_link')
     form = forms.IsdbTunerForm
 
 
 class AdminUnicastInput(admin.ModelAdmin):
     actions = [start_device, stop_device, scan_device]
-    list_display = ('port', 'interface', 'protocol','server', 'switch_link')
+    list_display = ('port', 'interface', 'protocol',
+                    'tuned', 'server', 'switch_link')
     form = forms.UnicastInputForm
 
 
 class AdminMulticastInput(admin.ModelAdmin):
     actions = [start_device, stop_device, scan_device]
     list_display = ('ip', 'port', 'interface', 'server', 'protocol',
-        'switch_link')
+        'tuned', 'switch_link')
     form = forms.MulticastInputForm
 
 

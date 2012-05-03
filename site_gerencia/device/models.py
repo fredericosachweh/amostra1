@@ -573,7 +573,7 @@ class InputModel(models.Model):
             command)
         )
         return etree.fromstring(" ".join(ret))
-    
+
     def has_lock(self):
         "Return True if is successfully tuned"
         has_lock = False
@@ -586,7 +586,15 @@ class InputModel(models.Model):
             pass
         
         return has_lock
-    
+
+    def tuned(self):
+        if self.has_lock() is True:
+            return '<a style="color:green;">OK</a>'
+        else:
+            return '<a style="color:red;">Sem sinal</a>'
+    tuned.short_description = _(u'Sinal')
+    tuned.allow_tags = True
+
     def scan(self):
         "Scans the transport stream and creates DemuxedInputs accordingly"
         import time
