@@ -23,7 +23,7 @@
                 django.jQuery.get(query, function(data) {
                     if (data) field.append(data);
                     // Pre select the last chosen value
-                    var adapter = '{{ original.adapter }}';
+                    var adapter = '{{ original.filename }}';
                     if (adapter) field.val(adapter);
                     field.removeAttr("disabled");
               	});
