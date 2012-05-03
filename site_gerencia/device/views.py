@@ -3,7 +3,11 @@ from django.http import HttpResponse, HttpResponseRedirect, \
                         HttpResponseBadRequest, HttpResponseServerError
 from django.shortcuts import get_object_or_404, render_to_response, render
 from django.core.urlresolvers import reverse
+from django.utils.encoding import force_unicode
 from django.template import RequestContext, loader
+from django.template.response import TemplateResponse
+from django.utils.translation import ugettext as _
+from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 import models
 import forms
@@ -138,6 +142,32 @@ def deviceserver_switchlink(request, method, klass, pk):
     if url is None:
         url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     return HttpResponseRedirect(url)
+
+def inputmodel_scan(request):
+    "Scan's a input device showing the results to the user"
+    ct = int(request.GET.get('ct'))
+    ids = [int(id) for id in request.GET.get('ids').split(',')]
+    model = ContentType.objects.get(pk=ct).model_class()
+    queryset = model.objects.filter(pk__in=ids)
+    opts = model._meta
+    if len(queryset) == 1:
+        objects_name = force_unicode(model._meta.verbose_name)
+    else:
+        objects_name = force_unicode(model._meta.verbose_name_plural)
+    try:
+        results = [(device, device.scan()) for device in queryset]
+    except models.InputModel.GotNoLockException as ex:
+        response = _(u'Sem sinal: "%s"' % ex)
+        t = loader.get_template('device_500.html')
+        c = RequestContext(request, {'error' : response})
+        return HttpResponseServerError(t.render(c))
+    context = {
+        'results' : results,
+        'objects_name' : objects_name,
+        'app_label' : model._meta.app_label,
+        'opts' : opts,
+    }
+    return TemplateResponse(request, 'scan_result.html', context)
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')

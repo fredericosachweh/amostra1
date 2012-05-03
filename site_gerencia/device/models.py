@@ -526,6 +526,10 @@ class InputModel(models.Model):
     class Meta:
         abstract = True
 
+    class GotNoLockException(Exception):
+        "Could not lock signal"
+        pass
+
     def _get_config(self):
         # Fill config file
         conf = u''
@@ -552,6 +556,70 @@ class InputModel(models.Model):
         create_folder(settings.DVBLAST_CONFS_DIR)
         create_folder(settings.DVBLAST_SOCKETS_DIR)
         create_folder(settings.DVBLAST_LOGS_DIR)
+
+    def _clean_sock_file(self):
+        self.server.execute('/bin/rm -f %s%d.sock' % (
+            settings.DVBLAST_SOCKETS_DIR, self.pk)
+        )
+
+    def _read_ctl(self, command):
+        "Returns an etree object containing dvblast status information"
+        from lxml import etree
+        ret = self.server.execute('%s -x xml -r %s%d.sock %s' % (
+            settings.DVBLASTCTL_COMMAND,
+            settings.DVBLAST_SOCKETS_DIR,
+            self.pk,
+            command)
+        )
+        return etree.fromstring(" ".join(ret))
+    
+    def has_lock(self):
+        "Return True if is successfully tuned"
+        has_lock = False
+        # This will throw and exception if the device couldn't tune
+        try:
+            status = self._read_ctl('fe_status')
+            if status.find('.//STATUS[@status="HAS_LOCK"]') is not None:
+                has_lock = True
+        except:
+            pass
+        
+        return has_lock
+    
+    def scan(self):
+        "Scans the transport stream and creates DemuxedInputs accordingly"
+        import time
+        if self.status or self.running():
+            was_running = True
+        else:
+            was_running = False
+            self.start()
+        time.sleep(3) # TODO: Improve this
+        if self.has_lock() is False:
+            raise InputModel.GotNoLockException("%s" % self)
+        pat = self._read_ctl('get_pat')
+        programs = pat.findall('.//PROGRAM')
+        sdt = self._read_ctl('get_sdt')
+        services = []
+        for program in programs:
+            number = int(program.get('number'))
+            if number is 0:
+                continue # Program 0 never works
+            ct = ContentType.objects.get_for_model(self)
+            service, created = \
+                DemuxedService.objects.get_or_create(
+                    sid=number, content_type=ct, object_id=self.pk)
+            detail = \
+                sdt.find('.//SERVICE[@sid="%d"]/DESC/SERVICE_DESC' % number)
+            if detail is not None:
+                service.provider = detail.get('provider')
+                service.service_desc = detail.get('service')
+                service.save()
+            services.append(service)
+        if was_running is False:
+            self.stop()
+        
+        return services
 
 
 class DigitalTunerHardware(models.Model):
@@ -639,6 +707,8 @@ class DigitalTuner(InputModel, DeviceServer):
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
                                 settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        # Cleanup residual sock file if applyable
+        self._clean_sock_file()
         # Start dvblast process
         log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
@@ -807,6 +877,8 @@ class IPInput(InputModel, DeviceServer):
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
             settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        # Cleanup residual sock file if applyable
+        self._clean_sock_file()
         # Start dvblast process
         log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)

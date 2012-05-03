@@ -49,6 +49,7 @@ urlpatterns = patterns('',
      {'method' : 'stop', 'klass' : get_model('device', 'fileinput')},
      'fileinput_stop'),
     
+    (r'^inputmodel/scan/$', 'device.views.inputmodel_scan'),
     (r'^file/start/(?P<pk>\d+)/$', 'device.views.file_start'),
     (r'^file/stop/(?P<pk>\d+)/$', 'device.views.file_stop'),
     (r'^multicat/start/(?P<pk>\d+)/$','device.views.multicat_start'),

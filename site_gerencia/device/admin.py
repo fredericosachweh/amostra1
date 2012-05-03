@@ -6,6 +6,10 @@ Modulo administrativo do controle de midias e gravacoes
 """
 
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy, ugettext as _
+from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 import models
 import forms
 
@@ -43,7 +47,27 @@ class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__','in_use','destinations',)
 
 
+def start_device(modeladmin, request, queryset):
+    [device.start() for device in queryset.all()]
+start_device.short_description = ugettext_lazy(
+    "Iniciar %(verbose_name_plural)s selecionados")
+
+def stop_device(modeladmin, request, queryset):
+    [device.stop() for device in queryset.all()]
+stop_device.short_description = ugettext_lazy(
+    "Parar %(verbose_name_plural)s selecionados")
+
+def scan_device(modeladmin, request, queryset):
+    selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
+    ct = ContentType.objects.get_for_model(queryset.model)
+    url = '%s?ct=%d&ids=%s' % (reverse('device.views.inputmodel_scan'),
+        ct.pk, ",".join(selected))
+    return HttpResponseRedirect(url)
+scan_device.short_description = ugettext_lazy(
+    "Escanear %(verbose_name_plural)s selecionados")
+
 class AdminDvbTuner(admin.ModelAdmin):
+    actions = [start_device, stop_device, scan_device]
     list_display = ('frequency', 'symbol_rate', 'polarization',
                     'modulation', 'fec', 'server', 'adapter',
                     'antenna', 'switch_link')
@@ -51,16 +75,19 @@ class AdminDvbTuner(admin.ModelAdmin):
 
 
 class AdminIsdbTuner(admin.ModelAdmin):
+    actions = [start_device, stop_device, scan_device]
     list_display = ('server', 'frequency', 'switch_link')
     form = forms.IsdbTunerForm
 
 
 class AdminUnicastInput(admin.ModelAdmin):
+    actions = [start_device, stop_device, scan_device]
     list_display = ('port', 'interface', 'protocol','server', 'switch_link')
     form = forms.UnicastInputForm
 
 
 class AdminMulticastInput(admin.ModelAdmin):
+    actions = [start_device, stop_device, scan_device]
     list_display = ('ip', 'port', 'interface', 'server', 'protocol',
         'switch_link')
     form = forms.MulticastInputForm
