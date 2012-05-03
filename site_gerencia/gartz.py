@@ -15,6 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
+    ('Eduardo Vieira', 'eduardo@cianet.ind.br'),
 	('Claudio Guirunas', 'claudio@cianet.ind.br'),
 )
 
@@ -110,7 +111,7 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
@@ -152,8 +153,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'django.contrib.markup',
     # South http://south.aeracode.org/docs/
-    'south',
+    #'south',
     # Gestao de canal
     'canal',
     # Interface dos setup-box
@@ -165,6 +167,21 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
+    'tv',
+    'tastypie',
+    # Recebe logs do setopbox, imprime e armazena
+    'log',
+)
+
+
+LOGIN_URL = '/%saccounts/login' % ROOT_URL
+
+LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
+
+#^/canal/(add|remove|edit|delete)/(.*)$
+LOGIN_REQUIRED_URLS = (
+    r'^/%scanal/((?!canallist$))$',
+    r'^/%sadmin/(.*)$',
 )
 
 MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
@@ -200,6 +217,7 @@ if DEBUG == True:
     except ImportError:
         pass
 
+TASTYPIE_FULL_DEBUG = DEBUG
 
 
 

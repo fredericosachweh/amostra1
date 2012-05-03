@@ -76,7 +76,7 @@ class Url(models.Model):
 
 class Channel(models.Model):
 	source = models.ForeignKey(Epg_Source)
-	channelid = models.CharField(max_length=3)
+	channelid = models.CharField(max_length=255, unique=True)
 	display_names = models.ManyToManyField(Display_Name, blank=True, null=True)
 	icons = models.ManyToManyField(Icon, blank=True, null=True)
 	urls = models.ManyToManyField(Url, blank=True, null=True)

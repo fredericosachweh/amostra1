@@ -14,6 +14,9 @@ from canal.models     import Canal
 from django.conf      import settings
 from django.core      import serializers
 
+#usado para converter strings
+from django.utils.encoding import smart_str, smart_unicode
+
 def index(request):
     """
     Imprime informações no console e exibe requsição do box pro setupbox
@@ -61,11 +64,7 @@ def canal_list(request):
     Usado pelo setupbox para pegar a lista de canais
     """
     canais = Canal.objects.filter(enabled=True).order_by('numero')
-    json = serializers.serialize('json',
-        canais,
-        indent=2,
-        use_natural_keys=True
-        )
+    json = serializers.serialize('json', canais, indent=2,use_natural_keys=True)
     return HttpResponse(json,content_type='application/json')
 
 def programme_info(request):
@@ -75,6 +74,7 @@ def programme_info(request):
     import datetime
     from epg.models import Guide
     from django.utils import simplejson
+    
     
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
     #Seta uma data passada por GET
@@ -99,7 +99,7 @@ def programme_info(request):
         guide = guides[0]
         pro = guide.programme
         
-        programid = int( pro.programid )
+        programid = int( guide.programme_id )
         
         #Inicio / Fim
         startStr = '{:%H:%M}'.format(guide.start)
@@ -109,22 +109,22 @@ def programme_info(request):
         titlesStr = ""
         titles = pro.titles.all().values()
         for title in titles:
-            titlesStr += title['value'] + " - "
+            titlesStr += smart_str(title['value']) + " - "
         titlesStr = titlesStr[0:-3]
-        titlesStr = titlesStr.upper()
+        titlesStr = smart_unicode(titlesStr).upper()
         
         #Segundo titulos
         secondaryTitlesStr = ""
         secondaryTitles = pro.secondary_titles.all().values()
         for secondary_title in secondaryTitles:
-            secondaryTitlesStr += secondary_title['value'] + " - "
+            secondaryTitlesStr += smart_str(secondary_title['value']) + " - "
         
         secondaryTitlesStr = secondaryTitlesStr[0:-3]
-        rating = pro.rating.system + ':' + pro.rating.value
+        rating = smart_str(pro.rating.value)
         
         #Descricao
         descriptions = ""
-        descriptions = pro.descriptions.get().value
+        descriptions = smart_str(pro.descriptions.get().value)
         
         json = simplejson.dumps( [{ 
                                    'programid'       :programid,
@@ -133,48 +133,30 @@ def programme_info(request):
                                    'stop'            :[stopStr],
                                    'titles'          :[titlesStr],
                                    'secondary_titles':[secondaryTitlesStr],
-                                   'descriptions'    :[descriptions],
-                                   'actors'          :[],
-                                   'length'          :[],
-                                   'adapters'        :[],
-                                   'audio_present'   :[],
-                                   'audio_stereo'    :[],
-                                   'categories'      :[],
-                                   'commentators'    :[],
-                                   'composers'       :[],
-                                   'country'         :[],
-                                   'date'            :[],
-                                   'directors'       :[],
-                                   'editors'         :[],
-                                   'episode_numbers' :[],
-                                   'guests'          :[],
-                                   'length'          :[],
-                                   'presenters'      :[],
-                                   'producers'       :[],
-                                   'subtitles'       :[],
-                                   'video_aspect'    :[],
-                                   'video_colour'    :[],
-                                   'video_present'   :[],
-                                   'video_quality'   :[],
-                                   'writers'         :[]
+                                   'descriptions'    :[descriptions]
                                    }])
         
     else:
         print('SEM PROGRAMACAO')
-        json = simplejson.dumps([])
+        json = simplejson.dumps( [{ 
+                                   'programid'       :0,
+                                   'rating'          :[" "],
+                                   'start'           :["00:00"],
+                                   'stop'            :["00:00"],
+                                   'titles'          :["Sem programação"],
+                                   'secondary_titles':[" "],
+                                   'descriptions'    :["Programação indisponível"]
+                                   }])
         
     # Chama o canal e pega a listagem do aplicativo canal
-    return HttpResponse(json)
+    return HttpResponse(json,content_type='application/json')
 
-def guide_programmes(request):
+def get_date_server(request):
     """
     Usado pelo setupbox para pegar o programa que esta acontecendo
     """
     import datetime
-    from datetime import timedelta
-    from epg.models import Guide
     from django.utils import simplejson
-    
     
     
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
@@ -188,21 +170,58 @@ def guide_programmes(request):
         mi   = int(nowStr[10:12])
         ss   = int(nowStr[12:14])
         now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
-        
-        rangeTimeStart = now-timedelta(hours=3)
-        rangeTimeStop = now+timedelta(hours=12)
-        
-        print('--------------')
-        print(rangeTimeStart)
-        print(rangeTimeStop)
-        print('--------------')
-        
         #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
     else:
         now = datetime.datetime.now()
-        
-        rangeTimeStart=now-timedelta(hours=3)
-        rangeTimeStop=now+timedelta(hours=12)
+
+    nowStr =  '{:%Y%m%d%H%M%S}'.format(now)
+    nowY  = '{:%Y}'.format(now)
+    nowm  = '{:%m}'.format(now)
+    nowd  = '{:%d}'.format(now)
+    nowH  = '{:%H}'.format(now)
+    nowM  = '{:%M}'.format(now)
+    nowS  = '{:%S}'.format(now)
+    
+    json = simplejson.dumps( [{
+                               'now':nowStr,
+                               'Y':nowY,
+                               'm':nowm,
+                               'd':nowd,
+                               'H':nowH,
+                               'M':nowM,
+                               'S':nowS
+                               }])
+    
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json,content_type='application/json')    
+
+def guide_programmes(request):
+    """
+    Usado pelo setupbox para pegar o programa que esta acontecendo
+    """
+    import datetime
+    from datetime import timedelta
+    from epg.models import Guide
+    from django.utils import simplejson
+    
+    
+    #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
+    #Seta uma data passada por GET
+    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+        nowStr = request.GET.get('now') 
+        yyyy = int(nowStr[0:4])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
+    else:
+        now = datetime.datetime.now()
+
+    rangeTimeStart=now-timedelta(hours=12)
+    rangeTimeStop=now+timedelta(hours=12)
     
     channel_id = request.GET.get('channel_id')
     
@@ -210,17 +229,16 @@ def guide_programmes(request):
     
     guides = Guide.objects.filter(channel=channel_id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
     
-    print(len(guides))
-    
     if len(guides) > 0:
         
         arr = []
         for guide in guides:
             pro = guide.programme
             
-            programid = int( pro.programid )
+            programid = int( guide.programme_id )
             
             #Inicio / Fim
+            start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
             startStr = '{:%H:%M}'.format(guide.start)
             stopStr  =  '{:%H:%M}'.format(guide.stop)
             
@@ -228,31 +246,32 @@ def guide_programmes(request):
             
             #Titulos
             titlesStr = ""
-            
             titles = pro.titles.all().values()
             for title in titles:
-                titlesStr += title['value'] + " - "
+                titlesStr += smart_str(title['value']) + " - "
             titlesStr = titlesStr[0:-3]
-            titlesStr = titlesStr.upper()
+            titlesStr = smart_unicode(titlesStr).upper()
+            
             
             #Segundo titulos
             secondaryTitlesStr = ""
             secondaryTitles = pro.secondary_titles.all().values()
             for secondary_title in secondaryTitles:
-                secondaryTitlesStr += secondary_title['value'] + " - "
+                secondaryTitlesStr += smart_str(secondary_title['value']) + " - "
             
             secondaryTitlesStr = secondaryTitlesStr[0:-3]
              
-            rating = pro.rating.system + ':' + pro.rating.value
+            rating = pro.rating.value
             
             #Descricao
             descriptions = ""
-            if(pro.descriptions.get().value):
-                descriptions = pro.descriptions.get().value
+            if(smart_str(pro.descriptions.get().value)):
+                descriptions = smart_str(pro.descriptions.get().value)
                 
             arr.append({
                         'programid':programid,
                         'duracao':int(duracao.total_seconds()),
+                        'start_yyymmddhhmm':start_yyymmddhhmm,
                         'start':startStr,
                         'stop':stopStr,
                         'titles':titlesStr,
@@ -261,13 +280,296 @@ def guide_programmes(request):
                         'rating':rating
                         })
         
-        json = simplejson.dumps(arr)
     else:
         print('SEM PROGRAMACAO')
-        json = simplejson.dumps([])
+        arr = []
+        arr.append({
+            'programid':0,
+            'duracao':"1",
+            'start_yyymmddhhmm':"00000000000000",
+            'start':"00:00",
+            'stop':"00:00",
+            'titles':"Sem programação",
+            'secondary_titles':" ",
+            'descriptions':"Programação indisponível",
+            'rating':""
+            })
+        
+    json = simplejson.dumps(arr)
         
     # Chama o canal e pega a listagem do aplicativo canal
-    return HttpResponse(json)
+    return HttpResponse(json,content_type='application/json')
+
+def channel_programme_info(request):
+    """
+    Usado pelo setupbox para mostrar a INFO do programa
+    """
+    from epg.models import Guide
+    from django.utils import simplejson
+    
+    RunNowChannelEpg = int( request.GET.get('c') )
+    RunNowProgrammeId = int( request.GET.get('p') )
+
+    if(RunNowChannelEpg and RunNowProgrammeId):
+        guides = Guide.objects.filter(channel=RunNowChannelEpg,programme=RunNowProgrammeId)
+        if len(guides) > 0:
+            guide = guides[0]
+                    
+            cha   = guide.channel
+            pro   = guide.programme
+            start = guide.start
+            stop  = guide.stop
+            
+            #Titles
+            titlesStr = ""
+            titles = pro.titles.all().values()
+            for title in titles:
+                titlesStr += smart_str(title['value']) + " - "
+            titlesStr = titlesStr[0:-3]
+            titlesStr = smart_unicode(titlesStr).upper()
+            
+            #Segundo titulos
+            secondaryTitlesStr = ""
+            secondaryTitles = pro.secondary_titles.all().values()
+            for secondary_title in secondaryTitles:
+                secondaryTitlesStr += smart_str(secondary_title['value']) + " - "
+            secondaryTitlesStr = secondaryTitlesStr[0:-3]
+            
+            #Actors
+            actorsStr = ""
+            actors = pro.actors.all().values()
+            for actor in actors:
+                actorsStr += smart_str(actor['name']) + ", "
+            actorsStr = actorsStr[0:-2]
+    
+            #Categoria
+            categoriesStr = ""
+            categories = pro.categories.all().values()
+            for categorie in categories:
+                categoriesStr += smart_str(categorie['value']) + ", "
+            categoriesStr = categoriesStr[0:-2]
+
+            #Diretores
+            directorsStr = ""
+            directors = pro.directors.all().values()
+            for director in directors:
+                directorsStr += smart_str(director['name']) + ", "
+            directorsStr = directorsStr[0:-2]
+            
+            ratingStr = ""
+            if(pro.rating):
+                ratingStr = str( smart_str(pro.rating.value) )
+                
+            descriptionsStr = ""
+            if(pro.descriptions.get()):
+                descriptionsStr = smart_str(pro.descriptions.get().value)
+
+            countryStr = ""
+            if(pro.country):
+                countryStr = smart_str(pro.country.value)
+            
+            
+            audio_stereoStr = ""
+            if(pro.audio_stereo):
+                audio_stereoStr = smart_str(pro.audio_stereo)
+
+            duracao = stop - start
+            lengthStr = str( smart_str(duracao) )
+
+            dateStr = ""
+            if(pro.date):
+                dateStr = pro.date
+
+            video_aspectStr = ""
+            if(pro.video_aspect):
+                video_aspectStr = smart_str(pro.video_aspect)
+
+            video_colourStr = ""
+            if(pro.video_colour):
+                video_colourStr = smart_str(pro.video_colour)
+
+            video_presentStr = ""
+            if(pro.video_present):
+                video_presentStr = smart_str(pro.video_present)
+
+            video_qualityStr = ""
+            if(pro.video_quality):
+                video_qualityStr = smart_str(pro.video_quality)
+
+            audio_presentStr = ""
+            if(pro.audio_present):
+                audio_presentStr = smart_str(pro.audio_present)
+            
+            arrChannel = {
+                'channelepg'   :RunNowChannelEpg,
+                'channelid'    :cha.channelid,
+                'display_names':cha.display_names.get().value,
+                'icons'        :smart_str(cha.icons.all().values('src')[0].get('src'))
+            }
+            
+            arrProgramme = {
+                'id'              :int( RunNowProgrammeId ),
+                'programid'       :int( smart_str(pro.programid) ),
+                'rating'          :( ratingStr.strip() or "Indisponível"),
+                'titles'          :( titlesStr.strip() or "Indisponível"),
+                'secondary_titles':( secondaryTitlesStr.strip() or "Indisponível"),
+                'descriptions'    :( descriptionsStr.strip() or "Indisponível"),
+                'actors'          :( actorsStr.strip() or "Indisponível"),                
+                'categories'      :( categoriesStr.strip() or "Indisponível"),
+                'directors'       :( directorsStr.strip() or "Indisponível"),
+                'country'         :( countryStr.strip() or "Indisponível"),
+                'length'          :( lengthStr or "Indisponível"),
+                'date'            :( dateStr.strip() or "Indisponível"),
+                'video_aspect'    :( video_aspectStr.strip() or "Indisponível"),
+                'video_colour'    :( video_colourStr.strip() or "Indisponível"),
+                'video_present'   :( video_presentStr.strip() or "Indisponível"),
+                'video_quality'   :( video_qualityStr.strip() or "Indisponível"),
+                'audio_present'   :( audio_presentStr.strip() or "Indisponível"),
+                'audio_stereo'    :( audio_stereoStr.strip() or "Indisponível")
+            }
+            
+            arr = {
+               'start':'{:%H:%M}'.format(start),
+               'stop':'{:%H:%M}'.format(stop),
+               'channel':arrChannel,
+               'programme':arrProgramme
+            }
+            
+        else:
+            arrChannel = {
+                'channelepg'   :RunNowChannelEpg,
+                'channelid'    :0,
+                'display_names':"Indisponível.",
+                'icons'        :""
+            }
+            
+            arrProgramme = {
+                'id'              :int( RunNowProgrammeId ),
+                'programid'       :"Indisponível.",
+                'rating'          :"Indisponível.",
+                'titles'          :"Indisponível.",
+                'secondary_titles':"Indisponível.",
+                'descriptions'    :"Indisponível.",
+                'actors'          :"Indisponível.",              
+                'categories'      :"Indisponível.",
+                'directors'       :"Indisponível.",
+                'country'         :"Indisponível.",
+                'length'          :"Indisponível.",
+                'date'            :"Indisponível.",
+                'video_aspect'    :"Indisponível.",
+                'video_colour'    :"Indisponível.",
+                'video_present'   :"Indisponível.",
+                'video_quality'   :"Indisponível.",
+                'audio_present'   :"Indisponível.",
+                'audio_stereo'    :"Indisponível."
+            }
+            
+            arr = {
+               'start':"00:00",
+               'stop':"00:00",
+               'channel':arrChannel,
+               'programme':arrProgramme
+            }
+    else:
+        print("INEXISTENTE")
+            
+    json = simplejson.dumps(arr)
+    
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json,content_type='application/json')
+
+
+def guide_mount_line_of_programe(request):
+    """
+    Usado pelo setupbox para mostrar a guia de programacao completa
+    """
+    import datetime
+    from datetime import timedelta
+    from epg.models import Guide
+    from django.utils import simplejson
+    
+    
+    #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
+    #Seta uma data passada por GET
+    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+        nowStr = request.GET.get('now') 
+        yyyy = int(nowStr[0:4])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
+    else:
+        now = datetime.datetime.now()
+
+    #buscando um range de tempo para a busca
+    hoursRangeStart = request.GET.get('r_start')
+    hoursRangeStop  = request.GET.get('r_stop')
+    
+    #Usado para posicionar o campo dentro da div gerada
+    divCodePosition = request.GET.get('dcode')
+    
+    if hoursRangeStart > 0 and hoursRangeStop >= hoursRangeStart:
+        print( "RANGE PESONALIZADO")
+        rangeTimeStart = now-timedelta(hours=int(hoursRangeStart) )
+        rangeTimeStop  = now+timedelta(hours=int(hoursRangeStop))
+    else:
+        print( "RANGE PADRAO: 3 a 12")
+        rangeTimeStart = now-timedelta(hours=3)
+        rangeTimeStop  = now+timedelta(hours=12)
+
+    #canal
+    channelEpgRunNow = request.GET.get('c')
+    
+    #Y na lista de canais
+    countY = int( request.GET.get('y') )
+    
+    guides = Guide.objects.filter(channel=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).distinct('start')
+    
+    arrGuideLine = []
+    if(len(guides)> 0):
+        countX = 0
+        for guide in guides:
+            pro   = guide.programme
+            programid = int( guide.programme_id )
+            duracao = guide.stop-guide.start
+            
+            start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
+            startStr = '{:%H:%M}'.format(guide.start)
+            stopStr  =  '{:%H:%M}'.format(guide.stop)
+            
+            is_run_now_programme = 0
+            if(  guide.start <= now and now <= guide.stop ):
+                is_run_now_programme = 1
+            
+            #Titulos
+            titlesStr = ""
+            titles = pro.titles.all().values()
+            titlesStr = smart_unicode(titles[0]['value']).upper()
+        
+            arrGuideLine.append({
+                'c':channelEpgRunNow,
+                'p':programid,
+                'rn':is_run_now_programme,
+                'sf':start_yyymmddhhmm,
+                'st':startStr,
+                'sp':stopStr,
+                't':titlesStr,
+                'dcode':divCodePosition,
+                'd': int((int(duracao.total_seconds()) / 60 )),
+                'x':countX,
+                'y':countY
+                })
+            countX  += 1
+    else:
+        print("SEM PROGRAMACAO")
+
+    json = simplejson.dumps(arrGuideLine)
+    
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json,content_type='application/json')
 
 def canal_update(request):
     """Retorna a data de atualização mais recente da lista de canais"""
