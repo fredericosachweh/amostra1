@@ -588,10 +588,12 @@ class InputModel(models.Model):
         return has_lock
 
     def tuned(self):
+        if self.running() is False:
+            return u''
         if self.has_lock() is True:
-            return '<a style="color:green;">OK</a>'
+            return u'<a style="color:green;">OK</a>'
         else:
-            return '<a style="color:red;">Sem sinal</a>'
+            return u'<a style="color:red;">Sem sinal</a>'
     tuned.short_description = _(u'Sinal')
     tuned.allow_tags = True
 
