@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="{{ LANGUAGE_CODE }}" xml:lang="{{ LANGUAGE_CODE }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
+	<head>
+		<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}admin/css/base.css" />
+		<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}admin/css/forms.css" />
+		<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.min.js"></script>
+		<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.init.js"></script>
+		<script type="text/javascript">
+			django.jQuery(document).ready(function() {
+				populate_channels();
+				preview_values();
+				
+				django.jQuery('select#id_sat').change(populate_channels);
+				django.jQuery('select#id_chan').change(preview_values);
+				django.jQuery('input#id_fta').change(populate_channels);
+			});
+			
+			function populate_channels()
+			{
+			    var sat = django.jQuery('select#id_sat').val();
+				if (sat) {
+					django.jQuery('select#id_chan').attr("disabled", "disabled");
+					django.jQuery(':submit').attr("disabled", "disabled");
+				    // Fill the channels <select> field
+				    query =  "{% url dvbinfo.views.get_dvbs_channels %}?sat=" + sat;
+					if (django.jQuery('input#id_fta').attr('checked')) query += '&fta=1';
+				    django.jQuery.getJSON(query, function(data) {
+						django.jQuery('select#id_chan').empty();
+						django.jQuery('select#id_chan').append('<option>---</option>');
+				        django.jQuery.each(data, function(key, value) {
+				        	var option = '<option value="' + value.pk + '">' + value.fields.name + '</option>'; 
+				        	django.jQuery('select#id_chan').append(option);
+				        });
+				        django.jQuery('select#id_chan').removeAttr("disabled");
+				        django.jQuery(':submit').removeAttr("disabled");
+				    });
+			   }
+			}
+			
+			function preview_values()
+			{
+			    var chan = django.jQuery('select#id_chan').val();
+				if (chan && !isNaN(chan)) {
+					django.jQuery(':submit').attr("disabled", "disabled");
+					query =  "{% url dvbinfo.views.get_transponders %}?chan=" + chan;
+					django.jQuery.getJSON(query, function(data) {
+						var json = data[0];
+						django.jQuery('input#id_freq').val(json.fields.frequency);
+						django.jQuery('input#id_sr').val(json.fields.symbol_rate);
+						django.jQuery('input#id_mod').val(json.fields.modulation);
+						django.jQuery('input#id_pol').val(json.fields.polarization);
+						django.jQuery('input#id_fec').val(json.fields.fec);
+						django.jQuery(':submit').removeAttr("disabled");
+					});
+				}
+			}
+		</script>
+		
+		<title>Selecione o satélite e canal desejado</title>
+	</head>
+	<body>
+		<form action="" method="post">{% csrf_token %}
+			
+			<fieldset class="module aligned ">
+				
+				<h2>Selecione o satélite e canal desejado</h2>
+	    		
+	    		{% for field in fields %}
+	    			<div class="form-row">
+		    			<div>
+					        <label>{{ field.label }}:</label>
+					        {{ field }}
+				        </div>
+	    			</div>
+	    		{% endfor %}
+			
+			</fieldset>
+			
+			<div class="submit-row">
+				<input class="default" type="submit" value="OK" />
+			</div>
+		</form>
+	</body>
+</html>

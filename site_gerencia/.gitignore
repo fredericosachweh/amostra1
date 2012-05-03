@@ -4,4 +4,7 @@
 *.e4p
 stream/debug
 *.pid
-.c9revisions
+django_extensions
+debug_toolbar
+django
+log

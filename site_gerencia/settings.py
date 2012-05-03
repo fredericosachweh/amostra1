@@ -57,6 +57,10 @@ else:
 # system time zone.
 TIME_ZONE = 'America/Sao_Paulo'
 
+# Novo no django 1.4
+USE_TZ = False
+#WSGI_APPLICATION = 'wsgi.application'
+
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'pt-br'
@@ -161,13 +165,41 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
+IPTV_LOG_DIR = '/var/log/iptv'
+
+## Color: \033[35m \033[0m
+# \t%(module)s->%(funcName)s->%(lineno)d
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(name)s %(funcName)s\
+(%(filename)s:%(lineno)d)] \t%(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s\t%(message)s'
+        },
+    },
     'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
         'mail_admins': {
             'level': 'ERROR',
             'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'file.debug': {
+            'class': 'logging.FileHandler',
+            'filename': '%s/debug.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
+        'file.device.remotecall': {
+            'class': 'logging.FileHandler',
+            'filename': '%s/remote-call.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
         }
     },
     'loggers': {
@@ -176,6 +208,18 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'debug': {
+            'handlers': ['file.debug'],
+            'propagate': True
+        },
+        'device.view': {
+            'handlers': ['file.debug'],
+            'propagate': True
+        },
+        'device.remotecall': {
+            'handlers': ['file.device.remotecall'],
+            'propagate': True
+        }
     }
 }
 
@@ -200,6 +244,8 @@ INSTALLED_APPS = (
     'device',
     # EPG
     'epg',
+    # App with info about possible frequencies to tune
+    'dvbinfo',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
@@ -212,19 +258,35 @@ LOGIN_REQUIRED_URLS = (
     r'^/%sadmin/(.*)$',
 )
 
-MULTICAST_DAEMON = '/usr/bin/multicat_daemon'
-MULTICAST_COMMAND = '/usr/bin/multicat'
-MULTICAST_APP = 'multicat'
 
-DVBLAST_DAEMON = '/usr/bin/dvblast_daemon'
+# Auxiliar apps configuration
+MULTICAT_COMMAND = '/usr/bin/multicat'
+MULTICAT_LOGS_DIR = '/var/log/multicat/'
+MULTICAT_RECORDINGS_DIR = '/var/lib/multicat/recordings/'
+MULTICAT_SOCKETS_DIR = '/var/run/multicat/sockets/'
+
 DVBLAST_COMMAND = '/usr/bin/dvblast'
-#DVBLAST_COMMAND = '/usr/local/bin/fake_dvblast'
-DVBLAST_APP = 'dvblast'
-DVBLAST_CONF_DIR = '/etc/dvblast'
+DVBLAST_CONFS_DIR = '/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
+
+VLC_COMMAND = '/usr/bin/cvlc'
+VLC_VIDEOFILES_DIR = '/home/videos/'
+
+INTERNAL_IP_MASK = '239.10.%d.%d'
+EXTERNAL_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
+    ## Envia todas as mensagens de log para o console
+    for logger in LOGGING['loggers']:
+        LOGGING['loggers'][logger]['handlers'] = ['console']
+    try:
+        import django_extensions
+        INSTALLED_APPS += ('django_extensions',)
+    except ImportError:
+        pass
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar

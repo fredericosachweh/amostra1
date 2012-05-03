@@ -1,0 +1,16 @@
+[
+  {
+    "pk": 18,
+    "model": "device.digitaltunerhardware",
+    "fields": {
+      "id_vendor": "1554",
+      "bus": "",
+      "adapter_nr": 5,
+      "driver": "",
+      "last_update": "2012-04-19T18:27:21",
+      "id_product": "5010",
+      "uniqueid": null,
+      "server": 1
+    }
+  }
+]

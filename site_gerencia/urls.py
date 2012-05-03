@@ -45,10 +45,11 @@ urlpatterns = patterns('',
     
     # REST interface for the EPG
     #(r'^%sapi/'%settings.ROOT_URL, include('api.urls')),
+    # DVBInfo
+    (r'^%sdvbinfo/'%settings.ROOT_URL, include('dvbinfo.urls')),
     # Devices em servidores
     (r'^%sdevice/'%settings.ROOT_URL,include('device.urls')),
     # Página inicial
-    #(r'^%s$'%settings.ROOT_URL,direct_to_template,{'template':'index.html'} ),
-    (r'^%s$'%settings.ROOT_URL,include('home.urls')),
+    (r'^%s$'%settings.ROOT_URL,direct_to_template,{'template':'index.html'} ),
+    #(r'^%s$'%settings.ROOT_URL,include('home.urls')),
 )
-

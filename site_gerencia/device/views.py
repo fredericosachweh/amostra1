@@ -1,107 +1,242 @@
-
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+# -*- encoding:utf-8 -*-
+from django.http import HttpResponse, HttpResponseRedirect, \
+                        HttpResponseBadRequest, HttpResponseServerError
+from django.shortcuts import get_object_or_404, render_to_response, render
 from django.core.urlresolvers import reverse
+from django.utils.encoding import force_unicode
+from django.template import RequestContext, loader
+from django.template.response import TemplateResponse
+from django.utils.translation import ugettext as _
+from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 import models
+import forms
+import logging
+
 
 def home(request):
-    return HttpResponse('Na raiz do sistema <a href="%s">Admin</a>'%reverse('admin:index'))
+    return HttpResponseRedirect(reverse('admin:index'))
 
-def server_status(request,pk=None):
-    device = get_object_or_404(models.Server,id=pk)
-    device.connect()
-    whoami = device.execute('whoami')
-    whoami = '' if device.execute('whoami') == None else whoami[0]
-    device.status = (whoami.strip() == device.username.strip())
-    device.save()
-    print('Device:%s [%s]' %(device,device.status))
-    print 'server_status'
+
+def server_status(request, pk=None):
+    server = get_object_or_404(models.Server, id=pk)
+    server.connect()
+    log = logging.getLogger('device.view')
+    log.debug('server_status(pk=%s)', pk)
+    if server.status is False:
+        log.error(u'Cant connect with server:(%s) %s:%d %s',
+            server, server.host, server.ssh_port, server.msg)
+    else:
+        server.auto_create_nic()
+    log.info('Server:%s [%s]', server, server.status)
+    log.info('server_status(pk=%s)', pk)
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
-def vlc_start(request,pk=None):
-    print 'vlc_start'
-    o = get_object_or_404(models.Vlc,id=pk)
+
+def server_list_interfaces(request):
+    log = logging.getLogger('device.view')
+    pk = request.GET.get('server')
+    log.debug('Server com pk=%s', pk)
+    server = get_object_or_404(models.Server, id=pk)
+    log.info('Listing NICs from server (pk=%s)', pk)
+    response = '<option selected="selected" value="">---------</option>'
+    for i in models.NIC.objects.filter(server=server):
+        response += ('<option value="%s">%s - %s</option>' % (i.pk,
+            i.name, i.ipv4))
+    return HttpResponse(response)
+
+def server_update_adapter(request, adapter_nr=None):
+    # Identify server by its IP
+    remote_addr =  request.META.get('REMOTE_ADDR', None)
+    server = get_object_or_404(models.Server, host=remote_addr)
+    if request.method == 'POST':
+        try:
+            adapter = models.DigitalTunerHardware.objects.get(server=server,
+                                                        adapter_nr=adapter_nr)
+        except models.DigitalTunerHardware.DoesNotExist:
+            adapter = models.DigitalTunerHardware(server=server,
+                                                        adapter_nr=adapter_nr)
+        adapter.grab_info()
+        adapter.save()
+    elif request.method == 'DELETE':
+        adapter = get_object_or_404(models.DigitalTunerHardware,
+                                   server=server, adapter_nr=adapter_nr)
+        adapter.delete()
+    return HttpResponse()
+
+def server_list_dvbadapters(request):
+    "Returns avaible DVBWorld devices on server, excluding already used"
+    pk = request.GET.get('server', None)
+    server = get_object_or_404(models.Server, pk=pk)
+    tuner_type = request.GET.get('type')
+    if tuner_type == 'dvb':
+        id_vendor = '04b4' # DVBWorld S/S2
+    elif tuner_type == 'isdb':
+        id_vendor = '1554' # PixelView SBTVD
+    else:
+        return HttpResponseBadRequest('Must specify the type of device')
+    response = '<option value="">---------</option>'
+    # Insert the currently selected
+    tuner_pk = request.GET.get('tuner')
+    if tuner_pk:
+        tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
+        response += '<option value="%s">%s</option>' % (tuner.adapter,
+                                        'DVBWorld %s' % tuner.adapter)
+    # Populate the not used adapters left
+    tuners = models.DvbTuner.objects.filter(server=server)
+    adapters = models.DigitalTunerHardware.objects.filter(
+        server=server, id_vendor='04b4') # DVBWorld S/S2
+    for adapter in adapters:
+        if not tuners.filter(adapter=adapter.uniqueid).exists():
+            response += '<option value="%s">%s</option>' % (adapter.uniqueid,
+                                            'DVBWorld %s' % adapter.uniqueid)
+    
+    return HttpResponse(response)
+
+def server_available_isdbtuners(request):
+    "Returns the number of non-used PixelView adapters"
+    pk = request.GET.get('server', None)
+    server = get_object_or_404(models.Server, pk=pk)
+    # Insert the currently selected
+    tuner_pk = request.GET.get('tuner')
+    if tuner_pk:
+        free_adapters = 1
+    else:
+        free_adapters = 0
+    # Sum the free adapters left
+    tuners = models.IsdbTuner.objects.filter(server=server).count()
+    adapters = models.DigitalTunerHardware.objects.filter(
+        server=server, id_vendor='1554').count()
+    # Sanity check
+    if tuners > adapters:
+        raise Exception(
+            'The total number of registered IsdbTuner objects '
+            'is greater that the number of plugged-in PixelView adapters')
+    
+    return HttpResponse(free_adapters + (adapters - tuners))
+
+def server_fileinput_scanfolder(request):
+    pk = request.GET.get('server')
+    server = get_object_or_404(models.Server, id=pk)
+    list = u'<option value="">---------</option>'
+    for file in server.list_dir(settings.VLC_VIDEOFILES_DIR):
+        list += u'<option value="%s%s">%s</option>\n' % (
+            settings.VLC_VIDEOFILES_DIR, file, file)
+    return HttpResponse(list)
+
+def deviceserver_switchlink(request, method, klass, pk):
+    device = get_object_or_404(klass, id=pk)
+    try:
+        if method == 'start':
+            device.start()
+        elif method == 'stop':
+            device.stop()
+        else:
+            raise NotImplementedError()
+    except Exception as ex:
+        response = '%s: %s' % (ex.__class__.__name__, ex)
+        t = loader.get_template('device_500.html')
+        c = RequestContext(request, {'error' : response})
+        return HttpResponseServerError(t.render(c))
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
+    return HttpResponseRedirect(url)
+
+def inputmodel_scan(request):
+    "Scan's a input device showing the results to the user"
+    ct = int(request.GET.get('ct'))
+    ids = [int(id) for id in request.GET.get('ids').split(',')]
+    model = ContentType.objects.get(pk=ct).model_class()
+    queryset = model.objects.filter(pk__in=ids)
+    opts = model._meta
+    if len(queryset) == 1:
+        objects_name = force_unicode(model._meta.verbose_name)
+    else:
+        objects_name = force_unicode(model._meta.verbose_name_plural)
+    try:
+        results = [(device, device.scan()) for device in queryset]
+    except models.InputModel.GotNoLockException as ex:
+        response = _(u'Sem sinal: "%s"' % ex)
+        t = loader.get_template('device_500.html')
+        c = RequestContext(request, {'error' : response})
+        return HttpResponseServerError(t.render(c))
+    context = {
+        'results' : results,
+        'objects_name' : objects_name,
+        'app_label' : model._meta.app_label,
+        'opts' : opts,
+    }
+    return TemplateResponse(request, 'scan_result.html', context)
+
+def file_start(request, pk=None):
+    log = logging.getLogger('device.view')
+    o = get_object_or_404(models.FileInput, id=pk)
+    log.info('Starting %s', o)
     o.start()
+    if o.status is True:
+        log.info('File started with pid:%d', o.pid)
+    else:
+        log.warning('File could not start:%s', o)
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
-def vlc_stop(request,pk=None):
-    print 'vlc_stop'
-    o = get_object_or_404(models.Vlc,id=pk)
+
+def file_stop(request, pk=None):
+    log = logging.getLogger('device.view')
+    o = get_object_or_404(models.FileInput, id=pk)
+    log.info('Stopping %s', o)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
 def multicat_start(request,pk=None):
     print 'multicat_start'
-    o = get_object_or_404(models.MulticatGeneric,id=pk)
+    o = get_object_or_404(models.MulticastInput,id=pk)
     o.start()
     return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
 
 def multicat_stop(request,pk=None):
     print 'multicat_stop'
-    o = get_object_or_404(models.MulticatGeneric,id=pk)
+    o = get_object_or_404(models.MulticastInput,id=pk)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
 
 def multicat_redirect_start(request,pk=None):
     print 'multicat_redirect_start'
-    o = get_object_or_404(models.MulticatRedirect,id=pk)
+    o = get_object_or_404(models.MulticastInput,id=pk)
     o.start()
     return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
 
 def multicat_redirect_stop(request,pk=None):
     print 'multicat_redirect_stop'
-    o = get_object_or_404(models.MulticatRedirect,id=pk)
+    o = get_object_or_404(models.MulticastInput,id=pk)
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
 
+def auto_fill_tuner_form(request, ttype):
+    if request.method == 'GET':
+        if ttype == 'dvbs':
+            return render_to_response('dvbs_autofill_form.html',
+                {'fields': forms.DvbTunerAutoFillForm},
+                context_instance=RequestContext(request))
+        elif ttype == 'isdb':
+            return render_to_response('isdb_autofill_form.html',
+                {'fields': forms.IsdbTunerAutoFillForm},
+                context_instance=RequestContext(request))
+    elif request.method == 'POST':
+        if ttype == 'dvbs':
+            return HttpResponse(\
+'<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s",\
+"%s","%s", "%s", "%s");</script>' % \
+(request.POST['freq'], request.POST['sr'], request.POST['pol'], \
+ request.POST['mod'], request.POST['fec']))
+        elif ttype == 'isdb':
+            return HttpResponse(\
+'<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");\
+</script>' % \
+(request.POST['freq']))
 
 
-
-#def play(request,streamid=None):
-#    stream = get_object_or_404(Stream,id=streamid)
-#    stream.play()
-#    return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
-#
-#def stop(request,streamid=None):
-#    stream = get_object_or_404(Stream,id=streamid)
-#    stream.stop()
-#    return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
-#
-#def record(request,streamid=None,act=None):
-#    stream = get_object_or_404(Stream,id=streamid)
-#    stream.stop()
-#    return HttpResponseRedirect(reverse('admin:stream_stream_changelist'))
-#
-#def scan_dvb(request,dvbid=None):
-#    dvb = get_object_or_404(DVBSource,id=dvbid)
-#    import simplejson
-#    canais = dvb.scan_channels()
-#    enc = simplejson.encoder.JSONEncoder()
-#    resposta = enc.encode(canais)
-#    #print(resposta)
-#    return HttpResponse(resposta,mimetype='application/javascript')
-#
-#def fake_scan_dvb(request,dvbid=None):
-#    import simplejson
-#    if dvbid == 1:
-#        canais = {'program': '1', 'pid': '80'}
-#    else:
-#        canais = {'program': '1', 'pid': '32'}, {'program': '2', 'pid': '259'}
-#    enc = simplejson.encoder.JSONEncoder()
-#    resposta = enc.encode(canais)
-#    return HttpResponse(resposta,mimetype='application/javascript')
-#
-#def dvb_play(request,streamid=None):
-#    stream = get_object_or_404(DVBSource,id=streamid)
-#    stream.play()
-#    return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
-#
-#def dvb_stop(request,streamid=None):
-#    stream = get_object_or_404(DVBSource,id=streamid)
-#    stream.stop()
-#    return HttpResponseRedirect(reverse('admin:stream_dvbsource_changelist'))
-#
-#
+### Deixado como exemplo de como executar o play do TVoD (catchuptv)
 #def tvod(request):
 #    from player import Player
 #    from django.conf import settings
