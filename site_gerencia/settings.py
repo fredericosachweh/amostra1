@@ -9,7 +9,7 @@ PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -246,7 +246,13 @@ INSTALLED_APPS = (
     'epg',
     # App with info about possible frequencies to tune
     'dvbinfo',
+    # TV
+    'tv',
 )
+
+# Insert suport to log stdout from remote settopbox when debugging
+if DEBUG == True:
+    INSTALLED_APPS += ('log',)
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
 
@@ -308,5 +314,7 @@ if DEBUG == True:
         )
     except ImportError:
         pass
+
+TASTYPIE_FULL_DEBUG = DEBUG
 
 FORCE_SCRIPT_NAME = ""
