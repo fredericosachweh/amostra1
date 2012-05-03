@@ -5,6 +5,12 @@ METHOD=prefork
 DEAMONIZE=false
 PYTHONPATH=".:.."
 
+if [ $# -gt 1 ];then
+    SETTINGS="settings_$2"
+    echo "USING CUSTOM SETTINGS: settings_$2.py"
+fi
+
+
 PROJECT_DIR=$(dirname $0)
 [ "x." = "x$PROJECT_DIR" ] && PROJECT_DIR=$(pwd)
 
