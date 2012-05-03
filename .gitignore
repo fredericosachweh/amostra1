@@ -12,3 +12,4 @@ banco.sqlite3
 /site_gerencia/.settings*
 /site_gerencia/tvfiles
 .c9revisions
+*.db
