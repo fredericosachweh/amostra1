@@ -50,7 +50,7 @@ class Channel(models.Model):
         Limpeza da imagem.
         Remove o logo e o thumbnail ao remover o canal
         """
-        super(Canal,self).delete()
+        super(Channel,self).delete()
         import os
         os.unlink(self.image.path)
         os.unlink(self.thumb.path)
