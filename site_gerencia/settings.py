@@ -240,7 +240,7 @@ INSTALLED_APPS = (
     'box',
     # Pagina de home
     #'home',
-    # Aplicação de controle de stream
+    # Aplicação de controle de devices
     'device',
     # EPG
     'epg',

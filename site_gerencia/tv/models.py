@@ -10,7 +10,7 @@ from django.utils.translation import ugettext as _
 from django.db.models import signals
 from django.conf import settings
 
-from stream.models import UniqueIP
+from device.models import UniqueIP
 
 class Channel(models.Model):
     """
