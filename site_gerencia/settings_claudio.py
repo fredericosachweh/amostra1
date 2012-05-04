@@ -5,10 +5,12 @@ import os
 
 from settings import *
 
+print('SETTINGS: CLAUDIO ;-)')
+
 DEBUG = True
 
 if 'test' in sys.argv:
-    print('CLAUDIO: TESTE SQLITE')
+    print('SETTINGS: TESTE SQLITE')
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -21,7 +23,7 @@ if 'test' in sys.argv:
         }
     }
 else:
-    print('CLAUDIO: DATABASE MYSQL')
+    print('SETTINGS: DATABASE MYSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -34,6 +36,21 @@ else:
 
     }
 
+
+#IMPORTANTE: 
+print('VERIFIQUE LINKS SIMBOLICOS')
+# ARRUMAR LINKS SIMBOLICOS DA SEGUINTE FORMA PARA QUE O SISTEMA FUNCIONE CERTO:
+# EM /var/www/html
+#0 lrwxrwxrwx. 1 nginx nginx   14 Mar  7 10:41 media -> tvfiles/media/
+#0 lrwxrwxrwx. 1 nginx nginx   15 Mar  7 10:41 static -> tvfiles/static/
+#0 lrwxrwxrwx. 1 nginx nginx    7 Mar  7 10:29 tv -> tvfiles
+#4 drwxr-xr-x. 4 nginx nginx 4096 Jan 13 12:23 tvfiles
+#
+# EM /home/claudio/Projects/iptv-middleware/site_gerencia:
+#
+#0 lrwxrwxrwx.  1 claudio claudio     22 Mar  7 10:47 tvfiles -> /var/www/html/tvfiles/
+#0 lrwxrwxrwx.  1 claudio claudio     27 Mar  7 10:38 media -> /var/www/html/tvfiles/media
+
 MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = '/var/www/html/tv/media/'
 ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
@@ -41,6 +58,13 @@ STATIC_ROOT = '/var/www/html/tv/static/'
 STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx3'
+
+
+#ROOT_URL = 'tv/'
+#MEDIA_URL = '/tv/media/'
+#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
+#ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
+#STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
+#STATIC_URL = '/tv/static/'
+
 
