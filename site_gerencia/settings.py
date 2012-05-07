@@ -219,6 +219,8 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
+    # Tools app
+    'tools',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL

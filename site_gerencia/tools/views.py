@@ -1,7 +1,7 @@
 from django.http import HttpResponse
-from pprint import pprint
 
-def index(request):
+def log(request):
+    from pprint import pprint
     pprint((
         'Log enviado pelo stdout do Settopbox', 
         request.META.get('REMOTE_ADDR'), 
@@ -12,3 +12,8 @@ def index(request):
     print('');
     #print(request)
     return HttpResponse('')
+    
+def date(request):
+    from datetime import datetime
+    return HttpResponse(datetime.now())
+    #return HttpResponse('2012-01-07 13:17:45.702043')
