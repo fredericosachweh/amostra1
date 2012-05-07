@@ -38,6 +38,8 @@ urlpatterns = patterns('',
     
     # LOG
     (r'^%slog/'%settings.ROOT_URL,include('log.urls')),
+    # DATE
+    (r'^%sdate/'%settings.ROOT_URL,include('date.urls')),
     
     #XXX: Varrer os apps em busca de api e concatenar os api.url da galera :)
     # REST interface
