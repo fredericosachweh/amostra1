@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.views.decorators.cache import never_cache
 
 def log(request):
     from pprint import pprint
@@ -12,8 +13,9 @@ def log(request):
     print('');
     #print(request)
     return HttpResponse('')
-    
+
+@never_cache
 def date(request):
     from datetime import datetime
     return HttpResponse(datetime.now())
-    #return HttpResponse('2012-01-07 13:17:45.702043')
+    #return HttpResponse('2012-01-01 13:00:00.702043')
