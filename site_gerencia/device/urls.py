@@ -48,6 +48,13 @@ urlpatterns = patterns('',
     (r'^fileinput/stop/(?P<pk>\d+)/$','device.views.deviceserver_switchlink',
      {'method' : 'stop', 'klass' : get_model('device', 'fileinput')},
      'fileinput_stop'),
+    # DemuxedService
+    (r'^demuxedservice/start/(?P<pk>\d+)/$','device.views.deviceserver_switchlink',
+     {'method' : 'start', 'klass' : get_model('device', 'demuxedservice')},
+     'demuxedservice_start'),
+    (r'^demuxedservice/stop/(?P<pk>\d+)/$','device.views.deviceserver_switchlink',
+     {'method' : 'stop', 'klass' : get_model('device', 'demuxedservice')},
+     'demuxedservice_stop'),
     
     (r'^inputmodel/scan/$', 'device.views.inputmodel_scan'),
     (r'^file/start/(?P<pk>\d+)/$', 'device.views.file_start'),
