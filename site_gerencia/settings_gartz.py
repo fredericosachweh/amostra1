@@ -31,3 +31,13 @@ SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx1'
 
 INTERNAL_IPS = ('127.0.0.1',)
 
+#MessageMiddleware
+#from django.contrib.messages.middleware.MessageMiddleware
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    #'lib.middleware.login.RequireLoginMiddleware',
+)
