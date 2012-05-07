@@ -248,8 +248,8 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
-    #LOG
-    'log',
+    # Tools app
+    'tools',
 )
 
 # Insert suport to log stdout from remote settopbox when debugging
