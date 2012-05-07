@@ -244,6 +244,8 @@ DVBLAST_CONFS_DIR = '/etc/dvblast/'
 DVBLAST_LOGS_DIR = '/var/log/dvblast/'
 DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
 
+DVBLASTCTL_COMMAND = '/usr/bin/dvblastctl'
+
 VLC_COMMAND = '/usr/bin/cvlc'
 VLC_VIDEOFILES_DIR = '/home/videos/'
 
