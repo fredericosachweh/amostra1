@@ -63,7 +63,7 @@ class RatingResource(ModelResource):
     class Meta(MetaDefault):
         queryset = Rating.objects.all()
         
-class CategoriesResource(ModelResource):
+class CategoryResource(ModelResource):
     class Meta(MetaDefault):
         queryset = Category.objects.all()
 
@@ -72,9 +72,12 @@ class ProgrammeResource(ModelResource):
     secondary_titles = fields.ToManyField(TitleResource, 'secondary_titles', full=True)
     descriptions = fields.ToManyField(DescriptionResource, 'descriptions', full=True)
     rating = fields.ForeignKey(RatingResource, 'rating', full=False)
-    categories = fields.ForeignKey(CategoriesResource, 'rating', full=False)
+    categories = fields.ToManyField(CategoryResource, 'categories', full=False)
     class Meta(MetaDefault):
         queryset = Programme.objects.all()
+        filtering = {
+            "video_aspect": ALL
+        }
 
 class GuideResource(ModelResource):
     channel = fields.ToOneField(ChannelResource, 'channel', full=False)
@@ -96,6 +99,6 @@ api.register(Display_NameResource())
 api.register(DescriptionResource())
 api.register(TitleResource())
 api.register(RatingResource())
-api.register(RatingResource())
-api.register(CategoriesResource())
+api.register(CategoryResource())
+api.register(ProgrammeResource())
 api.register(GuideResource())
