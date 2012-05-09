@@ -136,6 +136,18 @@ class Server(models.Model):
         self.save()
         return int(pid)
 
+    def get(self, remotepath, localpath = None):
+        """Copies a file between the remote host and the local host."""
+        s = self.connect()
+        s.get(remotepath, localpath)
+        s.close()
+
+    def put(self, localpath, remotepath = None):
+        """Copies a file between the local host and the remote host."""
+        s = self.connect()
+        s.put(localpath, remotepath)
+        s.close()
+
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
