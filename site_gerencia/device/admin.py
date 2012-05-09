@@ -111,6 +111,11 @@ class AdminMulticastOutput(admin.ModelAdmin):
     form = forms.MulticastOutputForm
 
 
+class AdminDemuxedService(admin.ModelAdmin):
+    list_display = ('sid', 'provider', 'service_desc',
+                    'server', 'sink', 'switch_link')
+
+
 admin.site.register(models.UniqueIP)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Antenna)
@@ -120,5 +125,5 @@ admin.site.register(models.UnicastInput, AdminUnicastInput)
 admin.site.register(models.MulticastInput, AdminMulticastInput)
 admin.site.register(models.FileInput, AdminFileInput)
 admin.site.register(models.MulticastOutput, AdminMulticastOutput)
-admin.site.register(models.DemuxedService)
+admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder)

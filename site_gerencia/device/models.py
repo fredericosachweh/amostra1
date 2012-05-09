@@ -360,15 +360,10 @@ class DeviceServer(models.Model):
         return _(u'undefined')
 
     def start(self):
-        if self.running():
-            raise DeviceServer.AlreadyRunning('Tried to start an already ' \
-                                          'running device: "%s"' % self)
+        pass
 
     def stop(self):
         """Interrompe processo no servidor"""
-        if not self.running():
-            raise DeviceServer.NotRunning('Tried to stop a device ' \
-                                          'that is not running: "%s"' % self)
         try:
             self.server.kill_process(self.pid)
             self.status = False
@@ -496,7 +491,7 @@ class Antenna(models.Model):
         return str(self.satellite)
 
 
-class DemuxedService(models.Model):
+class DemuxedService(DeviceServer):
     class Meta:
         verbose_name = _(u'Entrada demultiplexada')
         verbose_name_plural = _(u'Entradas demultiplexadas')
@@ -506,6 +501,7 @@ class DemuxedService(models.Model):
         blank=True)
     service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True,
         blank=True)
+    enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
@@ -519,7 +515,20 @@ class DemuxedService(models.Model):
         return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
 
     def start(self):
-        self.sink.start()
+        self.enabled = True; self.status = True
+        self.save()
+        if self.sink.status is True:
+            self.sink.reload_config()
+        else:
+            self.sink.start()
+
+    def stop(self):
+        self.enabled = False; self.status = False
+        self.save()
+        self.sink.reload_config()
+
+    def running(self):
+        return self.status and self.enabled
 
 
 class InputModel(models.Model):
@@ -531,10 +540,13 @@ class InputModel(models.Model):
         "Could not lock signal"
         pass
 
+    def _list_services(self):
+        return self.src.filter(enabled=True)
+
     def _get_config(self):
         # Fill config file
         conf = u''
-        for service in self.src.all():
+        for service in self._list_services():
             if service.src.count() > 0:
                 sid = service.sid
                 ip = service.src.all()[0].ip
@@ -543,6 +555,23 @@ class InputModel(models.Model):
                 conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
 
         return conf
+
+    def reload_config(self):
+        from lxml import etree
+        conf = self._get_config()
+        # Write the config file to disk
+        self.server.execute('echo "%s" > %s%d.conf' % (conf,
+                        settings.DVBLAST_CONFS_DIR, self.pk))
+        try:
+            self._read_ctl('reload')
+        except etree.XMLSyntaxError:
+            # This is expected: the reload command returns an empty string
+            pass
+
+    def stop(self):
+        for service in self._list_services():
+            service.stop()
+        super(InputModel, self).stop()
 
     def _create_folders(self):
         "Creates all the folders dvblast needs"
@@ -588,10 +617,12 @@ class InputModel(models.Model):
         return has_lock
 
     def tuned(self):
+        if self.running() is False:
+            return u''
         if self.has_lock() is True:
-            return '<a style="color:green;">OK</a>'
+            return u'<a style="color:green;">OK</a>'
         else:
-            return '<a style="color:red;">Sem sinal</a>'
+            return u'<a style="color:red;">Sem sinal</a>'
     tuned.short_description = _(u'Sinal')
     tuned.allow_tags = True
 
@@ -616,7 +647,7 @@ class InputModel(models.Model):
                 continue # Program 0 never works
             ct = ContentType.objects.get_for_model(self)
             service, created = \
-                DemuxedService.objects.get_or_create(
+                DemuxedService.objects.get_or_create(server=self.server,
                     sid=number, content_type=ct, object_id=self.pk)
             detail = \
                 sdt.find('.//SERVICE[@sid="%d"]/DESC/SERVICE_DESC' % number)
@@ -708,21 +739,25 @@ class DigitalTuner(InputModel, DeviceServer):
 
     def start(self):
         "Starts a dvblast instance based on the current model's configuration"
-        DeviceServer.start(self)
+        super(DigitalTuner, self).start()
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
         self._create_folders()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
-                                settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        # Cleanup residual sock file if applyable
-        self._clean_sock_file()
-        # Start dvblast process
-        log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
-        self.pid = self.server.execute_daemon(cmd, log_path=log_path)
-        self.status = True
-        self.save()
+                        settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+        if self.status is True:
+            # Already running, just reload config
+            self.reload_config()
+        else:
+            # Cleanup residual sock file if applyable
+            self._clean_sock_file()
+            # Start dvblast process
+            log_path = '%s%d' % (settings.DVBLAST_LOGS_DIR, self.pk)
+            self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+            self.status = True
+            self.save()
 
 class DvbTuner(DigitalTuner):
     class Meta:

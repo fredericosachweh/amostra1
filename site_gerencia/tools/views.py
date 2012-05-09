@@ -1,7 +1,8 @@
 from django.http import HttpResponse
-from pprint import pprint
+from django.views.decorators.cache import never_cache
 
-def index(request):
+def log(request):
+    from pprint import pprint
     pprint((
         'Log enviado pelo stdout do Settopbox', 
         request.META.get('REMOTE_ADDR'), 
@@ -12,3 +13,9 @@ def index(request):
     print('');
     #print(request)
     return HttpResponse('')
+
+@never_cache
+def date(request):
+    from datetime import datetime
+    return HttpResponse(datetime.now())
+    #return HttpResponse('2012-01-01 13:00:00.702043')
