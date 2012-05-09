@@ -62,12 +62,17 @@ class DescriptionResource(ModelResource):
 class RatingResource(ModelResource):
     class Meta(MetaDefault):
         queryset = Rating.objects.all()
+        
+class CategoriesResource(ModelResource):
+    class Meta(MetaDefault):
+        queryset = Category.objects.all()
 
 class ProgrammeResource(ModelResource):
     titles = fields.ToManyField(TitleResource, 'titles', full=True)
     secondary_titles = fields.ToManyField(TitleResource, 'secondary_titles', full=True)
     descriptions = fields.ToManyField(DescriptionResource, 'descriptions', full=True)
     rating = fields.ForeignKey(RatingResource, 'rating', full=False)
+    categories = fields.ForeignKey(CategoriesResource, 'rating', full=False)
     class Meta(MetaDefault):
         queryset = Programme.objects.all()
 
@@ -91,5 +96,6 @@ api.register(Display_NameResource())
 api.register(DescriptionResource())
 api.register(TitleResource())
 api.register(RatingResource())
-api.register(ProgrammeResource())
+api.register(RatingResource())
+api.register(CategoriesResource())
 api.register(GuideResource())
