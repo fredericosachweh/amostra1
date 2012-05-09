@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+'<option value="2">bar0 - 172.17.0.2</option>'#!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 """
 Testes unitários
@@ -390,13 +390,13 @@ class AdaptersManipulationTests(TestCase):
         Server.objects.all().delete()
 
     def test_update_by_post(self):
-        url = reverse('device.views.server_update_adapter',
-                      kwargs={'adapter_nr' : 0})
         # Create a new adapter
-        response = self.client.post(url)
+        response = self.client.post(
+            reverse('server_adapter_add'), {'adapter_nr' : 0})
         self.assertEqual(response.status_code, 200)
         # Delete it
-        response = self.client.delete(url)
+        response = self.client.post(
+            reverse('server_adapter_remove'), {'adapter_nr' : 0})
         self.assertEqual(response.status_code, 200)
 
     def test_isdb_adapter_nr(self):
@@ -733,20 +733,24 @@ class ServerTest(TestCase):
         NIC.objects.create(
             server=server,
             ipv4='192.168.0.10',
-            name='eth0'
+            name='foo0'
         )
         NIC.objects.create(
             server=server,
             ipv4='172.17.0.2',
-            name='br0'
+            name='bar0'
         )
         url = reverse('device.views.server_list_interfaces') + '?server=1'
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
-        expected = '<option selected="selected" value="">---------</option>' \
-                   '<option value="1">eth0 - 192.168.0.10</option>' \
-                   '<option value="2">br0 - 172.17.0.2</option>'
-        self.assertEqual(expected, response.content)
+        expected = '<option selected="selected" value="">---------</option>'
+        self.assertIn(expected, response.content)
+        pk = NIC.objects.get(server=server, name='foo0').pk
+        expected = '<option value="%d">foo0 - 192.168.0.10</option>' % pk
+        self.assertIn(expected, response.content)
+        pk = NIC.objects.get(server=server, name='bar0').pk
+        expected = '<option value="%d">bar0 - 172.17.0.2</option>' % pk
+        self.assertIn(expected, response.content)
 
     def test_dvbtuners_list_view(self):
         url = reverse('device.views.server_list_dvbadapters')
@@ -867,17 +871,16 @@ class TestViews(TestCase):
             rsakey='~/.ssh/id_rsa',
             offline_mode=False,
         )
-        server.save()
         # Input interface
         NIC.objects.create(
             server=server,
-            name='eth0',
+            name='foobar0',
             ipv4='192.168.0.10',
         )
         # Output interface
         NIC.objects.create(
             server=server,
-            name='eth1',
+            name='foobar1',
             ipv4='10.0.1.10',
         )
 

@@ -22,7 +22,6 @@ ADMINS = (
 MANAGERS = ADMINS
 
 if 'test' in sys.argv:
-    print('SETTINGS: TESTE SQLITE')
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -35,7 +34,6 @@ if 'test' in sys.argv:
         }
     }
 else:
-    print('SETTINGS: DATABASE MYSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -77,7 +75,6 @@ USE_L10N = True
 
 
 #IMPORTANTE:
-print('VERIFIQUE LINKS SIMBOLICOS')
 # ARRUMAR LINKS SIMBOLICOS DA SEGUINTE FORMA PARA QUE O SISTEMA FUNCIONE CERTO:
 # EM /var/www/html
 #0 lrwxrwxrwx. 1 nginx nginx   14 Mar  7 10:41 media -> tvfiles/media/
@@ -96,7 +93,8 @@ ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = '/var/www/html/tv/static/'
 STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
-
+# Porta que o servidor web está configurado
+MIDDLEWARE_WEBSERVICE_PORT = 8000
 
 
 #ROOT_URL = 'tv/'
@@ -282,8 +280,8 @@ CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if DEBUG == True:
     ## Envia todas as mensagens de log para o console
-    for logger in LOGGING['loggers']:
-        LOGGING['loggers'][logger]['handlers'] = ['console']
+#    for logger in LOGGING['loggers']:
+#        LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
         import django_extensions
         INSTALLED_APPS += ('django_extensions',)
