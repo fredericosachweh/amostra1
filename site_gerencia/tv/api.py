@@ -10,9 +10,6 @@ from tastypie.api import Api
 
 from models import *
 
-# Exemplo de foreignKey
-from stream import api as stream_api
-
 class ChannelResource(ModelResource):
     # Exemplo de foreignKey
     #source_data = fields.ForeignKey(stream_api.SourceResource, 'source', full=True)
