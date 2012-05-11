@@ -25,8 +25,8 @@ urlpatterns = patterns('',
     url(r'^debug/(?P<path>.*)$', 'django.views.static.serve', {
             'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/src/",
         }),
-    url(r'^docs/(?P<path>.*)$', 'django.views.static.serve', {
-            'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/docs/",
+    url(r'^doc/(?P<path>.*)$', 'django.views.static.serve', {
+            'document_root': os.path.dirname(settings.PROJECT_ROOT_PATH)+"/frontend/doc/",
         }),
     url(r'^$',     direct_to_template, {'template': 'box/index.html'}),
     url(r'^(?P<path>.*)$', 'django.views.static.serve', {

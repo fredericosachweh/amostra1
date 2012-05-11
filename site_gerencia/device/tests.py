@@ -86,30 +86,37 @@ class CommandsGenerationTest(TestCase):
             filename='foobar.mkv',
         )
         service_a = DemuxedService.objects.create(
+            server=server,
             sid=1,
             sink=dvbtuner,
         )
         service_b = DemuxedService.objects.create(
+            server=server,
             sid=2,
             sink=dvbtuner,
         )
         service_c = DemuxedService.objects.create(
+            server=server,
             sid=3,
             sink=dvbtuner,
         )
         service_d = DemuxedService.objects.create(
+            server=server,
             sid=1,
             sink=isdbtuner,
         )
         service_e = DemuxedService.objects.create(
+            server=server,
             sid=1,
             sink=unicastin,
         )
         service_f = DemuxedService.objects.create(
+            server=server,
             sid=2,
             sink=unicastin,
         )
         service_g = DemuxedService.objects.create(
+            server=server,
             sid=1024,
             sink=multicastin,
         )
@@ -222,7 +229,11 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd())
-
+        # Workaround: this should be done inside the start method
+        for service in tuner.src.all():
+            service.enabled = True
+            service.save()
+        
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
 
@@ -241,6 +252,9 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
+        for service in tuner.src.all():
+            service.enabled = True
+            service.save()
 
         expected_conf = u'239.1.0.4:20000/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
@@ -257,6 +271,9 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
+        for service in unicastin.src.all():
+            service.enabled = True
+            service.save()
 
         expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
@@ -273,9 +290,21 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
              )
         self.assertEqual(expected_cmd, multicastin._get_cmd())
+        for service in multicastin.src.all():
+            service.enabled = True
+            service.save()
 
         expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
+
+    def test_demuxedinput(self):
+        unicastin = UnicastInput.objects.get(port=30000)
+        self.assertFalse(unicastin.running())
+        services = unicastin.src.all()
+        service_a = services[0]
+        service_b = services[1]
+        
+        
 
     def test_fileinput(self):
         fileinput = FileInput.objects.all()[0]
