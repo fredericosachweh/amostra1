@@ -2,6 +2,7 @@
 from django.http import HttpResponse, HttpResponseRedirect, \
                         HttpResponseBadRequest, HttpResponseServerError
 from django.shortcuts import get_object_or_404, render_to_response, render
+from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse
 from django.utils.encoding import force_unicode
 from django.template import RequestContext, loader
@@ -26,8 +27,6 @@ def server_status(request, pk=None):
     if server.status is False:
         log.error(u'Cant connect with server:(%s) %s:%d %s',
             server, server.host, server.ssh_port, server.msg)
-    else:
-        server.auto_create_nic()
     log.info('Server:%s [%s]', server, server.status)
     log.info('server_status(pk=%s)', pk)
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
@@ -45,11 +44,13 @@ def server_list_interfaces(request):
             i.name, i.ipv4))
     return HttpResponse(response)
 
-def server_update_adapter(request, adapter_nr=None):
+@csrf_exempt
+def server_update_adapter(request, method):
     # Identify server by its IP
     remote_addr =  request.META.get('REMOTE_ADDR', None)
     server = get_object_or_404(models.Server, host=remote_addr)
-    if request.method == 'POST':
+    adapter_nr = request.POST.get('adapter_nr')
+    if method == 'add':
         try:
             adapter = models.DigitalTunerHardware.objects.get(server=server,
                                                         adapter_nr=adapter_nr)
@@ -58,7 +59,7 @@ def server_update_adapter(request, adapter_nr=None):
                                                         adapter_nr=adapter_nr)
         adapter.grab_info()
         adapter.save()
-    elif request.method == 'DELETE':
+    elif method == 'remove':
         adapter = get_object_or_404(models.DigitalTunerHardware,
                                    server=server, adapter_nr=adapter_nr)
         adapter.delete()
