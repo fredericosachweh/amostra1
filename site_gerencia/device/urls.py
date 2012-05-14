@@ -16,6 +16,7 @@ urlpatterns = patterns('',
     (r'^server/isdbtuners/$','device.views.server_available_isdbtuners'),
     (r'^server/fileinput/scanfolder/$',
      'device.views.server_fileinput_scanfolder'),
+    (r'^server/(?P<pk>\d+)/coldstart/$','device.views.server_coldstart'),
     # DvbTuner
     (r'^dvbtuner/start/(?P<pk>\d+)/$','device.views.deviceserver_switchlink',
      {'method' : 'start', 'klass' : get_model('device', 'dvbtuner')},

@@ -125,6 +125,14 @@ def server_fileinput_scanfolder(request):
             settings.VLC_VIDEOFILES_DIR, file, file)
     return HttpResponse(list)
 
+def server_coldstart(request, pk):
+    server = get_object_or_404(models.Server, id=pk)
+    # Erase all
+    models.DigitalTunerHardware.objects.filter(server=server).delete()
+    # And create new ones
+    tuners = server.auto_detect_digital_tuners()
+    return HttpResponse(str(tuners))
+
 def deviceserver_switchlink(request, method, klass, pk):
     device = get_object_or_404(klass, id=pk)
     try:
