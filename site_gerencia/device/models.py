@@ -193,7 +193,10 @@ class Server(models.Model):
         for device in devices:
             adapter = DigitalTunerHardware(server=self)
             match = re.match(r'^adapter(\d+)$', device)
-            if match:
+            # Sometimes the adapter folder exits
+            # but the frontend0 file is not there
+            if match and \
+                'frontend0' in self.list_dir('/dev/dvb/%s' % device):
                 adapter.adapter_nr = match.groups()[0]
                 adapter.grab_info()
                 adapter.save()
