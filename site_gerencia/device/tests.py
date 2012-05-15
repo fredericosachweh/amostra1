@@ -1,4 +1,4 @@
-'<option value="2">bar0 - 172.17.0.2</option>'#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 """
 Testes unitários
