@@ -898,6 +898,13 @@ class TestViews(TestCase):
     def test_fileinput_scanfolder(self):
         import re
         server = Server.objects.get(pk=1)
+        # Check if the videos folder is acessible
+        try:
+            server.execute('ls %s' % settings.VLC_VIDEOFILES_DIR)
+        except Server.ExecutionFailure:
+            raise self.failureException(
+                "The %s folder doesn't exists or is inacessible" % 
+                    settings.VLC_VIDEOFILES_DIR)
         # Create a temporary file inside the videos folder
         out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)
         # Make sure the file name is returned on the list

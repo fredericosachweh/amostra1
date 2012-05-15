@@ -119,7 +119,7 @@ def server_available_isdbtuners(request):
 def server_fileinput_scanfolder(request):
     pk = request.GET.get('server')
     server = get_object_or_404(models.Server, id=pk)
-    list = u'<option value="">---------</option>'
+    list = u'<option value="">---------</option>\n'
     for file in server.list_dir(settings.VLC_VIDEOFILES_DIR):
         list += u'<option value="%s%s">%s</option>\n' % (
             settings.VLC_VIDEOFILES_DIR, file, file)
