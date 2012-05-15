@@ -5,7 +5,7 @@ import logging
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
-from django.db.models.signals import pre_save, pre_delete
+from django.db.models.signals import pre_save, pre_delete, post_save
 from django.dispatch import receiver
 from django.conf import settings
 from django.contrib.contenttypes import generic
@@ -136,6 +136,18 @@ class Server(models.Model):
         self.save()
         return int(pid)
 
+    def get(self, remotepath, localpath = None):
+        """Copies a file between the remote host and the local host."""
+        s = self.connect()
+        s.get(remotepath, localpath)
+        s.close()
+
+    def put(self, localpath, remotepath = None):
+        """Copies a file between the local host and the remote host."""
+        s = self.connect()
+        s.put(localpath, remotepath)
+        s.close()
+
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
@@ -172,10 +184,19 @@ class Server(models.Model):
     def auto_detect_digital_tuners(self):
         import re
         resp = []
-        for device in self.list_dir('/dev/dvb/'):
+        try:
+            devices = self.list_dir('/dev/dvb/')
+        except Server.ExecutionFailure:
+            # This can happen if the /dev/dvb folder doesn't exist
+            # or the ssh user doesn't has access permission
+            return None
+        for device in devices:
             adapter = DigitalTunerHardware(server=self)
             match = re.match(r'^adapter(\d+)$', device)
-            if match:
+            # Sometimes the adapter folder exits
+            # but the frontend0 file is not there
+            if match and \
+                'frontend0' in self.list_dir('/dev/dvb/%s' % device):
                 adapter.adapter_nr = match.groups()[0]
                 adapter.grab_info()
                 adapter.save()
@@ -266,6 +287,54 @@ class Server(models.Model):
         content = u''.join(ret)
         return content.strip()
 
+@receiver(post_save, sender=Server)
+def Server_post_save(sender, instance, created, **kwargs):
+    "Signal to prepare the server for use"
+    from tempfile import NamedTemporaryFile
+    from helper.template_scripts import INIT_SCRIPT, UDEV_CONF
+    if created is True and instance.offline_mode is False:
+        if instance.connect() is None:
+            log = logging.getLogger('debug')
+            log.info("The server %s was unreachable, " \
+                     "so we couldn't configure it" , instance)
+            return # There is nothing we can do
+        instance.auto_create_nic()
+        instance.auto_detect_digital_tuners()
+        # Create the udev rules file
+        cmd = "/bin/env |" \
+              "/bin/grep SSH_CLIENT |" \
+              "/bin/grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
+        my_ip = "".join(instance.execute(cmd)).strip()
+        udev_conf = UDEV_CONF % \
+            {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
+             'add_url' : reverse('server_adapter_add'),
+             'rm_url' : reverse('server_adapter_remove')}
+        tmpfile = NamedTemporaryFile()
+        tmpfile.file.write(udev_conf)
+        tmpfile.file.flush()
+        remote_tmpfile = "".join(instance.execute('/bin/mktemp')).strip()
+        instance.put(tmpfile.name, remote_tmpfile)
+        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
+                         '/etc/udev/rules.d/87-iptv.rules' % remote_tmpfile)
+        # Create the init script to report a server boot event
+        init_script = INIT_SCRIPT % \
+            {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
+             'status_url' : reverse('device.views.server_status', 
+                kwargs={'pk' : instance.pk}),
+             'coldstart_url' : reverse('device.views.server_coldstart',
+                kwargs={'pk' : instance.pk})}
+        tmpfile = NamedTemporaryFile()
+        tmpfile.file.write(init_script)
+        tmpfile.file.flush()
+        remote_tmpfile = "".join(instance.execute('/bin/mktemp')).strip()
+        instance.put(tmpfile.name, remote_tmpfile)
+        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
+                         '/etc/init.d/iptv_coldstart' % remote_tmpfile)
+        instance.execute('/usr/bin/sudo /bin/chmod +x ' \
+                         '/etc/init.d/iptv_coldstart')
+        instance.execute('/usr/bin/sudo /sbin/chkconfig --add ' \
+                         '/etc/init.d/iptv_coldstart')
+
 
 class NIC(models.Model):
     'Classe de manipulação da interface de rede e referencia do servidor'
@@ -273,8 +342,12 @@ class NIC(models.Model):
     server = models.ForeignKey(Server)
     ipv4 = models.IPAddressField(_(u'Endereço ip v4 atual'))
 
+    class Meta:
+        unique_together = ('name', 'server')
+
     def __unicode__(self):
         return u'%s->%s(%s)' % (self.server, self.name, self.ipv4)
+
 
 class UniqueIP(models.Model):
     """
@@ -710,10 +783,14 @@ class DigitalTunerHardware(models.Model):
         self.bus = match.groups()[0]
         match = re.search(r'ATTRS\{devnum\}=="(\d+)"', info)
         devnum = match.groups()[0]
-        ret = self.server.execute(
-            '/usr/bin/lsusb -t | /bin/grep "Dev %s"' % devnum)
-        match = re.search(r'Driver=(.*),', " ".join(ret))
-        self.driver = match.groups()[0]
+        try:
+            ret = self.server.execute(
+                '/usr/bin/lsusb -t | /bin/grep "Dev %s"' % devnum)
+            match = re.search(r'Driver=(.*),', " ".join(ret))
+            self.driver = match.groups()[0]
+        except Server.ExecutionFailure:
+            "Se foi, foi. Se não foi, tudo bem."
+            pass
 
         if self.id_vendor == '04b4':
             self.uniqueid = self._read_mac_from_dvbworld()

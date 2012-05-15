@@ -18,7 +18,7 @@ class ChannelResource(ModelResource):
         excludes = ['enabled']
         allowed_methods = ['get']
     def dehydrate_source(self, bundle):
-        return bundle.obj.source
+        return '%s:%d'%(bundle.obj.source.ip,bundle.obj.source.port)
 
 api = Api(api_name='tv')
 api.register(ChannelResource())
