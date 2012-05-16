@@ -22,7 +22,6 @@ ADMINS = (
 MANAGERS = ADMINS
 
 if 'test' in sys.argv:
-    print('SETTINGS: TESTE SQLITE')
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -35,7 +34,6 @@ if 'test' in sys.argv:
         }
     }
 else:
-    print('SETTINGS: DATABASE MYSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -236,7 +234,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     #'south',
     # Gestao de canal
-    'canal',
+    #'canal',
     # Interface dos setup-box
     'box',
     # Pagina de home

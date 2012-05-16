@@ -354,13 +354,13 @@ class UniqueIP(models.Model):
     Classe de endereço ip externo (na rede dos clientes)
     """
     class Meta:
-        verbose_name = _(u'Endereço de fluxo externo')
-        verbose_name_plural = _(u'Endereços de fluxo externo')
+        verbose_name = _(u'Endereço IPv4 multicast')
+        verbose_name_plural = _(u'Endereços IPv4 multicast')
     ip = models.IPAddressField(_(u'Endereço IP'),
         unique=True,
         null=True)
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
-    nic = models.ForeignKey(NIC)
+    #nic = models.ForeignKey(NIC)
     sequential = models.PositiveSmallIntegerField(
         _(u'Valor auxiliar para gerar o IP único'),
         default=2)
@@ -410,6 +410,20 @@ class UniqueIP(models.Model):
 
     def start(self):
         self.sink.start()
+
+    @classmethod
+    def create(klass, sink=None):
+        obj = klass()
+        obj.ip = obj._gen_ip()
+        obj.sink = sink
+        obj.save()
+        return obj
+
+    def start(self, *args, **kwargs):
+        self.sink.start(*args, **kwargs)
+
+    def stop(self, *args, **kwargs):
+        self.sink.stop(*args, **kwargs)
 
 
 class DeviceServer(models.Model):
@@ -516,34 +530,6 @@ Rodando</a>' % (url, self.id)
         self.save()
 
 
-class Channel(models.Model):
-    class Meta:
-        verbose_name = _(u'Canal')
-        verbose_name_plural = _(u'Canais')
-
-    # Input
-    input_limit = models.Q(app_label='device', model='DemuxedInput') | \
-                models.Q(app_label='device', model='DvbTuner') | \
-                models.Q(app_label='device', model='IsdbTuner') | \
-                models.Q(app_label='device', model='UnicastInput') | \
-                models.Q(app_label='device', model='MulticastInput')
-    input_content_type = models.ForeignKey(ContentType,
-        limit_choices_to=input_limit)
-    input_object_id = models.PositiveIntegerField()
-    input = generic.GenericForeignKey('input_content_type', 'input_object_id')
-    # Output
-    output = models.ForeignKey('MulticastOutput', null=True, blank=True)
-    # Recorder
-    ## TODO: Este cara pode ser multiplo pro mesmo canal
-    recorder = models.ForeignKey('StreamRecorder', null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s -> %s' % (self.input, self.output)
-
-    def play(self):
-        pass
-
-
 class Antenna(models.Model):
     class Meta:
         verbose_name = _(u'Antena parabólica')
@@ -576,6 +562,7 @@ class DemuxedService(DeviceServer):
         blank=True)
     enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
+    nic_src = models.ForeignKey(NIC)
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in":
@@ -587,7 +574,8 @@ class DemuxedService(DeviceServer):
     def __unicode__(self):
         return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
 
-    def start(self):
+    def start(self, *args, **kwargs):
+        print 'start do service'
         self.enabled = True; self.status = True
         self.save()
         if self.sink.status is True:
@@ -595,7 +583,7 @@ class DemuxedService(DeviceServer):
         else:
             self.sink.start()
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         self.enabled = False; self.status = False
         self.save()
         self.sink.reload_config()
@@ -991,6 +979,7 @@ class IPInput(InputModel, DeviceServer):
     src = generic.GenericRelation(DemuxedService)
 
     def start(self):
+        print 'start do ip input'
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
@@ -1150,7 +1139,7 @@ class OutputModel(models.Model):
 
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in": ("UniqueIP",)},
-        null=True)
+        null=True, verbose_name=_(u'Conexão com device'))
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
 
@@ -1161,6 +1150,11 @@ class OutputModel(models.Model):
         self.server.execute('mkdir -p %s%d' % (
             settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
         self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR)
+
+    def stop(self, recursive=False):
+        super(OutputModel, self).stop()
+        if recursive is True:
+            self.sink.stop(recursive=recursive)
 
 
 class IPOutput(OutputModel, DeviceServer):
@@ -1173,19 +1167,25 @@ class IPOutput(OutputModel, DeviceServer):
                         (u'rtp', u'RTP'),
                         )
 
-    interface = models.ForeignKey(NIC, verbose_name=_(u'Interface de rede'))
+    interface = models.ForeignKey(NIC,
+        verbose_name=_(u'Interface de rede externa'))
     port = models.PositiveSmallIntegerField(_(u'Porta'), default=10000)
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
         choices=PROTOCOL_CHOICES, default=u'udp')
 
-    def start(self):
+    def start(self, recursive=False):
+        print 'start do ipout'
         # Create the necessary folders
         self._create_folders()
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
+        self.status = True
         self.save()
+        
+        if recursive is True:
+            self.sink.start(recursive=recursive)
 
 
 class MulticastOutput(IPOutput):
@@ -1195,6 +1195,8 @@ class MulticastOutput(IPOutput):
         verbose_name_plural = _(u'Saídas IP multicast')
 
     ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
+    nic_sink = models.ForeignKey(NIC, related_name='nic_sink',
+        verbose_name=_(u'Interface de rede interna'))
 
     def __unicode__(self):
         return '%s:%d [%s]' % (self.ip_out, self.port, self.interface)
@@ -1233,11 +1235,12 @@ class StreamRecorder(OutputModel, DeviceServer):
     Serviço de gravação dos fluxos multimidia.
     """
     rotate = models.PositiveIntegerField(_(u'Tempo em minutos do arquivo'))
-    folder = models.CharField(_(u'Diretório destino'),max_length=500,
-        default=settings.CHANNEL_RECORD_DIR, db_index=True)
     keep_time = models.PositiveIntegerField(_(u'Tempo que permanece gravado'))
     start_time = models.DateTimeField(_(u'Hora inicial da gravação'), null=True,
         default=None)
+    channel = models.ForeignKey('tv.Channel', null=True, blank=True)
+    nic_sink = models.ForeignKey(NIC,
+        verbose_name=_(u'Interface de rede interna'))
 
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
@@ -1256,7 +1259,8 @@ class StreamRecorder(OutputModel, DeviceServer):
         # Create the necessary folders
         self._create_folders()
         # Create folder to store record files
-        self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
+        self.server.execute('mkdir -p %s/%d' % (
+            settings.MULTICAT_RECORDINGS_DIR, self.pk))
         cmd = u'%s -r %d -c %s%d.sock -u @%s:%d %s/%d' % (
             settings.MULTICAT_COMMAND,
             (self.rotate * 60 * 27000000),
@@ -1264,12 +1268,13 @@ class StreamRecorder(OutputModel, DeviceServer):
             self.pk,
             self.sink.ip,
             self.sink.port,
-            self.folder,
+            settings.MULTICAT_RECORDINGS_DIR,
             self.pk
             )
         return cmd
 
-    def start(self):
+    def start(self, recursive=False):
+        print 'start do recorder'
         # Create destination folder
         # Create the necessary log folders
         self._create_folders()
@@ -1280,4 +1285,8 @@ class StreamRecorder(OutputModel, DeviceServer):
         if self.status is True:
             import datetime
             self.start_time = datetime.datetime.now()
+        self.status = True
         self.save()
+        
+        if recursive is True:
+            self.sink.start(recursive=recursive)

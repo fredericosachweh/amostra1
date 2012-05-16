@@ -78,4 +78,4 @@ class FileInputForm(forms.ModelForm):
 class MulticastOutputForm(forms.ModelForm):
     class Meta:
         model = MulticastOutput
-        exclude = ('content_type', 'object_id')
+        #exclude = ('content_type', 'object_id')
