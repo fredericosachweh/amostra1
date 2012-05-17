@@ -575,7 +575,6 @@ class DemuxedService(DeviceServer):
         return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
 
     def start(self, *args, **kwargs):
-        print 'start do service'
         self.enabled = True; self.status = True
         self.save()
         if self.sink.status is True:
@@ -601,13 +600,20 @@ class InputModel(models.Model):
         "Could not lock signal"
         pass
 
-    def _list_services(self):
+    def _list_enabled_services(self):
         return self.src.filter(enabled=True)
+
+    def _list_all_services(self):
+        return self.src.all()
+
+    def start_all_services(self):
+        for service in self._list_all_services():
+            service.start()
 
     def _get_config(self):
         # Fill config file
         conf = u''
-        for service in self._list_services():
+        for service in self._list_enabled_services():
             if service.src.count() > 0:
                 sid = service.sid
                 ip = service.src.all()[0].ip
@@ -630,7 +636,7 @@ class InputModel(models.Model):
             pass
 
     def stop(self):
-        for service in self._list_services():
+        for service in self._list_enabled_services():
             service.stop()
         super(InputModel, self).stop()
 
@@ -802,10 +808,10 @@ class DigitalTuner(InputModel, DeviceServer):
     class AdapterNotInstalled(Exception):
         pass
 
-    def start(self):
+    def start(self, adapter_num=None):
         "Starts a dvblast instance based on the current model's configuration"
         super(DigitalTuner, self).start()
-        cmd = self._get_cmd()
+        cmd = self._get_cmd(adapter_num)
         conf = self._get_config()
         # Create the necessary folders
         self._create_folders()
@@ -923,9 +929,12 @@ class IsdbTuner(DigitalTuner):
     def __unicode__(self):
         return str(self.frequency)
 
-    def start(self):
-        self.adapter = self.adapter_num
-        super(IsdbTuner, self).start()
+    def start(self, adapter_num=None):
+        if adapter_num is None:
+            self.adapter = self.adapter_num
+        else:
+            self.adapter = adapter_num
+        super(IsdbTuner, self).start(adapter_num)
 
     def stop(self):
         self.adapter = None
@@ -979,7 +988,6 @@ class IPInput(InputModel, DeviceServer):
     src = generic.GenericRelation(DemuxedService)
 
     def start(self):
-        print 'start do ip input'
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
@@ -1174,7 +1182,6 @@ class IPOutput(OutputModel, DeviceServer):
         choices=PROTOCOL_CHOICES, default=u'udp')
 
     def start(self, recursive=False):
-        print 'start do ipout'
         # Create the necessary folders
         self._create_folders()
         # Start multicat
@@ -1274,7 +1281,6 @@ class StreamRecorder(OutputModel, DeviceServer):
         return cmd
 
     def start(self, recursive=False):
-        print 'start do recorder'
         # Create destination folder
         # Create the necessary log folders
         self._create_folders()
