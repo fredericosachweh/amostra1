@@ -66,7 +66,6 @@ class ChannelTest(TestCase):
         Server.objects.all().delete()
 
     def test_channel(self):
-        print self.channel._get_channel_devices_str()
         self.channel.start()
         self.assertTrue(self.channel._is_streaming())
         self.assertTrue(self.channel._is_recording())

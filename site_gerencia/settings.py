@@ -75,7 +75,6 @@ USE_L10N = True
 
 
 #IMPORTANTE:
-print('VERIFIQUE LINKS SIMBOLICOS')
 # ARRUMAR LINKS SIMBOLICOS DA SEGUINTE FORMA PARA QUE O SISTEMA FUNCIONE CERTO:
 # EM /var/www/html
 #0 lrwxrwxrwx. 1 nginx nginx   14 Mar  7 10:41 media -> tvfiles/media/
