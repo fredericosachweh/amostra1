@@ -287,6 +287,16 @@ class Server(models.Model):
         content = u''.join(ret)
         return content.strip()
 
+    def file_exists(self, path):
+        try:
+            self.execute('/bin/ls %s' % path)
+        except Server.ExecutionFailure:
+            return False
+        return True
+
+    def rm_file(self, path):
+        self.execute('/bin/rm -f %s' % path)
+
 @receiver(post_save, sender=Server)
 def Server_post_save(sender, instance, created, **kwargs):
     "Signal to prepare the server for use"
@@ -371,7 +381,17 @@ class UniqueIP(models.Model):
     object_id = models.PositiveIntegerField(null=True)
 
     def __unicode__(self):
-        return '[%d] %s:%d' % (self.sequential, self.ip, self.port)
+        if self.sink is None:
+            sink = u''; sink_classname = u''
+        else:
+            sink = self.sink
+            sink_classname = self.sink.__class__.__name__
+        src_connections = [unicode(con) for con in self.src]
+        ret = u'%s %s --> [ %s:%d ] <-- { %s }' % (
+            sink_classname, sink, self.ip,
+            self.port, ", ".join(src_connections),
+        )
+        return ret
 
     @property
     def src(self):
@@ -582,7 +602,10 @@ class DemuxedService(DeviceServer):
     def stop(self, *args, **kwargs):
         self.enabled = False; self.status = False
         self.save()
-        self.sink.reload_config()
+        if kwargs.get('recursive') is True:
+            self.sink.reload_config(shutdown_gracefully=True)
+        else:
+            self.sink.reload_config()
 
     def running(self):
         return self.status and self.enabled
@@ -620,7 +643,7 @@ class InputModel(models.Model):
 
         return conf
 
-    def reload_config(self):
+    def reload_config(self, shutdown_gracefully=False):
         from lxml import etree
         conf = self._get_config()
         # Write the config file to disk
@@ -631,11 +654,17 @@ class InputModel(models.Model):
         except etree.XMLSyntaxError:
             # This is expected: the reload command returns an empty string
             pass
+        if len(conf) is 0 and shutdown_gracefully is True:
+            self.stop()
 
     def stop(self):
         for service in self._list_enabled_services():
             service.stop()
         super(InputModel, self).stop()
+        # Clean socket file
+        path = u'%s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        if self.server.file_exists(path):
+            self.server.rm_file(path)
 
     def _create_folders(self):
         "Creates all the folders dvblast needs"
