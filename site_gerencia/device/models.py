@@ -408,9 +408,6 @@ class UniqueIP(models.Model):
             self.sequential % 256)
         return ip
 
-    def start(self):
-        self.sink.start()
-
     @classmethod
     def create(klass, sink=None):
         obj = klass()
