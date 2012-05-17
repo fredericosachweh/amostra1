@@ -17,5 +17,6 @@ def log(request):
 @never_cache
 def date(request):
     from datetime import datetime
-    return HttpResponse(datetime.now())
-    #return HttpResponse('2012-01-01 13:00:00.702043')
+    import time
+    return HttpResponse(time.mktime(datetime.now().timetuple()))
+    #return HttpResponse('2012-05-15 17:14:55.702043')
