@@ -2,6 +2,7 @@
 # -*- encoding:utf8 -*-
 
 from django.conf.urls.defaults import *
+import time
 
 from tastypie import fields
 from tastypie.resources import ModelResource
@@ -80,6 +81,7 @@ class ProgrammeResource(ModelResource):
         }
 
 class GuideResource(ModelResource):
+    start = fields.IntegerField(blank=True, null=True)
     channel = fields.ToOneField(ChannelResource, 'channel', full=False)
     programme = fields.ToOneField(ProgrammeResource, 'programme', full=True)
     class Meta(MetaDefault):
@@ -89,6 +91,10 @@ class GuideResource(ModelResource):
             "start": ALL,
             "stop": ALL,
         }
+    def dehydrate_start(self, bundle):
+        return '%d'%(time.mktime(bundle.obj.start.timetuple()))
+    def dehydrate_stop(self, bundle):
+        return '%d'%(time.mktime(bundle.obj.stop.timetuple()))
 
 api = Api(api_name='epg')
 api.register(ChannelResource())
