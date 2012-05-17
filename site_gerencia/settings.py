@@ -283,6 +283,28 @@ EXTERNAL_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
+if 'test' in sys.argv:
+    from tempfile import mkdtemp
+    # Create a temporary dir for when running tests
+    tmpdir = mkdtemp(prefix='iptv-test-')
+    # Change vars to point the new location
+    MULTICAT_LOGS_DIR = tmpdir + MULTICAT_LOGS_DIR
+    os.makedirs(MULTICAT_LOGS_DIR)
+    MULTICAT_RECORDINGS_DIR = tmpdir + MULTICAT_RECORDINGS_DIR
+    os.makedirs(MULTICAT_RECORDINGS_DIR)
+    MULTICAT_SOCKETS_DIR = tmpdir + MULTICAT_SOCKETS_DIR
+    os.makedirs(MULTICAT_SOCKETS_DIR)
+    DVBLAST_CONFS_DIR = tmpdir + DVBLAST_CONFS_DIR
+    os.makedirs(DVBLAST_CONFS_DIR)
+    DVBLAST_LOGS_DIR = tmpdir + DVBLAST_LOGS_DIR
+    os.makedirs(DVBLAST_LOGS_DIR)
+    DVBLAST_SOCKETS_DIR = tmpdir + DVBLAST_SOCKETS_DIR
+    os.makedirs(DVBLAST_SOCKETS_DIR)
+    VLC_VIDEOFILES_DIR = tmpdir + VLC_VIDEOFILES_DIR
+    os.makedirs(VLC_VIDEOFILES_DIR)
+    CHANNEL_RECORD_DIR = tmpdir + CHANNEL_RECORD_DIR
+    os.makedirs(CHANNEL_RECORD_DIR)
+
 if DEBUG == True:
     ## Envia todas as mensagens de log para o console
 #    for logger in LOGGING['loggers']:
