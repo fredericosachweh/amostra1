@@ -301,7 +301,7 @@ def Server_post_save(sender, instance, created, **kwargs):
         instance.auto_create_nic()
         instance.auto_detect_digital_tuners()
         # Create the udev rules file
-        cmd = "/bin/env |" \
+        cmd = "/usr/bin/env |" \
               "/bin/grep SSH_CLIENT |" \
               "/bin/grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
         my_ip = "".join(instance.execute(cmd)).strip()
