@@ -176,6 +176,8 @@ class Server(models.Model):
 
     def kill_process(self, pid):
         u"Mata um processo em execução"
+        if type(pid) is not int:
+            raise Exception('kill_process expect a number as argument')
         s = self.connect()
         resp = s.execute('/bin/kill %d' % pid)
         s.close()
@@ -602,10 +604,11 @@ class DemuxedService(DeviceServer):
     def stop(self, *args, **kwargs):
         self.enabled = False; self.status = False
         self.save()
-        if kwargs.get('recursive') is True:
-            self.sink.reload_config(shutdown_gracefully=True)
-        else:
-            self.sink.reload_config()
+        if self.sink.running() is True:
+            if kwargs.get('recursive') is True:
+                self.sink.reload_config(shutdown_gracefully=True)
+            else:
+                self.sink.reload_config()
 
     def running(self):
         return self.status and self.enabled
