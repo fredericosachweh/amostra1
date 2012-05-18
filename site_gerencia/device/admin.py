@@ -116,6 +116,11 @@ class AdminDemuxedService(admin.ModelAdmin):
                     'server', 'sink', 'switch_link')
 
 
+class AdminStreamRecorder(admin.ModelAdmin):
+    list_display = ('server', 'start_time', 'rotate',
+                    'keep_time', 'channel', 'switch_link')
+
+
 admin.site.register(models.UniqueIP)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Antenna)
@@ -126,4 +131,4 @@ admin.site.register(models.MulticastInput, AdminMulticastInput)
 admin.site.register(models.FileInput, AdminFileInput)
 admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
-admin.site.register(models.StreamRecorder)
+admin.site.register(models.StreamRecorder, AdminStreamRecorder)
