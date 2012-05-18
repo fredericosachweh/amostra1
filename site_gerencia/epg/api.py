@@ -2,6 +2,7 @@
 # -*- encoding:utf8 -*-
 
 from django.conf.urls.defaults import *
+from datetime import datetime
 import time
 
 from tastypie import fields
@@ -81,20 +82,24 @@ class ProgrammeResource(ModelResource):
         }
 
 class GuideResource(ModelResource):
-    start = fields.IntegerField(blank=True, null=True)
+    start_timestamp = fields.IntegerField()
+    stop_timestamp = fields.IntegerField()
     channel = fields.ToOneField(ChannelResource, 'channel', full=False)
     programme = fields.ToOneField(ProgrammeResource, 'programme', full=True)
+    current = fields.BooleanField(default=False)
     class Meta(MetaDefault):
         queryset = Guide.objects.all()
         filtering = {
             "channel": ALL_WITH_RELATIONS,
-            "start": ALL,
-            "stop": ALL,
+            "start": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
+            "stop": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
         }
-    def dehydrate_start(self, bundle):
+    def dehydrate_start_timestamp(self, bundle):
         return '%d'%(time.mktime(bundle.obj.start.timetuple()))
-    def dehydrate_stop(self, bundle):
+    def dehydrate_stop_timestamp(self, bundle):
         return '%d'%(time.mktime(bundle.obj.stop.timetuple()))
+    def dehydrate_current(self, bundle):
+        return datetime.now() >= bundle.obj.start and datetime.now() <= bundle.obj.stop
 
 api = Api(api_name='epg')
 api.register(ChannelResource())
