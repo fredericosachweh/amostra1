@@ -1282,14 +1282,14 @@ class StreamRecorder(OutputModel, DeviceServer):
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
 
-    def validate_unique(self, exclude=None):
-        from django.core.exceptions import ValidationError
-        val = StreamRecorder.objects.filter(folder=self.folder,
-            server=self.server)
-        if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %s' % (
-                self.server.name, self.folder))
-            raise ValidationError({'__all__': [msg]})
+#    def validate_unique(self, exclude=None):
+#        from django.core.exceptions import ValidationError
+#        val = StreamRecorder.objects.filter(folder=self.folder,
+#            server=self.server)
+#        if val.exists() and val[0].pk != self.pk:
+#            msg = _(u'Combinação já existente: %s e %s' % (
+#                self.server.name, self.folder))
+#            raise ValidationError({'__all__': [msg]})
 
     def _get_cmd(self):
         # Create the necessary folders
