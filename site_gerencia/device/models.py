@@ -398,9 +398,9 @@ class UniqueIP(models.Model):
     def sink_str(self):
         if self.sink is None:
             return u''
-        return u'<a href="%s">%s</a>' % (
+        return u'<a href="%s">&lt;%s&gt; %s</a>' % (
             reverse('admin:device_%s_change' % self.sink._meta.module_name,
-                args=[self.sink.pk]), self.sink)
+                args=[self.sink.pk]), self.sink._meta.verbose_name, self.sink)
     sink_str.allow_tags = True
     sink_str.short_description = _(u'Entrada (sink)')
 
@@ -409,10 +409,10 @@ class UniqueIP(models.Model):
             return u''
         ret = []
         for obj in self.src:
-            ret.append(u'<a href="%s">%s</a>' % (
+            ret.append(u'<a href="%s">&lt;%s&gt; %s</a>' % (
                 reverse('admin:device_%s_change' % obj._meta.module_name,
-                    args=[obj.pk]), obj))
-        return u", ".join(ret)
+                    args=[obj.pk]), obj._meta.verbose_name, obj))
+        return u"<br />".join(ret)
     src_str.allow_tags = True
     src_str.short_description = _(u'Saídas (src)')
 
@@ -1302,6 +1302,9 @@ class StreamRecorder(OutputModel, DeviceServer):
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
+
+    def __unicode__(self):
+        return u'%d, %d, %s' % (self.rotate, self.keep_time, self.channel)
 
 #    def validate_unique(self, exclude=None):
 #        from django.core.exceptions import ValidationError
