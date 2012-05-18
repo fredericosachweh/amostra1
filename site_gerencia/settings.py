@@ -304,6 +304,15 @@ if 'test' in sys.argv:
     CHANNEL_RECORD_DIR = tmpdir + CHANNEL_RECORD_DIR
     os.makedirs(CHANNEL_RECORD_DIR)
 
+    # Pseudo executables folder
+    HELPER_FOLDER = os.path.join(PROJECT_ROOT_PATH, 'device', 'helper')
+    # Settings to replace
+    DVBLAST_DUMMY = os.path.join(HELPER_FOLDER, 'dvblast_dummy.py')
+    DVBLASTCTL_DUMMY = os.path.join(HELPER_FOLDER, 'dvblastctl_dummy.py')
+    MULTICAT_DUMMY = os.path.join(HELPER_FOLDER, 'multicat_dummy.py')
+    MULTICATCTL_DUMMY = os.path.join(HELPER_FOLDER, 'multicatctl_dummy.py')
+    VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
+
 if DEBUG == True:
     ## Envia todas as mensagens de log para o console
 #    for logger in LOGGING['loggers']:

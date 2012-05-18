@@ -17,20 +17,11 @@ from device.models import *
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 
-# Pseudo executables folder
-HELPER_FOLDER = os.path.join(settings.PROJECT_ROOT_PATH, 'device', 'helper')
-# Settings to replace
-DVBLAST_DUMMY = os.path.join(HELPER_FOLDER, 'dvblast_dummy.py')
-DVBLASTCTL_DUMMY = os.path.join(HELPER_FOLDER, 'dvblastctl_dummy.py')
-MULTICAT_DUMMY = os.path.join(HELPER_FOLDER, 'multicat_dummy.py')
-MULTICATCTL_DUMMY = os.path.join(HELPER_FOLDER, 'multicatctl_dummy.py')
-VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
-
-@override_settings(DVBLAST_COMMAND=DVBLAST_DUMMY)
-@override_settings(DVBLASTCTL_COMMAND=DVBLASTCTL_DUMMY)
-@override_settings(MULTICAT_COMMAND=MULTICAT_DUMMY)
-@override_settings(MULTICATCTL_COMMAND=MULTICATCTL_DUMMY)
-@override_settings(VLC_COMMAND=VLC_DUMMY)
+@override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
+@override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
+@override_settings(MULTICAT_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(MULTICATCTL_COMMAND=settings.MULTICATCTL_DUMMY)
+@override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class CommandsGenerationTest(TestCase):
     def setUp(self):
         import getpass

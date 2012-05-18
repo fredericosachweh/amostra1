@@ -9,6 +9,12 @@ from django.test.utils import override_settings
 from tv.models import Channel
 from device.models import *
 
+
+@override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
+@override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
+@override_settings(MULTICAT_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(MULTICATCTL_COMMAND=settings.MULTICATCTL_DUMMY)
+@override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class ChannelTest(TestCase):
     """
     Testes dos canais de televisão
