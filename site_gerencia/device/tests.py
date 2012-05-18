@@ -32,26 +32,7 @@ class CommandsGenerationTest(TestCase):
             username=getpass.getuser(),
             rsakey='~/.ssh/id_rsa',
         )
-        # Clean pre-detected NICs
-        NIC.objects.all().delete()
-        # Input interface
-        nic_a = NIC.objects.create(
-            server=server,
-            name='eth0',
-            ipv4='192.168.0.10',
-        )
-        # Output interface
-        nic_b = NIC.objects.create(
-            server=server,
-            name='eth1',
-            ipv4='10.0.1.10',
-        )
-        # Loopback
-        nic_c = NIC.objects.create(
-            server=server,
-            name='lo',
-            ipv4='127.0.0.1',
-        )
+        nic = NIC.objects.get(ipv4='127.0.0.1')
         antenna = Antenna.objects.create(
             satellite='StarOne C2',
             lnb_type='multiponto_c',
@@ -83,13 +64,13 @@ class CommandsGenerationTest(TestCase):
         )
         unicastin = UnicastInput.objects.create(
             server=server,
-            interface=nic_a,
+            interface=nic,
             port=30000,
             protocol='udp',
         )
         multicastin = MulticastInput.objects.create(
             server=server,
-            interface=nic_a,
+            interface=nic,
             port=40000,
             protocol='udp',
             ip='224.0.0.1',
@@ -102,43 +83,43 @@ class CommandsGenerationTest(TestCase):
             server=server,
             sid=1,
             sink=dvbtuner,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         service_b = DemuxedService.objects.create(
             server=server,
             sid=2,
             sink=dvbtuner,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         service_c = DemuxedService.objects.create(
             server=server,
             sid=3,
             sink=dvbtuner,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         service_d = DemuxedService.objects.create(
             server=server,
             sid=1,
             sink=isdbtuner,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         service_e = DemuxedService.objects.create(
             server=server,
             sid=1,
             sink=unicastin,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         service_f = DemuxedService.objects.create(
             server=server,
             sid=2,
             sink=unicastin,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         service_g = DemuxedService.objects.create(
             server=server,
             sid=1024,
             sink=multicastin,
-            nic_src=nic_c,
+            nic_src=nic,
         )
         internal_a = UniqueIP.objects.create(
             port=20000,
@@ -173,59 +154,59 @@ class CommandsGenerationTest(TestCase):
             ip_out='239.0.1.3',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_a,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
         recorder_a = StreamRecorder.objects.create(
             server=server,
             rotate=60,
             sink=internal_a,
             keep_time=168,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
         ipout_b = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.4',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_c,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
         ipout_c = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.5',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_d,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
         ipout_d = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.6',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_e,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
         recorder_b = StreamRecorder.objects.create(
             server=server,
             rotate=60,
             sink=internal_f,
             keep_time=130,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
         ipout_e = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.7',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_g,
-            nic_sink=nic_c,
+            nic_sink=nic,
         )
 
     def tearDown(self):
@@ -304,7 +285,7 @@ class CommandsGenerationTest(TestCase):
         unicastin = UnicastInput.objects.get(port=30000)
         expected_cmd = (
             "%s "
-            "-D @192.168.0.10:30000/udp "
+            "-D @127.0.0.1:30000/udp "
             "-c %s%d.conf "
             "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND,
