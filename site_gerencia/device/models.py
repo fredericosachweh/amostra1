@@ -395,6 +395,27 @@ class UniqueIP(models.Model):
         )
         return ret
 
+    def sink_str(self):
+        if self.sink is None:
+            return u''
+        return u'<a href="%s">%s</a>' % (
+            reverse('admin:device_%s_change' % self.sink._meta.module_name,
+                args=[self.sink.pk]), self.sink)
+    sink_str.allow_tags = True
+    sink_str.short_description = _(u'Entrada (sink)')
+
+    def src_str(self):
+        if len(self.src) is 0:
+            return u''
+        ret = []
+        for obj in self.src:
+            ret.append(u'<a href="%s">%s</a>' % (
+                reverse('admin:device_%s_change' % obj._meta.module_name,
+                    args=[obj.pk]), obj))
+        return u", ".join(ret)
+    src_str.allow_tags = True
+    src_str.short_description = _(u'Saídas (src)')
+
     @property
     def src(self):
         from itertools import chain

@@ -123,7 +123,11 @@ class AdminStreamRecorder(admin.ModelAdmin):
     form = forms.StreamRecorderForm
 
 
-admin.site.register(models.UniqueIP)
+class AdminUniqueIP(admin.ModelAdmin):
+    list_display = ('ip', 'port', 'sequential',
+                    'sink_str', 'src_str')
+
+admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Antenna)
 admin.site.register(models.DvbTuner, AdminDvbTuner)
