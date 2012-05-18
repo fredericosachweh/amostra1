@@ -114,11 +114,13 @@ class AdminMulticastOutput(admin.ModelAdmin):
 class AdminDemuxedService(admin.ModelAdmin):
     list_display = ('sid', 'provider', 'service_desc',
                     'server', 'sink', 'switch_link')
+    form = forms.DemuxedServiceForm
 
 
 class AdminStreamRecorder(admin.ModelAdmin):
     list_display = ('server', 'start_time', 'rotate',
                     'keep_time', 'channel', 'switch_link')
+    form = forms.StreamRecorderForm
 
 
 admin.site.register(models.UniqueIP)
