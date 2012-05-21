@@ -279,7 +279,7 @@ class Server(models.Model):
     def list_dir(self, directory='/'):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
         log = logging.getLogger('debug')
-        log.info('Listing dir on %s dir=%s', self, dir)
+        log.info('Listing dir on server "%s" dir="%s"', self, directory)
         ret = self.execute('/bin/ls %s' % directory)
         return map(lambda x: x.strip('\n'), ret)
 
