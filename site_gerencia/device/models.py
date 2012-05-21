@@ -279,7 +279,7 @@ class Server(models.Model):
     def list_dir(self, directory='/'):
         "Lista o diretório no servidor retornando uma lista do conteúdo"
         log = logging.getLogger('debug')
-        log.info('Listing dir on %s dir=%s', self, dir)
+        log.info('Listing dir on server "%s" dir="%s"', self, directory)
         ret = self.execute('/bin/ls %s' % directory)
         return map(lambda x: x.strip('\n'), ret)
 
@@ -301,7 +301,7 @@ class Server(models.Model):
 
     def create_tempfile(self):
         "Creates a temp file and return it's path"
-        return "".join(instance.execute('/bin/mktemp')).strip()
+        return "".join(self.execute('/bin/mktemp')).strip()
 
 @receiver(post_save, sender=Server)
 def Server_post_save(sender, instance, created, **kwargs):
@@ -317,7 +317,6 @@ def Server_post_save(sender, instance, created, **kwargs):
         instance.auto_create_nic()
         instance.auto_detect_digital_tuners()
         # Create the tmpfiles
-        tmpfile = NamedTemporaryFile()
         remote_tmpfile = instance.create_tempfile()
         # Create the udev rules file
         cmd = "/bin/env |" \
@@ -328,7 +327,7 @@ def Server_post_save(sender, instance, created, **kwargs):
             {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
              'add_url' : reverse('server_adapter_add', args=[instance.pk]),
              'rm_url' : reverse('server_adapter_remove', args=[instance.pk])}
-        tmpfile.file.truncate(0)
+        tmpfile = NamedTemporaryFile()
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
@@ -341,7 +340,7 @@ def Server_post_save(sender, instance, created, **kwargs):
                 kwargs={'pk' : instance.pk}),
              'coldstart_url' : reverse('device.views.server_coldstart',
                 kwargs={'pk' : instance.pk})}
-        tmpfile.file.truncate(0)
+        tmpfile = NamedTemporaryFile()
         tmpfile.file.write(init_script)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
@@ -349,10 +348,9 @@ def Server_post_save(sender, instance, created, **kwargs):
                          '/etc/init.d/iptv_coldstart' % remote_tmpfile)
         instance.execute('/usr/bin/sudo /bin/chmod +x ' \
                          '/etc/init.d/iptv_coldstart')
-        instance.execute('/usr/bin/sudo /sbin/chkconfig' \
-                         '/etc/init.d/iptv_coldstart on')
+        instance.execute('/usr/bin/sudo /sbin/chkconfig iptv_coldstart on')
         # Create the modprobe config file
-        tmpfile.file.truncate(0)
+        tmpfile = NamedTemporaryFile()
         tmpfile.file.write(MODPROBE_CONF)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
@@ -707,7 +705,9 @@ class InputModel(models.Model):
 
         def create_folder(path):
             try:
-                self.server.execute('mkdir -p %s' % path)
+                self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
+                self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
+                    self.server.username, self.server.username, path))
             except Exception as ex:
                 log = logging.getLogger('debug')
                 log.error(unicode(ex))
@@ -1219,11 +1219,19 @@ class OutputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders multicat needs"
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR,
-            persist=True)
-        self.server.execute('mkdir -p %s%d' % (
-            settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR)
+        
+        def create_folder(path):
+            try:
+                self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
+                self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
+                    self.server.username, self.server.username, path))
+            except Exception as ex:
+                log = logging.getLogger('debug')
+                log.error(unicode(ex))
+        
+        create_folder(settings.MULTICAT_SOCKETS_DIR)
+        create_folder(settings.MULTICAT_RECORDINGS_DIR)
+        create_folder(settings.MULTICAT_LOGS_DIR)
 
     def stop(self, recursive=False):
         super(OutputModel, self).stop()
