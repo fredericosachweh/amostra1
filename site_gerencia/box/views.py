@@ -79,7 +79,7 @@ def programme_info(request):
     
     channel_id = request.GET.get('channel_id')
     
-    guides = Guide.objects.filter(channel=channel_id,start__lte=now,stop__gt=now).order_by('start')
+    guides = Guide.objects.filter(channel__channelid=channel_id,start__lte=now,stop__gt=now)
     
     if len(guides) > 0:
         guide = guides[0]
@@ -213,7 +213,7 @@ def guide_programmes(request):
     
     #BUSCAR OS CANAIS LISTADOS NA TELA
     
-    guides = Guide.objects.filter(channel=channel_id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
+    guides = Guide.objects.filter(channel__channelid=channel_id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop)
     
     if len(guides) > 0:
         
@@ -297,7 +297,7 @@ def channel_programme_info(request):
     RunNowProgrammeId = int( request.GET.get('p') )
 
     if(RunNowChannelEpg and RunNowProgrammeId):
-        guides = Guide.objects.filter(channel=RunNowChannelEpg,programme=RunNowProgrammeId)
+        guides = Guide.objects.filter(channel__channelid=RunNowChannelEpg,programme=RunNowProgrammeId)
         if len(guides) > 0:
             guide = guides[0]
                     
@@ -509,10 +509,13 @@ def guide_mount_line_of_programe(request):
     #canal
     channelEpgRunNow = request.GET.get('c')
     
+    #canal Number
+    channelNumber = request.GET.get('ch')
+    
     #Y na lista de canais
     countY = int( request.GET.get('y') )
     
-    guides = Guide.objects.filter(channel=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).distinct('start')
+    guides = Guide.objects.filter(channel__channelid=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop)
     
     arrGuideLine = []
     if(len(guides)> 0):
@@ -536,6 +539,7 @@ def guide_mount_line_of_programe(request):
             titlesStr = smart_unicode(titles[0]['value']).upper()
         
             arrGuideLine.append({
+                'ch':channelNumber,
                 'c':channelEpgRunNow,
                 'p':programid,
                 'rn':is_run_now_programme,
@@ -574,9 +578,3 @@ def ping(request):
     image.save(response, "PNG")
     #return HttpResponse() # Remova o comentário para emular servidor sem conexão
     return response
-
-
-
-
-
-
