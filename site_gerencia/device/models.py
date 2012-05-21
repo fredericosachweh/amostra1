@@ -299,11 +299,15 @@ class Server(models.Model):
     def rm_file(self, path):
         self.execute('/bin/rm -f %s' % path)
 
+    def create_tempfile(self):
+        "Creates a temp file and return it's path"
+        return "".join(instance.execute('/bin/mktemp')).strip()
+
 @receiver(post_save, sender=Server)
 def Server_post_save(sender, instance, created, **kwargs):
     "Signal to prepare the server for use"
     from tempfile import NamedTemporaryFile
-    from helper.template_scripts import INIT_SCRIPT, UDEV_CONF
+    from helper.template_scripts import INIT_SCRIPT, UDEV_CONF, MODPROBE_CONF
     if created is True and instance.offline_mode is False:
         if instance.connect() is None:
             log = logging.getLogger('debug')
@@ -312,6 +316,9 @@ def Server_post_save(sender, instance, created, **kwargs):
             return # There is nothing we can do
         instance.auto_create_nic()
         instance.auto_detect_digital_tuners()
+        # Create the tmpfiles
+        tmpfile = NamedTemporaryFile()
+        remote_tmpfile = instance.create_tempfile()
         # Create the udev rules file
         cmd = "/bin/env |" \
               "/bin/grep SSH_CLIENT |" \
@@ -321,10 +328,9 @@ def Server_post_save(sender, instance, created, **kwargs):
             {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
              'add_url' : reverse('server_adapter_add', args=[instance.pk]),
              'rm_url' : reverse('server_adapter_remove', args=[instance.pk])}
-        tmpfile = NamedTemporaryFile()
+        tmpfile.file.truncate(0)
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
-        remote_tmpfile = "".join(instance.execute('/bin/mktemp')).strip()
         instance.put(tmpfile.name, remote_tmpfile)
         instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
                          '/etc/udev/rules.d/87-iptv.rules' % remote_tmpfile)
@@ -335,17 +341,23 @@ def Server_post_save(sender, instance, created, **kwargs):
                 kwargs={'pk' : instance.pk}),
              'coldstart_url' : reverse('device.views.server_coldstart',
                 kwargs={'pk' : instance.pk})}
-        tmpfile = NamedTemporaryFile()
+        tmpfile.file.truncate(0)
         tmpfile.file.write(init_script)
         tmpfile.file.flush()
-        remote_tmpfile = "".join(instance.execute('/bin/mktemp')).strip()
         instance.put(tmpfile.name, remote_tmpfile)
         instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
                          '/etc/init.d/iptv_coldstart' % remote_tmpfile)
         instance.execute('/usr/bin/sudo /bin/chmod +x ' \
                          '/etc/init.d/iptv_coldstart')
-        instance.execute('/usr/bin/sudo /sbin/chkconfig --add ' \
-                         '/etc/init.d/iptv_coldstart')
+        instance.execute('/usr/bin/sudo /sbin/chkconfig' \
+                         '/etc/init.d/iptv_coldstart on')
+        # Create the modprobe config file
+        tmpfile.file.truncate(0)
+        tmpfile.file.write(MODPROBE_CONF)
+        tmpfile.file.flush()
+        instance.put(tmpfile.name, remote_tmpfile)
+        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
+                         '/etc/modprobe.d/iptv-cianet.conf' % remote_tmpfile)
 
 
 class NIC(models.Model):
