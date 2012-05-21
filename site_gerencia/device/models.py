@@ -497,10 +497,13 @@ class DeviceServer(models.Model):
         return _(u'undefined')
 
     def start(self):
-        pass
+        log = logging.getLogger('debug')
+        log.info('Iniciando device %s', self)
 
     def stop(self):
         """Interrompe processo no servidor"""
+        log = logging.getLogger('debug')
+        log.info('Parando device %s', self)
         try:
             self.server.kill_process(self.pid)
             self.status = False
@@ -642,7 +645,7 @@ class DemuxedService(DeviceServer):
                 self.sink.reload_config()
 
     def running(self):
-        return self.status and self.enabled
+        return self.enabled and self.status and self.sink.runnig()
 
 
 class InputModel(models.Model):
@@ -876,6 +879,8 @@ class DigitalTuner(InputModel, DeviceServer):
 
     def start(self, adapter_num=None):
         "Starts a dvblast instance based on the current model's configuration"
+        log = logger.getLogger('debug')
+        log.info('Iniciando device %s', self)
         super(DigitalTuner, self).start()
         cmd = self._get_cmd(adapter_num)
         conf = self._get_config()
