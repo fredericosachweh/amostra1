@@ -317,7 +317,6 @@ def Server_post_save(sender, instance, created, **kwargs):
         instance.auto_create_nic()
         instance.auto_detect_digital_tuners()
         # Create the tmpfiles
-        tmpfile = NamedTemporaryFile()
         remote_tmpfile = instance.create_tempfile()
         # Create the udev rules file
         cmd = "/bin/env |" \
@@ -328,7 +327,7 @@ def Server_post_save(sender, instance, created, **kwargs):
             {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
              'add_url' : reverse('server_adapter_add', args=[instance.pk]),
              'rm_url' : reverse('server_adapter_remove', args=[instance.pk])}
-        tmpfile.file.truncate(0)
+        tmpfile = NamedTemporaryFile()
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
@@ -341,7 +340,7 @@ def Server_post_save(sender, instance, created, **kwargs):
                 kwargs={'pk' : instance.pk}),
              'coldstart_url' : reverse('device.views.server_coldstart',
                 kwargs={'pk' : instance.pk})}
-        tmpfile.file.truncate(0)
+        tmpfile = NamedTemporaryFile()
         tmpfile.file.write(init_script)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
@@ -351,7 +350,7 @@ def Server_post_save(sender, instance, created, **kwargs):
                          '/etc/init.d/iptv_coldstart')
         instance.execute('/usr/bin/sudo /sbin/chkconfig iptv_coldstart on')
         # Create the modprobe config file
-        tmpfile.file.truncate(0)
+        tmpfile = NamedTemporaryFile()
         tmpfile.file.write(MODPROBE_CONF)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
