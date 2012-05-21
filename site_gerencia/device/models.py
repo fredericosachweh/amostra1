@@ -804,7 +804,9 @@ class DigitalTunerHardware(models.Model):
         import re
         udevadm = '/sbin/udevadm'
         # Sanity check
-        if not self.server or not self.adapter_nr:
+	log = logging.getLogger('debug')
+	log.debug('grab_info: server=%s, adapter_nr=%s' % (self.server, self.adapter_nr))
+        if self.server is None or self.adapter_nr is None:
             raise Exception('server and adapter_nr attributes '
                                 'must both be pre-defined.')
         # Connect to server and obtain data

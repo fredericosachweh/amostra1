@@ -51,20 +51,23 @@ def server_update_adapter(request, pk, action):
     log.debug(u'Requisição para mudança de estado de um adapter')
     log.debug(u'server: %s, action: %s, adapter_nr: %s' % (
         pk, action, adapter_nr))
-    server = get_object_or_404(models.Server, pk)
+    server = get_object_or_404(models.Server, id=pk)
     if action == 'add':
         try:
             adapter = models.DigitalTunerHardware.objects.get(server=server,
                                                         adapter_nr=adapter_nr)
+            log.debug(u'adapter já existia na base de dados')
         except models.DigitalTunerHardware.DoesNotExist:
             adapter = models.DigitalTunerHardware(server=server,
                                                         adapter_nr=adapter_nr)
+            log.debug(u'adapter vai ser inserido na base de dados')
         adapter.grab_info()
         adapter.save()
     elif action == 'remove':
         adapter = get_object_or_404(models.DigitalTunerHardware,
                                    server=server, adapter_nr=adapter_nr)
         adapter.delete()
+        log.debug(u'o adapter %s foi removido da base de dados' % adapter)
     return HttpResponse()
 
 def server_list_dvbadapters(request):
@@ -127,7 +130,10 @@ def server_fileinput_scanfolder(request):
             settings.VLC_VIDEOFILES_DIR, file, file)
     return HttpResponse(list)
 
+@csrf_exempt
 def server_coldstart(request, pk):
+    log = logger.getLogger('debug')
+    log.debug('Iniciando rotina de coldstart no server com pk=%s' % pk)
     server = get_object_or_404(models.Server, id=pk)
     # Erase all
     models.DigitalTunerHardware.objects.filter(server=server).delete()
