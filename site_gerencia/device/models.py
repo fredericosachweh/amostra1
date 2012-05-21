@@ -301,7 +301,7 @@ class Server(models.Model):
 
     def create_tempfile(self):
         "Creates a temp file and return it's path"
-        return "".join(instance.execute('/bin/mktemp')).strip()
+        return "".join(self.execute('/bin/mktemp')).strip()
 
 @receiver(post_save, sender=Server)
 def Server_post_save(sender, instance, created, **kwargs):
@@ -349,8 +349,7 @@ def Server_post_save(sender, instance, created, **kwargs):
                          '/etc/init.d/iptv_coldstart' % remote_tmpfile)
         instance.execute('/usr/bin/sudo /bin/chmod +x ' \
                          '/etc/init.d/iptv_coldstart')
-        instance.execute('/usr/bin/sudo /sbin/chkconfig' \
-                         '/etc/init.d/iptv_coldstart on')
+        instance.execute('/usr/bin/sudo /sbin/chkconfig iptv_coldstart on')
         # Create the modprobe config file
         tmpfile.file.truncate(0)
         tmpfile.file.write(MODPROBE_CONF)
