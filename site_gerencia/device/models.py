@@ -497,12 +497,12 @@ class DeviceServer(models.Model):
         return _(u'undefined')
 
     def start(self):
-        log = logger.getLogger('debug')
+        log = logging.getLogger('debug')
         log.info('Iniciando device %s', self)
 
     def stop(self):
         """Interrompe processo no servidor"""
-        log = logger.getLogger('debug')
+        log = logging.getLogger('debug')
         log.info('Parando device %s', self)
         try:
             self.server.kill_process(self.pid)
