@@ -46,26 +46,30 @@ def server_list_interfaces(request):
 
 @csrf_exempt
 def server_update_adapter(request, pk, action):
+    import re
     log = logging.getLogger('debug')
     adapter_nr = request.POST.get('adapter_nr')
     log.debug(u'Requisição para mudança de estado de um adapter')
     log.debug(u'server: %s, action: %s, adapter_nr: %s' % (
         pk, action, adapter_nr))
     server = get_object_or_404(models.Server, id=pk)
+    # The adapter_nr will come in the format dvb1.frontend0, so I need to post process it
+    aux = re.match(r'dvb(\d+)\.frontend\d+', adapter_nr)
+    nr = aux.group(1)
     if action == 'add':
         try:
             adapter = models.DigitalTunerHardware.objects.get(server=server,
-                                                        adapter_nr=adapter_nr)
+                                                        adapter_nr=nr)
             log.debug(u'adapter já existia na base de dados')
         except models.DigitalTunerHardware.DoesNotExist:
             adapter = models.DigitalTunerHardware(server=server,
-                                                        adapter_nr=adapter_nr)
+                                                        adapter_nr=nr)
             log.debug(u'adapter vai ser inserido na base de dados')
         adapter.grab_info()
         adapter.save()
     elif action == 'remove':
         adapter = get_object_or_404(models.DigitalTunerHardware,
-                                   server=server, adapter_nr=adapter_nr)
+                                   server=server, adapter_nr=nr)
         adapter.delete()
         log.debug(u'o adapter %s foi removido da base de dados' % adapter)
     return HttpResponse()

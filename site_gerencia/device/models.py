@@ -780,6 +780,8 @@ class InputModel(models.Model):
 
 
 class DigitalTunerHardware(models.Model):
+    class Meta:
+        unique_together = ('server', 'adapter_nr')
 
     def __unicode__(self):
         return '[%s:%s] Bus: %s, Adapter: %s, Driver: %s, ID: %s' % (
