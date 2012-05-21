@@ -40,3 +40,14 @@ STATIC_URL = '/tvfiles/static/'
 #ROOT_URLCONF = '/tv'
 
 INTERNAL_IPS = ('127.0.0.1',)
+
+#MessageMiddleware
+#from django.contrib.messages.middleware.MessageMiddleware
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    #'lib.middleware.login.RequireLoginMiddleware',
+)
