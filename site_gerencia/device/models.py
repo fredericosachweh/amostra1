@@ -705,7 +705,9 @@ class InputModel(models.Model):
 
         def create_folder(path):
             try:
-                self.server.execute('mkdir -p %s' % path)
+                self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
+                self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
+                    self.server.username, self.server.username, path))
             except Exception as ex:
                 log = logging.getLogger('debug')
                 log.error(unicode(ex))
@@ -1217,11 +1219,19 @@ class OutputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders multicat needs"
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_SOCKETS_DIR,
-            persist=True)
-        self.server.execute('mkdir -p %s%d' % (
-            settings.MULTICAT_RECORDINGS_DIR, self.pk), persist=True)
-        self.server.execute('mkdir -p %s' % settings.MULTICAT_LOGS_DIR)
+        
+        def create_folder(path):
+            try:
+                self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
+                self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
+                    self.server.username, self.server.username, path))
+            except Exception as ex:
+                log = logging.getLogger('debug')
+                log.error(unicode(ex))
+        
+        create_folder(settings.MULTICAT_SOCKETS_DIR)
+        create_folder(settings.MULTICAT_RECORDINGS_DIR)
+        create_folder(settings.MULTICAT_LOGS_DIR)
 
     def stop(self, recursive=False):
         super(OutputModel, self).stop()
