@@ -126,6 +126,7 @@ class AdminStreamRecorder(admin.ModelAdmin):
 class AdminUniqueIP(admin.ModelAdmin):
     list_display = ('ip', 'port', 'sequential',
                     'sink_str', 'src_str')
+    form = forms.UniqueIPForm
 
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server,AdminServer)

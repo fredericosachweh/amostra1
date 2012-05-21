@@ -379,8 +379,8 @@ class UniqueIP(models.Model):
 
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, null=True)
-    object_id = models.PositiveIntegerField(null=True)
+    content_type = models.ForeignKey(ContentType, blank=True, null=True)
+    object_id = models.PositiveIntegerField(blank=True, null=True)
 
     def __unicode__(self):
         if self.sink is None:

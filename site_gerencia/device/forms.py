@@ -110,3 +110,8 @@ class MulticastOutputForm(GenericRelationForm):
 class StreamRecorderForm(GenericRelationForm):
     class Meta:
         model = StreamRecorder
+
+
+class UniqueIPForm(GenericRelationForm):
+    class Meta:
+        model = UniqueIP
