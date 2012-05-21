@@ -19,6 +19,8 @@ INIT_SCRIPT=u"""\
 
 start() {
         echo -n $"Sending a server started signal... "
+        modprobe dvb_usb
+        sleep 5 # Wait the devices to be detected
         /usr/bin/curl http://%(my_ip)s:%(my_port)s%(coldstart_url)s -d 'started=1'
         RETVAL=$?
         echo
@@ -52,7 +54,14 @@ esac
 exit $RETVAL
 """
 
-UDEV_CONF="""\
-ACTION=="add", SUBSYSTEM=="dvb", ENV{DVB_DEVICE_TYPE}=="frontend", RUN+="/usr/bin/curl http://%(my_ip)s:%(my_port)s%(add_url)s -d 'adapter_nr=%%n'"
-ACTION=="remove", SUBSYSTEM=="dvb", ENV{DVB_DEVICE_TYPE}=="frontend", RUN+="/usr/bin/curl http://%(my_ip)s:%(my_port)s%(rm_url)s -d 'adapter_nr=%%n'"
+UDEV_CONF=u"""\
+ACTION=="add",ATTRS{idVendor}=="04b4", GROUP="root", MODE="0666"
+ACTION=="add",ATTRS{idVendor}=="1554", GROUP="root", MODE="0666"
+ACTION=="add", SUBSYSTEM=="dvb", ENV{DVB_DEVICE_TYPE}=="frontend", RUN+="/usr/bin/curl http://%(my_ip)s:%(my_port)s%(add_url)s -d 'adapter_nr=%%k'"
+ACTION=="remove", SUBSYSTEM=="dvb", ENV{DVB_DEVICE_TYPE}=="frontend", RUN+="/usr/bin/curl http://%(my_ip)s:%(my_port)s%(rm_url)s -d 'adapter_nr=%%k'"
+"""
+
+MODPROBE_CONF=u"""\
+blacklist dvb_usb
+options dvb_usb_dw2102 debug=255 demod=0
 """
