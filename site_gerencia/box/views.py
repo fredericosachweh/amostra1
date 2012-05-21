@@ -65,7 +65,7 @@ def programme_info(request):
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
     #Seta uma data passada por GET
     if request.GET.get('now') and len(request.GET.get('now')) == 14:
-        nowStr = request.GET.get('now') 
+        nowStr = request.GET.get('now')
         yyyy = int(nowStr[0:4])
         mm   = int(nowStr[4:6])
         dd   = int(nowStr[6:8])
