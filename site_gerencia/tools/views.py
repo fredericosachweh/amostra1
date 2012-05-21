@@ -18,5 +18,12 @@ def log(request):
 def date(request):
     from datetime import datetime
     import time
-    return HttpResponse(time.mktime(datetime.now().timetuple()))
+    now = datetime.now()
+    #timestamp = time.mktime(now.timetuple())
+    #timestamp = now.strftime("%s")
+    #timestamp = time.mktime(time.gmtime())
+    timestamp = time.strftime("%s")
+    timezone = time.timezone
+    response = '{"timestamp": %s, "timezone": %d}'% (timestamp,timezone)
+    return HttpResponse(response)
     #return HttpResponse('2012-05-15 17:14:55.702043')
