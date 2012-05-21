@@ -319,8 +319,8 @@ def Server_post_save(sender, instance, created, **kwargs):
         my_ip = "".join(instance.execute(cmd)).strip()
         udev_conf = UDEV_CONF % \
             {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
-             'add_url' : reverse('server_adapter_add', args=[self.pk]),
-             'rm_url' : reverse('server_adapter_remove', args=[self.pk])}
+             'add_url' : reverse('server_adapter_add', args=[instance.pk]),
+             'rm_url' : reverse('server_adapter_remove', args=[instance.pk])}
         tmpfile = NamedTemporaryFile()
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
