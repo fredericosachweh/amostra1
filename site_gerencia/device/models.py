@@ -612,7 +612,7 @@ class DemuxedService(DeviceServer):
         blank=True)
     enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
-    nic_src = models.ForeignKey(NIC)
+    nic_src = models.ForeignKey(NIC, blank=True, null=True)
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in":
