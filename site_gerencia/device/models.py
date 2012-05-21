@@ -100,7 +100,6 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
-            log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             self.save()
             return 'Can not connect'
@@ -615,7 +614,7 @@ class DemuxedService(DeviceServer):
         blank=True)
     enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
-    nic_src = models.ForeignKey(NIC)
+    nic_src = models.ForeignKey(NIC, blank=True, null=True)
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in":
@@ -645,7 +644,13 @@ class DemuxedService(DeviceServer):
                 self.sink.reload_config()
 
     def running(self):
-        return self.enabled and self.status and self.sink.runnig()
+        return self.enabled and self.status and self.sink.running()
+
+    def switch_link(self):
+        if self.src.count() is 0:
+            return _(u'Desconfigurado')
+        return super(DemuxedService, self).switch_link()
+    switch_link.allow_tags = True
 
 
 class InputModel(models.Model):
@@ -879,8 +884,6 @@ class DigitalTuner(InputModel, DeviceServer):
 
     def start(self, adapter_num=None):
         "Starts a dvblast instance based on the current model's configuration"
-        log = logger.getLogger('debug')
-        log.info('Iniciando device %s', self)
         super(DigitalTuner, self).start()
         cmd = self._get_cmd(adapter_num)
         conf = self._get_config()

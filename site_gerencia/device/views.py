@@ -136,7 +136,7 @@ def server_fileinput_scanfolder(request):
 
 @csrf_exempt
 def server_coldstart(request, pk):
-    log = logger.getLogger('debug')
+    log = logging.getLogger('debug')
     log.debug('Iniciando rotina de coldstart no server com pk=%s' % pk)
     server = get_object_or_404(models.Server, id=pk)
     # Erase all
