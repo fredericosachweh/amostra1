@@ -129,10 +129,11 @@ class GuideResource(ModelResource):
             "start": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
             "stop": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
         }
+
     def dehydrate_start_timestamp(self, bundle):
-        return '%d'%(time.mktime(bundle.obj.start.timetuple()))
+        return time.mktime(bundle.obj.start.timetuple())
     def dehydrate_stop_timestamp(self, bundle):
-        return '%d'%(time.mktime(bundle.obj.stop.timetuple()))
+        return time.mktime(bundle.obj.stop.timetuple())
     def dehydrate_current(self, bundle):
         return datetime.now() >= bundle.obj.start and datetime.now() <= bundle.obj.stop
 

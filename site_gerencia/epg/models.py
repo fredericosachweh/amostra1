@@ -9,6 +9,8 @@ from django.utils.translation import ugettext as _
 from dateutil import tz
 from pytz import timezone
 
+from datetime import datetime
+
 class Epg_Source(models.Model):
 
 	class Meta:
