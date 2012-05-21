@@ -45,12 +45,14 @@ def server_list_interfaces(request):
     return HttpResponse(response)
 
 @csrf_exempt
-def server_update_adapter(request, method):
-    # Identify server by its IP
-    remote_addr =  request.META.get('REMOTE_ADDR', None)
-    server = get_object_or_404(models.Server, host=remote_addr)
+def server_update_adapter(request, pk, action):
+    log = logging.getLogger('debug')
     adapter_nr = request.POST.get('adapter_nr')
-    if method == 'add':
+    log.debug(u'Requisição para mudança de estado de um adapter')
+    log.debug(u'server: %s, action: %s, adapter_nr: %s' % (
+        pk, action, adapter_nr))
+    server = get_object_or_404(models.Server, pk)
+    if action == 'add':
         try:
             adapter = models.DigitalTunerHardware.objects.get(server=server,
                                                         adapter_nr=adapter_nr)
@@ -59,7 +61,7 @@ def server_update_adapter(request, method):
                                                         adapter_nr=adapter_nr)
         adapter.grab_info()
         adapter.save()
-    elif method == 'remove':
+    elif action == 'remove':
         adapter = get_object_or_404(models.DigitalTunerHardware,
                                    server=server, adapter_nr=adapter_nr)
         adapter.delete()
