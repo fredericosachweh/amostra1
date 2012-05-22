@@ -147,6 +147,9 @@ def server_coldstart(request, pk):
 
 def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     try:
         if action == 'start':
             device.start()
@@ -160,11 +163,8 @@ def deviceserver_switchlink(request, action, klass, pk):
     except Exception as ex:
         response = '%s: %s' % (ex.__class__.__name__, ex)
         t = loader.get_template('device_500.html')
-        c = RequestContext(request, {'error' : response})
+        c = RequestContext(request, {'error' : response, 'return_url' : url})
         return HttpResponseServerError(t.render(c))
-    url = request.META.get('HTTP_REFERER')
-    if url is None:
-        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     return HttpResponseRedirect(url)
 
 def inputmodel_scan(request):
