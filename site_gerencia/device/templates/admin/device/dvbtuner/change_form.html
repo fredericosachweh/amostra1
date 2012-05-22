@@ -31,7 +31,10 @@
                     if (data) field.append(data);
                     // Pre select the last chosen value
                     var adapter = '{{ original.adapter }}';
-                    if (adapter) field.val(adapter);
+                    if (adapter) {
+                        field.append('<option value="'+adapter+'">DVBWorld '+adapter+'</option>');
+                        field.val(adapter);
+                    }
                     field.removeAttr("disabled");
               	});
             }
