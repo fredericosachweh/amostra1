@@ -688,8 +688,12 @@ class InputModel(models.Model):
                 sid = service.sid
                 ip = service.src.all()[0].ip
                 port = service.src.all()[0].port
-                # Assume internal IPs always work with raw UDP
-                conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
+                nic = service.nic_src
+                conf += u'%s:%d' % (ip, port)
+                if nic is not None:
+                    conf += u'@%s' % nic.ipv4
+                # Assume internal IPs always work under raw UDP
+                conf += u'/udp 1 %d\n' % sid
 
         return conf
 
