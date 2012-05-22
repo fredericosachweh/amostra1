@@ -57,6 +57,7 @@ class Server(models.Model):
         return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
 
     switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -534,7 +535,13 @@ class DeviceServer(models.Model):
         if (hasattr(self, 'src') and self.src is None) or \
            (hasattr(self, 'sink') and self.sink is None):
             return _(u'Desconfigurado')
-        if self.running():
+        running = self.running()
+        if running is False and self.status is True:
+            url = reverse('%s_recover' % module_name,
+                kwargs={'pk': self.id})
+            return 'Crashed<a href="%s" id="%s_id_%s" style="color:red;">' \
+                   ' ( Recuperar )</a>' % (url, module_name, self.id)
+        if running is True and self.status is True:
             url = reverse('%s_stop' % module_name,
                 kwargs={'pk': self.id})
             return '<a href="%s" id="%s_id_%s" style="color:green;">' \
@@ -651,6 +658,7 @@ class DemuxedService(DeviceServer):
             return _(u'Desconfigurado')
         return super(DemuxedService, self).switch_link()
     switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
 
 
 class InputModel(models.Model):

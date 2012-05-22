@@ -145,13 +145,16 @@ def server_coldstart(request, pk):
     tuners = server.auto_detect_digital_tuners()
     return HttpResponse(str(tuners))
 
-def deviceserver_switchlink(request, method, klass, pk):
+def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
     try:
-        if method == 'start':
+        if action == 'start':
             device.start()
-        elif method == 'stop':
+        elif action == 'stop':
             device.stop()
+        elif action == 'recover':
+            device.status = False
+            device.save()
         else:
             raise NotImplementedError()
     except Exception as ex:
