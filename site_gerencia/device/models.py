@@ -389,7 +389,9 @@ class UniqueIP(models.Model):
 
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, blank=True, null=True)
+    content_type = models.ForeignKey(ContentType, 
+        limit_choices_to={"model__in": ("DemuxedService", "FileInput")},
+        blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
     def __unicode__(self):
@@ -1315,10 +1317,11 @@ class MulticastOutput(IPOutput):
     def _get_cmd(self):
         cmd = u'%s' % settings.MULTICAT_COMMAND
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
-        cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
+        cmd += ' -u @%s:%d/ifaddr=%s' % (
+            self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         if self.protocol == 'udp':
             cmd += ' -U'
-        cmd += ' %s:%d' % (self.ip_out, self.port)
+        cmd += ' %s:%d@%s' % (self.ip_out, self.port, self.interface.ipv4)
         return cmd
 
 ## Gravação:
