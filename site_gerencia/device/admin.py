@@ -108,6 +108,17 @@ class AdminFileInput(admin.ModelAdmin):
 class AdminMulticastOutput(admin.ModelAdmin):
     list_display = ('ip_out', 'port', 'protocol',
         'server', 'interface', 'switch_link')
+    fieldsets = (
+        (_(u'Servidor'), {
+            'fields' : ('server',)
+        }),
+        (_(u'Entrada'), {
+            'fields' : ('nic_sink', 'content_type', 'object_id')
+        }),
+        (_(u'Saída'), {
+            'fields' : ('interface', 'ip_out', 'port', 'protocol')
+        }),
+    )
     form = forms.MulticastOutputForm
 
 
@@ -124,8 +135,16 @@ class AdminStreamRecorder(admin.ModelAdmin):
 
 
 class AdminUniqueIP(admin.ModelAdmin):
-    list_display = ('ip', 'port', 'sequential',
-                    'sink_str', 'src_str')
+    list_display = ('ip', 'port', 'sink_str', 'src_str')
+    exclude = ('sequential',)
+    fieldsets = (
+        (None, {
+            'fields' : ('ip', 'port')
+        }),
+        (_(u'Entrada'), {
+            'fields' : ('content_type', 'object_id')
+        }),
+    )
     form = forms.UniqueIPForm
 
 admin.site.register(models.UniqueIP, AdminUniqueIP)

@@ -1297,7 +1297,7 @@ class MulticastOutput(IPOutput):
         verbose_name = _(u'Saída IP multicast')
         verbose_name_plural = _(u'Saídas IP multicast')
 
-    ip_out = models.IPAddressField(_(u'Endereço IP multicast'))
+    ip_out = models.IPAddressField(_(u'Endereço IP multicast'), unique=True)
     nic_sink = models.ForeignKey(NIC, related_name='nic_sink',
         verbose_name=_(u'Interface de rede interna'))
 
