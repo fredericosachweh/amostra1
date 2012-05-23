@@ -1,11 +1,13 @@
-'<option value="2">bar0 - 172.17.0.2</option>'#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 """
 Testes unitários
 """
 
+import os
 from django.test import TestCase
 from django.test import LiveServerTestCase
+from django.test.utils import override_settings
 from django.test.client import Client
 from django.test.client import RequestFactory
 from django.conf import settings
@@ -15,7 +17,11 @@ from device.models import *
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 
-
+@override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
+@override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
+@override_settings(MULTICAT_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(MULTICATCTL_COMMAND=settings.MULTICATCTL_DUMMY)
+@override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class CommandsGenerationTest(TestCase):
     def setUp(self):
         import getpass
@@ -25,20 +31,8 @@ class CommandsGenerationTest(TestCase):
             ssh_port=22,
             username=getpass.getuser(),
             rsakey='~/.ssh/id_rsa',
-            offline_mode=True,
         )
-        # Input interface
-        nic_a = NIC.objects.create(
-            server=server,
-            name='eth0',
-            ipv4='192.168.0.10',
-        )
-        # Output interface
-        nic_b = NIC.objects.create(
-            server=server,
-            name='eth1',
-            ipv4='10.0.1.10',
-        )
+        nic = NIC.objects.get(ipv4='127.0.0.1')
         antenna = Antenna.objects.create(
             satellite='StarOne C2',
             lnb_type='multiponto_c',
@@ -70,13 +64,13 @@ class CommandsGenerationTest(TestCase):
         )
         unicastin = UnicastInput.objects.create(
             server=server,
-            interface=nic_a,
+            interface=nic,
             port=30000,
             protocol='udp',
         )
         multicastin = MulticastInput.objects.create(
             server=server,
-            interface=nic_a,
+            interface=nic,
             port=40000,
             protocol='udp',
             ip='224.0.0.1',
@@ -89,125 +83,130 @@ class CommandsGenerationTest(TestCase):
             server=server,
             sid=1,
             sink=dvbtuner,
+            nic_src=nic,
         )
         service_b = DemuxedService.objects.create(
             server=server,
             sid=2,
             sink=dvbtuner,
+            nic_src=nic,
         )
         service_c = DemuxedService.objects.create(
             server=server,
             sid=3,
             sink=dvbtuner,
+            nic_src=nic,
         )
         service_d = DemuxedService.objects.create(
             server=server,
             sid=1,
             sink=isdbtuner,
+            nic_src=nic,
         )
         service_e = DemuxedService.objects.create(
             server=server,
             sid=1,
             sink=unicastin,
+            nic_src=nic,
         )
         service_f = DemuxedService.objects.create(
             server=server,
             sid=2,
             sink=unicastin,
+            nic_src=nic,
         )
         service_g = DemuxedService.objects.create(
             server=server,
             sid=1024,
             sink=multicastin,
+            nic_src=nic,
         )
         internal_a = UniqueIP.objects.create(
             port=20000,
             sink=service_a,
-            nic=NIC.objects.filter(server=server)[0],
         )
         internal_b = UniqueIP.objects.create(
             port=20000,
             sink=service_b,
-            nic=NIC.objects.filter(server=server)[0],
         )
         internal_c = UniqueIP.objects.create(
             port=20000,
             sink=service_d,
-            nic=NIC.objects.filter(server=server)[0],
         )
         internal_d = UniqueIP.objects.create(
             port=20000,
             sink=service_e,
-            nic=NIC.objects.filter(server=server)[0],
         )
         internal_e = UniqueIP.objects.create(
             port=20000,
             sink=service_f,
-            nic=NIC.objects.filter(server=server)[0],
         )
         internal_f = UniqueIP.objects.create(
             port=20000,
             sink=service_g,
-            nic=NIC.objects.filter(server=server)[0],
         )
         internal_g = UniqueIP.objects.create(
             port=20000,
             sink=fileinput,
-            nic=NIC.objects.filter(server=server)[0],
         )
         ipout_a = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.3',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_a,
+            nic_sink=nic,
         )
         recorder_a = StreamRecorder.objects.create(
             server=server,
             rotate=60,
-            folder='/tmp/recording_a',
             sink=internal_a,
-            keep_time=168
+            keep_time=168,
+            nic_sink=nic,
         )
         ipout_b = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.4',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_c,
+            nic_sink=nic,
         )
         ipout_c = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.5',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_d,
+            nic_sink=nic,
         )
         ipout_d = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.6',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_e,
+            nic_sink=nic,
         )
         recorder_b = StreamRecorder.objects.create(
             server=server,
             rotate=60,
-            folder='/tmp/recording_b',
             sink=internal_f,
             keep_time=130,
+            nic_sink=nic,
         )
         ipout_e = MulticastOutput.objects.create(
             server=server,
             ip_out='239.0.1.7',
             port=10000,
             protocol='udp',
-            interface=nic_b,
+            interface=nic,
             sink=internal_g,
+            nic_sink=nic,
         )
 
     def tearDown(self):
@@ -229,13 +228,24 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd())
-        # Workaround: this should be done inside the start method
-        for service in tuner.src.all():
-            service.enabled = True
-            service.save()
+        
+        tuner.start()
+        self.assertTrue(tuner.running())
+        self.assertTrue(tuner.status)
+        
+        tuner.start_all_services()
+        for service in tuner._list_all_services():
+            self.assertTrue(service.status)
         
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
+        
+        tuner.stop()
+        self.assertFalse(tuner.running())
+        self.assertFalse(tuner.status)
+        
+        for service in tuner._list_all_services():
+            self.assertFalse(service.status)
 
     def test_isdbtuner(self):
         tuner = IsdbTuner.objects.get(pk=2)
@@ -252,18 +262,30 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
-        for service in tuner.src.all():
-            service.enabled = True
-            service.save()
-
+        
+        tuner.start(adapter_num=1)
+        self.assertTrue(tuner.running())
+        self.assertTrue(tuner.status)
+        
+        tuner.start_all_services()
+        for service in tuner._list_all_services():
+            self.assertTrue(service.status)
+        
         expected_conf = u'239.1.0.4:20000/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
+        
+        tuner.stop()
+        self.assertFalse(tuner.running())
+        self.assertFalse(tuner.status)
+        
+        for service in tuner._list_all_services():
+            self.assertFalse(service.status)
 
     def test_unicastinput(self):
         unicastin = UnicastInput.objects.get(port=30000)
         expected_cmd = (
             "%s "
-            "-D @192.168.0.10:30000/udp "
+            "-D @127.0.0.1:30000/udp "
             "-c %s%d.conf "
             "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND,
@@ -271,12 +293,24 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
-        for service in unicastin.src.all():
-            service.enabled = True
-            service.save()
-
+        
+        unicastin.start()
+        self.assertTrue(unicastin.running())
+        self.assertTrue(unicastin.status)
+        
+        unicastin.start_all_services()
+        for service in unicastin._list_all_services():
+            self.assertTrue(service.status)
+        
         expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
+        
+        unicastin.stop()
+        self.assertFalse(unicastin.running())
+        self.assertFalse(unicastin.status)
+        
+        for service in unicastin._list_all_services():
+            self.assertFalse(service.status)
 
     def test_multicastinput(self):
         multicastin = MulticastInput.objects.get(port=40000)
@@ -290,21 +324,49 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
              )
         self.assertEqual(expected_cmd, multicastin._get_cmd())
-        for service in multicastin.src.all():
-            service.enabled = True
-            service.save()
-
+        
+        multicastin.start()
+        self.assertTrue(multicastin.running())
+        self.assertTrue(multicastin.status)
+        
+        multicastin.start_all_services()
+        for service in multicastin._list_all_services():
+            self.assertTrue(service.status)
+        
         expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
+        
+        multicastin.stop()
+        self.assertFalse(multicastin.running())
+        self.assertFalse(multicastin.status)
+        
+        for service in multicastin._list_all_services():
+            self.assertFalse(service.status)
 
     def test_demuxedinput(self):
+        """When starting a demuxedinput the 
+           connected device should start as well"""
         unicastin = UnicastInput.objects.get(port=30000)
         self.assertFalse(unicastin.running())
-        services = unicastin.src.all()
-        service_a = services[0]
-        service_b = services[1]
         
+        services = unicastin._list_all_services()
+        if len(services) > 0:
+            service = services[0]
+        else:
+            self.fail("There is no service attached to this device")
         
+        # TODO: coerência entre banco e instância
+        service.start()
+        # recarregando o banco porque o unicastin atual esta diferente do banco
+        unicastin = UnicastInput.objects.get(port=30000)
+        self.assertTrue(service.running())
+        self.assertTrue(unicastin.running())
+        
+        unicastin.stop()
+        # recarregando o banco porque o service atual esta diferente do banco
+        service = DemuxedService.objects.get(pk=service.pk)
+        self.assertFalse(unicastin.running())
+        self.assertFalse(service.running())
 
     def test_fileinput(self):
         fileinput = FileInput.objects.all()[0]
@@ -315,6 +377,12 @@ class CommandsGenerationTest(TestCase):
             '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
         ) % (settings.VLC_COMMAND)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
+        
+        fileinput.start()
+        self.assertTrue(fileinput.running())
+        
+        fileinput.stop()
+        self.assertFalse(fileinput.running())
 
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
@@ -327,10 +395,15 @@ class CommandsGenerationTest(TestCase):
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
              )
         self.assertEqual(expected_cmd, ipout._get_cmd())
+        
+        ipout.start()
+        self.assertTrue(ipout.running())
+        
+        ipout.stop()
+        self.assertFalse(ipout.running())
 
     def test_streamrecorder(self):
-        folder='/tmp/recording_a'
-        recorder = StreamRecorder.objects.get(folder=folder)
+        recorder = StreamRecorder.objects.get(keep_time=168)
         expected_cmd = (
             "%s "
             "-r 97200000000 " # 27M * 60 * 60
@@ -339,9 +412,15 @@ class CommandsGenerationTest(TestCase):
             "%s/%d"
         ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, recorder.pk,
-             folder, recorder.pk,
+             settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
              )
         self.assertEqual(expected_cmd, recorder._get_cmd())
+        
+        recorder.start()
+        self.assertTrue(recorder.running())
+        
+        recorder.stop()
+        self.assertFalse(recorder.running())
 
     def test_connections(self):
         # Test dvbtuner generic relation
@@ -598,7 +677,7 @@ class UniqueIPTest(TestCase):
             ssh_port=22)
         nic = NIC.objects.create(server=srv, ipv4='127.0.0.1')
         for i in range(1024):
-            ip1 = UniqueIP(nic=nic)
+            ip1 = UniqueIP()
             ip1.save()
 
 
@@ -898,6 +977,13 @@ class TestViews(TestCase):
     def test_fileinput_scanfolder(self):
         import re
         server = Server.objects.get(pk=1)
+        # Check if the videos folder is acessible
+        try:
+            server.execute('ls %s' % settings.VLC_VIDEOFILES_DIR)
+        except Server.ExecutionFailure:
+            raise self.failureException(
+                "The %s folder doesn't exists or is inacessible" % 
+                    settings.VLC_VIDEOFILES_DIR)
         # Create a temporary file inside the videos folder
         out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)
         # Make sure the file name is returned on the list
@@ -914,55 +1000,53 @@ class TestViews(TestCase):
         self.assertIn(expected, options)
 
 
-class TestRecord(TestCase):
-    """
-    Test record stream on remote server
-    """
-
-    def setUp(self):
-        import getpass
-        server = Server.objects.create(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username=getpass.getuser(),
-            rsakey='~/.ssh/id_rsa',
-            offline_mode=True,
-        )
-        NIC.objects.create(
-            server=server,
-            name='eth0',
-            ipv4='192.168.0.10',
-        )
-        NIC.objects.create(
-            server=server,
-            name='eth1',
-            ipv4='10.0.1.10',
-        )
-
-    def test_record(self):
-        srv = Server.objects.get(name='local')
-        ext_ip = UniqueIP.objects.create(
-            port=20000,
-            nic=NIC.objects.filter(server=srv)[0],
-        )
-        ext_ip.ip = '127.0.0.1'
-        ext_ip.save()
-        recorder = StreamRecorder.objects.create(
-            server=srv,
-            rotate=60,
-            folder='/tmp/recording_xx',
-            keep_time=130,
-            sink=ext_ip,
-        )
-        cmd_expected = '%s \
--r %d -c %s%d.sock -u @127.0.0.1:20000 /tmp/recording_xx/%d' % (
-            settings.MULTICAT_COMMAND,
-            (60*60*27000000),
-            settings.MULTICAT_SOCKETS_DIR,
-            recorder.pk,
-            recorder.pk,
-            )
-        self.assertEqual(recorder._get_cmd(), cmd_expected,
-            'Comando de gravação difere do esperado')
+#class TestRecord(TestCase):
+#    """
+#    Test record stream on remote server
+#    """
+#
+#    def setUp(self):
+#        import getpass
+#        server = Server.objects.create(
+#            name='local',
+#            host='127.0.0.1',
+#            ssh_port=22,
+#            username=getpass.getuser(),
+#            rsakey='~/.ssh/id_rsa',
+#            offline_mode=True,
+#        )
+#        NIC.objects.create(
+#            server=server,
+#            name='eth0',
+#            ipv4='192.168.0.10',
+#        )
+#        NIC.objects.create(
+#            server=server,
+#            name='eth1',
+#            ipv4='10.0.1.10',
+#        )
+#
+#    def test_record(self):
+#        srv = Server.objects.get(name='local')
+#        ext_ip = UniqueIP.objects.create(
+#            port=20000,
+#            ip='127.0.0.1',
+#        )
+#        recorder = StreamRecorder.objects.create(
+#            server=srv,
+#            rotate=60,
+#            folder='/tmp/recording_xx',
+#            keep_time=130,
+#            sink=ext_ip,
+#        )
+#        cmd_expected = '%s \
+#-r %d -c %s%d.sock -u @127.0.0.1:20000 /tmp/recording_xx/%d' % (
+#            settings.MULTICAT_COMMAND,
+#            (60*60*27000000),
+#            settings.MULTICAT_SOCKETS_DIR,
+#            recorder.pk,
+#            recorder.pk,
+#            )
+#        self.assertEqual(recorder._get_cmd(), cmd_expected,
+#            'Comando de gravação difere do esperado')
 

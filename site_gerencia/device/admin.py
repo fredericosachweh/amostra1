@@ -108,15 +108,46 @@ class AdminFileInput(admin.ModelAdmin):
 class AdminMulticastOutput(admin.ModelAdmin):
     list_display = ('ip_out', 'port', 'protocol',
         'server', 'interface', 'switch_link')
+    fieldsets = (
+        (_(u'Servidor'), {
+            'fields' : ('server',)
+        }),
+        (_(u'Entrada'), {
+            'fields' : ('nic_sink', 'content_type', 'object_id')
+        }),
+        (_(u'Saída'), {
+            'fields' : ('interface', 'ip_out', 'port', 'protocol')
+        }),
+    )
     form = forms.MulticastOutputForm
 
 
 class AdminDemuxedService(admin.ModelAdmin):
     list_display = ('sid', 'provider', 'service_desc',
                     'server', 'sink', 'switch_link')
+    form = forms.DemuxedServiceForm
 
 
-admin.site.register(models.UniqueIP)
+class AdminStreamRecorder(admin.ModelAdmin):
+    list_display = ('server', 'start_time', 'rotate',
+                    'keep_time', 'channel', 'switch_link')
+    form = forms.StreamRecorderForm
+
+
+class AdminUniqueIP(admin.ModelAdmin):
+    list_display = ('ip', 'port', 'sink_str', 'src_str')
+    exclude = ('sequential',)
+    fieldsets = (
+        (None, {
+            'fields' : ('ip', 'port')
+        }),
+        (_(u'Entrada'), {
+            'fields' : ('content_type', 'object_id')
+        }),
+    )
+    form = forms.UniqueIPForm
+
+admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Antenna)
 admin.site.register(models.DvbTuner, AdminDvbTuner)
@@ -126,4 +157,4 @@ admin.site.register(models.MulticastInput, AdminMulticastInput)
 admin.site.register(models.FileInput, AdminFileInput)
 admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
-admin.site.register(models.StreamRecorder)
+admin.site.register(models.StreamRecorder, AdminStreamRecorder)

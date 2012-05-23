@@ -9,10 +9,11 @@ from django.http      import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template  import RequestContext
 
-from canal.models     import Canal
+from tv.models        import Channel
 
 from django.conf      import settings
 from django.core      import serializers
+
 
 #usado para converter strings
 from django.utils.encoding import smart_str, smart_unicode
@@ -21,18 +22,7 @@ def index(request):
     """
     Imprime informações no console e exibe requsição do box pro setupbox
     """
-    #print(request.COOKIES)
-    #print(dir(request.META))
-    #print(' | '.join(request.META))
-    #print('---->IP:',request.META['REMOTE_ADDR'],end='|',sep='=')
     stress = request.GET.get('stress')
-    #print('IP=%s'%request.META['REMOTE_ADDR'])
-    #print('IP: %s %s' %(request.REMOTE_ADDR,request.REMOTE_HOST))
-    #return render_to_response(
-    #                          'box/index.html',
-    #                          { 'stress':stress },
-    #                          context_instance=RequestContext(request)
-    #                          )
     return HttpResponseRedirect('%sfrontend/'%settings.MEDIA_URL)
 
 def setup(request):
@@ -46,25 +36,21 @@ def setup(request):
 
 def auth(request, mac = None):
     """Realiza a autenticação do setupbox atravéz de seu endereço MAC"""
-    #print('MAC=%s'%mac)
     return HttpResponse('{"MAC":"%s"}'%mac)
 
 def remote_log(request):
     """
     Exibe log no console
     """
-    #print(dir(request))
-    #print('----->ERROR IP: %s' %request.META.get('REMOTE_ADDR'))
-    #print('message',request.POST.get('body'))
-    #print('stack',request.POST.get('stack'))
     return HttpResponse('{"success":"true"}')
 
 def canal_list(request):
     """
     Usado pelo setupbox para pegar a lista de canais
     """
-    canais = Canal.objects.filter(enabled=True).order_by('numero')
-    json = serializers.serialize('json', canais, indent=2,use_natural_keys=True)
+    channels = Channel.objects.filter(enabled=True).order_by('number')
+    
+    json = serializers.serialize('json', channels, indent=2,use_natural_keys=True)
     return HttpResponse(json,content_type='application/json')
 
 def programme_info(request):
@@ -79,7 +65,7 @@ def programme_info(request):
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
     #Seta uma data passada por GET
     if request.GET.get('now') and len(request.GET.get('now')) == 14:
-        nowStr = request.GET.get('now') 
+        nowStr = request.GET.get('now')
         yyyy = int(nowStr[0:4])
         mm   = int(nowStr[4:6])
         dd   = int(nowStr[6:8])
@@ -93,7 +79,7 @@ def programme_info(request):
     
     channel_id = request.GET.get('channel_id')
     
-    guides = Guide.objects.filter(channel=channel_id,start__lte=now,stop__gt=now).order_by('start')
+    guides = Guide.objects.filter(channel__channelid=channel_id,start__lte=now,stop__gt=now)
     
     if len(guides) > 0:
         guide = guides[0]
@@ -227,7 +213,7 @@ def guide_programmes(request):
     
     #BUSCAR OS CANAIS LISTADOS NA TELA
     
-    guides = Guide.objects.filter(channel=channel_id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
+    guides = Guide.objects.filter(channel__channelid=channel_id,start__gte=rangeTimeStart,stop__lte=rangeTimeStop)
     
     if len(guides) > 0:
         
@@ -311,7 +297,7 @@ def channel_programme_info(request):
     RunNowProgrammeId = int( request.GET.get('p') )
 
     if(RunNowChannelEpg and RunNowProgrammeId):
-        guides = Guide.objects.filter(channel=RunNowChannelEpg,programme=RunNowProgrammeId)
+        guides = Guide.objects.filter(channel__channelid=RunNowChannelEpg,programme=RunNowProgrammeId)
         if len(guides) > 0:
             guide = guides[0]
                     
@@ -523,10 +509,13 @@ def guide_mount_line_of_programe(request):
     #canal
     channelEpgRunNow = request.GET.get('c')
     
+    #canal Number
+    channelNumber = request.GET.get('ch')
+    
     #Y na lista de canais
     countY = int( request.GET.get('y') )
     
-    guides = Guide.objects.filter(channel=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).distinct('start')
+    guides = Guide.objects.filter(channel__channelid=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop)
     
     arrGuideLine = []
     if(len(guides)> 0):
@@ -550,6 +539,7 @@ def guide_mount_line_of_programe(request):
             titlesStr = smart_unicode(titles[0]['value']).upper()
         
             arrGuideLine.append({
+                'ch':channelNumber,
                 'c':channelEpgRunNow,
                 'p':programid,
                 'rn':is_run_now_programme,
@@ -571,19 +561,10 @@ def guide_mount_line_of_programe(request):
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
 
-def canal_update(request):
-    """Retorna a data de atualização mais recente da lista de canais"""
-    #print('---->IP:',request.META['REMOTE_ADDR'],end=' ')
-    #sys.stdout.flush()
-    #print('META',' | '.join(request.META))
-    atual = Canal.objects.all().order_by('-atualizado')[0]
-    #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.strftime('%Y-%m-%dT%H:%M:%S')))
-    #return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.isoformat()))
-    return HttpResponse('{"atualizado":"%s"}'%(atual.atualizado.ctime()))
-
 def ping(request):
     """ Responde true """
-    print('--> Ping from %s' % (request.META['REMOTE_ADDR']))
+    if settings.DEBUG == True:
+        print('--> Ping from %s' % (request.META['REMOTE_ADDR']))
     try:
         import Image
     except:
@@ -597,9 +578,3 @@ def ping(request):
     image.save(response, "PNG")
     #return HttpResponse() # Remova o comentário para emular servidor sem conexão
     return response
-
-
-
-
-
-

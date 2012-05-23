@@ -45,24 +45,33 @@ def server_list_interfaces(request):
     return HttpResponse(response)
 
 @csrf_exempt
-def server_update_adapter(request, method):
-    # Identify server by its IP
-    remote_addr =  request.META.get('REMOTE_ADDR', None)
-    server = get_object_or_404(models.Server, host=remote_addr)
+def server_update_adapter(request, pk, action):
+    import re
+    log = logging.getLogger('debug')
     adapter_nr = request.POST.get('adapter_nr')
-    if method == 'add':
+    log.debug(u'Requisição para mudança de estado de um adapter')
+    log.debug(u'server: %s, action: %s, adapter_nr: %s' % (
+        pk, action, adapter_nr))
+    server = get_object_or_404(models.Server, id=pk)
+    # The adapter_nr will come in the format dvb1.frontend0, so I need to post process it
+    aux = re.match(r'dvb(\d+)\.frontend\d+', adapter_nr)
+    nr = aux.group(1)
+    if action == 'add':
         try:
             adapter = models.DigitalTunerHardware.objects.get(server=server,
-                                                        adapter_nr=adapter_nr)
+                                                        adapter_nr=nr)
+            log.debug(u'adapter já existia na base de dados')
         except models.DigitalTunerHardware.DoesNotExist:
             adapter = models.DigitalTunerHardware(server=server,
-                                                        adapter_nr=adapter_nr)
+                                                        adapter_nr=nr)
+            log.debug(u'adapter vai ser inserido na base de dados')
         adapter.grab_info()
         adapter.save()
-    elif method == 'remove':
+    elif action == 'remove':
         adapter = get_object_or_404(models.DigitalTunerHardware,
-                                   server=server, adapter_nr=adapter_nr)
+                                   server=server, adapter_nr=nr)
         adapter.delete()
+        log.debug(u'o adapter %s foi removido da base de dados' % adapter)
     return HttpResponse()
 
 def server_list_dvbadapters(request):
@@ -119,13 +128,16 @@ def server_available_isdbtuners(request):
 def server_fileinput_scanfolder(request):
     pk = request.GET.get('server')
     server = get_object_or_404(models.Server, id=pk)
-    list = u'<option value="">---------</option>'
+    list = u'<option value="">---------</option>\n'
     for file in server.list_dir(settings.VLC_VIDEOFILES_DIR):
         list += u'<option value="%s%s">%s</option>\n' % (
             settings.VLC_VIDEOFILES_DIR, file, file)
     return HttpResponse(list)
 
+@csrf_exempt
 def server_coldstart(request, pk):
+    log = logging.getLogger('debug')
+    log.debug('Iniciando rotina de coldstart no server com pk=%s' % pk)
     server = get_object_or_404(models.Server, id=pk)
     # Erase all
     models.DigitalTunerHardware.objects.filter(server=server).delete()
@@ -133,23 +145,26 @@ def server_coldstart(request, pk):
     tuners = server.auto_detect_digital_tuners()
     return HttpResponse(str(tuners))
 
-def deviceserver_switchlink(request, method, klass, pk):
+def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     try:
-        if method == 'start':
+        if action == 'start':
             device.start()
-        elif method == 'stop':
+        elif action == 'stop':
             device.stop()
+        elif action == 'recover':
+            device.status = False
+            device.save()
         else:
             raise NotImplementedError()
     except Exception as ex:
         response = '%s: %s' % (ex.__class__.__name__, ex)
         t = loader.get_template('device_500.html')
-        c = RequestContext(request, {'error' : response})
+        c = RequestContext(request, {'error' : response, 'return_url' : url})
         return HttpResponseServerError(t.render(c))
-    url = request.META.get('HTTP_REFERER')
-    if url is None:
-        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     return HttpResponseRedirect(url)
 
 def inputmodel_scan(request):

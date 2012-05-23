@@ -3,14 +3,14 @@
 #from base import *
 
 from django.db import models
-
 from django.utils.translation import ugettext as _
+from django.core.urlresolvers import reverse
 
 #SIGNALS
 from django.db.models import signals
 from django.conf import settings
 
-from device.models import UniqueIP
+from device.models import UniqueIP, MulticastOutput
 
 class Channel(models.Model):
     """
@@ -31,9 +31,10 @@ class Channel(models.Model):
         upload_to = 'tv/channel/image/thumb',
         help_text = 'Imagem do canal'
     )
-    source      = models.OneToOneField(UniqueIP, unique=True, null=True, blank=True)
     updated     = models.DateTimeField(auto_now=True)
     enabled     = models.BooleanField(_(u'Disponível'), default=False)
+    output     = models.OneToOneField(MulticastOutput, unique=True,
+                                       null=True, blank=True)
     
     def __unicode__(self):
         return u"[%d] num=%s %s" %(self.id,self.number,self.name)
@@ -44,7 +45,36 @@ class Channel(models.Model):
     
     image_thum.short_description = 'Miniatura'
     image_thum.allow_tags = True
-    
+
+    def _is_streaming(self):
+        return self.output.running()
+
+    def _is_recording(self):
+        for recorder in self.streamrecorder_set.all():
+            if recorder.status is True:
+                return True
+        return False
+
+    def switch_link(self):
+        if self.output is None and len(self.streamrecorder_set.all()) is 0:
+            return '<a>Desconfigurado</a>'
+        ret = []
+        if self._is_streaming() is True:
+            ret.append(_(u'Estrimando'))
+        if self._is_recording() is True:
+            ret.append(_(u'Gravando'))
+        if len(ret) > 0:
+            s = _(u" e ").join(ret)
+            return '<a href="%s" id="tv_id_%d" style="color:green;">' \
+                   '%s</a>' % (reverse('channel_stop', args=[self.pk]),
+                               self.pk, s)
+        else:
+            return '<a href="%s" id="tv_id_%d" style="color:red;">' \
+                   'Parado</a>' % (reverse('channel_start',
+                                    kwargs={'pk' : self.pk}), self.pk)
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
+
     def delete(self):
         """
         Limpeza da imagem.
@@ -54,8 +84,29 @@ class Channel(models.Model):
         import os
         os.unlink(self.image.path)
         os.unlink(self.thumb.path)
-    
 
+    def start(self, recursive=True):
+        self.output.start(recursive=recursive)
+        for recorder in self.streamrecorder_set.all():
+            recorder.start(recursive=recursive)
+
+    def stop(self, recursive=True):
+        self.output.stop(recursive=recursive)
+        for recorder in self.streamrecorder_set.all():
+            recorder.stop(recursive=recursive)
+
+    def _get_channel_devices_str(self):
+        obj = self.output
+        ret = []
+        while True:
+            ret.append(unicode(u"%s '%s'" % \
+                (obj.__class__.__name__, unicode(obj))))
+            if hasattr(obj, 'sink') and obj.sink is not None:
+                obj = obj.sink
+            else:
+                break
+            
+        return u" --> ".join(ret)
 
 
 def channel_post_save(signal, instance, sender, **kwargs):

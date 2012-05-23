@@ -22,7 +22,6 @@ ADMINS = (
 MANAGERS = ADMINS
 
 if 'test' in sys.argv:
-    print('SETTINGS: TESTE SQLITE')
     ## Banco de dados teste
     DATABASES = {
         'default': {
@@ -35,7 +34,6 @@ if 'test' in sys.argv:
         }
     }
 else:
-    print('SETTINGS: DATABASE MYSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -77,7 +75,6 @@ USE_L10N = True
 
 
 #IMPORTANTE:
-print('VERIFIQUE LINKS SIMBOLICOS')
 # ARRUMAR LINKS SIMBOLICOS DA SEGUINTE FORMA PARA QUE O SISTEMA FUNCIONE CERTO:
 # EM /var/www/html
 #0 lrwxrwxrwx. 1 nginx nginx   14 Mar  7 10:41 media -> tvfiles/media/
@@ -236,7 +233,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     #'south',
     # Gestao de canal
-    'canal',
+    #'canal',
     # Interface dos setup-box
     'box',
     # Pagina de home
@@ -284,6 +281,37 @@ INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
 
 CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
+
+if 'test' in sys.argv:
+    from tempfile import mkdtemp
+    # Create a temporary dir for when running tests
+    tmpdir = mkdtemp(prefix='iptv-test-')
+    # Change vars to point the new location
+    MULTICAT_LOGS_DIR = tmpdir + MULTICAT_LOGS_DIR
+    os.makedirs(MULTICAT_LOGS_DIR)
+    MULTICAT_RECORDINGS_DIR = tmpdir + MULTICAT_RECORDINGS_DIR
+    os.makedirs(MULTICAT_RECORDINGS_DIR)
+    MULTICAT_SOCKETS_DIR = tmpdir + MULTICAT_SOCKETS_DIR
+    os.makedirs(MULTICAT_SOCKETS_DIR)
+    DVBLAST_CONFS_DIR = tmpdir + DVBLAST_CONFS_DIR
+    os.makedirs(DVBLAST_CONFS_DIR)
+    DVBLAST_LOGS_DIR = tmpdir + DVBLAST_LOGS_DIR
+    os.makedirs(DVBLAST_LOGS_DIR)
+    DVBLAST_SOCKETS_DIR = tmpdir + DVBLAST_SOCKETS_DIR
+    os.makedirs(DVBLAST_SOCKETS_DIR)
+    VLC_VIDEOFILES_DIR = tmpdir + VLC_VIDEOFILES_DIR
+    os.makedirs(VLC_VIDEOFILES_DIR)
+    CHANNEL_RECORD_DIR = tmpdir + CHANNEL_RECORD_DIR
+    os.makedirs(CHANNEL_RECORD_DIR)
+
+    # Pseudo executables folder
+    HELPER_FOLDER = os.path.join(PROJECT_ROOT_PATH, 'device', 'helper')
+    # Settings to replace
+    DVBLAST_DUMMY = os.path.join(HELPER_FOLDER, 'dvblast_dummy.py')
+    DVBLASTCTL_DUMMY = os.path.join(HELPER_FOLDER, 'dvblastctl_dummy.py')
+    MULTICAT_DUMMY = os.path.join(HELPER_FOLDER, 'multicat_dummy.py')
+    MULTICATCTL_DUMMY = os.path.join(HELPER_FOLDER, 'multicatctl_dummy.py')
+    VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
 
 if DEBUG == True:
     ## Envia todas as mensagens de log para o console

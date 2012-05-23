@@ -8,5 +8,10 @@
 {% block content %}
 <h1>{% trans 'Server Error <em>(500)</em>' %}</h1>
 <p style="color: red; font-size: large">{{ error }}</p>
+{% if return_url %}
+    <p><a href="{{ return_url }}">Voltar</a></p>
+{% else %}
+    <p><a href="javascript:history.back();">Voltar</a></p>
+{% endif %}
 
 {% endblock %}
