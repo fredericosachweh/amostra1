@@ -137,6 +137,14 @@ class AdminStreamRecorder(admin.ModelAdmin):
 class AdminUniqueIP(admin.ModelAdmin):
     list_display = ('ip', 'port', 'sink_str', 'src_str')
     exclude = ('sequential',)
+    fieldsets = (
+        (None, {
+            'fields' : ('ip', 'port')
+        }),
+        (_(u'Entrada'), {
+            'fields' : ('content_type', 'object_id')
+        }),
+    )
     form = forms.UniqueIPForm
 
 admin.site.register(models.UniqueIP, AdminUniqueIP)
