@@ -1302,6 +1302,9 @@ class MulticastOutput(IPOutput):
     def __unicode__(self):
         return '%s:%d [%s]' % (self.ip, self.port, self.interface)
 
+    def natural_key(self):
+        return {'ip' : self.ip, 'port' : self.port}
+
 #    def validate_unique(self, exclude=None):
 #        # unique_together = ('ip', 'server')
 #        from django.core.exceptions import ValidationError
