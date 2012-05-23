@@ -8,7 +8,6 @@ import os
 
 urlpatterns = patterns('',
     url(r'^index/$',        'box.views.index',        name='box_index'),
-#    url(r'^$',              'box.views.index'),
     url(r'^auth/(?P<mac>[0-9A-F:]{10,20})/.*$','box.views.auth', name='box_auth'),
     url(r'^canal_list/$',                   'box.views.canal_list',   name='canal_list'),
     url(r'^programme_info/$',               'box.views.programme_info', name='programme_info'),
@@ -17,7 +16,6 @@ urlpatterns = patterns('',
     url(r'^guide_mount_line_of_programe/$', 'box.views.guide_mount_line_of_programe', name='guide_mount_line_of_programe'),
     url(r'^channel_programme_info/$',       'box.views.channel_programme_info', name='channel_programme_info'),
     url(r'^remote_log/$',                   'box.views.remote_log',   name='box_remote_log'),
-    url(r'^canal_update/$',                 'box.views.canal_update', name='canal_update'),
     url(r'^setup/$',                        'box.views.setup',        name='setup'),
     
     url(r'^ping$',          'box.views.ping',         name='ping'),

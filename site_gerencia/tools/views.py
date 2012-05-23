@@ -17,5 +17,13 @@ def log(request):
 @never_cache
 def date(request):
     from datetime import datetime
-    return HttpResponse(datetime.now())
-    #return HttpResponse('2012-01-01 13:00:00.702043')
+    import time
+    now = datetime.now()
+    #timestamp = time.mktime(now.timetuple())
+    #timestamp = now.strftime("%s")
+    #timestamp = time.mktime(time.gmtime())
+    timestamp = time.strftime("%s")
+    timezone = time.timezone
+    response = '{"timestamp": %s, "timezone": %d}'% (timestamp,timezone)
+    return HttpResponse(response)
+    #return HttpResponse('2012-05-15 17:14:55.702043')

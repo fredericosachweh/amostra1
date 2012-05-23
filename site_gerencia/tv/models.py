@@ -33,7 +33,7 @@ class Channel(models.Model):
     )
     updated     = models.DateTimeField(auto_now=True)
     enabled     = models.BooleanField(_(u'Disponível'), default=False)
-    output     = models.OneToOneField(MulticastOutput, unique=True,
+    source      = models.OneToOneField(MulticastOutput, unique=True,
                                        null=True, blank=True)
     
     def __unicode__(self):
@@ -47,7 +47,7 @@ class Channel(models.Model):
     image_thum.allow_tags = True
 
     def _is_streaming(self):
-        return self.output.running()
+        return self.source.running()
 
     def _is_recording(self):
         for recorder in self.streamrecorder_set.all():
@@ -56,7 +56,8 @@ class Channel(models.Model):
         return False
 
     def switch_link(self):
-        if self.output is None and len(self.streamrecorder_set.all()) is 0:
+        print 'chamou switch_link'
+        if self.source is None and len(self.streamrecorder_set.all()) is 0:
             return '<a>Desconfigurado</a>'
         ret = []
         if self._is_streaming() is True:
@@ -86,17 +87,17 @@ class Channel(models.Model):
         os.unlink(self.thumb.path)
 
     def start(self, recursive=True):
-        self.output.start(recursive=recursive)
+        self.source.start(recursive=recursive)
         for recorder in self.streamrecorder_set.all():
             recorder.start(recursive=recursive)
 
     def stop(self, recursive=True):
-        self.output.stop(recursive=recursive)
+        self.source.stop(recursive=recursive)
         for recorder in self.streamrecorder_set.all():
             recorder.stop(recursive=recursive)
 
     def _get_channel_devices_str(self):
-        obj = self.output
+        obj = self.source
         ret = []
         while True:
             ret.append(unicode(u"%s '%s'" % \

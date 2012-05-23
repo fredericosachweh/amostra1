@@ -319,7 +319,7 @@ def Server_post_save(sender, instance, created, **kwargs):
         # Create the tmpfiles
         remote_tmpfile = instance.create_tempfile()
         # Create the udev rules file
-        cmd = "/bin/env |" \
+        cmd = "/usr/bin/env |" \
               "/bin/grep SSH_CLIENT |" \
               "/bin/grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
         my_ip = "".join(instance.execute(cmd)).strip()
@@ -616,11 +616,9 @@ class DemuxedService(DeviceServer):
         verbose_name = _(u'Entrada demultiplexada')
         verbose_name_plural = _(u'Entradas demultiplexadas')
 
-    sid = models.PositiveSmallIntegerField(_(u'Programa'))
-    provider = models.CharField(_(u'Provedor'), max_length=200, null=True,
-        blank=True)
-    service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True,
-        blank=True)
+    sid = models.PositiveIntegerField(_(u'Programa'))
+    provider = models.CharField(_(u'Provedor'), max_length=2000, null=True, blank=True)
+    service_desc = models.CharField(_(u'Serviço'), max_length=2000, null=True, blank=True)
     enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
     nic_src = models.ForeignKey(NIC, blank=True, null=True)
@@ -1297,22 +1295,25 @@ class MulticastOutput(IPOutput):
         verbose_name = _(u'Saída IP multicast')
         verbose_name_plural = _(u'Saídas IP multicast')
 
-    ip_out = models.IPAddressField(_(u'Endereço IP multicast'), unique=True)
+    ip = models.IPAddressField(_(u'Endereço IP multicast'), unique=True)
     nic_sink = models.ForeignKey(NIC, related_name='nic_sink',
         verbose_name=_(u'Interface de rede interna'))
 
     def __unicode__(self):
-        return '%s:%d [%s]' % (self.ip_out, self.port, self.interface)
+        return '%s:%d [%s]' % (self.ip, self.port, self.interface)
 
-    def validate_unique(self, exclude=None):
-        # unique_together = ('ip', 'server')
-        from django.core.exceptions import ValidationError
-        val = MulticastOutput.objects.filter(ip_out=self.ip_out,
-            server=self.server)
-        if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %s' % (
-                self.server.name, self.ip))
-            raise ValidationError({'__all__': [msg]})
+    def natural_key(self):
+        return {'ip' : self.ip, 'port' : self.port}
+
+#    def validate_unique(self, exclude=None):
+#        # unique_together = ('ip', 'server')
+#        from django.core.exceptions import ValidationError
+#        val = MulticastOutput.objects.filter(ip_out=self.ip_out,
+#            server=self.server)
+#        if val.exists() and val[0].pk != self.pk:
+#            msg = _(u'Combinação já existente: %s e %s' % (
+#                self.server.name, self.ip))
+#            raise ValidationError({'__all__': [msg]})
 
     def _get_cmd(self):
         cmd = u'%s' % settings.MULTICAT_COMMAND
@@ -1321,7 +1322,7 @@ class MulticastOutput(IPOutput):
             self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         if self.protocol == 'udp':
             cmd += ' -U'
-        cmd += ' %s:%d@%s' % (self.ip_out, self.port, self.interface.ipv4)
+        cmd += ' %s:%d@%s' % (self.ip, self.port, self.interface.ipv4)
         return cmd
 
 ## Gravação:
