@@ -951,7 +951,8 @@ class DvbTuner(DigitalTuner):
         max_length=200, choices=POLARIZATION_CHOICES)
     fec = models.CharField(_(u'FEC'),
         max_length=200, choices=FEC_CHOICES, default=u'999')
-    adapter = models.CharField(_(u'Adaptador'), max_length=200)
+    adapter = models.CharField(_(u'Adaptador'), max_length=200,
+        null=True, blank=True)
     antenna = models.ForeignKey(Antenna, verbose_name=_(u'Antena'))
 
     def __unicode__(self):
