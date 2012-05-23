@@ -616,11 +616,9 @@ class DemuxedService(DeviceServer):
         verbose_name = _(u'Entrada demultiplexada')
         verbose_name_plural = _(u'Entradas demultiplexadas')
 
-    sid = models.PositiveSmallIntegerField(_(u'Programa'))
-    provider = models.CharField(_(u'Provedor'), max_length=200, null=True,
-        blank=True)
-    service_desc = models.CharField(_(u'Serviço'), max_length=200, null=True,
-        blank=True)
+    sid = models.PositiveIntegerField(_(u'Programa'))
+    provider = models.CharField(_(u'Provedor'), max_length=2000, null=True, blank=True)
+    service_desc = models.CharField(_(u'Serviço'), max_length=2000, null=True, blank=True)
     enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
     nic_src = models.ForeignKey(NIC, blank=True, null=True)
