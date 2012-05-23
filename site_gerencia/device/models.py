@@ -1295,22 +1295,22 @@ class MulticastOutput(IPOutput):
         verbose_name = _(u'Saída IP multicast')
         verbose_name_plural = _(u'Saídas IP multicast')
 
-    ip_out = models.IPAddressField(_(u'Endereço IP multicast'), unique=True)
+    ip = models.IPAddressField(_(u'Endereço IP multicast'), unique=True)
     nic_sink = models.ForeignKey(NIC, related_name='nic_sink',
         verbose_name=_(u'Interface de rede interna'))
 
     def __unicode__(self):
-        return '%s:%d [%s]' % (self.ip_out, self.port, self.interface)
+        return '%s:%d [%s]' % (self.ip, self.port, self.interface)
 
-    def validate_unique(self, exclude=None):
-        # unique_together = ('ip', 'server')
-        from django.core.exceptions import ValidationError
-        val = MulticastOutput.objects.filter(ip_out=self.ip_out,
-            server=self.server)
-        if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %s' % (
-                self.server.name, self.ip))
-            raise ValidationError({'__all__': [msg]})
+#    def validate_unique(self, exclude=None):
+#        # unique_together = ('ip', 'server')
+#        from django.core.exceptions import ValidationError
+#        val = MulticastOutput.objects.filter(ip_out=self.ip_out,
+#            server=self.server)
+#        if val.exists() and val[0].pk != self.pk:
+#            msg = _(u'Combinação já existente: %s e %s' % (
+#                self.server.name, self.ip))
+#            raise ValidationError({'__all__': [msg]})
 
     def _get_cmd(self):
         cmd = u'%s' % settings.MULTICAT_COMMAND
@@ -1319,7 +1319,7 @@ class MulticastOutput(IPOutput):
             self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         if self.protocol == 'udp':
             cmd += ' -U'
-        cmd += ' %s:%d@%s' % (self.ip_out, self.port, self.interface.ipv4)
+        cmd += ' %s:%d@%s' % (self.ip, self.port, self.interface.ipv4)
         return cmd
 
 ## Gravação:

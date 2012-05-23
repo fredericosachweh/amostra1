@@ -13,7 +13,7 @@ from models import *
 class ChannelResource(ModelResource):
     source = fields.CharField(blank=True)
     class Meta:
-        queryset = Channel.objects.filter(enabled=True, output__isnull=False)
+        queryset = Channel.objects.filter(enabled=True, source__isnull=False)
         authorization = Authorization()
         excludes = ['enabled']
         allowed_methods = ['get']
