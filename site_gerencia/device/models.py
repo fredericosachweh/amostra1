@@ -57,6 +57,7 @@ class Server(models.Model):
         return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
 
     switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -388,7 +389,9 @@ class UniqueIP(models.Model):
 
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, blank=True, null=True)
+    content_type = models.ForeignKey(ContentType, 
+        limit_choices_to={"model__in": ("DemuxedService", "FileInput")},
+        blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
     def __unicode__(self):
@@ -534,7 +537,13 @@ class DeviceServer(models.Model):
         if (hasattr(self, 'src') and self.src is None) or \
            (hasattr(self, 'sink') and self.sink is None):
             return _(u'Desconfigurado')
-        if self.running():
+        running = self.running()
+        if running is False and self.status is True:
+            url = reverse('%s_recover' % module_name,
+                kwargs={'pk': self.id})
+            return 'Crashed<a href="%s" id="%s_id_%s" style="color:red;">' \
+                   ' ( Recuperar )</a>' % (url, module_name, self.id)
+        if running is True and self.status is True:
             url = reverse('%s_stop' % module_name,
                 kwargs={'pk': self.id})
             return '<a href="%s" id="%s_id_%s" style="color:green;">' \
@@ -651,6 +660,7 @@ class DemuxedService(DeviceServer):
             return _(u'Desconfigurado')
         return super(DemuxedService, self).switch_link()
     switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
 
 
 class InputModel(models.Model):
@@ -680,8 +690,12 @@ class InputModel(models.Model):
                 sid = service.sid
                 ip = service.src.all()[0].ip
                 port = service.src.all()[0].port
-                # Assume internal IPs always work with raw UDP
-                conf += "%s:%d/udp 1 %d\n" % (ip, port, sid)
+                nic = service.nic_src
+                conf += u'%s:%d' % (ip, port)
+                if nic is not None:
+                    conf += u'@%s' % nic.ipv4
+                # Assume internal IPs always work under raw UDP
+                conf += u'/udp 1 %d\n' % sid
 
         return conf
 
@@ -1303,10 +1317,11 @@ class MulticastOutput(IPOutput):
     def _get_cmd(self):
         cmd = u'%s' % settings.MULTICAT_COMMAND
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
-        cmd += ' -u @%s:%d' % (self.sink.ip, self.sink.port)
+        cmd += ' -u @%s:%d/ifaddr=%s' % (
+            self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         if self.protocol == 'udp':
             cmd += ' -U'
-        cmd += ' %s:%d' % (self.ip_out, self.port)
+        cmd += ' %s:%d@%s' % (self.ip_out, self.port, self.interface.ipv4)
         return cmd
 
 ## Gravação:

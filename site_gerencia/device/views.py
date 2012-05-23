@@ -145,23 +145,26 @@ def server_coldstart(request, pk):
     tuners = server.auto_detect_digital_tuners()
     return HttpResponse(str(tuners))
 
-def deviceserver_switchlink(request, method, klass, pk):
+def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
+    url = request.META.get('HTTP_REFERER')
+    if url is None:
+        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     try:
-        if method == 'start':
+        if action == 'start':
             device.start()
-        elif method == 'stop':
+        elif action == 'stop':
             device.stop()
+        elif action == 'recover':
+            device.status = False
+            device.save()
         else:
             raise NotImplementedError()
     except Exception as ex:
         response = '%s: %s' % (ex.__class__.__name__, ex)
         t = loader.get_template('device_500.html')
-        c = RequestContext(request, {'error' : response})
+        c = RequestContext(request, {'error' : response, 'return_url' : url})
         return HttpResponseServerError(t.render(c))
-    url = request.META.get('HTTP_REFERER')
-    if url is None:
-        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     return HttpResponseRedirect(url)
 
 def inputmodel_scan(request):
