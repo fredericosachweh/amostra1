@@ -101,6 +101,7 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
+            log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             self.save()
             return 'Can not connect'
@@ -1057,7 +1058,7 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % self.adapter_num
         else:
             cmd += ' -a %d' % adapter_num
-        cmd += super(IsdbTunerTuner, self)._get_cmd()
+        cmd += super(IsdbTuner, self)._get_cmd()
 
         return cmd
 
