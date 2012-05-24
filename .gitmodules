@@ -16,3 +16,6 @@
 [submodule "modules/django-extensions"]
 	path = modules/django-extensions
 	url = git://github.com/django-extensions/django-extensions.git
+[submodule "modules/django-grappelli"]
+	path = modules/django-grappelli
+	url = https://github.com/sehmaschine/django-grappelli.git
