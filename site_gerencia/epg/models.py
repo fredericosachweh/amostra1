@@ -86,18 +86,18 @@ class Channel(models.Model):
 		return u"%s [%s]" % (self.display_names.values_list()[0][1], self.channelid);
 
 class Title(models.Model):
-	value = models.CharField(max_length=100)
+	value = models.CharField(max_length=128)
 	lang = models.ForeignKey(Lang, blank=True, null=True)
 
 class Description(models.Model):
-	value = models.CharField(max_length=500, blank=True, null=True)
+	value = models.CharField(max_length=512, blank=True, null=True)
 	lang = models.ForeignKey(Lang, blank=True, null=True)
 
 class Staff(models.Model):
-	name = models.CharField(max_length=100)
+	name = models.CharField(max_length=512)
 
 class Actor(models.Model):
-	name = models.CharField(max_length=100)
+	name = models.CharField(max_length=512)
 	role = models.CharField(max_length=100, blank=True, null=True)
 	
 class Category(models.Model):

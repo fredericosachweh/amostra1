@@ -157,6 +157,8 @@ def deviceserver_switchlink(request, action, klass, pk):
             device.stop()
         elif action == 'recover':
             device.status = False
+            if isinstance(device, models.IsdbTuner):
+                device.adapter = None
             device.save()
         else:
             raise NotImplementedError()
