@@ -8,16 +8,29 @@ from settings import *
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-DATABASES = {
-	'default': {
-	    'ENGINE': 'django.db.backends.mysql',
-	    'NAME': 'iptv',
-	    'USER':'root',
-	    'PASSWORD':'root',
-	    'HOST':'127.0.0.1',
-	    'PORT':''
+if 'test' in sys.argv:
+    ## Banco de dados teste
+    DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
+        'USER':'',
+        'PASSWORD':'',
+        'HOST':'',
+        'PORT':''
+        }
+    }
+else:
+	DATABASES = {
+		'default': {
+		    'ENGINE': 'django.db.backends.mysql',
+		    'NAME': 'iptv',
+		    'USER':'root',
+		    'PASSWORD':'root',
+		    'HOST':'127.0.0.1',
+		    'PORT':''
+		}
 	}
-}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tvfiles/media/'

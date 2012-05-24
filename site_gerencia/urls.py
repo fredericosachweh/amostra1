@@ -30,7 +30,7 @@ urlpatterns = patterns('',
     (r'^%smedia/(?P<path>.*)$'%settings.ROOT_URL, 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
     (r'^%sstatic/(?P<path>.*)$'%settings.ROOT_URL, 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
     # Configuração de canais
-    (r'^%scanal/'%settings.ROOT_URL,include('canal.urls')),
+    (r'^%stv/'%settings.ROOT_URL,include('tv.urls')),
     # Interface dos setupbox
     (r'^%sbox/'%settings.ROOT_URL,include('box.urls')),
     # EPG

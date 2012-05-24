@@ -4,8 +4,29 @@ from django import forms
 from django.utils.translation import ugettext as _
 from django.contrib import admin
 from django.core.urlresolvers import reverse
+from django.contrib.admin.widgets import ForeignKeyRawIdWidget
+from django.db.models.fields.related import ManyToOneRel
+from widgets import ContentTypeSelect
 from models import *
 from dvbinfo.models import *
+
+
+class GenericRelationForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(GenericRelationForm, self).__init__(*args, **kwargs)
+        try:
+            model = self.instance.content_type.model_class()
+            model_key = model._meta.pk.name
+        except Exception as ex:
+            model = self.Meta.model
+            model_key = 'id'
+        self.fields['object_id'].widget = ForeignKeyRawIdWidget(
+            rel=ManyToOneRel(model, model_key), admin_site=admin.site)
+        self.fields['content_type'].widget.widget = ContentTypeSelect(
+                        'lookup_id_object_id', 
+                        self.fields['content_type'].widget.widget.attrs, 
+                        self.fields['content_type'].widget.widget.choices)
+
 
 class DvbTunerForm(forms.ModelForm):
     class Meta:
@@ -68,6 +89,12 @@ class MulticastInputForm(forms.ModelForm):
             raise ValidationError(_(u'Endereços multicast devem ter o primeiro octeto entre 224 e 239.'))
         return ip
 
+
+class DemuxedServiceForm(GenericRelationForm):
+    class Meta:
+        model = DemuxedService
+
+
 class FileInputForm(forms.ModelForm):
     class Meta:
         model = FileInput
@@ -75,7 +102,16 @@ class FileInputForm(forms.ModelForm):
             'filename' : forms.Select(),
         }
 
-class MulticastOutputForm(forms.ModelForm):
+class MulticastOutputForm(GenericRelationForm):
     class Meta:
         model = MulticastOutput
-        exclude = ('content_type', 'object_id')
+
+
+class StreamRecorderForm(GenericRelationForm):
+    class Meta:
+        model = StreamRecorder
+
+
+class UniqueIPForm(GenericRelationForm):
+    class Meta:
+        model = UniqueIP
