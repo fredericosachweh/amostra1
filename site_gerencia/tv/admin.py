@@ -39,15 +39,15 @@ class ChannelAdmin(admin.ModelAdmin):
         'fields':( 
             ('number', 'name', 'channelid', 'enabled'),
             'description', 'image', 
-                ('output'),
+                ('source'),
             ),
         }), )
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
     #fields = ('numero','nome','descricao','logo','sigla','source', )
-    list_display  = ('image_thum', 'number', 'name', 'channelid', 'output', 'enabled', 'switch_link')
+    list_display  = ('image_thum', 'number', 'name', 'channelid', 'source', 'enabled', 'switch_link')
     list_display_links = ('image_thum', )
-    list_editable = ('number', 'output', 'name', 'channelid', 'enabled')
+    list_editable = ('number', 'source', 'name', 'channelid', 'enabled')
     #inline        = (Programa,)
     save_as       = True
     list_per_page = 10

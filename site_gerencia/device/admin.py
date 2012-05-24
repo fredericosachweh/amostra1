@@ -106,7 +106,7 @@ class AdminFileInput(admin.ModelAdmin):
 
 
 class AdminMulticastOutput(admin.ModelAdmin):
-    list_display = ('ip_out', 'port', 'protocol',
+    list_display = ('ip', 'port', 'protocol',
         'server', 'interface', 'switch_link')
     fieldsets = (
         (_(u'Servidor'), {
@@ -116,7 +116,7 @@ class AdminMulticastOutput(admin.ModelAdmin):
             'fields' : ('nic_sink', 'content_type', 'object_id')
         }),
         (_(u'Saída'), {
-            'fields' : ('interface', 'ip_out', 'port', 'protocol')
+            'fields' : ('interface', 'ip', 'port', 'protocol')
         }),
     )
     form = forms.MulticastOutputForm
