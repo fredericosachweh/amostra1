@@ -50,12 +50,12 @@ class IsdbTunerForm(forms.ModelForm):
         model = IsdbTuner
         exclude = ('adapter',)
     
-    def clean_free_adapters(self):
-        fa = int(self.cleaned_data['free_adapters'])
-        if fa <= 0:
-            from django.core.exceptions import ValidationError
-            raise ValidationError(_(u'Deve haver pelo menos 1 adaptador disponível para uso.'))
-        return self.cleaned_data['free_adapters']
+#    def clean_free_adapters(self):
+#        fa = int(self.cleaned_data['free_adapters'])
+#        if fa <= 0:
+#            from django.core.exceptions import ValidationError
+#            raise ValidationError(_(u'Deve haver pelo menos 1 adaptador disponível para uso.'))
+#        return self.cleaned_data['free_adapters']
     
     free_adapters = forms.IntegerField(label=_('Adaptadores livres'))
 
