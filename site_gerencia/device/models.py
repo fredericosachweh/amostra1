@@ -1233,8 +1233,9 @@ class OutputModel(models.Model):
         abstract = True
 
     content_type = models.ForeignKey(ContentType,
-        limit_choices_to={"model__in": ("UniqueIP",)},
-        null=True, verbose_name=_(u'Conexão com device'))
+        #limit_choices_to={"model__in": ("UniqueIP",)},
+        null=True,
+        verbose_name=_(u'Conexão com device'))
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
 
