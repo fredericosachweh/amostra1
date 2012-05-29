@@ -101,6 +101,7 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
+            log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             self.save()
             return 'Can not connect'
