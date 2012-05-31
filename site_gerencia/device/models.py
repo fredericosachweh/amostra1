@@ -101,6 +101,7 @@ class Server(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
+            log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             self.save()
             return 'Can not connect'
@@ -894,6 +895,12 @@ class DigitalTuner(InputModel, DeviceServer):
     class AdapterNotInstalled(Exception):
         pass
 
+    def _get_cmd(self):
+        cmd = u' -w'
+        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
+        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        return cmd
+
     def start(self, adapter_num=None):
         "Starts a dvblast instance based on the current model's configuration"
         super(DigitalTuner, self).start()
@@ -991,8 +998,7 @@ class DvbTuner(DigitalTuner):
             cmd += ' -a %s' % self.adapter_num
         else:
             cmd += ' -a %s' % adapter_num
-        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
-        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        cmd += super(DvbTuner, self)._get_cmd()
 
         return cmd
 
@@ -1052,8 +1058,7 @@ class IsdbTuner(DigitalTuner):
             cmd += ' -a %d' % self.adapter_num
         else:
             cmd += ' -a %d' % adapter_num
-        cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
-        cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
+        cmd += super(IsdbTuner, self)._get_cmd()
 
         return cmd
 
