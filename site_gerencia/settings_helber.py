@@ -1,8 +1,4 @@
 # -*- encoding:utf-8 -*-
-
-import sys
-import os
-
 from settings import *
 
 DEBUG = True
@@ -43,7 +39,7 @@ STATIC_URL = '/tvfiles/static/'
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'lib.middleware.login.RequireLoginMiddleware',
@@ -54,7 +50,7 @@ MIDDLEWARE_CLASSES = (
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
 if DEBUG is True:
-    ## Envia todas as mensagens de log para o console
+    # Envia todas as mensagens de log para o console
     #for logger in LOGGING['loggers']:
     #    LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
@@ -77,6 +73,7 @@ if DEBUG is True:
             'debug_toolbar.panels.logger.LoggingPanel',
         )
         INSTALLED_APPS += ('debug_toolbar',)
+        INTERNAL_IPS = ('127.0.0.1',)
         MIDDLEWARE_CLASSES += (
             'debug_toolbar.middleware.DebugToolbarMiddleware',
         )
@@ -84,5 +81,3 @@ if DEBUG is True:
         pass
 
 
-
-INTERNAL_IPS = ('127.0.0.1',)

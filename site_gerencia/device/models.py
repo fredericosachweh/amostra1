@@ -1220,7 +1220,7 @@ class FileInput(DeviceServer):
             ip.ip, ip.port)
         return cmd
 
-    def start(self):
+    def start(self, recursive=False):
         """Inicia processo do VLC"""
         self.pid = self.server.execute_daemon(self._get_cmd())
         self.status = True
@@ -1253,7 +1253,7 @@ class OutputModel(models.Model):
                 log.error(unicode(ex))
         
         create_folder(settings.MULTICAT_SOCKETS_DIR)
-        create_folder(settings.MULTICAT_RECORDINGS_DIR)
+        create_folder(settings.CHANNEL_RECORD_DIR)
         create_folder(settings.MULTICAT_LOGS_DIR)
 
     def stop(self, recursive=False):
@@ -1328,24 +1328,25 @@ class MulticastOutput(IPOutput):
         cmd += ' %s:%d@%s' % (self.ip, self.port, self.interface.ipv4)
         return cmd
 
+
 ## Gravação:
 # RT=$((60*60*27000000)) #rotate (minutos)
 # FOLDER=ch_53
 # MULTICAT -r $RT -u @239.0.1.1:10000 $FOLDER
-
-## Recuperação:
-# TIME_SHIFT=-$((60*5*27000000)) # (minutos)
-# FOLDER=ch_53
-# MULTICAT -U -k $TIME_SHIFT $FOLDER 192.168.0.244:5000
-
+# /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
+#@239.10.0.1:10000/ifaddr=172.17.0.1 -U -r 97200000000 -u /iptv/recorder/6
 class StreamRecorder(OutputModel, DeviceServer):
-    """
+    u"""
     Serviço de gravação dos fluxos multimidia.
     """
-    rotate = models.PositiveIntegerField(_(u'Tempo em minutos do arquivo'))
-    keep_time = models.PositiveIntegerField(_(u'Tempo que permanece gravado'))
-    start_time = models.DateTimeField(_(u'Hora inicial da gravação'), null=True,
-        default=None)
+    rotate = models.PositiveIntegerField(_(u'Tempo em minutos do arquivo'),
+        help_text=_(u'Padrão é 60 min.'))
+    folder = models.CharField(_(u'Diretório destino'), max_length=500,
+        default=settings.CHANNEL_RECORD_DIR, )
+    keep_time = models.PositiveIntegerField(_(u'Horas que permanece gravado'),
+        help_text=_(u'Padrão: 48'))
+    start_time = models.DateTimeField(_(u'Hora inicial da gravação'),
+        null=True, default=None, blank=True)
     channel = models.ForeignKey('tv.Channel', null=True, blank=True)
     nic_sink = models.ForeignKey(NIC,
         verbose_name=_(u'Interface de rede interna'))
@@ -1355,31 +1356,33 @@ class StreamRecorder(OutputModel, DeviceServer):
         verbose_name_plural = _(u'Gravadores de fluxo')
 
     def __unicode__(self):
-        return u'%d, %d, %s' % (self.rotate, self.keep_time, self.channel)
+        return u'rotate:%d, keep:%d, channel:%s, start:%s' % (self.rotate,
+            self.keep_time, self.channel, self.start_time)
 
-#    def validate_unique(self, exclude=None):
-#        from django.core.exceptions import ValidationError
-#        val = StreamRecorder.objects.filter(folder=self.folder,
-#            server=self.server)
-#        if val.exists() and val[0].pk != self.pk:
-#            msg = _(u'Combinação já existente: %s e %s' % (
-#                self.server.name, self.folder))
-#            raise ValidationError({'__all__': [msg]})
+    def validate_unique(self, exclude=None):
+        from django.core.exceptions import ValidationError
+        val = StreamRecorder.objects.filter(folder=self.folder,
+            server=self.server)
+        if val.exists() and val[0].pk != self.pk:
+            msg = _(u'Combinação já existente: %s e %s' % (
+                self.server.name, self.folder))
+            raise ValidationError({'__all__': [msg]})
 
     def _get_cmd(self):
         # Create the necessary folders
         self._create_folders()
         # Create folder to store record files
-        self.server.execute('mkdir -p %s/%d' % (
-            settings.MULTICAT_RECORDINGS_DIR, self.pk))
-        cmd = u'%s -r %d -c %s%d.sock -u @%s:%d %s/%d' % (
+        self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
+        # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
+        #@239.10.0.1:10000/ifaddr=172.17.0.1 -U -r 97200000000 \
+        #-u /iptv/recorder/6
+        cmd = u'%s -r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.MULTICAT_COMMAND,
             (self.rotate * 60 * 27000000),
-            settings.MULTICAT_SOCKETS_DIR,
-            self.pk,
             self.sink.ip,
             self.sink.port,
-            settings.MULTICAT_RECORDINGS_DIR,
+            self.nic_sink.ipv4,
+            self.folder,
             self.pk
             )
         return cmd
@@ -1392,11 +1395,93 @@ class StreamRecorder(OutputModel, DeviceServer):
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
-        if self.status is True:
+        if self.pid > 0:
             import datetime
             self.start_time = datetime.datetime.now()
-        self.status = True
+            self.status = True
         self.save()
-        
         if recursive is True:
             self.sink.start(recursive=recursive)
+
+
+## Recuperação:
+# TIME_SHIFT=-$(( 60 * 5 * 27000000 )) # (minutos)
+# FOLDER=ch_53
+# MULTICAT -U -k $TIME_SHIFT $FOLDER 192.168.0.244:5000
+# /usr/bin/multicat -r 97200000000 -k -$(( 27000000 * 60  * 5)) \
+#-U /iptv/recorder/6 192.168.0.244:10000
+class StreamPlayer(OutputModel, DeviceServer):
+    u"""Player de conteúdo gravado nos servidores (catshup-TV)"""
+    recorder = models.ForeignKey(StreamRecorder)
+    """Client IP address"""
+    stb_ip = models.IPAddressField(_(u'IP destino'), db_index=True,
+        unique=True)
+    stb_port = models.PositiveSmallIntegerField(_(u'Porta destino'),
+        help_text=_(u'Padrão: %s' % (settings.CHANNEL_PLAY_PORT)),
+        default=settings.CHANNEL_PLAY_PORT)
+    # Socket de controle do aplicativo no servidor
+    control_socket = models.CharField(_(u'Socket de controle (auto)'),
+        max_length=500)
+
+    class Meta:
+        verbose_name = _(u'Reprodutor de fluxo gravado')
+        verbose_name_plural = _(u'Reprodutores de fluxo gravado')
+
+    def play(self, time_shift=0):
+        ur"""
+        Localizar um servidor de gravação que tenha o canal gravado no horário
+        solicitado.
+        Caso esteja rodando um vídeo anterior, interromper este antes de
+        executar o novo.
+        """
+        if self.running():
+            self.stop()
+        return self.start(time_shift=time_shift)
+
+    def pause(self):
+        """
+        Abre o socket da reprodução atual chamando o multicatctl e envia o
+        comando pause para o soket específico
+        multicatctl -c /xxx/multicat_yy.socket pause
+        """
+        pass
+
+    #def stop(self):
+    #    """
+    #    Interrompe p processo de reprodução do fluxo para o cliente.
+    #    Existem 2 alternativas:
+    #    - Mata o processo de reprodução (este é o utilizado agora)
+    #    - Manda um stop para o processo e deixa este rodando
+    #    """
+    #    pass
+
+    def _get_cmd(self, time_shift=0):
+        # Create the necessary folders
+        self._create_folders()
+        self.control_socket = '%sclient_%d.sock' % (
+            settings.MULTICAT_SOCKETS_DIR,
+            self.pk)
+        cmd = u'%s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
+            settings.MULTICAT_COMMAND,
+            self.control_socket,
+            (self.recorder.rotate * 60 * 27000000),
+            (time_shift * 27000000),
+            self.recorder.folder,
+            self.recorder.pk,
+            self.stb_ip,
+            self.stb_port
+            )
+        return cmd
+
+    def start(self, recursive=False, time_shift=0):
+        # Create destination folder
+        # Create the necessary log folders
+        self._create_folders()
+        # Start multicat
+        log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
+        cmd = self._get_cmd(time_shift=time_shift)
+        #print(cmd)
+        self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+        self.save()
+        if self.pid > 0:
+            return 'OK'

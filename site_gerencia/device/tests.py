@@ -16,6 +16,7 @@ from device.models import *
 
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
+from tv.models import Channel
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
 @override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
@@ -151,7 +152,7 @@ class CommandsGenerationTest(TestCase):
         )
         ipout_a = MulticastOutput.objects.create(
             server=server,
-            ip_out='239.0.1.3',
+            ip='239.0.1.3',
             port=10000,
             protocol='udp',
             interface=nic,
@@ -167,7 +168,7 @@ class CommandsGenerationTest(TestCase):
         )
         ipout_b = MulticastOutput.objects.create(
             server=server,
-            ip_out='239.0.1.4',
+            ip='239.0.1.4',
             port=10000,
             protocol='udp',
             interface=nic,
@@ -176,7 +177,7 @@ class CommandsGenerationTest(TestCase):
         )
         ipout_c = MulticastOutput.objects.create(
             server=server,
-            ip_out='239.0.1.5',
+            ip='239.0.1.5',
             port=10000,
             protocol='udp',
             interface=nic,
@@ -185,7 +186,7 @@ class CommandsGenerationTest(TestCase):
         )
         ipout_d = MulticastOutput.objects.create(
             server=server,
-            ip_out='239.0.1.6',
+            ip='239.0.1.6',
             port=10000,
             protocol='udp',
             interface=nic,
@@ -201,7 +202,7 @@ class CommandsGenerationTest(TestCase):
         )
         ipout_e = MulticastOutput.objects.create(
             server=server,
-            ip_out='239.0.1.7',
+            ip='239.0.1.7',
             port=10000,
             protocol='udp',
             interface=nic,
@@ -385,7 +386,7 @@ class CommandsGenerationTest(TestCase):
         self.assertFalse(fileinput.running())
 
     def test_multicastoutput(self):
-        ipout = MulticastOutput.objects.get(ip_out='239.0.1.3')
+        ipout = MulticastOutput.objects.get(ip='239.0.1.3')
         expected_cmd = (
             "%s "
             "-c %s%d.sock "
@@ -401,26 +402,6 @@ class CommandsGenerationTest(TestCase):
         
         ipout.stop()
         self.assertFalse(ipout.running())
-
-    def test_streamrecorder(self):
-        recorder = StreamRecorder.objects.get(keep_time=168)
-        expected_cmd = (
-            "%s "
-            "-r 97200000000 " # 27M * 60 * 60
-            "-c %s%d.sock "
-            "-u @239.1.0.2:20000 "
-            "%s/%d"
-        ) % (settings.MULTICAT_COMMAND,
-             settings.MULTICAT_SOCKETS_DIR, recorder.pk,
-             settings.MULTICAT_RECORDINGS_DIR, recorder.pk,
-             )
-        self.assertEqual(expected_cmd, recorder._get_cmd())
-        
-        recorder.start()
-        self.assertTrue(recorder.running())
-        
-        recorder.stop()
-        self.assertFalse(recorder.running())
 
     def test_connections(self):
         # Test dvbtuner generic relation
@@ -1000,53 +981,151 @@ class TestViews(TestCase):
         self.assertIn(expected, options)
 
 
-#class TestRecord(TestCase):
-#    """
-#    Test record stream on remote server
-#    """
-#
-#    def setUp(self):
-#        import getpass
-#        server = Server.objects.create(
-#            name='local',
-#            host='127.0.0.1',
-#            ssh_port=22,
-#            username=getpass.getuser(),
-#            rsakey='~/.ssh/id_rsa',
-#            offline_mode=True,
-#        )
-#        NIC.objects.create(
-#            server=server,
-#            name='eth0',
-#            ipv4='192.168.0.10',
-#        )
-#        NIC.objects.create(
-#            server=server,
-#            name='eth1',
-#            ipv4='10.0.1.10',
-#        )
-#
-#    def test_record(self):
-#        srv = Server.objects.get(name='local')
-#        ext_ip = UniqueIP.objects.create(
-#            port=20000,
-#            ip='127.0.0.1',
-#        )
-#        recorder = StreamRecorder.objects.create(
-#            server=srv,
-#            rotate=60,
-#            folder='/tmp/recording_xx',
-#            keep_time=130,
-#            sink=ext_ip,
-#        )
-#        cmd_expected = '%s \
-#-r %d -c %s%d.sock -u @127.0.0.1:20000 /tmp/recording_xx/%d' % (
-#            settings.MULTICAT_COMMAND,
-#            (60*60*27000000),
-#            settings.MULTICAT_SOCKETS_DIR,
-#            recorder.pk,
-#            recorder.pk,
-#            )
-#        self.assertEqual(recorder._get_cmd(), cmd_expected,
-#            'Comando de gravação difere do esperado')
+class TestRecord(TestCase):
+    u"""
+    Test record stream on remote server
+    """
 
+    def setUp(self):
+        import getpass
+        from datetime import datetime, timedelta
+        start_time = datetime.now() + timedelta(0, -(3600 * 3))
+        server = Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
+            offline_mode=True,
+        )
+        server1 = Server.objects.create(
+            name='local1',
+            host='127.0.0.2',
+            ssh_port=22,
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
+            offline_mode=True,
+        )
+        NIC.objects.create(
+            server=server,
+            name='eth0',
+            ipv4='192.168.0.10',
+        )
+        NIC.objects.create(
+            server=server,
+            name='eth1',
+            ipv4='10.0.1.10',
+        )
+        NIC.objects.create(
+            server=server1,
+            name='lo',
+            ipv4='127.0.0.2',
+        )
+        NIC.objects.create(
+            server=server1,
+            name='p1p1',
+            ipv4='10.0.1.11',
+        )
+        ext_ip = UniqueIP.objects.create(
+            port=20000,
+            ip='239.10.11.12',
+        )
+        ch1 = Channel.objects.create(
+            number=10,
+            name='Teste 1',
+            description='Teste 1',
+            channelid='TTT'
+        )
+        ch2 = Channel.objects.create(
+            number=12,
+            name='Teste 2',
+            description='Teste 2',
+            channelid='TTT'
+        )
+        StreamRecorder.objects.create(
+            server=server,
+            rotate=60,
+            folder='/tmp/recording_i',
+            keep_time=100,
+            sink=ext_ip,
+            nic_sink=server.nic_set.get(name='eth1'),
+            channel=ch1,
+            start_time=start_time
+        )
+        StreamRecorder.objects.create(
+            server=server1,
+            rotate=60,
+            folder='/tmp/recording_1',
+            keep_time=130,
+            sink=ext_ip,
+            nic_sink=server.nic_set.get(name='eth1'),
+            channel=ch1,
+            start_time=start_time
+        )
+        StreamRecorder.objects.create(
+            server=server,
+            rotate=60,
+            folder='/tmp/recording_j',
+            keep_time=40,
+            sink=ext_ip,
+            nic_sink=server.nic_set.get(name='eth0'),
+            channel=ch2,
+            start_time=start_time
+        )
+
+    def test_record(self):
+        srv = Server.objects.get(name='local')
+        ext_ip = UniqueIP.objects.create(
+            port=20000,
+            ip='127.0.0.1',
+        )
+        recorder = StreamRecorder.objects.create(
+            server=srv,
+            rotate=60,
+            folder='/tmp/recording_i',
+            keep_time=130,
+            sink=ext_ip,
+            nic_sink=srv.nic_set.get(name='eth1'),
+        )
+        cmd_expected = '%s \
+-r %d -U -u @127.0.0.1:20000/ifaddr=10.0.1.10 %s/%d' % (
+            settings.MULTICAT_COMMAND,
+            (60 * 60 * 27000000),
+            recorder.folder,
+            recorder.pk,
+            )
+        self.assertEqual(recorder._get_cmd(), cmd_expected,
+            'Comando de gravação difere do esperado')
+        self.assertEqual(cmd_expected, recorder._get_cmd())
+        recorder.start()
+        self.assertTrue(recorder.running())
+        recorder.stop()
+        self.assertFalse(recorder.running())
+
+    def test_view_tvod_list(self):
+        from datetime import datetime, timedelta
+        import simplejson as json
+        start_time = datetime.now() + timedelta(0, -3600)
+        ## Muda o status para rodando
+        StreamRecorder.objects.filter(keep_time__gt=80).update(status=True,
+            start_time=start_time)
+        self.c = Client()
+        response = self.c.get(reverse('device.views.tvod_list'))
+        self.assertEqual(response.status_code, 200, 'Deveria haver a listagem')
+        # Objeto JSON
+        decoder = json.JSONDecoder()
+        jrecorder = decoder.decode(response.content)
+        self.assertEqual(len(jrecorder), 2, 'Deveria haver 2 canais rodando')
+
+    def test_tvod_view(self):
+        #from models import StreamPlayer
+        urlplay = reverse('device.views.tvod',
+            kwargs={'channel_number': 12, 'command': 'play', 'seek': 3600})
+        self.assertEqual('/tv/device/tvod/12/play/3600', urlplay,
+            'URL invalida')
+        urlstopOK = reverse('device.views.tvod',
+            kwargs={'channel_number': 12, 'command': 'stop', 'seek': ''})
+        self.assertEqual('/tv/device/tvod/12/stop/', urlstopOK, 'URL invalida')
+        self.c = Client()
+        response = self.c.get(urlplay)
+        print(response.content)
