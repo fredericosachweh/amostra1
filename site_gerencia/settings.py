@@ -39,7 +39,7 @@ else:
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
             'USER': 'iptv',
-            'PASSWORD': 'iptv',
+            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
             'HOST': '127.0.0.1',
             'PORT': '3306'
         }
