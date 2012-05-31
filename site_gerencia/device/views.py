@@ -1,7 +1,9 @@
 # -*- encoding:utf-8 -*-
-from django.http import HttpResponse, HttpResponseRedirect, \
-                        HttpResponseBadRequest, HttpResponseServerError
-from django.shortcuts import get_object_or_404, render_to_response, render
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.http import HttpResponseBadRequest
+from django.http import HttpResponseServerError
+from django.shortcuts import get_object_or_404, render_to_response
 from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse
 from django.utils.encoding import force_unicode
@@ -258,6 +260,63 @@ def auto_fill_tuner_form(request, ttype):
 '<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");\
 </script>' % \
 (request.POST['freq']))
+
+
+def tvod(request, channel_number=None, command=None, seek=0):
+    u'TVOD commands'
+    resp = 'Not running'
+    from datetime import datetime, timedelta
+    from models import StreamPlayer, StreamRecorder
+    from tv.models import Channel
+    log = logging.getLogger('device.view')
+    ## Load channel
+    channel = get_object_or_404(Channel, number=channel_number)
+    ip = request.META.get('REMOTE_ADDR')
+    log.debug('tvod[%s] client:%s channel:%s seek:%s' % (command, ip,
+        channel_number, seek))
+    ## Verifica se existe gravação solicitada
+    record_time = datetime.now() - timedelta(0, int(seek))
+    recorders = StreamRecorder.objects.filter(start_time__lte=record_time,
+        channel=channel, keep_time__gte=(int(seek)/3600))
+    log.debug('avaliable recorders: %s' % recorders)
+    if len(recorders) == 0:
+        return HttpResponse(u'Unavaliable', mimetype='application/javascript')
+    ## Verifica se existe um player para o cliente
+    if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
+        StreamPlayer.objects.create(
+            stb_ip=ip,
+            server=recorders[0].server,
+            recorder=recorders[0]
+            )
+    player = StreamPlayer.objects.get(stb_ip=ip)
+    if command == 'play':
+        resp = player.play(time_shift=int(seek))
+    elif command == 'stop':
+        player.stop()
+        resp = 'Stoped'
+    log.debug('Player: %s', player)
+    return HttpResponse(resp, mimetype='application/javascript')
+
+
+def tvod_list(request):
+    u'Get list of current recorders'
+    import simplejson
+    import time
+    from models import StreamRecorder
+    log = logging.getLogger('device.view')
+    ip = request.META.get('REMOTE_ADDR')
+    log.debug('tvod_list from ip=%s' % ip)
+    rec = StreamRecorder.objects.filter(status=True)
+    obj = []
+    for r in rec:
+        obj.append({
+            'id': r.id,
+            'start': time.mktime(r.start_time.timetuple()),
+            'channel': r.channel.number
+            })
+    json = simplejson.dumps(obj)
+    return HttpResponse(json, mimetype='application/javascript')
+
 
 
 ### Deixado como exemplo de como executar o play do TVoD (catchuptv)
