@@ -1427,7 +1427,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         log.debug('__init__ -> %s', self)
         # Create the necessary folders
         #self._create_folders()
-        super(StreamPlayer,self).__init__(*args,**kwargs)
+        super(StreamPlayer, self).__init__(*args, **kwargs)
 
     def play(self, time_shift=0):
         ur"""
