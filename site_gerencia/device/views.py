@@ -277,10 +277,11 @@ def tvod(request, channel_number=None, command=None, seek=0):
     ## Verifica se existe gravação solicitada
     record_time = datetime.now() - timedelta(0, int(seek))
     recorders = StreamRecorder.objects.filter(start_time__lte=record_time,
-        channel=channel, keep_time__gte=(int(seek)/3600))
+        channel=channel, keep_time__gte=(int(seek) / 3600))
     log.debug('avaliable recorders: %s' % recorders)
     if len(recorders) == 0:
         return HttpResponse(u'Unavaliable', mimetype='application/javascript')
+    print(recorders)
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
         StreamPlayer.objects.create(
@@ -289,10 +290,18 @@ def tvod(request, channel_number=None, command=None, seek=0):
             recorder=recorders[0]
             )
     player = StreamPlayer.objects.get(stb_ip=ip)
+    player.recorder = recorders[0]
+    player.server = recorders[0].server
+    player.save()
     if command == 'play':
-        resp = player.play(time_shift=int(seek))
+        player.play(time_shift=int(seek))
+        if player.pid and player.status:
+            resp = 'OK'
+        else:
+            resp = player.msg
     elif command == 'stop':
-        player.stop()
+        if player.pid and player.status:
+            player.stop()
         resp = 'Stoped'
     log.debug('Player: %s', player)
     return HttpResponse(resp, mimetype='application/javascript')

@@ -1359,15 +1359,6 @@ class StreamRecorder(OutputModel, DeviceServer):
         return u'rotate:%d, keep:%d, channel:%s, start:%s' % (self.rotate,
             self.keep_time, self.channel, self.start_time)
 
-    def validate_unique(self, exclude=None):
-        from django.core.exceptions import ValidationError
-        val = StreamRecorder.objects.filter(folder=self.folder,
-            server=self.server)
-        if val.exists() and val[0].pk != self.pk:
-            msg = _(u'Combinação já existente: %s e %s' % (
-                self.server.name, self.folder))
-            raise ValidationError({'__all__': [msg]})
-
     def _get_cmd(self):
         # Create the necessary folders
         self._create_folders()
@@ -1427,6 +1418,13 @@ class StreamPlayer(OutputModel, DeviceServer):
         verbose_name = _(u'Reprodutor de fluxo gravado')
         verbose_name_plural = _(u'Reprodutores de fluxo gravado')
 
+    def __init__(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.debug('__init__ -> %s', self)
+        # Create the necessary folders
+        #self._create_folders()
+        super(StreamPlayer,self).__init__(*args,**kwargs)
+
     def play(self, time_shift=0):
         ur"""
         Localizar um servidor de gravação que tenha o canal gravado no horário
@@ -1434,7 +1432,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         Caso esteja rodando um vídeo anterior, interromper este antes de
         executar o novo.
         """
-        if self.running():
+        if self.status and self.pid:
             self.stop()
         return self.start(time_shift=time_shift)
 
@@ -1446,18 +1444,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         """
         pass
 
-    #def stop(self):
-    #    """
-    #    Interrompe p processo de reprodução do fluxo para o cliente.
-    #    Existem 2 alternativas:
-    #    - Mata o processo de reprodução (este é o utilizado agora)
-    #    - Manda um stop para o processo e deixa este rodando
-    #    """
-    #    pass
-
     def _get_cmd(self, time_shift=0):
-        # Create the necessary folders
-        self._create_folders()
         self.control_socket = '%sclient_%d.sock' % (
             settings.MULTICAT_SOCKETS_DIR,
             self.pk)
@@ -1480,8 +1467,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         # Start multicat
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
-        #print(cmd)
+        print(cmd)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+        self.status = True
         self.save()
-        if self.pid > 0:
-            return 'OK'
