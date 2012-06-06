@@ -46,6 +46,7 @@ def server_list_interfaces(request):
             i.name, i.ipv4))
     return HttpResponse(response)
 
+
 @csrf_exempt
 def server_update_adapter(request, pk, action):
     import re
@@ -55,7 +56,8 @@ def server_update_adapter(request, pk, action):
     log.debug(u'server: %s, action: %s, adapter_nr: %s' % (
         pk, action, adapter_nr))
     server = get_object_or_404(models.Server, id=pk)
-    # The adapter_nr will come in the format dvb1.frontend0, so I need to post process it
+    # The adapter_nr will come in the format dvb1.frontend0, \
+    # so I need to post process it
     aux = re.match(r'dvb(\d+)\.frontend\d+', adapter_nr)
     nr = aux.group(1)
     if action == 'add':
@@ -76,15 +78,16 @@ def server_update_adapter(request, pk, action):
         log.debug(u'o adapter %s foi removido da base de dados' % adapter)
     return HttpResponse()
 
+
 def server_list_dvbadapters(request):
     "Returns avaible DVBWorld devices on server, excluding already used"
     pk = request.GET.get('server', None)
     server = get_object_or_404(models.Server, pk=pk)
     tuner_type = request.GET.get('type')
     if tuner_type == 'dvb':
-        id_vendor = '04b4' # DVBWorld S/S2
+        id_vendor = '04b4'  # DVBWorld S/S2
     elif tuner_type == 'isdb':
-        id_vendor = '1554' # PixelView SBTVD
+        id_vendor = '1554'  # PixelView SBTVD
     else:
         return HttpResponseBadRequest('Must specify the type of device')
     response = '<option value="">---------</option>'
@@ -97,13 +100,13 @@ def server_list_dvbadapters(request):
     # Populate the not used adapters left
     tuners = models.DvbTuner.objects.filter(server=server)
     adapters = models.DigitalTunerHardware.objects.filter(
-        server=server, id_vendor='04b4') # DVBWorld S/S2
+        server=server, id_vendor='04b4')  # DVBWorld S/S2
     for adapter in adapters:
         if not tuners.filter(adapter=adapter.uniqueid).exists():
             response += '<option value="%s">%s</option>' % (adapter.uniqueid,
                                             'DVBWorld %s' % adapter.uniqueid)
-    
     return HttpResponse(response)
+
 
 def server_available_isdbtuners(request):
     "Returns the number of non-used PixelView adapters"
@@ -124,17 +127,18 @@ def server_available_isdbtuners(request):
         raise Exception(
             'The total number of registered IsdbTuner objects '
             'is greater that the number of plugged-in PixelView adapters')
-    
     return HttpResponse(free_adapters + (adapters - tuners))
+
 
 def server_fileinput_scanfolder(request):
     pk = request.GET.get('server')
     server = get_object_or_404(models.Server, id=pk)
-    list = u'<option value="">---------</option>\n'
-    for file in server.list_dir(settings.VLC_VIDEOFILES_DIR):
-        list += u'<option value="%s%s">%s</option>\n' % (
-            settings.VLC_VIDEOFILES_DIR, file, file)
-    return HttpResponse(list)
+    l = u'<option value="">---------</option>\n'
+    for f in server.list_dir(settings.VLC_VIDEOFILES_DIR):
+        l += u'<option value="%s%s">%s</option>\n' % (
+            settings.VLC_VIDEOFILES_DIR, f, f)
+    return HttpResponse(l)
+
 
 @csrf_exempt
 def server_coldstart(request, pk):
@@ -146,6 +150,7 @@ def server_coldstart(request, pk):
     # And create new ones
     tuners = server.auto_detect_digital_tuners()
     return HttpResponse(str(tuners))
+
 
 def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
@@ -167,14 +172,15 @@ def deviceserver_switchlink(request, action, klass, pk):
     except Exception as ex:
         response = '%s: %s' % (ex.__class__.__name__, ex)
         t = loader.get_template('device_500.html')
-        c = RequestContext(request, {'error' : response, 'return_url' : url})
+        c = RequestContext(request, {'error': response, 'return_url': url})
         return HttpResponseServerError(t.render(c))
     return HttpResponseRedirect(url)
+
 
 def inputmodel_scan(request):
     "Scan's a input device showing the results to the user"
     ct = int(request.GET.get('ct'))
-    ids = [int(id) for id in request.GET.get('ids').split(',')]
+    ids = [int(i) for i in request.GET.get('ids').split(',')]
     model = ContentType.objects.get(pk=ct).model_class()
     queryset = model.objects.filter(pk__in=ids)
     opts = model._meta
@@ -187,15 +193,16 @@ def inputmodel_scan(request):
     except models.InputModel.GotNoLockException as ex:
         response = _(u'Sem sinal: "%s"' % ex)
         t = loader.get_template('device_500.html')
-        c = RequestContext(request, {'error' : response})
+        c = RequestContext(request, {'error': response})
         return HttpResponseServerError(t.render(c))
     context = {
-        'results' : results,
-        'objects_name' : objects_name,
-        'app_label' : model._meta.app_label,
-        'opts' : opts,
+        'results': results,
+        'objects_name': objects_name,
+        'app_label': model._meta.app_label,
+        'opts': opts,
     }
     return TemplateResponse(request, 'scan_result.html', context)
+
 
 def file_start(request, pk=None):
     log = logging.getLogger('device.view')
@@ -216,29 +223,38 @@ def file_stop(request, pk=None):
     o.stop()
     return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
 
-def multicat_start(request,pk=None):
+
+def multicat_start(request, pk=None):
     print 'multicat_start'
-    o = get_object_or_404(models.MulticastInput,id=pk)
+    o = get_object_or_404(models.MulticastInput, id=pk)
     o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
+    return HttpResponseRedirect(reverse(
+        'admin:device_multicatgeneric_changelist'))
 
-def multicat_stop(request,pk=None):
+
+def multicat_stop(request, pk=None):
     print 'multicat_stop'
-    o = get_object_or_404(models.MulticastInput,id=pk)
+    o = get_object_or_404(models.MulticastInput, id=pk)
     o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicatgeneric_changelist'))
+    return HttpResponseRedirect(reverse(
+        'admin:device_multicatgeneric_changelist'))
 
-def multicat_redirect_start(request,pk=None):
+
+def multicat_redirect_start(request, pk=None):
     print 'multicat_redirect_start'
-    o = get_object_or_404(models.MulticastInput,id=pk)
+    o = get_object_or_404(models.MulticastInput, id=pk)
     o.start()
-    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
+    return HttpResponseRedirect(reverse(
+        'admin:device_multicatredirect_changelist'))
 
-def multicat_redirect_stop(request,pk=None):
+
+def multicat_redirect_stop(request, pk=None):
     print 'multicat_redirect_stop'
-    o = get_object_or_404(models.MulticastInput,id=pk)
+    o = get_object_or_404(models.MulticastInput, id=pk)
     o.stop()
-    return HttpResponseRedirect(reverse('admin:device_multicatredirect_changelist'))
+    return HttpResponseRedirect(reverse(
+        'admin:device_multicatredirect_changelist'))
+
 
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
@@ -327,40 +343,3 @@ def tvod_list(request):
             })
     json = simplejson.dumps(obj)
     return HttpResponse(json, mimetype='application/javascript')
-
-
-
-### Deixado como exemplo de como executar o play do TVoD (catchuptv)
-#def tvod(request):
-#    from player import Player
-#    from django.conf import settings
-#    import os
-#    ip = request.META.get('REMOTE_ADDR')
-#    seek = request.GET.get('seek')
-#    channel_number = request.GET.get('channel')
-#    channel = '%s/ch_%s' %(settings.CHANNEL_RECORD_DIR,channel_number)
-#    action = request.GET.get('action')
-#    # Grava:
-#    # multicat -r 97200000000 -u @239.0.1.1:10000 /ldslsdld/dsasd/ch_3
-#    # Roda unicast 5 min. 
-#    # multicat -U -k -$((60*5*27000000)) /ldslsdld/dsasd/ch_3 192.168.0.244:5000
-#    print('comando de tvod executado. seek: '+seek)
-#    if seek:
-#        seek = int(seek)
-#    else:
-#        seek =  60*5
-#    port = 12000
-#    if action == 'stop':
-#        p = Player()
-#        p.direct_stop(ip)
-#        resposta = '{"status":"OK","command":"stop"}'
-#        return HttpResponse(resposta,mimetype='application/javascript')
-#    if os.path.exists(channel) is False:
-#        resposta = '{"status":"ERROR","message":"channel record %s does not existis":"path":"%s"}' %(channel_number,channel)
-#        return HttpResponse(resposta,mimetype='application/javascript')
-#    p = Player()
-#    pid = p.direct_play(channel, ip, port, seek)
-#    resposta = '{"status":"OK","PID":"%s","seek":%s,"channel_path":"%s","destination":"%s"}' %(pid,seek,channel,'%s:%d'%(ip,port))
-#    return HttpResponse(resposta,mimetype='application/javascript')
-#    
-

@@ -4,7 +4,6 @@
 Testes unitários
 """
 
-import os
 from django.test import TestCase
 from django.test import LiveServerTestCase
 from django.test.utils import override_settings
@@ -17,6 +16,7 @@ from device.models import *
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from tv.models import Channel
+
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
 @override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
@@ -229,22 +229,22 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd())
-        
+
         tuner.start()
         self.assertTrue(tuner.running())
         self.assertTrue(tuner.status)
-        
+
         tuner.start_all_services()
         for service in tuner._list_all_services():
             self.assertTrue(service.status)
-        
+
         expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
-        
+
         tuner.stop()
         self.assertFalse(tuner.running())
         self.assertFalse(tuner.status)
-        
+
         for service in tuner._list_all_services():
             self.assertFalse(service.status)
 
@@ -263,22 +263,22 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, tuner.pk,
              )
         self.assertEqual(expected_cmd, tuner._get_cmd(adapter_num=1))
-        
+
         tuner.start(adapter_num=1)
         self.assertTrue(tuner.running())
         self.assertTrue(tuner.status)
-        
+
         tuner.start_all_services()
         for service in tuner._list_all_services():
             self.assertTrue(service.status)
-        
+
         expected_conf = u'239.1.0.4:20000/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
-        
+
         tuner.stop()
         self.assertFalse(tuner.running())
         self.assertFalse(tuner.status)
-        
+
         for service in tuner._list_all_services():
             self.assertFalse(service.status)
 
@@ -294,22 +294,23 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, unicastin.pk,
              )
         self.assertEqual(expected_cmd, unicastin._get_cmd())
-        
+
         unicastin.start()
         self.assertTrue(unicastin.running())
         self.assertTrue(unicastin.status)
-        
+
         unicastin.start_all_services()
         for service in unicastin._list_all_services():
             self.assertTrue(service.status)
-        
-        expected_conf = u'239.1.0.5:20000/udp 1 1\n239.1.0.6:20000/udp 1 2\n'
+
+        expected_conf = u'239.1.0.5:20000@127.0.0.1/udp 1 \
+1\n239.1.0.6:20000@127.0.0.1/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
-        
+
         unicastin.stop()
         self.assertFalse(unicastin.running())
         self.assertFalse(unicastin.status)
-        
+
         for service in unicastin._list_all_services():
             self.assertFalse(service.status)
 
@@ -325,44 +326,44 @@ class CommandsGenerationTest(TestCase):
              settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
              )
         self.assertEqual(expected_cmd, multicastin._get_cmd())
-        
+
         multicastin.start()
         self.assertTrue(multicastin.running())
         self.assertTrue(multicastin.status)
-        
+
         multicastin.start_all_services()
         for service in multicastin._list_all_services():
             self.assertTrue(service.status)
-        
-        expected_conf = u'239.1.0.7:20000/udp 1 1024\n'
+
+        expected_conf = u'239.1.0.7:20000@127.0.0.1/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
-        
+
         multicastin.stop()
         self.assertFalse(multicastin.running())
         self.assertFalse(multicastin.status)
-        
+
         for service in multicastin._list_all_services():
             self.assertFalse(service.status)
 
     def test_demuxedinput(self):
-        """When starting a demuxedinput the 
+        r"""When starting a demuxedinput the
            connected device should start as well"""
         unicastin = UnicastInput.objects.get(port=30000)
         self.assertFalse(unicastin.running())
-        
+
         services = unicastin._list_all_services()
         if len(services) > 0:
             service = services[0]
         else:
             self.fail("There is no service attached to this device")
-        
+
         # TODO: coerência entre banco e instância
         service.start()
         # recarregando o banco porque o unicastin atual esta diferente do banco
         unicastin = UnicastInput.objects.get(port=30000)
         self.assertTrue(service.running())
         self.assertTrue(unicastin.running())
-        
+
         unicastin.stop()
         # recarregando o banco porque o service atual esta diferente do banco
         service = DemuxedService.objects.get(pk=service.pk)
@@ -378,10 +379,10 @@ class CommandsGenerationTest(TestCase):
             '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
         ) % (settings.VLC_COMMAND)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
-        
+
         fileinput.start()
         self.assertTrue(fileinput.running())
-        
+
         fileinput.stop()
         self.assertFalse(fileinput.running())
 
@@ -396,10 +397,10 @@ class CommandsGenerationTest(TestCase):
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
              )
         self.assertEqual(expected_cmd, ipout._get_cmd())
-        
+
         ipout.start()
         self.assertTrue(ipout.running())
-        
+
         ipout.stop()
         self.assertFalse(ipout.running())
 
@@ -436,7 +437,7 @@ class CommandsGenerationTest(TestCase):
 class AdaptersManipulationTests(TestCase):
     def setUp(self):
         import getpass
-        server = Server.objects.create(
+        Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
@@ -452,11 +453,11 @@ class AdaptersManipulationTests(TestCase):
     def test_update_by_post(self):
         # Create a new adapter
         response = self.client.post(
-            reverse('server_adapter_add'), {'adapter_nr' : 0})
+            reverse('server_adapter_add'), {'adapter_nr': 0})
         self.assertEqual(response.status_code, 200)
         # Delete it
         response = self.client.post(
-            reverse('server_adapter_remove'), {'adapter_nr' : 0})
+            reverse('server_adapter_remove'), {'adapter_nr': 0})
         self.assertEqual(response.status_code, 200)
 
     def test_isdb_adapter_nr(self):
@@ -532,14 +533,14 @@ class MySeleniumTests(LiveServerTestCase):
                 return True
         return False
 
-    def _select(self, id, choice):
-        field = self.selenium.find_element_by_id(id)
+    def _select(self, el_id, choice):
+        field = self.selenium.find_element_by_id(el_id)
         for option in field.find_elements_by_tag_name('option'):
             if option.text == choice:
-                option.click() # select() in earlier versions of webdriver
+                option.click()  # select() in earlier versions of webdriver
 
-    def _select_by_value(self, id, value):
-        field = self.selenium.find_element_by_id(id)
+    def _select_by_value(self, el_id, value):
+        field = self.selenium.find_element_by_id(el_id)
         field.find_element_by_xpath("//option[@value='%s']" % value).click()
 
     def test_valid_login(self):
@@ -558,8 +559,8 @@ class MySeleniumTests(LiveServerTestCase):
                          "Login should have failed")
 
     def test_unicastinput(self):
-        fields = {'server' : 'local',
-                  'interface' : 1,
+        fields = {'server': 'local',
+                  'interface': 1,
         }
         self._login('admin', 'cianet')
         add_new_url = '%s%s' % (self.live_server_url,
@@ -569,7 +570,8 @@ class MySeleniumTests(LiveServerTestCase):
         self._select_by_value('id_server', 1)
         # Wait ajax to complete
         WebDriverWait(self.selenium, 10).until(
-            lambda driver: driver.find_element_by_xpath("//option[@value='2']"))
+            lambda driver: driver.find_element_by_xpath(
+                "//option[@value='2']"))
         self._select('id_interface', 'eth0 - 192.168.0.14')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
@@ -651,16 +653,6 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual(6, tuner.bandwidth)
         tuner.delete()
 
-class UniqueIPTest(TestCase):
-
-    def test_sequential(self):
-        srv = Server.objects.create(host='127.0.0.1', name='local',
-            ssh_port=22)
-        nic = NIC.objects.create(server=srv, ipv4='127.0.0.1')
-        for i in range(1024):
-            ip1 = UniqueIP()
-            ip1.save()
-
 
 class ConnectionTest(TestCase):
     """
@@ -720,7 +712,7 @@ class ServerTest(TestCase):
 
     def setUp(self):
         import getpass
-        server = Server.objects.create(
+        Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
@@ -740,7 +732,6 @@ class ServerTest(TestCase):
             'Deveria existir o diretório usr')
 
     def test_list_process(self):
-        from models import Server
         server = Server.objects.get(pk=1)
         server.connect()
         procs = server.list_process()
@@ -851,7 +842,7 @@ class ServerTest(TestCase):
             satellite='StarOne C2',
             lnb_type='multiponto_c',
         )
-        dvbtuner = DvbTuner.objects.create(
+        DvbTuner.objects.create(
             server=server,
             antenna=antenna,
             frequency=3990,
@@ -947,11 +938,11 @@ class TestViews(TestCase):
     def test_server_status(self):
         server = Server.objects.get(pk=1)
         c = Client()
-        url = reverse('device.views.server_status', kwargs={'pk':server.pk})
+        url = reverse('device.views.server_status', kwargs={'pk': server.pk})
         response = c.get(url, follow=True)
         self.assertRedirects(response,
             'http://testserver/tv/administracao/device/server/', 302)
-        urlnotfound = reverse('device.views.server_status', kwargs={'pk':2})
+        urlnotfound = reverse('device.views.server_status', kwargs={'pk': 2})
         response = c.get(urlnotfound, follow=True)
         self.assertEqual(response.status_code, 404, 'Deveria ser 404')
 
@@ -963,7 +954,7 @@ class TestViews(TestCase):
             server.execute('ls %s' % settings.VLC_VIDEOFILES_DIR)
         except Server.ExecutionFailure:
             raise self.failureException(
-                "The %s folder doesn't exists or is inacessible" % 
+                "The %s folder doesn't exists or is inacessible" %
                     settings.VLC_VIDEOFILES_DIR)
         # Create a temporary file inside the videos folder
         out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)

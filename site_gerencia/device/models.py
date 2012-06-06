@@ -137,13 +137,13 @@ class Server(models.Model):
         self.save()
         return int(pid)
 
-    def get(self, remotepath, localpath = None):
+    def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
         s = self.connect()
         s.get(remotepath, localpath)
         s.close()
 
-    def put(self, localpath, remotepath = None):
+    def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         s = self.connect()
         s.put(localpath, remotepath)
@@ -265,7 +265,8 @@ class Server(models.Model):
             self.execute('/usr/bin/sudo /sbin/route del -host %s dev %s'
                 % (ip, dev))
         except Exception as e:
-            log.error('Error deleting route on %s [%s %s]:%s', self, dev, ip, e)
+            log.error('Error deleting route on %s [%s %s]:%s', self, dev, ip,
+                e)
 
     def list_routes(self):
         log = logging.getLogger('debug')
@@ -304,6 +305,7 @@ class Server(models.Model):
         "Creates a temp file and return it's path"
         return "".join(self.execute('/bin/mktemp')).strip()
 
+
 @receiver(post_save, sender=Server)
 def Server_post_save(sender, instance, created, **kwargs):
     "Signal to prepare the server for use"
@@ -313,8 +315,8 @@ def Server_post_save(sender, instance, created, **kwargs):
         if instance.connect() is None:
             log = logging.getLogger('debug')
             log.info("The server %s was unreachable, " \
-                     "so we couldn't configure it" , instance)
-            return # There is nothing we can do
+                     "so we couldn't configure it", instance)
+            return  # There is nothing we can do
         instance.auto_create_nic()
         instance.auto_detect_digital_tuners()
         # Create the tmpfiles
@@ -325,9 +327,9 @@ def Server_post_save(sender, instance, created, **kwargs):
               "/bin/grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
         my_ip = "".join(instance.execute(cmd)).strip()
         udev_conf = UDEV_CONF % \
-            {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
-             'add_url' : reverse('server_adapter_add', args=[instance.pk]),
-             'rm_url' : reverse('server_adapter_remove', args=[instance.pk])}
+            {'my_ip': my_ip, 'my_port': settings.MIDDLEWARE_WEBSERVICE_PORT,
+             'add_url': reverse('server_adapter_add', args=[instance.pk]),
+             'rm_url': reverse('server_adapter_remove', args=[instance.pk])}
         tmpfile = NamedTemporaryFile()
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
@@ -336,11 +338,11 @@ def Server_post_save(sender, instance, created, **kwargs):
                          '/etc/udev/rules.d/87-iptv.rules' % remote_tmpfile)
         # Create the init script to report a server boot event
         init_script = INIT_SCRIPT % \
-            {'my_ip' : my_ip, 'my_port' : settings.MIDDLEWARE_WEBSERVICE_PORT,
-             'status_url' : reverse('device.views.server_status', 
-                kwargs={'pk' : instance.pk}),
-             'coldstart_url' : reverse('device.views.server_coldstart',
-                kwargs={'pk' : instance.pk})}
+            {'my_ip': my_ip, 'my_port': settings.MIDDLEWARE_WEBSERVICE_PORT,
+             'status_url': reverse('device.views.server_status',
+                kwargs={'pk': instance.pk}),
+             'coldstart_url': reverse('device.views.server_coldstart',
+                kwargs={'pk': instance.pk})}
         tmpfile = NamedTemporaryFile()
         tmpfile.file.write(init_script)
         tmpfile.file.flush()
@@ -390,14 +392,15 @@ class UniqueIP(models.Model):
 
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, 
+    content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in": ("DemuxedService", "FileInput")},
         blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
     def __unicode__(self):
         if self.sink is None:
-            sink = u''; sink_classname = u''
+            sink = u''
+            sink_classname = u''
         else:
             sink = self.sink
             sink_classname = self.sink.__class__.__name__
@@ -557,6 +560,7 @@ class DeviceServer(models.Model):
     switch_link.allow_tags = True
     switch_link.short_description = u'Status'
 
+
 class Dvblast(DeviceServer):
     "DEPRECATED: Não utilizado mais???"
     class Meta:
@@ -618,8 +622,10 @@ class DemuxedService(DeviceServer):
         verbose_name_plural = _(u'Entradas demultiplexadas')
 
     sid = models.PositiveIntegerField(_(u'Programa'))
-    provider = models.CharField(_(u'Provedor'), max_length=2000, null=True, blank=True)
-    service_desc = models.CharField(_(u'Serviço'), max_length=2000, null=True, blank=True)
+    provider = models.CharField(_(u'Provedor'), max_length=2000, null=True,
+        blank=True)
+    service_desc = models.CharField(_(u'Serviço'), max_length=2000, null=True,
+        blank=True)
     enabled = models.BooleanField(default=False)
     src = generic.GenericRelation(UniqueIP)
     nic_src = models.ForeignKey(NIC, blank=True, null=True)
@@ -635,7 +641,8 @@ class DemuxedService(DeviceServer):
         return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)
 
     def start(self, *args, **kwargs):
-        self.enabled = True; self.status = True
+        self.enabled = True
+        self.status = True
         self.save()
         if self.sink.status is True:
             self.sink.reload_config()
@@ -643,7 +650,8 @@ class DemuxedService(DeviceServer):
             self.sink.start()
 
     def stop(self, *args, **kwargs):
-        self.enabled = False; self.status = False
+        self.enabled = False
+        self.status = False
         self.save()
         if self.sink.running() is True:
             if kwargs.get('recursive') is True:
@@ -763,7 +771,6 @@ class InputModel(models.Model):
                 has_lock = True
         except:
             pass
-        
         return has_lock
 
     def tuned(self):
@@ -784,7 +791,7 @@ class InputModel(models.Model):
         else:
             was_running = False
             self.start()
-        time.sleep(3) # TODO: Improve this
+        time.sleep(3)  # TODO: Improve this
         if self.has_lock() is False:
             raise InputModel.GotNoLockException("%s" % self)
         pat = self._read_ctl('get_pat')
@@ -794,7 +801,7 @@ class InputModel(models.Model):
         for program in programs:
             number = int(program.get('number'))
             if number is 0:
-                continue # Program 0 never works
+                continue  # Program 0 never works
             ct = ContentType.objects.get_for_model(self)
             service, created = \
                 DemuxedService.objects.get_or_create(server=self.server,
@@ -808,11 +815,20 @@ class InputModel(models.Model):
             services.append(service)
         if was_running is False:
             self.stop()
-        
         return services
 
 
 class DigitalTunerHardware(models.Model):
+
+    server = models.ForeignKey(Server)
+    id_vendor = models.CharField(max_length=100)
+    id_product = models.CharField(max_length=100)
+    bus = models.CharField(max_length=100)
+    driver = models.CharField(max_length=100)
+    last_update = models.DateTimeField(auto_now=True)
+    uniqueid = models.CharField(max_length=100, unique=True, null=True)
+    adapter_nr = models.PositiveSmallIntegerField()
+
     class Meta:
         unique_together = ('server', 'adapter_nr')
 
@@ -839,8 +855,9 @@ class DigitalTunerHardware(models.Model):
         import re
         udevadm = '/sbin/udevadm'
         # Sanity check
-	log = logging.getLogger('debug')
-	log.debug('grab_info: server=%s, adapter_nr=%s' % (self.server, self.adapter_nr))
+        log = logging.getLogger('debug')
+        log.debug('grab_info: server=%s, adapter_nr=%s' % (self.server,
+            self.adapter_nr))
         if self.server is None or self.adapter_nr is None:
             raise Exception('server and adapter_nr attributes '
                                 'must both be pre-defined.')
@@ -848,7 +865,7 @@ class DigitalTunerHardware(models.Model):
         try:
             self.server.execute('/bin/ls /dev/dvb/adapter%s' % self.adapter_nr,
                                     persist=True)
-        except Server.ExecutionFailure: # The file don't exist
+        except Server.ExecutionFailure:  # The file don't exist
             return
         info = " ".join(
             self.server.execute("%s info -a -p "
@@ -876,14 +893,6 @@ class DigitalTunerHardware(models.Model):
         if self.id_vendor == '04b4':
             self.uniqueid = self._read_mac_from_dvbworld()
 
-    server = models.ForeignKey(Server)
-    id_vendor = models.CharField(max_length=100)
-    id_product = models.CharField(max_length=100)
-    bus = models.CharField(max_length=100)
-    driver = models.CharField(max_length=100)
-    last_update = models.DateTimeField(auto_now=True)
-    uniqueid = models.CharField(max_length=100, unique=True, null=True)
-    adapter_nr = models.PositiveSmallIntegerField()
 
 class DigitalTuner(InputModel, DeviceServer):
     class Meta:
@@ -922,6 +931,7 @@ class DigitalTuner(InputModel, DeviceServer):
             self.pid = self.server.execute_daemon(cmd, log_path=log_path)
             self.status = True
             self.save()
+
 
 class DvbTuner(DigitalTuner):
     class Meta:
@@ -1123,8 +1133,8 @@ class UnicastInput(IPInput):
             cmd += '/udp'
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-
         return cmd
+
 
 class MulticastInput(IPInput):
     "Multicast MPEG2TS IP input stream"
@@ -1154,7 +1164,6 @@ class MulticastInput(IPInput):
             cmd += '/udp'
         cmd += ' -c %s%d.conf' % (settings.DVBLAST_CONFS_DIR, self.pk)
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
-
         return cmd
 
 
@@ -1246,7 +1255,6 @@ class OutputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders multicat needs"
-        
         def create_folder(path):
             try:
                 self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
@@ -1255,7 +1263,6 @@ class OutputModel(models.Model):
             except Exception as ex:
                 log = logging.getLogger('debug')
                 log.error(unicode(ex))
-        
         create_folder(settings.MULTICAT_SOCKETS_DIR)
         create_folder(settings.CHANNEL_RECORD_DIR)
         create_folder(settings.MULTICAT_LOGS_DIR)
@@ -1291,7 +1298,6 @@ class IPOutput(OutputModel, DeviceServer):
             log_path=log_path)
         self.status = True
         self.save()
-        
         if recursive is True:
             self.sink.start(recursive=recursive)
 
@@ -1310,7 +1316,7 @@ class MulticastOutput(IPOutput):
         return '%s:%d [%s]' % (self.ip, self.port, self.interface)
 
     def natural_key(self):
-        return {'ip' : self.ip, 'port' : self.port}
+        return {'ip': self.ip, 'port': self.port}
 
 #    def validate_unique(self, exclude=None):
 #        # unique_together = ('ip', 'server')
