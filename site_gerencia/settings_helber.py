@@ -51,8 +51,8 @@ SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
 if DEBUG is True:
     # Envia todas as mensagens de log para o console
-    #for logger in LOGGING['loggers']:
-    #    LOGGING['loggers'][logger]['handlers'] = ['console']
+    for logger in LOGGING['loggers']:
+        LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
         import django_extensions
         INSTALLED_APPS += ('django_extensions',)
