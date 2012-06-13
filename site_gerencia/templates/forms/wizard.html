@@ -24,7 +24,10 @@
             {{ previous_fields|safe }}
 
             <div class="submit-row">
-                <input type="submit" value="{% ifequal step step_count %}Finish{% else %}Next &raquo;{% endifequal %}" class="default" name="_save" />
+                <input type="submit" value="{% ifequal step step_count %}Finalizar{% else %}Próximo &raquo;{% endifequal %}" class="default" name="_save" />
+                {% ifequal step 1 %}{% else %}
+                <input type="button" class="default" value="Anterior" onClick="history.go(-1);return true;">
+                {% endifequal %}
             </div>
 
             <script type="text/javascript">document.getElementById("{{ form.first_field.auto_id }}").focus();</script>

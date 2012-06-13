@@ -12,4 +12,5 @@ urlpatterns = patterns('',
     url(r'^edit/(?P<id>\d)$','canal.views.edit', name='canal_edit'),
     url(r'^index/$','canal.views.index',name='canal_index'),
     url(r'^$','canal.views.index'),
+#    url(r'^$','canal.views.index'),
     )

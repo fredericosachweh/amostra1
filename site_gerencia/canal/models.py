@@ -6,7 +6,6 @@ from django.db import models
 
 from django.utils.translation import ugettext as _
 
-#SIGNALS
 from django.db.models import signals
 from django.conf import settings
 
@@ -21,12 +20,12 @@ class Canal(models.Model):
         ordering = ('numero',)
         verbose_name_plural = _('Canais')
     numero = models.PositiveSmallIntegerField(_('Numero'), unique=True)
-    nome   = models.CharField(_('Nome'), max_length=100)
+    nome = models.CharField(_('Nome'), max_length=100)
     descricao = models.TextField(_('Descricao'))
     sigla = models.CharField(_('Sigla'), max_length=5)
     logo = models.ImageField(_('Logo'),
-        upload_to='imgs/canal/logo/tmp', 
-        help_text='Imagem do canal'
+        upload_to='imgs/canal/logo/tmp',
+        help_text='Imagem do canal', blank=True, null=True
         )
     thumb = models.ImageField(_('Miniatura'),
         upload_to='imgs/canal/logo/thumb',
@@ -38,7 +37,8 @@ class Canal(models.Model):
     enabled = models.BooleanField(_(u'Disponível'), default=False)
     
     def __unicode__(self):
-        return u"[%d][%s] num=%s %s" %(self.id,self.enabled,self.numero,self.nome)
+        return u"[%d][%s] num=%s %s" % (self.id, self.enabled, self.numero,
+                                       self.nome)
     
     def imagem_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />' % (
@@ -52,48 +52,45 @@ class Canal(models.Model):
         Limpeza da imagem.
         Remove o logo e o thumbnail ao remover o canal
         """
-        super(Canal,self).delete()
+        super(Canal, self).delete()
         import os
         os.unlink(self.logo.path)
         os.unlink(self.thumb.path)
 
 
 def canal_post_save(signal, instance, sender, **kwargs):
+    pass
     """
     Manipulador de evento post-save do Canal
     """
-    #print('canal_post_save:%s'%instance)
-    #print(instance.logo.url)
-    #print('signal:%s'%signal)
-    #print('sender:%s'%sender)
-    #if instance.logo is None:
-    #    return
     if instance.logo.name.startswith('imgs/canal/logo/tmp'):
         ## Carrega biblioteca de manipulação de imagem
-        #print('Original:\n%s'%instance.logo.path)
         try:
             import Image
         except ImportError:
             from PIL import Image
-        import os,shutil
+        import os, shutil
         ## Pegar info da logo
         extensao = instance.logo.name.split('.')[-1]
         # Busca a configuração MEDIA_ROOT
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         # Caso não exista, cria o diretório
-        if os.path.exists(os.path.join(MEDIA_ROOT,'imgs/canal/logo/thumb')) == False:
-            os.mkdir(os.path.join(MEDIA_ROOT,'imgs/canal/logo/thumb'))
-        if os.path.exists(os.path.join(MEDIA_ROOT,'imgs/canal/logo/original')) == False:
-            os.mkdir(os.path.join(MEDIA_ROOT,'imgs/canal/logo/original'))
+        if os.path.exists(os.path.join(MEDIA_ROOT,
+                                       'imgs/canal/logo/thumb')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'imgs/canal/logo/thumb'))
+        if os.path.exists(os.path.join(MEDIA_ROOT,
+                                       'imgs/canal/logo/original')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'imgs/canal/logo/original'))
         # Criação da miniatura
-        instance.thumb.name = 'imgs/canal/logo/thumb/%d.%s' %(instance.id,extensao)
+        instance.thumb.name = 'imgs/canal/logo/thumb/%d.%s' % (instance.id,
+                                                              extensao)
         thumb = Image.open(instance.logo.path)
-        thumb.thumbnail((200,200),Image.ANTIALIAS)
+        thumb.thumbnail((200, 200), Image.ANTIALIAS)
         thumb.save(instance.thumb.path)
         # Imagem original
-        original = 'imgs/canal/logo/original/%d.%s' %(instance.id,extensao)
-        #print('Copiando:\n%s\n%s'%(instance.logo.path,os.path.join(MEDIA_ROOT,original)))
-        shutil.copyfile(instance.logo.path, os.path.join(MEDIA_ROOT,original))
+        original = 'imgs/canal/logo/original/%d.%s' % (instance.id, extensao)
+        shutil.copyfile(instance.logo.path, os.path.join(MEDIA_ROOT,
+                                                         original))
         # Remove arquivo temporário
         os.unlink(instance.logo.path)
         #instance.thumb.file

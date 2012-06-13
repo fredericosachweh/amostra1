@@ -3,7 +3,7 @@
 
 from django.contrib import admin
 from models         import Canal
-from forms          import CanalForm
+from canal.forms          import CanalForm
 from django.db      import models
 
 from django.contrib.admin.widgets import AdminFileWidget
@@ -12,6 +12,7 @@ from django.utils.safestring      import mark_safe
 from django.conf.urls.defaults import url, patterns
 from django.utils.functional import update_wrapper
 from canal.admin_views import create_canal_wizard
+
 
 class AdminImageWidget(AdminFileWidget):
     """
@@ -35,13 +36,13 @@ class AdminImageWidget(AdminFileWidget):
         return mark_safe(u''.join(output))
 
 
-
 class CanalAdmin(admin.ModelAdmin):
     """
     Define modelo administrativo do Canal
     """
     fieldsets = ((None, {
-        'fields':( ('numero', 'nome', 'sigla', 'enabled'),'descricao', 'logo', ('source'), 'epg',),
+        'fields':( ('numero', 'nome', 'sigla', 'enabled'),'descricao', 'logo',\
+                   ('source'), 'epg',),
         }), )
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
@@ -69,7 +70,7 @@ class CanalAdmin(admin.ModelAdmin):
     def get_urls(self):
         def wrap(view):
             def wrapper(*args, **kwds):
-                kwds['admin'] = self   # Use a closure to pass this admin instance to our wizard
+                kwds['admin'] = self
                 return self.admin_site.admin_view(view)(*args, **kwds)
             return update_wrapper(wrapper, view)
 
@@ -81,5 +82,5 @@ class CanalAdmin(admin.ModelAdmin):
         urlpatterns += super(CanalAdmin, self).get_urls()
         return urlpatterns
 
-admin.site.register(Canal, CanalAdmin)
 
+admin.site.register(Canal, CanalAdmin)

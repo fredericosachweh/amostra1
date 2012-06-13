@@ -233,7 +233,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     #'south',
     # Gestao de canal
-    #'canal',
+    'canal',
     # Interface dos setup-box
     'box',
     # Pagina de home
