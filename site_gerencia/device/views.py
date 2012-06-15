@@ -170,7 +170,7 @@ def deviceserver_switchlink(request, action, klass, pk):
         else:
             raise NotImplementedError()
     except Exception as ex:
-        response = '%s: %s' % (ex.__class__.__name__, ex)
+        response = u'%s: %s' % (ex.__class__.__name__, ex)
         t = loader.get_template('device_500.html')
         c = RequestContext(request, {'error': response, 'return_url': url})
         return HttpResponseServerError(t.render(c))
