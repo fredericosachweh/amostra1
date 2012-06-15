@@ -26,11 +26,11 @@ if 'test' in sys.argv:
     DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-        'USER':'',
-        'PASSWORD':'',
-        'HOST':'',
-        'PORT':''
+        'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': ''
         }
     }
 else:
@@ -81,7 +81,7 @@ STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
 
 # Porta que o servidor web está configurado
-MIDDLEWARE_WEBSERVICE_PORT = 8000
+MIDDLEWARE_WEBSERVICE_PORT = 80
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
 LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
@@ -139,7 +139,7 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
-IPTV_LOG_DIR = '/var/log/iptv'
+IPTV_LOG_DIR = '/iptv/var/log'
 
 ## Color: \033[35m \033[0m
 # \t%(module)s->%(funcName)s->%(lineno)d
@@ -243,25 +243,26 @@ LOGIN_REQUIRED_URLS = (
 
 
 # Auxiliar apps configuration
-MULTICAT_COMMAND = '/usr/bin/multicat'
-MULTICAT_LOGS_DIR = '/var/log/multicat/'
-MULTICAT_SOCKETS_DIR = '/var/run/multicat/sockets/'
+MULTICAT_COMMAND = '/iptv/bin/multicat'
+MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
+MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 
-DVBLAST_COMMAND = '/usr/bin/dvblast'
-DVBLAST_CONFS_DIR = '/etc/dvblast/'
-DVBLAST_LOGS_DIR = '/var/log/dvblast/'
-DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
+CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
+CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
+CHANNEL_PLAY_PORT = 12000
 
-DVBLASTCTL_COMMAND = '/usr/bin/dvblastctl'
+DVBLAST_COMMAND = '/iptv/bin/dvblast'
+DVBLAST_CONFS_DIR = '/iptv/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/iptv/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/iptv/var/run/dvblast/sockets/'
+
+DVBLASTCTL_COMMAND = '/iptv/bin/dvblastctl'
 
 VLC_COMMAND = '/usr/bin/cvlc'
-VLC_VIDEOFILES_DIR = '/home/videos/'
+VLC_VIDEOFILES_DIR = '/var/lib/iptv/videos/'
 
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
-
-CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
-CHANNEL_PLAY_PORT = 12000
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
