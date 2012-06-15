@@ -46,6 +46,23 @@ MIDDLEWARE_CLASSES = (
 )
 
 
+# Auxiliar apps configuration
+MULTICAT_COMMAND = '/usr/bin/multicat'
+MULTICAT_LOGS_DIR = '/var/log/multicat/'
+MULTICAT_SOCKETS_DIR = '/var/run/multicat/sockets/'
+
+CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
+CHANNEL_RECORD_CLEAN_COMMAND = '/usr/bin/multicat_expire.sh'
+CHANNEL_PLAY_PORT = 12000
+
+DVBLAST_COMMAND = '/usr/bin/dvblast'
+DVBLAST_CONFS_DIR = '/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
+
+DVBLASTCTL_COMMAND = '/usr/bin/dvblastctl'
+
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
