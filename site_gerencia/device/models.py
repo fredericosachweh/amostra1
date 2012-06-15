@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+from __future__ import division
 import logging
 from django.db import models
 from django.utils.translation import ugettext as _
@@ -1350,11 +1351,11 @@ class StreamRecorder(OutputModel, DeviceServer):
     Serviço de gravação dos fluxos multimidia.
     """
     rotate = models.PositiveIntegerField(_(u'Tempo em minutos do arquivo'),
-        help_text=_(u'Padrão é 60 min.'))
+        help_text=_(u'Padrão é 60 min.'), default=60)
     folder = models.CharField(_(u'Diretório destino'), max_length=500,
         default=settings.CHANNEL_RECORD_DIR, )
     keep_time = models.PositiveIntegerField(_(u'Horas que permanece gravado'),
-        help_text=_(u'Padrão: 48'))
+        help_text=_(u'Padrão: 48'), default=48)
     start_time = models.DateTimeField(_(u'Hora inicial da gravação'),
         null=True, default=None, blank=True)
     channel = models.ForeignKey('tv.Channel', null=True, blank=True)
@@ -1366,12 +1367,13 @@ class StreamRecorder(OutputModel, DeviceServer):
         verbose_name_plural = _(u'Gravadores de fluxo')
 
     def __unicode__(self):
-        return u'rotate:%d, keep:%d, channel:%s, start:%s' % (self.rotate,
+        return u'id:%d rotate:%d, keep:%d, channel:%s, start:%s' % (
+            self.id, self.rotate,
             self.keep_time, self.channel, self.start_time)
 
     def _get_cmd(self):
         # Create the necessary folders
-        self._create_folders()
+        #self._create_folders()
         # Create folder to store record files
         self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
         # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
@@ -1391,7 +1393,7 @@ class StreamRecorder(OutputModel, DeviceServer):
     def start(self, recursive=False):
         # Create destination folder
         # Create the necessary log folders
-        self._create_folders()
+        #self._create_folders()
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
@@ -1403,6 +1405,52 @@ class StreamRecorder(OutputModel, DeviceServer):
         self.save()
         if recursive is True:
             self.sink.start(recursive=recursive)
+        # This install all cronjobs to current recorder server
+        self.install_cron()
+
+    def get_cron_line(self):
+        r"Install cronjob to clean expired record"
+        # Example of job definition:
+        # .---------------- minute (0 - 59)
+        # |  .------------- hour (0 - 23)
+        # |  |  .---------- day of month (1 - 31)
+        # |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+        # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7)
+        # |  |  |  |  |
+        # *  *  *  *  * user-name  command to be executed
+        #*/30 * * * * nginx /iptv/bin/multicat_expire.sh /iptv/recorder/50/ 13
+        #*/30 * * * * nginx /iptv/bin/multicat_expire.sh /iptv/recorder/53/ 13
+        #*/30 * * * * nginx /iptv/bin/multicat_expire.sh /iptv/recorder/54/ 25
+        #import getpass
+        #user = getpass.getuser()
+        elements = (self.keep_time / (self.rotate / 60)) + 1
+        cmd = '*/30 * * * * %s %s/%d/ %d' % (
+            settings.CHANNEL_RECORD_CLEAN_COMMAND, self.folder, self.id,
+            elements)
+        return cmd
+
+    def install_cron(self):
+        u'Reinstall crontab for current server\
+        (for now full install all recorders)'
+        from tempfile import NamedTemporaryFile
+        from datetime import datetime
+        # Get all running recorders on current recorder server
+        recorders = StreamRecorder.objects.filter(
+            server=self.server, status=True)
+        if len(recorders) == 0:
+            return
+        tmpfile = NamedTemporaryFile()
+        cron = '# New cronfile: %s \n\n' % datetime.now()
+        remote_tmpfile = "".join(self.server.execute('/bin/mktemp')).strip()
+        for rec in recorders:
+            cron += '# recorder = %s\n' % rec
+            cron += rec.get_cron_line() + '\n\n'
+        tmpfile.file.write(cron)
+        tmpfile.file.flush()
+        if self.server.offline_mode is False:
+            self.server.put(tmpfile.name, remote_tmpfile)
+        self.server.execute('/bin/crontab %s ' % remote_tmpfile)
+        tmpfile.close()
 
 
 ## Recuperação:
@@ -1427,13 +1475,6 @@ class StreamPlayer(OutputModel, DeviceServer):
     class Meta:
         verbose_name = _(u'Reprodutor de fluxo gravado')
         verbose_name_plural = _(u'Reprodutores de fluxo gravado')
-
-    def __init__(self, *args, **kwargs):
-        log = logging.getLogger('debug')
-        log.debug('__init__ -> %s', self)
-        # Create the necessary folders
-        #self._create_folders()
-        super(StreamPlayer, self).__init__(*args, **kwargs)
 
     def play(self, time_shift=0):
         ur"""
@@ -1473,11 +1514,12 @@ class StreamPlayer(OutputModel, DeviceServer):
     def start(self, recursive=False, time_shift=0):
         # Create destination folder
         # Create the necessary log folders
-        self._create_folders()
+        #self._create_folders()
         # Start multicat
+        log = logging.getLogger('debug')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
-        print(cmd)
+        log.info('StreamPlayer.command:%s' % cmd)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()

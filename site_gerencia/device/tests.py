@@ -1035,9 +1035,9 @@ class TestRecord(TestCase):
         )
         StreamRecorder.objects.create(
             server=server,
-            rotate=60,
+            rotate=60,  # minutos
             folder='/tmp/recording_i',
-            keep_time=100,
+            keep_time=24,  # horas
             sink=ext_ip,
             nic_sink=server.nic_set.get(name='eth1'),
             channel=ch1,
@@ -1045,9 +1045,9 @@ class TestRecord(TestCase):
         )
         StreamRecorder.objects.create(
             server=server1,
-            rotate=60,
+            rotate=5,  # minutos
             folder='/tmp/recording_1',
-            keep_time=130,
+            keep_time=2,  # horas
             sink=ext_ip,
             nic_sink=server.nic_set.get(name='eth1'),
             channel=ch1,
@@ -1057,7 +1057,7 @@ class TestRecord(TestCase):
             server=server,
             rotate=60,
             folder='/tmp/recording_j',
-            keep_time=40,
+            keep_time=48,
             sink=ext_ip,
             nic_sink=server.nic_set.get(name='eth0'),
             channel=ch2,
@@ -1088,10 +1088,6 @@ class TestRecord(TestCase):
         self.assertEqual(recorder._get_cmd(), cmd_expected,
             'Comando de gravação difere do esperado')
         self.assertEqual(cmd_expected, recorder._get_cmd())
-        recorder.start()
-        self.assertTrue(recorder.running())
-        recorder.stop()
-        self.assertFalse(recorder.running())
 
     def test_view_tvod_list(self):
         from datetime import datetime, timedelta
@@ -1115,8 +1111,27 @@ class TestRecord(TestCase):
         self.assertEqual('/tv/device/tvod/12/play/3600', urlplay,
             'URL invalida')
         urlstopOK = reverse('device.views.tvod',
-            kwargs={'channel_number': 12, 'command': 'stop', 'seek': ''})
-        self.assertEqual('/tv/device/tvod/12/stop/', urlstopOK, 'URL invalida')
+            kwargs={'channel_number': 12, 'command': 'stop', 'seek': 0})
+        self.assertEqual('/tv/device/tvod/12/stop/0', urlstopOK,
+            'URL invalida')
         self.c = Client()
         response = self.c.get(urlplay)
-        print(response.content)
+        self.assertContains(response, 'Can not start')
+        response = self.c.get(urlstopOK)
+        self.assertContains(response, 'Stoped')
+
+    def test_install_cron(self):
+        recorders = StreamRecorder.objects.all()
+        cron_1 = '*/30 * * * * /iptv/bin/multicat_expire.sh \
+/tmp/recording_i/1/ 25'
+        self.assertEqual(cron_1, recorders[0].get_cron_line(),
+            'Must be equals')
+        cron_2 = '*/30 * * * * /iptv/bin/multicat_expire.sh \
+/tmp/recording_1/2/ 25'
+        self.assertEqual(cron_2, recorders[1].get_cron_line(),
+            'Must be equals')
+        cron_3 = '*/30 * * * * /iptv/bin/multicat_expire.sh \
+/tmp/recording_j/3/ 49'
+        self.assertEqual(cron_3, recorders[2].get_cron_line(),
+            'Must be equals')
+        recorders[0].install_cron()
