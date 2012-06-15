@@ -1449,7 +1449,7 @@ class StreamRecorder(OutputModel, DeviceServer):
         tmpfile.file.flush()
         if self.server.offline_mode is False:
             self.server.put(tmpfile.name, remote_tmpfile)
-        self.server.execute('/bin/crontab %s ' % remote_tmpfile)
+        self.server.execute('/usr/bin/crontab %s ' % remote_tmpfile)
         tmpfile.close()
 
 
