@@ -290,16 +290,16 @@ def tvod(request, channel_number=None, command=None, seek=0):
     ## Load channel
     channel = get_object_or_404(Channel, number=channel_number)
     ip = request.META.get('REMOTE_ADDR')
-    log.debug('tvod[%s] client:%s channel:%s seek:%s' % (command, ip,
+    log.info('tvod[%s] client:%s channel:%s seek:%s' % (command, ip,
         channel_number, seek))
     ## Verifica se existe gravação solicitada
     record_time = datetime.now() - timedelta(0, int(seek))
     recorders = StreamRecorder.objects.filter(start_time__lte=record_time,
         channel=channel, keep_time__gte=(int(seek) / 3600))
-    log.debug('avaliable recorders: %s' % recorders)
+    log.info('avaliable recorders: %s' % recorders)
     if len(recorders) == 0:
+        log.info('Record Unavaliable')
         return HttpResponse(u'Unavaliable', mimetype='application/javascript')
-    print(recorders)
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
         StreamPlayer.objects.create(
@@ -307,16 +307,23 @@ def tvod(request, channel_number=None, command=None, seek=0):
             server=recorders[0].server,
             recorder=recorders[0]
             )
+        log.info('new player created to ip: %s' % ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
     player.recorder = recorders[0]
     player.server = recorders[0].server
     player.save()
     if command == 'play':
-        player.play(time_shift=int(seek))
+        try:
+            player.play(time_shift=int(seek))
+        except Exception as e:
+            log.error(e)
+            resp = 'Error'
         if player.pid and player.status:
             resp = 'OK'
         else:
-            resp = player.msg
+            log.error('Can not start: status=%s pid=%s' % (player.status,
+                player.pid))
+            resp = 'Can not start'
     elif command == 'stop':
         if player.pid and player.status:
             player.stop()
