@@ -1090,7 +1090,7 @@ class IPInput(InputModel, DeviceServer):
                                 choices=PROTOCOL_CHOICES, default=u'udp')
     src = generic.GenericRelation(DemuxedService)
 
-    def start(self):
+    def start(self, recursive=False):
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
