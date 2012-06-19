@@ -29,6 +29,8 @@ def server_status(request, pk=None):
     if server.status is False:
         log.error(u'Cant connect with server:(%s) %s:%d %s',
             server, server.host, server.ssh_port, server.msg)
+    else:
+        server.auto_create_nic()
     log.info('Server:%s [%s]', server, server.status)
     log.info('server_status(pk=%s)', pk)
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
