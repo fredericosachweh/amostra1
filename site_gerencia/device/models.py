@@ -1523,3 +1523,82 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
+        
+
+class SoftTranscoder(DeviceServer):
+    "A software transcoder device"
+    
+    AUDIO_CODECS_LIST = (
+        (u'mp3', u'MP3'),
+        (u'mp4a', u'AAC'),
+        (u'mpga', u'MP1/2'),
+        (u'a52', u'AC-3'),
+    )
+    
+    nic_sink = models.ForeignKey(NIC)
+    nic_src = models.ForeignKey(NIC)
+    content_type = models.ForeignKey(ContentType,
+        limit_choices_to={"model__in": ("UniqueIP",)},
+        null=True,
+        verbose_name=_(u'Conexão com device'))
+    object_id = models.PositiveIntegerField(null=True)
+    sink = generic.GenericForeignKey()
+    src = generic.GenericRelation(UniqueIP)
+    # Audio transcoder
+    transcode_audio = models.BooleanField()
+    audio_codec = models.CharField(max_length=100, 
+        choices=AUDIO_CODECS_LIST, null=True, blank=True)
+    audio_bitrate = models.PositiveIntegerField(default=96,
+        null=True, blank=True)
+    sync_on_audio_track = models.BooleanField(default=False) # --sout-transcode-audio-sync
+    # Gain control filter
+    apply_gain = models.BooleanField()
+    gain_value = models.FloatField(default=1.0, null=True, blank=True) # --gain-value
+    # Dynamic range compressor
+    apply_compressor = models.BooleanField()
+    compressor_rms_peak = models.FloatField(default=0.0, null=True, blank=True)
+    compressor_attack = models.FloatField(default=25.0, null=True, blank=True)
+    compressor_release = models.FloatField(default=100.0, null=True, blank=True)
+    compressor_threshold = models.FloatField(default=-11.0, null=True, blank=True)
+    compressor_ratio = models.FloatField(default=8.0, null=True, blank=True)
+    compressor_knee = models.FloatField(default=2.5, null=True, blank=True)
+    compressor_makeup_gain = models.FloatField(default=7.0, null=True, blank=True)
+    # Volume normalizer
+    apply_normvol = models.BooleanField()
+    normvol_buf_size = models.IntegerField(default=20, null=True, blank=True)
+    normvol_max_level = models.FloatField(default=2.0, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = _(u'Transcodificador em Software')
+        verbose_name_plural = _(u'Transcodificadores em Software')
+
+    def __unicode__(self):
+        return u'%s' % audio_codec
+    
+    def _get_filter_options(self):
+        pass
+    
+    def _get_cmd(self):
+        cmd = u'%s -I dummy' % settings.VLC_COMMAND
+        input_addr = u'udp://%s@%s:%d' % (
+            self.nic_sink, self.sink.ip, self.sink.port)
+        output = u'std{access=udp,mux=ts,dst=%s:%d}' % (
+            self.src.ip, self.src.port
+        )
+        if self.transcode_audio is True:
+            afilters = []
+            if self.apply_gain:
+                afilters.append('gain')
+            if self.apply_compressor:
+                afilters.append('compressor')
+            if self.apply_normvol:
+                afilters.append('volnorm')
+            cmd += u'--sout="#transcode{acodec=%s,afilter={%s}}:%s" %s' % (
+                self.audio_codec, u':'.join(afilters), output, input_addr
+            )
+            cmd += self._get_filter_options()
+        else:
+            cmd += u'--sout="#%s" %s' % (output, input_addr)
+
+        return cmd
+
