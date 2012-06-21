@@ -248,6 +248,8 @@ MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
+CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
+CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'
 CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
 CHANNEL_PLAY_PORT = 12000
 
