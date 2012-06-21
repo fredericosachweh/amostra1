@@ -477,6 +477,8 @@ class UniqueIP(models.Model):
         return obj
 
     def start(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.debug('UniqueIP.start args=%s, kwargs=%s', args, kwargs)
         self.sink.start(*args, **kwargs)
 
     def stop(self, *args, **kwargs):
@@ -536,6 +538,9 @@ class DeviceServer(models.Model):
         else:
             alive = False
         return alive
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.__class__, self.description)
 
     def switch_link(self):
         module_name = self._meta.module_name
@@ -732,7 +737,9 @@ class InputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders dvblast needs"
-
+        log = logging.getLogger('debug')
+        log.debug('skip create folders on InputModel')
+        return
         def create_folder(path):
             try:
                 self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
@@ -1094,7 +1101,7 @@ class IPInput(InputModel, DeviceServer):
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
-        self._create_folders()
+        #self._create_folders()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
             settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
@@ -1223,7 +1230,9 @@ class FileInput(DeviceServer):
         return '[%s] %s -->' % (self.server, self.description)
 
     def _get_cmd(self):
+        log = logging.getLogger('debug')
         ip = self.src.get()
+        log.debug('FileInput._get_cmd() ip=%s', ip)
         cmd = u'%s' % settings.VLC_COMMAND
         cmd += ' -I dummy -v'
         if self.repeat:
@@ -1256,13 +1265,15 @@ class OutputModel(models.Model):
 
     def _create_folders(self):
         "Creates all the folders multicat needs"
+        log = logging.getLogger('debug')
+        log.debug('skip create folders on OutputModel')
+        return
         def create_folder(path):
             try:
                 self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
                 self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
                     self.server.username, self.server.username, path))
             except Exception as ex:
-                log = logging.getLogger('debug')
                 log.error(unicode(ex))
         create_folder(settings.MULTICAT_SOCKETS_DIR)
         create_folder(settings.CHANNEL_RECORD_DIR)
@@ -1330,6 +1341,9 @@ class MulticastOutput(IPOutput):
 #            raise ValidationError({'__all__': [msg]})
 
     def _get_cmd(self):
+        log = logging.getLogger('debug')
+        log.debug('MulticastOutput::_get_cmd() sink=%s nic_sink=%s' % (
+            self.sink, self.nic_sink))
         cmd = u'%s' % settings.MULTICAT_COMMAND
         cmd += ' -c %s%d.sock' % (settings.MULTICAT_SOCKETS_DIR, self.pk)
         cmd += ' -u @%s:%d/ifaddr=%s' % (
