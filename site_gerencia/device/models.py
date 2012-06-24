@@ -394,7 +394,8 @@ class UniqueIP(models.Model):
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,
-        limit_choices_to={"model__in": ("DemuxedService", "FileInput")},
+        limit_choices_to={"model__in": (
+            "DemuxedService", "FileInput", "SoftTranscoder")},
         blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
@@ -441,7 +442,9 @@ class UniqueIP(models.Model):
                                                object_id=self.pk)
         recorder = StreamRecorder.objects.filter(content_type=uniqueip_type,
                                                object_id=self.pk)
-        return list(chain(ipout, recorder))
+        soft_transcoder = SoftTranscoder.objects.filter(content_type=uniqueip_type,
+                                               object_id=self.pk)
+        return list(chain(ipout, recorder, soft_transcoder))
 
     def natural_key(self):
         return {'ip': self.ip, 'port': self.port}
@@ -1535,8 +1538,8 @@ class SoftTranscoder(DeviceServer):
         (u'a52', u'AC-3'),
     )
     
-    nic_sink = models.ForeignKey(NIC)
-    nic_src = models.ForeignKey(NIC)
+    nic_sink = models.ForeignKey(NIC, related_name='soft_transcoder_nic_sink')
+    nic_src = models.ForeignKey(NIC, related_name='soft_transcoder_nic_src')
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in": ("UniqueIP",)},
         null=True,
@@ -1550,7 +1553,8 @@ class SoftTranscoder(DeviceServer):
         choices=AUDIO_CODECS_LIST, null=True, blank=True)
     audio_bitrate = models.PositiveIntegerField(default=96,
         null=True, blank=True)
-    sync_on_audio_track = models.BooleanField(default=False) # --sout-transcode-audio-sync
+    sync_on_audio_track = models.BooleanField(
+        default=False) # --sout-transcode-audio-sync
     # Gain control filter
     apply_gain = models.BooleanField()
     gain_value = models.FloatField(default=1.0, null=True, blank=True) # --gain-value
@@ -1575,30 +1579,84 @@ class SoftTranscoder(DeviceServer):
     def __unicode__(self):
         return u'%s' % audio_codec
     
-    def _get_filter_options(self):
-        pass
+    def _get_gain_filter_options(self):
+        return u'--gain-value %.2f ' % self.gain_value
+    
+    def _get_compressor_filter_options(self):
+        return (
+           u'--compressor-rms-peak %.2f '
+            '--compressor-attack %.2f '
+            '--compressor-release %.2f '
+            '--compressor-threshold %.2f '
+            '--compressor-ratio %.2f '
+            '--compressor-knee %.2f '
+            '--compressor-makeup-gain %.2f ' % (
+               self.compressor_rms_peak,
+               self.compressor_attack,
+               self.compressor_release,
+               self.compressor_threshold,
+               self.compressor_ratio,
+               self.compressor_knee,
+               self.compressor_makeup_gain,
+           )
+        )
+    
+    def _get_normvol_filter_options(self):
+        return u'--norm-buff-size %d --norm-max-level %.2f ' % (
+            self.normvol_buf_size, self.normvol_max_level
+        )
     
     def _get_cmd(self):
-        cmd = u'%s -I dummy' % settings.VLC_COMMAND
-        input_addr = u'udp://%s@%s:%d' % (
-            self.nic_sink, self.sink.ip, self.sink.port)
-        output = u'std{access=udp,mux=ts,dst=%s:%d}' % (
-            self.src.ip, self.src.port
+        import re
+        cmd = u'%s -I dummy ' % settings.VLC_COMMAND
+        # TODO - How to specify the input bind interface (nic_sink)
+        # when the address is multicast
+        if re.match(r'^2[23]\d\.', self.sink.ip): # is multicast
+            input_addr = u'udp://@%s:%d' % (self.sink.ip, self.sink.port)
+        else:
+            input_addr = u'udp://@%s:%d' % (self.nic_sink.ipv4, self.sink.port)
+        if self.src.count() is not 1:
+            raise Exception(
+                'A SoftTranscoder must be connected to ONE destination!')
+        src = self.src.get()
+        output = u'std{access=udp,mux=ts,bind=%s,dst=%s:%d}' % (
+            self.nic_src.ipv4, src.ip, src.port
         )
         if self.transcode_audio is True:
+            if self.sync_on_audio_track:
+                cmd += u'--sout-transcode-audio-sync '
             afilters = []
             if self.apply_gain:
                 afilters.append('gain')
+                cmd += self._get_gain_filter_options()
             if self.apply_compressor:
                 afilters.append('compressor')
+                cmd += self._get_compressor_filter_options()
             if self.apply_normvol:
                 afilters.append('volnorm')
-            cmd += u'--sout="#transcode{acodec=%s,afilter={%s}}:%s" %s' % (
-                self.audio_codec, u':'.join(afilters), output, input_addr
+                cmd += self._get_normvol_filter_options()
+            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' % (
+                self.audio_codec, self.audio_bitrate,
+                u':'.join(afilters), output, input_addr
             )
-            cmd += self._get_filter_options()
         else:
             cmd += u'--sout="#%s" %s' % (output, input_addr)
 
         return cmd
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # You need to specify a codec if transcoding is enabled
+        if self.transcode_audio is True and self.audio_codec is None:
+            raise ValidationError(
+                _(u'Especifique o codec para transcodificação.'))
+        # Filters will only be applied if transcoding is enabled
+        if self.transcode_audio is False and (
+            self.apply_gain is True or \
+            self.apply_compressor is True or \
+            self.apply_normvol is True):
+            raise ValidationError(
+                _(u'Os filtros só serão aplicados se a'
+                u' transcodificação estiver habilitada.'))
+        
 
