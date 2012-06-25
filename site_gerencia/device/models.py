@@ -1577,7 +1577,7 @@ class SoftTranscoder(DeviceServer):
         verbose_name_plural = _(u'Transcodificadores em Software')
 
     def __unicode__(self):
-        return u'%s' % audio_codec
+        return u'Transcoder %s' % self.audio_codec
     
     def _get_gain_filter_options(self):
         return u'--gain-value %.2f ' % self.gain_value
@@ -1610,7 +1610,7 @@ class SoftTranscoder(DeviceServer):
         import re
         cmd = u'%s -I dummy ' % settings.VLC_COMMAND
         # TODO - How to specify the input bind interface (nic_sink)
-        # when the address is multicast
+        # when the address is multicast ?
         if re.match(r'^2[23]\d\.', self.sink.ip): # is multicast
             input_addr = u'udp://@%s:%d' % (self.sink.ip, self.sink.port)
         else:
@@ -1643,6 +1643,16 @@ class SoftTranscoder(DeviceServer):
             cmd += u'--sout="#%s" %s' % (output, input_addr)
 
         return cmd
+
+    def start(self, recursive=False):
+        log_path = '%s%d' % (settings.VLC_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(self._get_cmd(),
+            log_path=log_path)
+        if self.pid > 0:
+            self.status = True
+        self.save()
+        if recursive is True:
+            self.sink.start(recursive=recursive)
 
     def clean(self):
         from django.core.exceptions import ValidationError

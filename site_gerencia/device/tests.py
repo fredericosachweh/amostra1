@@ -518,6 +518,13 @@ class CommandsGenerationTest(TestCase):
         ) % settings.VLC_COMMAND
         
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
+        
+        soft_transcoder.start()
+        self.assertTrue(soft_transcoder.running())
+
+        soft_transcoder.stop()
+        self.assertFalse(soft_transcoder.running())
+
 
 class AdaptersManipulationTests(TestCase):
     def setUp(self):
