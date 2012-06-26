@@ -394,8 +394,8 @@ class UniqueIP(models.Model):
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,
-        limit_choices_to={"model__in": (
-            "DemuxedService", "FileInput", "SoftTranscoder")},
+#        limit_choices_to={"model__in": (
+#            "DemuxedService", "FileInput", "SoftTranscoder")},
         blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
@@ -1541,7 +1541,7 @@ class SoftTranscoder(DeviceServer):
     nic_sink = models.ForeignKey(NIC, related_name='soft_transcoder_nic_sink')
     nic_src = models.ForeignKey(NIC, related_name='soft_transcoder_nic_src')
     content_type = models.ForeignKey(ContentType,
-        limit_choices_to={"model__in": ("UniqueIP",)},
+#        limit_choices_to={"model__in": ("UniqueIP",)},
         null=True,
         verbose_name=_(u'Conexão com device'))
     object_id = models.PositiveIntegerField(null=True)
