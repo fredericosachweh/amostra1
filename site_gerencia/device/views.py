@@ -343,12 +343,20 @@ def tvod_list(request):
     ip = request.META.get('REMOTE_ADDR')
     log.debug('tvod_list from ip=%s' % ip)
     rec = StreamRecorder.objects.filter(status=True)
+    meta = {
+        'previous': "",
+        'total_count': 0,
+        'offset': 0,
+        'limit': 0,
+        'next': ""
+    }
     obj = []
     for r in rec:
+        meta['total_count'] += 1
         obj.append({
             'id': r.id,
             'start': time.mktime(r.start_time.timetuple()),
             'channel': r.channel.number
             })
-    json = simplejson.dumps(obj)
+    json = simplejson.dumps({'meta': meta, 'objects': obj})
     return HttpResponse(json, mimetype='application/javascript')
