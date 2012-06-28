@@ -28,11 +28,11 @@ else:
     }
 
 ROOT_URL = 'tv/'
-MEDIA_URL = '/tvfiles/media/'
+MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
 ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
-STATIC_URL = '/tvfiles/static/'
+STATIC_URL = '/tv/static/'
 #ROOT_URLCONF = '/tv'
 
 
