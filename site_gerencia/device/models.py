@@ -1234,7 +1234,7 @@ class FileInput(DeviceServer):
             cmd += ' -R'
         #cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
         cmd += ' "%s"' % (self.filename)
-        cmd += ' --miface-addr %s' % self.nic_src.ipv4
+        cmd += ' --miface %s' % self.nic_src.name
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             ip.ip, ip.port)
         return cmd
@@ -1611,7 +1611,7 @@ class SoftTranscoder(DeviceServer):
     def _get_cmd(self):
         import re
         cmd = u'%s -I dummy ' % settings.VLC_COMMAND
-        cmd += u'--miface-addr %s ' % self.nic_src.ipv4
+        cmd += u'--miface %s ' % self.nic_src.name
         if re.match(r'^2[23]\d\.', self.sink.ip): # is multicast
             input_addr = u'udp://@%s:%d/ifaddr=%s' % (
                 self.sink.ip, self.sink.port, self.nic_sink.ipv4)
