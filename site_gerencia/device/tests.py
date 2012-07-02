@@ -79,10 +79,12 @@ class CommandsGenerationTest(TestCase):
         fileinput = FileInput.objects.create(
             server=server,
             filename='foobar.mkv',
+            nic_src=nic,
         )
         fi_soft_transcoder = FileInput.objects.create(
             server=server,
             filename='foobar.mkv',
+            nic_src=nic,
         )
         service_a = DemuxedService.objects.create(
             server=server,
@@ -405,6 +407,7 @@ class CommandsGenerationTest(TestCase):
             '%s '
             '-I dummy -v -R '
             '"foobar.mkv" '
+            '--miface-addr 127.0.0.1 '
             '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
         ) % (settings.VLC_COMMAND)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
@@ -468,8 +471,9 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
+            "--miface-addr 127.0.0.1 "
             "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
-            "udp://@239.1.0.9:20000"
+            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Unicast input
@@ -477,6 +481,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
+            "--miface-addr 127.0.0.1 "
             "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
             "udp://@127.0.0.1:20000"
         ) % settings.VLC_COMMAND
@@ -488,9 +493,10 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
+            "--miface-addr 127.0.0.1 "
             "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={}}"
             ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
-            "udp://@239.1.0.9:20000"
+            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Enable audio filters
@@ -501,6 +507,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
+            "--miface-addr 127.0.0.1 "
             "--sout-transcode-audio-sync "
             "--gain-value 1.00 "
             "--compressor-rms-peak 0.00 "
@@ -514,7 +521,7 @@ class CommandsGenerationTest(TestCase):
             "--norm-max-level 2.00 "
             "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:volnorm}}"
             ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
-            "udp://@239.1.0.9:20000"
+            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
         
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())

@@ -1219,6 +1219,7 @@ class FileInput(DeviceServer):
         null=True)
     repeat = models.BooleanField(_(u'Repetir indefinidamente'), default=True)
     src = generic.GenericRelation(UniqueIP)
+    nic_src = models.ForeignKey(NIC)
 
     def __unicode__(self):
         if hasattr(self, 'server') is False:
@@ -1233,6 +1234,7 @@ class FileInput(DeviceServer):
             cmd += ' -R'
         #cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
         cmd += ' "%s"' % (self.filename)
+        cmd += ' --miface-addr %s' % self.nic_src.ipv4
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             ip.ip, ip.port)
         return cmd
@@ -1609,10 +1611,10 @@ class SoftTranscoder(DeviceServer):
     def _get_cmd(self):
         import re
         cmd = u'%s -I dummy ' % settings.VLC_COMMAND
-        # TODO - How to specify the input bind interface (nic_sink)
-        # when the address is multicast ?
+        cmd += u'--miface-addr %s ' % self.nic_src.ipv4
         if re.match(r'^2[23]\d\.', self.sink.ip): # is multicast
-            input_addr = u'udp://@%s:%d' % (self.sink.ip, self.sink.port)
+            input_addr = u'udp://@%s:%d/ifaddr=%s' % (
+                self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         else:
             input_addr = u'udp://@%s:%d' % (self.nic_sink.ipv4, self.sink.port)
         if self.src.count() is not 1:
