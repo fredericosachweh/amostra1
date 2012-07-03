@@ -79,6 +79,12 @@ class CommandsGenerationTest(TestCase):
         fileinput = FileInput.objects.create(
             server=server,
             filename='foobar.mkv',
+            nic_src=nic,
+        )
+        fi_soft_transcoder = FileInput.objects.create(
+            server=server,
+            filename='foobar.mkv',
+            nic_src=nic,
         )
         service_a = DemuxedService.objects.create(
             server=server,
@@ -150,6 +156,20 @@ class CommandsGenerationTest(TestCase):
             port=20000,
             sink=fileinput,
         )
+        file_to_soft = UniqueIP.objects.create(
+            port=20000,
+            sink=fi_soft_transcoder,
+        )
+        soft_transcoder = SoftTranscoder.objects.create(
+            server=server,
+            sink=file_to_soft,
+            nic_sink=nic,
+            nic_src=nic,
+        )
+        soft_to_ipout = UniqueIP.objects.create(
+            port=20000,
+            sink=soft_transcoder,
+        )
         ipout_a = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.3',
@@ -209,6 +229,17 @@ class CommandsGenerationTest(TestCase):
             sink=internal_g,
             nic_sink=nic,
         )
+        ipout_soft_transcoder = MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.8',
+            port=10000,
+            protocol='udp',
+            interface=nic,
+            sink=soft_to_ipout,
+            nic_sink=nic,
+        )
+        # TODO - FileInput -> UniqueIP -> SoftTranscoder -> UniqueIP -> MulticastOutput
+        
 
     def tearDown(self):
         Server.objects.all().delete()
@@ -376,6 +407,7 @@ class CommandsGenerationTest(TestCase):
             '%s '
             '-I dummy -v -R '
             '"foobar.mkv" '
+            '--miface-addr 127.0.0.1 '
             '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
         ) % (settings.VLC_COMMAND)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
@@ -432,6 +464,73 @@ class CommandsGenerationTest(TestCase):
         self.assertIn(recorder, internal_src)
         self.assertEqual(internal, ipout.sink)
         self.assertEqual(internal, recorder.sink)
+
+    def test_soft_transcoder(self):
+        soft_transcoder = SoftTranscoder.objects.all()[0]
+        # Multicast input
+        expected_cmd = unicode(
+            "%s "
+            "-I dummy "
+            "--miface lo "
+            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
+            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
+        ) % settings.VLC_COMMAND
+        self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
+        # Unicast input
+        soft_transcoder.sink.ip = '192.169.1.100'
+        expected_cmd = unicode(
+            "%s "
+            "-I dummy "
+            "--miface lo "
+            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
+            "udp://@127.0.0.1:20000"
+        ) % settings.VLC_COMMAND
+        self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
+        # Enable audio transcoding
+        soft_transcoder.sink.ip = '239.1.0.9'
+        soft_transcoder.transcode_audio = True
+        soft_transcoder.audio_codec = 'mp4a'
+        expected_cmd = unicode(
+            "%s "
+            "-I dummy "
+            "--miface lo "
+            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={}}"
+            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
+            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
+        ) % settings.VLC_COMMAND
+        self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
+        # Enable audio filters
+        soft_transcoder.sync_on_audio_track = True
+        soft_transcoder.apply_gain = True
+        soft_transcoder.apply_compressor = True
+        soft_transcoder.apply_normvol = True
+        expected_cmd = unicode(
+            "%s "
+            "-I dummy "
+            "--miface lo "
+            "--sout-transcode-audio-sync "
+            "--gain-value 1.00 "
+            "--compressor-rms-peak 0.00 "
+            "--compressor-attack 25.00 "
+            "--compressor-release 100.00 "
+            "--compressor-threshold -11.00 "
+            "--compressor-ratio 8.00 "
+            "--compressor-knee 2.50 "
+            "--compressor-makeup-gain 7.00 "
+            "--norm-buff-size 20 "
+            "--norm-max-level 2.00 "
+            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:volnorm}}"
+            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
+            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
+        ) % settings.VLC_COMMAND
+        
+        self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
+        
+        soft_transcoder.start()
+        self.assertTrue(soft_transcoder.running())
+
+        soft_transcoder.stop()
+        self.assertFalse(soft_transcoder.running())
 
 
 class AdaptersManipulationTests(TestCase):

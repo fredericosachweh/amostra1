@@ -115,3 +115,9 @@ class StreamRecorderForm(GenericRelationForm):
 class UniqueIPForm(GenericRelationForm):
     class Meta:
         model = UniqueIP
+
+        
+class SoftTranscoderForm(GenericRelationForm):
+    class Meta:
+        model = SoftTranscoder
+

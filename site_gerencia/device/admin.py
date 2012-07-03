@@ -147,6 +147,37 @@ class AdminUniqueIP(admin.ModelAdmin):
     )
     form = forms.UniqueIPForm
 
+
+class AdminSoftTranscoder(admin.ModelAdmin):
+    list_display = ('audio_codec', 'switch_link')
+    fieldsets = (
+        (_(u'Conexão com outros devices'), {
+            'fields' : ('server', 'nic_sink', 'nic_src',
+                        'content_type', 'object_id')
+        }),
+        (_(u'Transcodificador de Áudio'), {
+            'fields' : ('transcode_audio', 'audio_codec',
+                        'audio_bitrate', 'sync_on_audio_track')
+        }),
+        (_(u'Ganho no Áudio'), {
+            'classes' : ('collapse',),
+            'fields' : ('apply_gain', 'gain_value')
+        }),
+        (_(u'Compressor Dinâmico de Áudio'), {
+            'classes' : ('collapse',),
+            'fields' : ('apply_compressor', 'compressor_rms_peak',
+            'compressor_attack', 'compressor_release',
+            'compressor_threshold', 'compressor_ratio',
+            'compressor_knee', 'compressor_makeup_gain')
+        }),
+        (_(u'Normalizador de Volume'), {
+            'classes' : ('collapse',),
+            'fields' : ('apply_normvol',
+                        'normvol_buf_size', 'normvol_max_level')
+        }),
+    )
+    form = forms.SoftTranscoderForm
+
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server,AdminServer)
 admin.site.register(models.Antenna)
@@ -158,3 +189,5 @@ admin.site.register(models.FileInput, AdminFileInput)
 admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
+admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
+

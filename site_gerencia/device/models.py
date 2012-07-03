@@ -394,7 +394,8 @@ class UniqueIP(models.Model):
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,
-        limit_choices_to={"model__in": ("DemuxedService", "FileInput")},
+#        limit_choices_to={"model__in": (
+#            "DemuxedService", "FileInput", "SoftTranscoder")},
         blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
@@ -441,7 +442,9 @@ class UniqueIP(models.Model):
                                                object_id=self.pk)
         recorder = StreamRecorder.objects.filter(content_type=uniqueip_type,
                                                object_id=self.pk)
-        return list(chain(ipout, recorder))
+        soft_transcoder = SoftTranscoder.objects.filter(content_type=uniqueip_type,
+                                               object_id=self.pk)
+        return list(chain(ipout, recorder, soft_transcoder))
 
     def natural_key(self):
         return {'ip': self.ip, 'port': self.port}
@@ -1223,6 +1226,7 @@ class FileInput(DeviceServer):
         null=True)
     repeat = models.BooleanField(_(u'Repetir indefinidamente'), default=True)
     src = generic.GenericRelation(UniqueIP)
+    nic_src = models.ForeignKey(NIC)
 
     def __unicode__(self):
         if hasattr(self, 'server') is False:
@@ -1239,6 +1243,7 @@ class FileInput(DeviceServer):
             cmd += ' -R'
         #cmd += ' "%s%s"' % (settings.VLC_VIDEOFILES_DIR, self.filename)
         cmd += ' "%s"' % (self.filename)
+        cmd += ' --miface %s' % self.nic_src.name
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
             ip.ip, ip.port)
         return cmd
@@ -1537,3 +1542,172 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
+        
+
+class SoftTranscoder(DeviceServer):
+    "A software transcoder device"
+    
+    AUDIO_CODECS_LIST = (
+        (u'mp3', u'MP3'),
+        (u'mp4a', u'AAC'),
+        (u'mpga', u'MP1/2'),
+        (u'a52', u'AC-3'),
+    )
+    
+    nic_sink = models.ForeignKey(NIC, related_name='soft_transcoder_nic_sink')
+    nic_src = models.ForeignKey(NIC, related_name='soft_transcoder_nic_src')
+    content_type = models.ForeignKey(ContentType,
+#        limit_choices_to={"model__in": ("UniqueIP",)},
+        null=True,
+        verbose_name=_(u'Conexão com device'))
+    object_id = models.PositiveIntegerField(null=True)
+    sink = generic.GenericForeignKey()
+    src = generic.GenericRelation(UniqueIP)
+    # Audio transcoder
+    transcode_audio = models.BooleanField()
+    audio_codec = models.CharField(max_length=100, 
+        choices=AUDIO_CODECS_LIST, null=True, blank=True)
+    audio_bitrate = models.PositiveIntegerField(default=96,
+        null=True, blank=True)
+    sync_on_audio_track = models.BooleanField(
+        default=False) # --sout-transcode-audio-sync
+    # Gain control filter
+    apply_gain = models.BooleanField()
+    gain_value = models.FloatField(u'Gain multiplier',
+        help_text=u'Increase or decrease the gain (default 1.0)', 
+        default=1.0, null=True, blank=True) # --gain-value
+    # Dynamic range compressor
+    apply_compressor = models.BooleanField()
+    compressor_rms_peak = models.FloatField(u'RMS/peak',
+        help_text=u'Set the RMS/peak (0 ... 1).',
+        default=0.0, null=True, blank=True)
+    compressor_attack = models.FloatField(u'Attack time',
+        help_text=u'Set the attack time in milliseconds (1.5 ... 400).',
+        default=25.0, null=True, blank=True)
+    compressor_release = models.FloatField(u'Release time',
+        help_text=u'Set the release time in milliseconds (2 ... 800).',
+        default=100.0, null=True, blank=True)
+    compressor_threshold = models.FloatField(u'Threshold level',
+        help_text=u'Set the threshold level in dB (-30 ... 0).',
+        default=-11.0, null=True, blank=True)
+    compressor_ratio = models.FloatField(u'Ratio',
+        help_text=u'Set the ratio (n:1) (1 ... 20).',
+        default=8.0, null=True, blank=True)
+    compressor_knee = models.FloatField(u'Knee radius',
+        help_text=u'Set the knee radius in dB (1 ... 10).',
+        default=2.5, null=True, blank=True)
+    compressor_makeup_gain = models.FloatField(u'Makeup gain',
+        help_text=u'Set the makeup gain in dB (0 ... 24).',
+        default=7.0, null=True, blank=True)
+    # Volume normalizer
+    apply_normvol = models.BooleanField()
+    normvol_buf_size = models.IntegerField(u'Number of audio buffers',
+        help_text=u'''This is the number of audio buffers on which the power \
+        measurement is made. A higher number of buffers will increase the \
+        response time of the filter to a spike but will make it less \
+        sensitive to short variations.''',
+        default=20, null=True, blank=True)
+    normvol_max_level = models.FloatField(u'Maximal volume level',
+        help_text=u'''If the average power over the last N buffers is higher \
+        than this value, the volume will be normalized. This value is a positive \
+        floating point number. A value between 0.5 and 10 seems sensible.''',
+        default=2.0, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = _(u'Transcodificador em Software')
+        verbose_name_plural = _(u'Transcodificadores em Software')
+
+    def __unicode__(self):
+        return u'Transcoder %s' % self.audio_codec
+    
+    def _get_gain_filter_options(self):
+        return u'--gain-value %.2f ' % self.gain_value
+    
+    def _get_compressor_filter_options(self):
+        return (
+           u'--compressor-rms-peak %.2f '
+            '--compressor-attack %.2f '
+            '--compressor-release %.2f '
+            '--compressor-threshold %.2f '
+            '--compressor-ratio %.2f '
+            '--compressor-knee %.2f '
+            '--compressor-makeup-gain %.2f ' % (
+               self.compressor_rms_peak,
+               self.compressor_attack,
+               self.compressor_release,
+               self.compressor_threshold,
+               self.compressor_ratio,
+               self.compressor_knee,
+               self.compressor_makeup_gain,
+           )
+        )
+    
+    def _get_normvol_filter_options(self):
+        return u'--norm-buff-size %d --norm-max-level %.2f ' % (
+            self.normvol_buf_size, self.normvol_max_level
+        )
+    
+    def _get_cmd(self):
+        import re
+        cmd = u'%s -I dummy ' % settings.VLC_COMMAND
+        cmd += u'--miface %s ' % self.nic_src.name
+        if re.match(r'^2[23]\d\.', self.sink.ip): # is multicast
+            input_addr = u'udp://@%s:%d/ifaddr=%s' % (
+                self.sink.ip, self.sink.port, self.nic_sink.ipv4)
+        else:
+            input_addr = u'udp://@%s:%d' % (self.nic_sink.ipv4, self.sink.port)
+        if self.src.count() is not 1:
+            raise Exception(
+                'A SoftTranscoder must be connected to ONE destination!')
+        src = self.src.get()
+        output = u'std{access=udp,mux=ts,bind=%s,dst=%s:%d}' % (
+            self.nic_src.ipv4, src.ip, src.port
+        )
+        if self.transcode_audio is True:
+            if self.sync_on_audio_track:
+                cmd += u'--sout-transcode-audio-sync '
+            afilters = []
+            if self.apply_gain:
+                afilters.append('gain')
+                cmd += self._get_gain_filter_options()
+            if self.apply_compressor:
+                afilters.append('compressor')
+                cmd += self._get_compressor_filter_options()
+            if self.apply_normvol:
+                afilters.append('volnorm')
+                cmd += self._get_normvol_filter_options()
+            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' % (
+                self.audio_codec, self.audio_bitrate,
+                u':'.join(afilters), output, input_addr
+            )
+        else:
+            cmd += u'--sout="#%s" %s' % (output, input_addr)
+
+        return cmd
+
+    def start(self, recursive=False):
+        log_path = '%s%d' % (settings.VLC_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(self._get_cmd(),
+            log_path=log_path)
+        if self.pid > 0:
+            self.status = True
+        self.save()
+        if recursive is True:
+            self.sink.start(recursive=recursive)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # You need to specify a codec if transcoding is enabled
+        if self.transcode_audio is True and self.audio_codec is None:
+            raise ValidationError(
+                _(u'Especifique o codec para transcodificação.'))
+        # Filters will only be applied if transcoding is enabled
+        if self.transcode_audio is False and (
+            self.apply_gain is True or \
+            self.apply_compressor is True or \
+            self.apply_normvol is True):
+            raise ValidationError(
+                _(u'Os filtros só serão aplicados se a'
+                u' transcodificação estiver habilitada.'))
+        
+
