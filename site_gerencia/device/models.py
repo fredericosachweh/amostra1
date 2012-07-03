@@ -1559,20 +1559,45 @@ class SoftTranscoder(DeviceServer):
         default=False) # --sout-transcode-audio-sync
     # Gain control filter
     apply_gain = models.BooleanField()
-    gain_value = models.FloatField(default=1.0, null=True, blank=True) # --gain-value
+    gain_value = models.FloatField(u'Gain multiplier',
+        help_text=u'Increase or decrease the gain (default 1.0)', 
+        default=1.0, null=True, blank=True) # --gain-value
     # Dynamic range compressor
     apply_compressor = models.BooleanField()
-    compressor_rms_peak = models.FloatField(default=0.0, null=True, blank=True)
-    compressor_attack = models.FloatField(default=25.0, null=True, blank=True)
-    compressor_release = models.FloatField(default=100.0, null=True, blank=True)
-    compressor_threshold = models.FloatField(default=-11.0, null=True, blank=True)
-    compressor_ratio = models.FloatField(default=8.0, null=True, blank=True)
-    compressor_knee = models.FloatField(default=2.5, null=True, blank=True)
-    compressor_makeup_gain = models.FloatField(default=7.0, null=True, blank=True)
+    compressor_rms_peak = models.FloatField(u'RMS/peak',
+        help_text=u'Set the RMS/peak (0 ... 1).',
+        default=0.0, null=True, blank=True)
+    compressor_attack = models.FloatField(u'Attack time',
+        help_text=u'Set the attack time in milliseconds (1.5 ... 400).',
+        default=25.0, null=True, blank=True)
+    compressor_release = models.FloatField(u'Release time',
+        help_text=u'Set the release time in milliseconds (2 ... 800).',
+        default=100.0, null=True, blank=True)
+    compressor_threshold = models.FloatField(u'Threshold level',
+        help_text=u'Set the threshold level in dB (-30 ... 0).',
+        default=-11.0, null=True, blank=True)
+    compressor_ratio = models.FloatField(u'Ratio',
+        help_text=u'Set the ratio (n:1) (1 ... 20).',
+        default=8.0, null=True, blank=True)
+    compressor_knee = models.FloatField(u'Knee radius',
+        help_text=u'Set the knee radius in dB (1 ... 10).',
+        default=2.5, null=True, blank=True)
+    compressor_makeup_gain = models.FloatField(u'Makeup gain',
+        help_text=u'Set the makeup gain in dB (0 ... 24).',
+        default=7.0, null=True, blank=True)
     # Volume normalizer
     apply_normvol = models.BooleanField()
-    normvol_buf_size = models.IntegerField(default=20, null=True, blank=True)
-    normvol_max_level = models.FloatField(default=2.0, null=True, blank=True)
+    normvol_buf_size = models.IntegerField(u'Number of audio buffers',
+        help_text=u'''This is the number of audio buffers on which the power \
+        measurement is made. A higher number of buffers will increase the \
+        response time of the filter to a spike but will make it less \
+        sensitive to short variations.''',
+        default=20, null=True, blank=True)
+    normvol_max_level = models.FloatField(u'Maximal volume level',
+        help_text=u'''If the average power over the last N buffers is higher \
+        than this value, the volume will be normalized. This value is a positive \
+        floating point number. A value between 0.5 and 10 seems sensible.''',
+        default=2.0, null=True, blank=True)
     
     class Meta:
         verbose_name = _(u'Transcodificador em Software')
