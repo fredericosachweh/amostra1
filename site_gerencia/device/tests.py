@@ -471,7 +471,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
-            "--miface-addr 127.0.0.1 "
+            "--miface lo "
             "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
             "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
@@ -481,7 +481,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
-            "--miface-addr 127.0.0.1 "
+            "--miface lo "
             "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
             "udp://@127.0.0.1:20000"
         ) % settings.VLC_COMMAND
@@ -493,7 +493,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
-            "--miface-addr 127.0.0.1 "
+            "--miface lo "
             "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={}}"
             ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
             "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
@@ -507,7 +507,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = unicode(
             "%s "
             "-I dummy "
-            "--miface-addr 127.0.0.1 "
+            "--miface lo "
             "--sout-transcode-audio-sync "
             "--gain-value 1.00 "
             "--compressor-rms-peak 0.00 "
