@@ -81,6 +81,8 @@ def programme_info(request):
     
     guides = Guide.objects.filter(channel__channelid=channel_id,start__lte=now,stop__gt=now)
     
+    arr = []
+
     if len(guides) > 0:
         guide = guides[0]
         pro = guide.programme
@@ -112,28 +114,41 @@ def programme_info(request):
         descriptions = ""
         descriptions = smart_str(pro.descriptions.get().value)
         
-        json = simplejson.dumps( [{ 
-                                   'programid'       :programid,
-                                   'rating'          :[rating],
-                                   'start'           :[startStr],
-                                   'stop'            :[stopStr],
-                                   'titles'          :[titlesStr],
-                                   'secondary_titles':[secondaryTitlesStr],
-                                   'descriptions'    :[descriptions]
-                                   }])
+        arr = {
+            'programid'       :programid,
+            'rating'          :[rating],
+            'start'           :[startStr],
+            'stop'            :[stopStr],
+            'titles'          :[titlesStr],
+            'secondary_titles':[secondaryTitlesStr],
+            'descriptions'    :[descriptions]
+        }
         
     else:
         print('SEM PROGRAMACAO')
-        json = simplejson.dumps( [{ 
-                                   'programid'       :0,
-                                   'rating'          :[" "],
-                                   'start'           :["00:00"],
-                                   'stop'            :["00:00"],
-                                   'titles'          :["Sem programação"],
-                                   'secondary_titles':[" "],
-                                   'descriptions'    :["Programação indisponível"]
-                                   }])
-        
+        arr = {
+            'programid'       :0,
+            'rating'          :[" "],
+            'start'           :["00:00"],
+            'stop'            :["00:00"],
+            'titles'          :["Sem programação"],
+            'secondary_titles':[" "],
+            'descriptions'    :["Programação indisponível"]
+        }
+
+    arrMeta = {
+    'meta': {
+    "limit": 0,
+    "next": "",
+    "offset": 0,
+    "previous": '',
+    "total_count": 0
+    },
+    "objects":[arr]
+    }
+
+    json = simplejson.dumps(arrMeta)
+
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
 
@@ -281,7 +296,18 @@ def guide_programmes(request):
             'rating':""
             })
         
-    json = simplejson.dumps(arr)
+    arrMeta = {
+      'meta': {
+               "limit": 0,
+               "next": "",
+               "offset": 0,
+               "previous": '',
+               "total_count": 0
+        },
+      "objects":arr
+     }
+        
+    json = simplejson.dumps(arrMeta)
         
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
@@ -458,12 +484,23 @@ def channel_programme_info(request):
             }
     else:
         print("INEXISTENTE")
+
+
+    arrMeta = {
+      'meta': {
+               "limit": 0,
+               "next": "",
+               "offset": 0,
+               "previous": '',
+               "total_count": 0
+        },
+      "objects":arr
+     }
             
-    json = simplejson.dumps(arr)
+    json = simplejson.dumps(arrMeta)
     
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
-
 
 def guide_mount_line_of_programe(request):
     """
@@ -515,7 +552,7 @@ def guide_mount_line_of_programe(request):
     #Y na lista de canais
     countY = int( request.GET.get('y') )
     
-    guides = Guide.objects.filter(channel__channelid=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop)
+    guides = Guide.objects.filter(channel__channelid=channelEpgRunNow,start__gte=rangeTimeStart,stop__lte=rangeTimeStop).order_by('start')
     
     arrGuideLine = []
     if(len(guides)> 0):
@@ -526,6 +563,7 @@ def guide_mount_line_of_programe(request):
             duracao = guide.stop-guide.start
             
             start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
+            print(start_yyymmddhhmm)
             startStr = '{:%H:%M}'.format(guide.start)
             stopStr  =  '{:%H:%M}'.format(guide.stop)
             
@@ -556,7 +594,19 @@ def guide_mount_line_of_programe(request):
     else:
         print("SEM PROGRAMACAO")
 
-    json = simplejson.dumps(arrGuideLine)
+
+    arrGuideLineMeta = {
+      'meta': {
+               "limit": 0,
+               "next": "",
+               "offset": 0,
+               "previous": '',
+               "total_count": 0
+        },
+      "objects":arrGuideLine
+     }
+
+    json = simplejson.dumps(arrGuideLineMeta)
     
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
