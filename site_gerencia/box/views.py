@@ -638,6 +638,8 @@ def tvod_list(request):
                                       ]
                             })
     
+    if request.GET.get('format') == 'jsonp' or request.GET.get('callback') == '?':
+        json = 'callback('+json+')'
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')  
 
