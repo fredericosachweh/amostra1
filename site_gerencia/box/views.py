@@ -611,6 +611,36 @@ def guide_mount_line_of_programe(request):
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')
 
+def tvod_list(request):
+    """
+    DADOS FAKE PARA TER O QUE MOSTRAR NA TELA, DEVE SER APAGADO
+    """
+    from django.utils import simplejson
+    
+    json = simplejson.dumps( {
+                              'meta': {
+                                       "limit": 0,
+                                       "next": "",
+                                       "offset": 0,
+                                       "previous": '',
+                                       "total_count": 0
+                                },
+                              "objects":[
+                                         {"start": 1340384411.0, 
+                                          "id": 50, 
+                                          "channel": 1}, 
+                                         {"start": 1340384321.0, 
+                                          "id": 53, 
+                                          "channel": 2},
+                                         {"start": 1340383426.0,
+                                          "id": 54, 
+                                          "channel": 3}
+                                      ]
+                            })
+    
+    # Chama o canal e pega a listagem do aplicativo canal
+    return HttpResponse(json,content_type='application/json')  
+
 def ping(request):
     """ Responde true """
     if settings.DEBUG == True:
