@@ -638,7 +638,7 @@ def tvod_list(request):
                                       ]
                             })
     
-    if request.GET.get('format') == 'jsonp':
+    if request.GET.get('format') == 'jsonp' and request.GET.get('callback') == None:
         json = 'callback('+json+')'
     if request.GET.get('callback') != None:
         json = request.GET.get('callback')+'('+json+')'
