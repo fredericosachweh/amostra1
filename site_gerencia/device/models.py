@@ -466,7 +466,7 @@ class UniqueIP(models.Model):
         super(UniqueIP, self).save(*args, **kwargs)
 
     def _gen_ip(self):
-        ip = settings.EXTERNAL_IP_MASK % (
+        ip = settings.INTERNAL_IP_MASK % (
             self.sequential / 256,
             self.sequential % 256)
         return ip
@@ -1137,6 +1137,10 @@ class UnicastInput(IPInput):
                 self.server.name, self.port, self.interface))
             raise ValidationError({'__all__': [msg]})
 
+    def has_lock(self):
+        "Return True on Multicast and unicast input"
+        return True
+
     def _get_cmd(self):
         cmd = u'%s' % settings.DVBLAST_COMMAND
         cmd += ' -D @%s:%d' % (self.interface.ipv4, self.port)
@@ -1167,6 +1171,10 @@ class MulticastInput(IPInput):
             msg = _(u'Combinação já existente: %s e %s' % (
                 self.server.name, self.ip))
             raise ValidationError({'__all__': [msg]})
+
+    def has_lock(self):
+        "Return True on Multicast and unicast input"
+        return True
 
     def _get_cmd(self):
         cmd = u'%s' % settings.DVBLAST_COMMAND
@@ -1542,18 +1550,18 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
-        
+
 
 class SoftTranscoder(DeviceServer):
     "A software transcoder device"
-    
+
     AUDIO_CODECS_LIST = (
         (u'mp3', u'MP3'),
         (u'mp4a', u'AAC'),
         (u'mpga', u'MP1/2'),
         (u'a52', u'AC-3'),
     )
-    
+
     nic_sink = models.ForeignKey(NIC, related_name='soft_transcoder_nic_sink')
     nic_src = models.ForeignKey(NIC, related_name='soft_transcoder_nic_src')
     content_type = models.ForeignKey(ContentType,
@@ -1565,17 +1573,17 @@ class SoftTranscoder(DeviceServer):
     src = generic.GenericRelation(UniqueIP)
     # Audio transcoder
     transcode_audio = models.BooleanField()
-    audio_codec = models.CharField(max_length=100, 
+    audio_codec = models.CharField(max_length=100,
         choices=AUDIO_CODECS_LIST, null=True, blank=True)
     audio_bitrate = models.PositiveIntegerField(default=96,
         null=True, blank=True)
     sync_on_audio_track = models.BooleanField(
-        default=False) # --sout-transcode-audio-sync
+        default=False)  # --sout-transcode-audio-sync
     # Gain control filter
     apply_gain = models.BooleanField()
     gain_value = models.FloatField(u'Gain multiplier',
-        help_text=u'Increase or decrease the gain (default 1.0)', 
-        default=1.0, null=True, blank=True) # --gain-value
+        help_text=u'Increase or decrease the gain (default 1.0)',
+        default=1.0, null=True, blank=True)  # --gain-value
     # Dynamic range compressor
     apply_compressor = models.BooleanField()
     compressor_rms_peak = models.FloatField(u'RMS/peak',
@@ -1609,20 +1617,21 @@ class SoftTranscoder(DeviceServer):
         default=20, null=True, blank=True)
     normvol_max_level = models.FloatField(u'Maximal volume level',
         help_text=u'''If the average power over the last N buffers is higher \
-        than this value, the volume will be normalized. This value is a positive \
-        floating point number. A value between 0.5 and 10 seems sensible.''',
+        than this value, the volume will be normalized. This value is a \
+        positive floating point number.\
+        A value between 0.5 and 10 seems sensible.''',
         default=2.0, null=True, blank=True)
-    
+
     class Meta:
         verbose_name = _(u'Transcodificador em Software')
         verbose_name_plural = _(u'Transcodificadores em Software')
 
     def __unicode__(self):
         return u'Transcoder %s' % self.audio_codec
-    
+
     def _get_gain_filter_options(self):
         return u'--gain-value %.2f ' % self.gain_value
-    
+
     def _get_compressor_filter_options(self):
         return (
            u'--compressor-rms-peak %.2f '
@@ -1641,17 +1650,17 @@ class SoftTranscoder(DeviceServer):
                self.compressor_makeup_gain,
            )
         )
-    
+
     def _get_normvol_filter_options(self):
         return u'--norm-buff-size %d --norm-max-level %.2f ' % (
             self.normvol_buf_size, self.normvol_max_level
         )
-    
+
     def _get_cmd(self):
         import re
         cmd = u'%s -I dummy ' % settings.VLC_COMMAND
         cmd += u'--miface %s ' % self.nic_src.name
-        if re.match(r'^2[23]\d\.', self.sink.ip): # is multicast
+        if re.match(r'^2[23]\d\.', self.sink.ip):  # is multicast
             input_addr = u'udp://@%s:%d/ifaddr=%s' % (
                 self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         else:
@@ -1709,5 +1718,3 @@ class SoftTranscoder(DeviceServer):
             raise ValidationError(
                 _(u'Os filtros só serão aplicados se a'
                 u' transcodificação estiver habilitada.'))
-        
-
