@@ -563,7 +563,7 @@ def guide_mount_line_of_programe(request):
             duracao = guide.stop-guide.start
             
             start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
-            print(start_yyymmddhhmm)
+            
             startStr = '{:%H:%M}'.format(guide.start)
             stopStr  =  '{:%H:%M}'.format(guide.stop)
             
@@ -593,7 +593,32 @@ def guide_mount_line_of_programe(request):
             countX  += 1
     else:
         print("SEM PROGRAMACAO")
-
+        tTotalStart = int(hoursRangeStart)
+        tTotalStop = int(hoursRangeStop)
+        tTotal = tTotalStart + tTotalStop
+        
+        countHours = 0
+        staTime = rangeTimeStart
+        stoTime = rangeTimeStart+timedelta(hours=1)
+        while countHours < tTotal:
+            arrGuideLine.append({
+                    'ch':channelNumber,
+                    'c':channelEpgRunNow,
+                    'p':'-1',
+                    'rn':0,
+                    'sf':'{:%Y%m%d%H%M}'.format(staTime),
+                    'st':'{:%H:%M}'.format(staTime),
+                    'sp':'{:%H:%M}'.format(stoTime),
+                    't':'',
+                    'dcode':divCodePosition,
+                    'd':60,
+                    'x':countHours,
+                    'y':countY
+                    })
+            countHours += 1
+            staTime = staTime+timedelta(hours=1)
+            stoTime = staTime+timedelta(hours=1)
+            
 
     arrGuideLineMeta = {
       'meta': {
