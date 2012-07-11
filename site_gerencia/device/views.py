@@ -359,4 +359,8 @@ def tvod_list(request):
             'channel': r.channel.number
             })
     json = simplejson.dumps({'meta': meta, 'objects': obj})
+    if request.GET.get('format') == 'jsonp' and request.GET.get('callback') == None:
+        json = 'callback('+json+')'
+    if request.GET.get('callback') != None:
+        json = request.GET.get('callback')+'('+json+')'
     return HttpResponse(json, mimetype='application/javascript')
