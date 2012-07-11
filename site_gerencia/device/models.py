@@ -442,8 +442,8 @@ class UniqueIP(models.Model):
                                                object_id=self.pk)
         recorder = StreamRecorder.objects.filter(content_type=uniqueip_type,
                                                object_id=self.pk)
-        soft_transcoder = SoftTranscoder.objects.filter(content_type=uniqueip_type,
-                                               object_id=self.pk)
+        soft_transcoder = SoftTranscoder.objects.filter(
+            content_type=uniqueip_type, object_id=self.pk)
         return list(chain(ipout, recorder, soft_transcoder))
 
     def natural_key(self):
@@ -482,10 +482,15 @@ class UniqueIP(models.Model):
     def start(self, *args, **kwargs):
         log = logging.getLogger('debug')
         log.debug('UniqueIP.start args=%s, kwargs=%s', args, kwargs)
-        self.sink.start(*args, **kwargs)
+        if self.sink.running() is False:
+            if kwargs.get('recursive') is True:
+                self.sink.start(*args, **kwargs)
 
     def stop(self, *args, **kwargs):
         self.sink.stop(*args, **kwargs)
+
+    def running(self):
+        return self.sink.running()
 
 
 class DeviceServer(models.Model):
@@ -512,7 +517,7 @@ class DeviceServer(models.Model):
         log = logging.getLogger('debug')
         log.info('Iniciando device %s', self)
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         """Interrompe processo no servidor"""
         log = logging.getLogger('debug')
         log.info('Parando device %s', self)
@@ -656,7 +661,8 @@ class DemuxedService(DeviceServer):
         if self.sink.status is True:
             self.sink.reload_config()
         else:
-            self.sink.start()
+            if kwargs.get('recursive') is True:
+                self.sink.start()
 
     def stop(self, *args, **kwargs):
         self.enabled = False
@@ -720,7 +726,7 @@ class InputModel(models.Model):
         conf = self._get_config()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
-                        settings.DVBLAST_CONFS_DIR, self.pk))
+            settings.DVBLAST_CONFS_DIR, self.pk))
         try:
             self._read_ctl('reload')
         except etree.XMLSyntaxError:
@@ -729,7 +735,7 @@ class InputModel(models.Model):
         if len(conf) is 0 and shutdown_gracefully is True:
             self.stop()
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         for service in self._list_enabled_services():
             service.stop()
         super(InputModel, self).stop()
@@ -743,6 +749,7 @@ class InputModel(models.Model):
         log = logging.getLogger('debug')
         log.debug('skip create folders on InputModel')
         return
+
         def create_folder(path):
             try:
                 self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
@@ -927,7 +934,7 @@ class DigitalTuner(InputModel, DeviceServer):
         cmd = self._get_cmd(adapter_num)
         conf = self._get_config()
         # Create the necessary folders
-        self._create_folders()
+        #self._create_folders()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
                         settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
@@ -1044,13 +1051,14 @@ class IsdbTuner(DigitalTuner):
         return str(self.frequency)
 
     def start(self, adapter_num=None):
+        ## TODO: verificar se já está rodando
         if adapter_num is None:
             self.adapter = self.adapter_num
         else:
             self.adapter = adapter_num
         super(IsdbTuner, self).start(adapter_num)
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         self.adapter = None
         super(IsdbTuner, self).stop()
 
@@ -1100,7 +1108,7 @@ class IPInput(InputModel, DeviceServer):
                                 choices=PROTOCOL_CHOICES, default=u'udp')
     src = generic.GenericRelation(DemuxedService)
 
-    def start(self, recursive=False):
+    def start(self, *args, **kwargs):
         cmd = self._get_cmd()
         conf = self._get_config()
         # Create the necessary folders
@@ -1256,7 +1264,7 @@ class FileInput(DeviceServer):
             ip.ip, ip.port)
         return cmd
 
-    def start(self, recursive=False):
+    def start(self, *args, **kwargs):
         """Inicia processo do VLC"""
         self.pid = self.server.execute_daemon(self._get_cmd())
         self.status = True
@@ -1281,6 +1289,7 @@ class OutputModel(models.Model):
         log = logging.getLogger('debug')
         log.debug('skip create folders on OutputModel')
         return
+
         def create_folder(path):
             try:
                 self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
@@ -1292,10 +1301,11 @@ class OutputModel(models.Model):
         create_folder(settings.CHANNEL_RECORD_DIR)
         create_folder(settings.MULTICAT_LOGS_DIR)
 
-    def stop(self, recursive=False):
-        super(OutputModel, self).stop()
-        if recursive is True:
-            self.sink.stop(recursive=recursive)
+    def stop(self, *args, **kwargs):
+        super(OutputModel, self).stop(*args, **kwargs)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is True:
+                self.sink.stop(recursive=kwargs.get('recursive'))
 
 
 class IPOutput(OutputModel, DeviceServer):
@@ -1314,7 +1324,7 @@ class IPOutput(OutputModel, DeviceServer):
     protocol = models.CharField(_(u'Protocolo de transporte'), max_length=20,
         choices=PROTOCOL_CHOICES, default=u'udp')
 
-    def start(self, recursive=False):
+    def start(self, *args, **kwargs):
         # Create the necessary folders
         self._create_folders()
         # Start multicat
@@ -1323,8 +1333,9 @@ class IPOutput(OutputModel, DeviceServer):
             log_path=log_path)
         self.status = True
         self.save()
-        if recursive is True:
-            self.sink.start(recursive=recursive)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is False:
+                self.sink.start(recursive=kwargs.get('recursive'))
 
 
 class MulticastOutput(IPOutput):
@@ -1342,16 +1353,6 @@ class MulticastOutput(IPOutput):
 
     def natural_key(self):
         return {'ip': self.ip, 'port': self.port}
-
-#    def validate_unique(self, exclude=None):
-#        # unique_together = ('ip', 'server')
-#        from django.core.exceptions import ValidationError
-#        val = MulticastOutput.objects.filter(ip_out=self.ip_out,
-#            server=self.server)
-#        if val.exists() and val[0].pk != self.pk:
-#            msg = _(u'Combinação já existente: %s e %s' % (
-#                self.server.name, self.ip))
-#            raise ValidationError({'__all__': [msg]})
 
     def _get_cmd(self):
         log = logging.getLogger('debug')
@@ -1417,10 +1418,7 @@ class StreamRecorder(OutputModel, DeviceServer):
             )
         return cmd
 
-    def start(self, recursive=False):
-        # Create destination folder
-        # Create the necessary log folders
-        #self._create_folders()
+    def start(self, *args, **kwargs):
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
@@ -1430,8 +1428,9 @@ class StreamRecorder(OutputModel, DeviceServer):
             self.start_time = datetime.datetime.now()
             self.status = True
         self.save()
-        if recursive is True:
-            self.sink.start(recursive=recursive)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is False:
+                self.sink.start(recursive=kwargs.get('recursive'))
         # This install all cronjobs to current recorder server
         self.install_cron()
 
@@ -1691,18 +1690,19 @@ class SoftTranscoder(DeviceServer):
             )
         else:
             cmd += u'--sout="#%s" %s' % (output, input_addr)
-
         return cmd
 
-    def start(self, recursive=False):
+    def start(self, *args, **kwargs):
+        ## TODO: verificar se já está rodando
         log_path = '%s%d' % (settings.VLC_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
         if self.pid > 0:
             self.status = True
         self.save()
-        if recursive is True:
-            self.sink.start(recursive=recursive)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is False:
+                self.sink.start(recursive=kwargs.get('recursive'))
 
     def clean(self):
         from django.core.exceptions import ValidationError
