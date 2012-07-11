@@ -503,7 +503,7 @@ def channel_programme_info(request):
     return HttpResponse(json,content_type='application/json')
 
 def guide_mount_line_of_programe(request):
-    """
+    """ 
     Usado pelo setupbox para mostrar a guia de programacao completa
     """
     import datetime
@@ -651,15 +651,16 @@ def tvod_list(request):
                                        "total_count": 0
                                 },
                               "objects":[
-                                         {"start": 1340384411.0, 
-                                          "id": 50, 
-                                          "channel": 1}, 
-                                         {"start": 1340384321.0, 
-                                          "id": 53, 
-                                          "channel": 2},
-                                         {"start": 1340383426.0,
-                                          "id": 54, 
-                                          "channel": 3}
+#                                         
+#                                         {"start": 1340384411.0, 
+#                                          "id": 50, 
+#                                          "channel": 1}, 
+#                                         {"start": 1340384321.0, 
+#                                          "id": 53, 
+#                                          "channel": 2},
+#                                         {"start": 1340383426.0,
+#                                          "id": 54, 
+#                                          "channel": 3}
                                       ]
                             })
     
