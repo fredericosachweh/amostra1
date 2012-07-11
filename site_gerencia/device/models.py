@@ -1466,11 +1466,11 @@ class StreamRecorder(OutputModel, DeviceServer):
         if len(recorders) == 0:
             return
         tmpfile = NamedTemporaryFile()
-        cron = '# New cronfile: %s \n\n' % datetime.now()
+        cron = u'# New cronfile: %s \n\n' % datetime.now()
         remote_tmpfile = "".join(self.server.execute('/bin/mktemp')).strip()
         for rec in recorders:
-            cron += '# recorder = %s\n' % rec
-            cron += rec.get_cron_line() + '\n\n'
+            cron += u'# recorder = %s\n' % rec.pk
+            cron += rec.get_cron_line() + u'\n\n'
         tmpfile.file.write(cron)
         tmpfile.file.flush()
         if self.server.offline_mode is False:
