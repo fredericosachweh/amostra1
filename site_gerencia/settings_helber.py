@@ -30,7 +30,7 @@ else:
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
 STATIC_URL = '/tv/static/'
 #ROOT_URLCONF = '/tv'
@@ -52,7 +52,7 @@ MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
-CHANNEL_RECORD_CLEAN_COMMAND = '/usr/bin/multicat_expire.sh'
+CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
 CHANNEL_PLAY_PORT = 12000
 
 DVBLAST_COMMAND = '/iptv/bin/dvblast'

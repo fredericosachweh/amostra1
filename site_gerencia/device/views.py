@@ -337,6 +337,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
 def tvod_list(request):
     u'Get list of current recorders'
     import simplejson
+    from datetime import datetime, timedelta
     import time
     from models import StreamRecorder
     log = logging.getLogger('device.view')
@@ -353,14 +354,21 @@ def tvod_list(request):
     obj = []
     for r in rec:
         meta['total_count'] += 1
+        rec_time = datetime.now() - timedelta(hours=int(r.keep_time))
+        if r.start_time < rec_time:
+            start = rec_time
+        else:
+            start = r.start_time
         obj.append({
             'id': r.id,
-            'start': time.mktime(r.start_time.timetuple()),
+            'start': time.mktime(start.timetuple()),
+            'start_as_string': str(start),
             'channel': r.channel.number
             })
     json = simplejson.dumps({'meta': meta, 'objects': obj})
-    if request.GET.get('format') == 'jsonp' and request.GET.get('callback') == None:
-        json = 'callback('+json+')'
+    if request.GET.get('format') == 'jsonp' and \
+        request.GET.get('callback') == None:
+        json = 'callback(' + json + ')'
     if request.GET.get('callback') != None:
-        json = request.GET.get('callback')+'('+json+')'
+        json = request.GET.get('callback') + '(' + json + ')'
     return HttpResponse(json, mimetype='application/javascript')

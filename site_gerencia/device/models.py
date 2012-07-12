@@ -1251,8 +1251,11 @@ class FileInput(DeviceServer):
 
     def _get_cmd(self):
         log = logging.getLogger('debug')
-        ip = self.src.get()
-        log.debug('FileInput._get_cmd() ip=%s', ip)
+        if self.src.count() is not 1:
+            raise Exception(
+                'A SoftTranscoder must be connected to ONE destination!')
+        src = self.src.get()
+        log.debug('FileInput._get_cmd() src=%s', src)
         cmd = u'%s' % settings.VLC_COMMAND
         cmd += ' -I dummy -v'
         if self.repeat:
@@ -1261,7 +1264,7 @@ class FileInput(DeviceServer):
         cmd += ' "%s"' % (self.filename)
         cmd += ' --miface %s' % self.nic_src.name
         cmd += ' --sout "#std{access=udp,mux=ts,dst=%s:%d}"' % (
-            ip.ip, ip.port)
+            src.ip, src.port)
         return cmd
 
     def start(self, *args, **kwargs):
@@ -1466,11 +1469,11 @@ class StreamRecorder(OutputModel, DeviceServer):
         if len(recorders) == 0:
             return
         tmpfile = NamedTemporaryFile()
-        cron = '# New cronfile: %s \n\n' % datetime.now()
+        cron = u'# New cronfile: %s \n\n' % datetime.now()
         remote_tmpfile = "".join(self.server.execute('/bin/mktemp')).strip()
         for rec in recorders:
-            cron += '# recorder = %s\n' % rec
-            cron += rec.get_cron_line() + '\n\n'
+            cron += u'# recorder = %s\n' % rec.pk
+            cron += rec.get_cron_line() + u'\n\n'
         tmpfile.file.write(cron)
         tmpfile.file.flush()
         if self.server.offline_mode is False:
