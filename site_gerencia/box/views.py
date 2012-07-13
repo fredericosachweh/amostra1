@@ -446,6 +446,7 @@ def guide_mount_line_of_programe(request):
         #now = datetime.datetime.utcnow().replace(tzinfo=utc)
         now = timezone.now()
 
+    totalCount = 0
     #buscando um range de tempo para a busca
     hoursRangeStart = request.GET.get('r_start')
     hoursRangeStop = request.GET.get('r_stop')
@@ -533,7 +534,7 @@ def guide_mount_line_of_programe(request):
                "next": "",
                "offset": 0,
                "previous": '',
-               "total_count": 0
+               "total_count": countX
         },
       "objects": arrGuideLine
      }
