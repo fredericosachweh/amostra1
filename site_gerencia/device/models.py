@@ -1244,6 +1244,14 @@ class FileInput(DeviceServer):
     src = generic.GenericRelation(UniqueIP)
     nic_src = models.ForeignKey(NIC)
 
+    @property
+    def ip(self):
+        return self.src.get().ip
+
+    @property
+    def port(self):
+        return self.src.get().port
+
     def __unicode__(self):
         if hasattr(self, 'server') is False:
             return self.description
@@ -1427,8 +1435,8 @@ class StreamRecorder(OutputModel, DeviceServer):
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
         if self.pid > 0:
-            import datetime
-            self.start_time = datetime.datetime.now()
+            from django.utils import timezone
+            self.start_time = timezone.now()
             self.status = True
         self.save()
         if kwargs.get('recursive') is True:
@@ -1462,14 +1470,14 @@ class StreamRecorder(OutputModel, DeviceServer):
         u'Reinstall crontab for current server\
         (for now full install all recorders)'
         from tempfile import NamedTemporaryFile
-        from datetime import datetime
+        from django.utils import timezone
         # Get all running recorders on current recorder server
         recorders = StreamRecorder.objects.filter(
             server=self.server, status=True)
         if len(recorders) == 0:
             return
         tmpfile = NamedTemporaryFile()
-        cron = u'# New cronfile: %s \n\n' % datetime.now()
+        cron = u'# New cronfile: %s \n\n' % timezone.now()
         remote_tmpfile = "".join(self.server.execute('/bin/mktemp')).strip()
         for rec in recorders:
             cron += u'# recorder = %s\n' % rec.pk
