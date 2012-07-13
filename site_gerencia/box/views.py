@@ -510,6 +510,7 @@ def guide_mount_line_of_programe(request):
     from datetime import timedelta
     from epg.models import Guide
     from django.utils import simplejson
+    from django.utils.timezone import utc
     
     
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
@@ -522,10 +523,10 @@ def guide_mount_line_of_programe(request):
         hh   = int(nowStr[8:10])
         mi   = int(nowStr[10:12])
         ss   = int(nowStr[12:14])
-        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss)
+        now = datetime.datetime(yyyy, mm, dd, hh, mi, ss).replace(tzinfo=utc)
         #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
     else:
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
     #buscando um range de tempo para a busca
     hoursRangeStart = request.GET.get('r_start')

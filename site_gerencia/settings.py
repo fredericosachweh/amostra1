@@ -56,7 +56,7 @@ else:
 TIME_ZONE = 'America/Sao_Paulo'
 
 # Novo no django 1.4
-USE_TZ = False
+USE_TZ = True
 #WSGI_APPLICATION = 'wsgi.application'
 
 # Language code for this installation. All choices can be found here:
