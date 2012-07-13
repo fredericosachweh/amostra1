@@ -19,11 +19,16 @@ def log(request):
 def date(request):
     from datetime import datetime
     import time
-    now = datetime.now()
+    
+    #FORCE DATE
+    now = datetime(2012, 6, 11, 12, 15, 00)
+    timestamp = int(time.mktime(now.timetuple()))
+    
     #timestamp = time.mktime(now.timetuple())
     #timestamp = now.strftime("%s")
     #timestamp = time.mktime(time.gmtime())
-    timestamp = time.strftime("%s")
+    
+    #timestamp = time.strftime("%s")
     timezone = time.timezone
     response = '{"timestamp": %s, "timezone": %d}'% (timestamp,timezone)
     return HttpResponse(response)
