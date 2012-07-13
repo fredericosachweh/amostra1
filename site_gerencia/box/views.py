@@ -64,9 +64,13 @@ def programme_info(request):
     from django.utils import timezone
     from epg.models import Guide
     from django.utils import simplejson
+    from django.utils.timezone import utc
+    import time
+    
+    
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
     #Seta uma data passada por GET
-    if request.GET.get('now') and len(request.GET.get('now')) == 14:
+    if request.GET.get('now') and len(request.GET.get('now')) >= 14:
         nowStr = request.GET.get('now')
         yyyy = int(nowStr[0:4])
         mm = int(nowStr[4:6])
@@ -78,7 +82,7 @@ def programme_info(request):
         #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
     else:
         now = timezone.now()
-
+        
     channel_id = request.GET.get('channel_id')
     guides = Guide.objects.filter(channel__channelid=channel_id,
         start__lte=now, stop__gt=now)
@@ -90,7 +94,8 @@ def programme_info(request):
         programid = int(guide.programme_id)
         #Inicio / Fim
         startStr = '{:%H:%M}'.format(guide.start)
-        stopStr = '{:%H:%M}'.format(guide.stop)
+        stopStr  =  '{:%H:%M}'.format(guide.stop)
+        
         #Titulos
         titlesStr = ""
         titles = pro.titles.all().values()
@@ -430,23 +435,24 @@ def guide_mount_line_of_programe(request):
     from django.utils import simplejson
     from django.utils import timezone
     from django.utils.timezone import utc
+    import time
+
     #data-Hora padrao do sistema: 20120117100000 (2012-01-17 10:00:00)
     #Seta uma data passada por GET
-    if request.GET.get('now') and len(request.GET.get('now')) == 14:
-        nowStr = request.GET.get('now')
+    if request.GET.get('now') and len(request.GET.get('now')) >= 14:
+        nowStr = request.GET.get('now') 
         yyyy = int(nowStr[0:4])
-        mm = int(nowStr[4:6])
-        dd = int(nowStr[6:8])
-        hh = int(nowStr[8:10])
-        mi = int(nowStr[10:12])
-        ss = int(nowStr[12:14])
+        mm   = int(nowStr[4:6])
+        dd   = int(nowStr[6:8])
+        hh   = int(nowStr[8:10])
+        mi   = int(nowStr[10:12])
+        ss   = int(nowStr[12:14])
         now = datetime.datetime(yyyy, mm, dd, hh, mi, ss).replace(tzinfo=utc)
-        #now = datetime.datetime(2012, 1, 17, 10, 00, 00)
     else:
-        #now = datetime.datetime.utcnow().replace(tzinfo=utc)
         now = timezone.now()
 
     countX = 0
+    
     #buscando um range de tempo para a busca
     hoursRangeStart = request.GET.get('r_start')
     hoursRangeStop = request.GET.get('r_stop')
@@ -477,8 +483,13 @@ def guide_mount_line_of_programe(request):
             programid = int(guide.programme_id)
             duracao = guide.stop - guide.start
             start_yyymmddhhmm = '{:%Y%m%d%H%M}'.format(guide.start)
+            start_tm   = int(time.mktime(guide.start.timetuple()))
+            
             startStr = '{:%H:%M}'.format(guide.start)
-            stopStr = '{:%H:%M}'.format(guide.stop)
+            stopStr  =  '{:%H:%M}'.format(guide.stop)
+            
+            stop_tm   = int(time.mktime(guide.stop.timetuple()))
+            
             is_run_now_programme = 0
             if(guide.start <= now and now <= guide.stop):
                 is_run_now_programme = 1
@@ -487,18 +498,21 @@ def guide_mount_line_of_programe(request):
             titles = pro.titles.all().values()
             titlesStr = smart_unicode(titles[0]['value']).upper()
             arrGuideLine.append({
-                'ch': channelNumber,
-                'c': channelEpgRunNow,
-                'p': programid,
-                'rn': is_run_now_programme,
-                'sf': start_yyymmddhhmm,
-                'st': startStr,
-                'sp': stopStr,
-                't': titlesStr,
-                'dcode': divCodePosition,
-                'd': int((int(duracao.total_seconds()) / 60)),
-                'x': countX,
-                'y': countY
+                'ch':channelNumber,
+                'c':channelEpgRunNow,
+                'p':programid,
+                'rn':is_run_now_programme,
+                'sf':start_yyymmddhhmm,
+                'sf_tm':start_tm,
+                'st':startStr,
+                'st_tm':start_tm,
+                'sp':stopStr,
+                'sp_tm':stop_tm,
+                't':titlesStr,
+                'dcode':divCodePosition,
+                'd': int((int(duracao.total_seconds()) / 60 )),
+                'x':countX,
+                'y':countY
                 })
             countX += 1
     else:
