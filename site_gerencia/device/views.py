@@ -285,7 +285,8 @@ def auto_fill_tuner_form(request, ttype):
 def tvod(request, channel_number=None, command=None, seek=0):
     u'TVOD commands'
     resp = 'Not running'
-    from datetime import datetime, timedelta
+    from datetime import timedelta
+    from django.utils import timezone
     from models import StreamPlayer, StreamRecorder
     from tv.models import Channel
     log = logging.getLogger('device.view')
@@ -295,7 +296,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     log.info('tvod[%s] client:%s channel:%s seek:%s' % (command, ip,
         channel_number, seek))
     ## Verifica se existe gravação solicitada
-    record_time = datetime.now() - timedelta(0, int(seek))
+    record_time = timezone.now() - timedelta(0, int(seek))
     recorders = StreamRecorder.objects.filter(start_time__lte=record_time,
         channel=channel, keep_time__gte=(int(seek) / 3600))
     log.info('avaliable recorders: %s' % recorders)
@@ -337,7 +338,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
 def tvod_list(request):
     u'Get list of current recorders'
     import simplejson
-    from datetime import datetime, timedelta
+    from datetime import timedelta
+    from django.utils import timezone
     import time
     from models import StreamRecorder
     log = logging.getLogger('device.view')
@@ -354,7 +356,7 @@ def tvod_list(request):
     obj = []
     for r in rec:
         meta['total_count'] += 1
-        rec_time = datetime.now() - timedelta(hours=int(r.keep_time))
+        rec_time = timezone.now() - timedelta(hours=int(r.keep_time))
         if r.start_time < rec_time:
             start = rec_time
         else:
