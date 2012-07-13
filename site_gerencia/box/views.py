@@ -527,9 +527,6 @@ def guide_mount_line_of_programe(request):
         start_tm   = int(time.mktime(staTime.timetuple()))
         stop_tm   = int(time.mktime(stoTime.timetuple()))
         
-        print(start_tm)    
-        print(stop_tm)
-        
         while countHours < tTotal:
             arrGuideLine.append({
                     'ch': channelNumber,
