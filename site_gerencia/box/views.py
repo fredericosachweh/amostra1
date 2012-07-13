@@ -523,6 +523,13 @@ def guide_mount_line_of_programe(request):
         countHours = 0
         staTime = rangeTimeStart
         stoTime = rangeTimeStart + timedelta(hours=1)
+        
+        start_tm   = int(time.mktime(staTime.timetuple()))
+        stop_tm   = int(time.mktime(stoTime.timetuple()))
+        
+        print(start_tm)    
+        print(stop_tm)
+        
         while countHours < tTotal:
             arrGuideLine.append({
                     'ch': channelNumber,
@@ -530,8 +537,11 @@ def guide_mount_line_of_programe(request):
                     'p': '-1',
                     'rn': 0,
                     'sf': '{:%Y%m%d%H%M}'.format(staTime),
+                    'sf_tm':start_tm,
                     'st': '{:%H:%M}'.format(staTime),
+                    'st_tm':start_tm,
                     'sp': '{:%H:%M}'.format(stoTime),
+                    'sp_tm':stop_tm,
                     't': '',
                     'dcode': divCodePosition,
                     'd': 60,
@@ -541,6 +551,9 @@ def guide_mount_line_of_programe(request):
             countHours += 1
             staTime = staTime + timedelta(hours=1)
             stoTime = staTime + timedelta(hours=1)
+            
+            start_tm   = int(time.mktime(staTime.timetuple()))
+            stop_tm   = int(time.mktime(stoTime.timetuple()))
 
     arrGuideLineMeta = {
       'meta': {
