@@ -93,8 +93,8 @@ def programme_info(request):
         pro = guide.programme
         programid = int(guide.programme_id)
         #Inicio / Fim
-        startStr = '{:%H:%M}'.format(guide.start)
-        stopStr  =  '{:%H:%M}'.format(guide.stop)
+        startStr = int(time.mktime(guide.start.timetuple()))
+        stopStr  = int(time.mktime(guide.stop.timetuple()))
         
         #Titulos
         titlesStr = ""
@@ -128,8 +128,8 @@ def programme_info(request):
         arr = {
             'programid':        0,
             'rating':           [" "],
-            'start':            ["00:00"],
-            'stop':             ["00:00"],
+            'start':            [0],
+            'stop':             [0],
             'titles':           ["Sem programação"],
             'secondary_titles': [" "],
             'descriptions':     ["Programação indisponível"]
@@ -250,180 +250,35 @@ def guide_programmes(request):
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json, content_type='application/json')
 
-
-def channel_programme_info(request):
+def tvod_list(request):
     """
-    Usado pelo setupbox para mostrar a INFO do programa
+    DADOS FAKE PARA TER O QUE MOSTRAR NA TELA, DEVE SER APAGADO
     """
-    from epg.models import Guide
     from django.utils import simplejson
-    RunNowChannelEpg = int(request.GET.get('c'))
-    RunNowProgrammeId = int(request.GET.get('p'))
-
-    if(RunNowChannelEpg and RunNowProgrammeId):
-        guides = Guide.objects.filter(channel__channelid=RunNowChannelEpg,
-            programme=RunNowProgrammeId)
-        if len(guides) > 0:
-            guide = guides[0]
-            cha = guide.channel
-            pro = guide.programme
-            start = guide.start
-            stop = guide.stop
-            #Titles
-            titlesStr = ""
-            titles = pro.titles.all().values()
-            for title in titles:
-                titlesStr += smart_str(title['value']) + " - "
-            titlesStr = titlesStr[0:-3]
-            titlesStr = smart_unicode(titlesStr).upper()
-            #Segundo titulos
-            secondaryTitlesStr = ""
-            secondaryTitles = pro.secondary_titles.all().values()
-            for secondary_title in secondaryTitles:
-                secondaryTitlesStr += smart_str(secondary_title['value']) +\
-                    " - "
-            secondaryTitlesStr = secondaryTitlesStr[0:-3]
-            #Actors
-            actorsStr = ""
-            actors = pro.actors.all().values()
-            for actor in actors:
-                actorsStr += smart_str(actor['name']) + ", "
-            actorsStr = actorsStr[0:-2]
-            #Categoria
-            categoriesStr = ""
-            categories = pro.categories.all().values()
-            for categorie in categories:
-                categoriesStr += smart_str(categorie['value']) + ", "
-            categoriesStr = categoriesStr[0:-2]
-            #Diretores
-            directorsStr = ""
-            directors = pro.directors.all().values()
-            for director in directors:
-                directorsStr += smart_str(director['name']) + ", "
-            directorsStr = directorsStr[0:-2]
-            ratingStr = ""
-            if(pro.rating):
-                ratingStr = str(smart_str(pro.rating.value))
-            descriptionsStr = ""
-            if(pro.descriptions.get()):
-                descriptionsStr = smart_str(pro.descriptions.get().value)
-
-            countryStr = ""
-            if(pro.country):
-                countryStr = smart_str(pro.country.value)
-            audio_stereoStr = ""
-            if(pro.audio_stereo):
-                audio_stereoStr = smart_str(pro.audio_stereo)
-
-            duracao = stop - start
-            lengthStr = str(smart_str(duracao))
-
-            dateStr = ""
-            if(pro.date):
-                dateStr = pro.date
-
-            video_aspectStr = ""
-            if(pro.video_aspect):
-                video_aspectStr = smart_str(pro.video_aspect)
-
-            video_colourStr = ""
-            if(pro.video_colour):
-                video_colourStr = smart_str(pro.video_colour)
-
-            video_presentStr = ""
-            if(pro.video_present):
-                video_presentStr = smart_str(pro.video_present)
-
-            video_qualityStr = ""
-            if(pro.video_quality):
-                video_qualityStr = smart_str(pro.video_quality)
-
-            audio_presentStr = ""
-            if(pro.audio_present):
-                audio_presentStr = smart_str(pro.audio_present)
-
-            arrChannel = {
-                'channelepg':    RunNowChannelEpg,
-                'channelid':     cha.channelid,
-                'display_names': cha.display_names.get().value,
-                'icons': smart_str(cha.icons.all().values('src')[0].get('src'))
-            }
-            arrProgramme = {
-            'id':               int(RunNowProgrammeId),
-            'programid':        int(smart_str(pro.programid)),
-            'rating':           (ratingStr.strip() or "Indisponível"),
-            'titles':           (titlesStr.strip() or "Indisponível"),
-            'secondary_titles': (secondaryTitlesStr.strip() or "Indisponível"),
-            'descriptions':     (descriptionsStr.strip() or "Indisponível"),
-            'actors':           (actorsStr.strip() or "Indisponível"),
-            'categories':       (categoriesStr.strip() or "Indisponível"),
-            'directors':        (directorsStr.strip() or "Indisponível"),
-            'country':          (countryStr.strip() or "Indisponível"),
-            'length':           (lengthStr or "Indisponível"),
-            'date':             (dateStr.strip() or "Indisponível"),
-            'video_aspect':     (video_aspectStr.strip() or "Indisponível"),
-            'video_colour':     (video_colourStr.strip() or "Indisponível"),
-            'video_present':    (video_presentStr.strip() or "Indisponível"),
-            'video_quality':    (video_qualityStr.strip() or "Indisponível"),
-            'audio_present':    (audio_presentStr.strip() or "Indisponível"),
-            'audio_stereo':     (audio_stereoStr.strip() or "Indisponível")
-            }
-            arr = {
-               'start': '{:%H:%M}'.format(start),
-               'stop': '{:%H:%M}'.format(stop),
-               'channel': arrChannel,
-               'programme': arrProgramme
-            }
-        else:
-            arrChannel = {
-                'channelepg':    RunNowChannelEpg,
-                'channelid':     0,
-                'display_names': "Indisponível.",
-                'icons':         ""
-            }
-            arrProgramme = {
-                'id':               int(RunNowProgrammeId),
-                'programid':        "Indisponível.",
-                'rating':           "Indisponível.",
-                'titles':           "Indisponível.",
-                'secondary_titles': "Indisponível.",
-                'descriptions':     "Indisponível.",
-                'actors':           "Indisponível.",
-                'categories':       "Indisponível.",
-                'directors':        "Indisponível.",
-                'country':          "Indisponível.",
-                'length':           "Indisponível.",
-                'date':             "Indisponível.",
-                'video_aspect':     "Indisponível.",
-                'video_colour':     "Indisponível.",
-                'video_present':    "Indisponível.",
-                'video_quality':    "Indisponível.",
-                'audio_present':    "Indisponível.",
-                'audio_stereo':     "Indisponível."
-            }
-            arr = {
-               'start': "00:00",
-               'stop': "00:00",
-               'channel': arrChannel,
-               'programme': arrProgramme
-            }
-    else:
-        print("INEXISTENTE")
-
-    arrMeta = {
-      'meta': {
-               "limit": 0,
-               "next": "",
-               "offset": 0,
-               "previous": '',
-               "total_count": 0
-        },
-      "objects": arr
-     }
-    json = simplejson.dumps(arrMeta)
+    
+    json = simplejson.dumps( {
+                              'meta': {
+                                       "limit": 0,
+                                       "next": "",
+                                       "offset": 0,
+                                       "previous": '',
+                                       "total_count": 0
+                                },
+                              "objects":[
+                                         {"start": 1340384411, 
+                                          "id": 50, 
+                                          "channel": 1}, 
+                                         {"start": 1340384321, 
+                                          "id": 53, 
+                                          "channel": 2},
+                                         {"start": 1340383426,
+                                          "id": 54, 
+                                          "channel": 3}
+                                      ]
+                            })
+    
     # Chama o canal e pega a listagem do aplicativo canal
-    return HttpResponse(json, content_type='application/json')
-
+    return HttpResponse(json,content_type='application/json')  
 
 def guide_mount_line_of_programe(request):
     """
