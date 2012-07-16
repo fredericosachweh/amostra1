@@ -22,8 +22,8 @@ else:
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
+            'HOST': '/var/lib/mysql/mysql.sock',
+            'PORT': '',
         }
     }
 
