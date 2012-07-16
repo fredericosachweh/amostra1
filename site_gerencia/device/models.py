@@ -1704,7 +1704,6 @@ class SoftTranscoder(DeviceServer):
         return cmd
 
     def start(self, *args, **kwargs):
-        ## TODO: verificar se já está rodando
         log_path = '%s%d' % (settings.VLC_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
