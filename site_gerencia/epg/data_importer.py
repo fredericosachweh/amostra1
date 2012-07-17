@@ -1,6 +1,33 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+#FIXME: GMT para importação deve ser corrigido.
+#
+# O valor que vem do XML segue seguinte padrão: yyyyMMddhhmmssmmmm gmt (20120713083000 -0300)
+# Para corrigir é necessário pegar o valor do GMT no fim, aplicar o inverso de horas e minutos
+# na data/hora informada e salvar informando que o valor do timezone está em UTF
+#
+# Assim se for importar horários de outras regiões, não vai dar conflito, pois atualmente
+# após a alteração para timezone ativado do Django, apenas coloquei como a região origem
+# do da data/hora como sendo America/Sao_Paulo (isso é, GMT -0300), isso não vai funcionar
+# Quando a gente importar programação de outras regiões que usem GMT diferente de -0300
+# Por isso a solução descrita acima.
+#
+# Mais informações em: https://docs.djangoproject.com/en/1.4/topics/i18n/timezones/#default-current-time-zone
+#
+# PS2: Não coloque o tzinfo=None, se isso for feito, o Django aplica o tzinfo como padrão
+# Isso é, se o servidor tiver um como GMT -0300, ele vai aplicar -3 horas em toda importação
+# o que vai gerar uma base de dados fora de UTC, por tanto quando for feita uma pesquisa pelo
+# Django por ele vai tentar corrigir o valor novamente, trazendo a informação de
+# data em -6
+#
+# Só vi o erro, uma semana depois que a gente ativou o tz, isso é, quando foi necessário
+# importar a base de dados, pois antes a gente não usava tz e o None fazia com que o
+# Django ignorasse o valor do tzinfo e simplismente salvasse do jeito que a data
+# estava sendo informada.
+
+
+
 import zipfile
 from lxml import etree
 from django.db import transaction
@@ -8,6 +35,7 @@ from datetime import tzinfo, timedelta, datetime
 from dateutil.parser import parse
 from pytz import timezone
 from types import NoneType
+from django.utils.timezone import utc
 
 from models import *
 
@@ -74,8 +102,8 @@ class XML_Epg_Importer(object):
 		stops = map(lambda p: parse(p.get('stop')), programmes)
 		starts.sort(); s_start = starts[0]
 		stops.sort(reverse=True); s_stop = stops[0]
-		return s_start.astimezone(timezone('UTC')).replace(tzinfo=None), \
-            s_stop.astimezone(timezone('UTC')).replace(tzinfo=None)
+		return s_start.astimezone(timezone('UTC')).replace(tzinfo=utc), \
+            s_stop.astimezone(timezone('UTC')).replace(tzinfo=utc)
 			
 	def get_xml_info(self):
 		tv = self.tree.getroot()
@@ -163,8 +191,8 @@ class XML_Epg_Importer(object):
 				date=None
 
 			# Get time and convert it to UTC
-			start = parse(e.get('start')).astimezone(timezone('UTC')).replace(tzinfo=None)
-			stop = parse(e.get('stop')).astimezone(timezone('UTC')).replace(tzinfo=None)
+			start = parse(e.get('start')).astimezone(timezone('UTC')).replace(tzinfo=utc)
+			stop = parse(e.get('stop')).astimezone(timezone('UTC')).replace(tzinfo=utc)
 
 			# Try to find the programme in db
 			try:
