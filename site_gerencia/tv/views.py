@@ -1,9 +1,11 @@
 # -*- encoding:utf-8 -*-
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.core.urlresolvers import reverse
 
 import models
+
 
 def channel_switchlink(request, action, pk):
     channel = get_object_or_404(models.Channel, id=pk)

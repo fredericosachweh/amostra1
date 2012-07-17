@@ -1,24 +1,30 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import *
+#from django.conf.urls.defaults import *
 
 from tastypie import fields
-from tastypie.resources import ModelResource
-from tastypie.authorization import Authorization
-from tastypie.api import Api
+from tastypie.authorization import DjangoAuthorization
+from tastypie.api import NamespacedApi
+from tastypie.resources import NamespacedModelResource
 
-from models import *
+import models
 
-class ChannelResource(ModelResource):
+
+class ChannelResource(NamespacedModelResource):
     source = fields.CharField(blank=True)
+
     class Meta:
-        queryset = Channel.objects.filter(enabled=True, source__isnull=False)
-        authorization = Authorization()
+        queryset = models.Channel.objects.filter(enabled=True,
+            source__isnull=False)
+        authorization = DjangoAuthorization()
         excludes = ['enabled']
         allowed_methods = ['get']
-    def dehydrate_source(self, bundle):
-        return '%s:%d'%(bundle.obj.source.ip,bundle.obj.source.port)
+        urlconf_namespace = 'tv'
 
-api = Api(api_name='tv')
+    def dehydrate_source(self, bundle):
+        return '%s:%d' % (bundle.obj.source.ip, bundle.obj.source.port)
+
+
+api = NamespacedApi(api_name='v1', urlconf_namespace='tv')
 api.register(ChannelResource())

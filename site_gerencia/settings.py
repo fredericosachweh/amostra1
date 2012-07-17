@@ -9,7 +9,7 @@ PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 if PROJECT_ROOT_PATH not in sys.path:
     sys.path.append(PROJECT_ROOT_PATH)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -26,11 +26,11 @@ if 'test' in sys.argv:
     DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-        'USER':'',
-        'PASSWORD':'',
-        'HOST':'',
-        'PORT':''
+        'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': ''
         }
     }
 else:
@@ -39,9 +39,9 @@ else:
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
             'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            'PORT': '3306'
+            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
+            'HOST': '/var/lib/mysql/mysql.sock',
+            'PORT': ''
         }
 
     }
@@ -56,7 +56,7 @@ else:
 TIME_ZONE = 'America/Sao_Paulo'
 
 # Novo no django 1.4
-USE_TZ = False
+USE_TZ = True
 #WSGI_APPLICATION = 'wsgi.application'
 
 # Language code for this installation. All choices can be found here:
@@ -73,39 +73,15 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-
-#IMPORTANTE:
-# ARRUMAR LINKS SIMBOLICOS DA SEGUINTE FORMA PARA QUE O SISTEMA FUNCIONE CERTO:
-# EM /var/www/html
-#0 lrwxrwxrwx. 1 nginx nginx   14 Mar  7 10:41 media -> tvfiles/media/
-#0 lrwxrwxrwx. 1 nginx nginx   15 Mar  7 10:41 static -> tvfiles/static/
-#0 lrwxrwxrwx. 1 nginx nginx    7 Mar  7 10:29 tv -> tvfiles
-#4 drwxr-xr-x. 4 nginx nginx 4096 Jan 13 12:23 tvfiles
-#
-# EM /home/claudio/Projects/iptv-middleware/site_gerencia:
-#
-#0 lrwxrwxrwx.  1 claudio claudio     22 Mar  7 10:47 tvfiles -> /var/www/html/tvfiles/
-#0 lrwxrwxrwx.  1 claudio claudio     27 Mar  7 10:38 media -> /var/www/html/tvfiles/media
-
 MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = '/var/www/html/tv/media/'
 ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = '/var/www/html/tv/static/'
 STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
+
 # Porta que o servidor web está configurado
-MIDDLEWARE_WEBSERVICE_PORT = 8000
-
-
-#ROOT_URL = 'tv/'
-
-ROOT_URL = 'tv/'
-MEDIA_URL = '/tv/media/'
-MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
-ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
-STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
-STATIC_URL = '/tv/static/'
-
+MIDDLEWARE_WEBSERVICE_PORT = 80
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
 LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
@@ -163,7 +139,7 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT_PATH, 'templates')
 )
 
-IPTV_LOG_DIR = '/var/log/iptv'
+IPTV_LOG_DIR = '/iptv/var/log'
 
 ## Color: \033[35m \033[0m
 # \t%(module)s->%(funcName)s->%(lineno)d
@@ -181,7 +157,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
@@ -190,11 +166,13 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler'
         },
         'file.debug': {
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '%s/debug.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
         'file.device.remotecall': {
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '%s/remote-call.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
@@ -203,19 +181,22 @@ LOGGING = {
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'propagate': True,
         },
         'debug': {
             'handlers': ['file.debug'],
+            'level': 'INFO',
             'propagate': True
         },
         'device.view': {
             'handlers': ['file.debug'],
+            'level': 'INFO',
             'propagate': True
         },
         'device.remotecall': {
             'handlers': ['file.device.remotecall'],
+            'level': 'INFO',
             'propagate': True
         }
     }
@@ -262,25 +243,29 @@ LOGIN_REQUIRED_URLS = (
 
 
 # Auxiliar apps configuration
-MULTICAT_COMMAND = '/usr/bin/multicat'
-MULTICAT_LOGS_DIR = '/var/log/multicat/'
-MULTICAT_RECORDINGS_DIR = '/var/lib/multicat/recordings/'
-MULTICAT_SOCKETS_DIR = '/var/run/multicat/sockets/'
+MULTICAT_COMMAND = '/iptv/bin/multicat'
+MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
+MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 
-DVBLAST_COMMAND = '/usr/bin/dvblast'
-DVBLAST_CONFS_DIR = '/etc/dvblast/'
-DVBLAST_LOGS_DIR = '/var/log/dvblast/'
-DVBLAST_SOCKETS_DIR = '/var/run/dvblast/sockets/'
+CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
+CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
+CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'
+CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
+CHANNEL_PLAY_PORT = 12000
 
-DVBLASTCTL_COMMAND = '/usr/bin/dvblastctl'
+DVBLAST_COMMAND = '/iptv/bin/dvblast'
+DVBLAST_CONFS_DIR = '/iptv/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/iptv/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/iptv/var/run/dvblast/sockets/'
+
+DVBLASTCTL_COMMAND = '/iptv/bin/dvblastctl'
 
 VLC_COMMAND = '/usr/bin/cvlc'
-VLC_VIDEOFILES_DIR = '/home/videos/'
+VLC_VIDEOFILES_DIR = '/var/lib/iptv/videos/'
+VLC_LOGS_DIR = '/iptv/var/log/vlc/'
 
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
-
-CHANNEL_RECORD_DIR = '/mnt/backup/gravacoes'
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
@@ -289,8 +274,6 @@ if 'test' in sys.argv:
     # Change vars to point the new location
     MULTICAT_LOGS_DIR = tmpdir + MULTICAT_LOGS_DIR
     os.makedirs(MULTICAT_LOGS_DIR)
-    MULTICAT_RECORDINGS_DIR = tmpdir + MULTICAT_RECORDINGS_DIR
-    os.makedirs(MULTICAT_RECORDINGS_DIR)
     MULTICAT_SOCKETS_DIR = tmpdir + MULTICAT_SOCKETS_DIR
     os.makedirs(MULTICAT_SOCKETS_DIR)
     DVBLAST_CONFS_DIR = tmpdir + DVBLAST_CONFS_DIR
@@ -303,7 +286,6 @@ if 'test' in sys.argv:
     os.makedirs(VLC_VIDEOFILES_DIR)
     CHANNEL_RECORD_DIR = tmpdir + CHANNEL_RECORD_DIR
     os.makedirs(CHANNEL_RECORD_DIR)
-
     # Pseudo executables folder
     HELPER_FOLDER = os.path.join(PROJECT_ROOT_PATH, 'device', 'helper')
     # Settings to replace
@@ -312,37 +294,6 @@ if 'test' in sys.argv:
     MULTICAT_DUMMY = os.path.join(HELPER_FOLDER, 'multicat_dummy.py')
     MULTICATCTL_DUMMY = os.path.join(HELPER_FOLDER, 'multicatctl_dummy.py')
     VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
-
-if DEBUG == True:
-    ## Envia todas as mensagens de log para o console
-#    for logger in LOGGING['loggers']:
-#        LOGGING['loggers'][logger]['handlers'] = ['console']
-    try:
-        import django_extensions
-        INSTALLED_APPS += ('django_extensions',)
-    except ImportError:
-        pass
-    try:
-        # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
-        import debug_toolbar
-        INTERNAL_IPS = ('127.0.0.3',)
-        DEBUG_TOOLBAR_PANELS = (
-            'debug_toolbar.panels.version.VersionDebugPanel',
-            'debug_toolbar.panels.timer.TimerDebugPanel',
-            'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
-            'debug_toolbar.panels.headers.HeaderDebugPanel',
-            'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-            'debug_toolbar.panels.template.TemplateDebugPanel',
-            'debug_toolbar.panels.sql.SQLDebugPanel',
-            'debug_toolbar.panels.signals.SignalDebugPanel',
-            'debug_toolbar.panels.logger.LoggingPanel',
-        )
-        INSTALLED_APPS += ('debug_toolbar',)
-        MIDDLEWARE_CLASSES += (
-            'debug_toolbar.middleware.DebugToolbarMiddleware',
-        )
-    except ImportError:
-        pass
 
 TASTYPIE_FULL_DEBUG = DEBUG
 

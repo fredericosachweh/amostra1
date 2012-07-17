@@ -14,38 +14,48 @@ from django.contrib.contenttypes import generic
 import models
 import forms
 
+from django.contrib.sites.models import Site
+
+
+def test_all_servers(modeladmin, request, queryset):
+    for s in queryset:
+        print(s)
+        s.connect()
+        if s.status is True:
+            s.auto_create_nic()
+
+test_all_servers.sort_descritpion = ugettext_lazy('Teste todos os servidores')
+
 
 class AdminServer(admin.ModelAdmin):
-    readonly_fields = ('status','modified','msg',)
-    list_display = ('__unicode__','server_type','status','msg','switch_link',)
+    readonly_fields = ('status', 'modified', 'msg',)
+    list_display = ('__unicode__', 'server_type', 'status', 'msg',
+        'switch_link',)
     fieldsets = (
       (None, {
-        'fields': (('status', 'modified', 'msg',),
+        'fields': (('status', 'modified', 'msg', ),
             ('server_type'),
-            ('name',), 
-            ('host', 'ssh_port',), 
+            ('name', ),
+            ('host', 'ssh_port', ),
             ('username', 'password',),
             ('rsakey'),
         )
       }),
     )
-    actions = ['testa_tudo']
-    def testa_tudo(self,request,queryset):
-        print(request)
-    testa_tudo.sort_descritpion = 'Teste todos os servidores'
+    actions = [test_all_servers]
 
 
 class AdminDevice(admin.ModelAdmin):
-    list_display = ('__unicode__','status','link_status','server_status',
+    list_display = ('__unicode__', 'status', 'link_status', 'server_status',
         'switch_link')
 
 
 class AdminStream(admin.ModelAdmin):
-    list_display = ('__unicode__','status',)
+    list_display = ('__unicode__', 'status',)
 
 
 class AdminSource(admin.ModelAdmin):
-    list_display = ('__unicode__','in_use','destinations',)
+    list_display = ('__unicode__', 'in_use', 'destinations',)
 
 
 def start_device(modeladmin, request, queryset):
@@ -53,10 +63,12 @@ def start_device(modeladmin, request, queryset):
 start_device.short_description = ugettext_lazy(
     "Iniciar %(verbose_name_plural)s selecionados")
 
+
 def stop_device(modeladmin, request, queryset):
     [device.stop() for device in queryset.all()]
 stop_device.short_description = ugettext_lazy(
     "Parar %(verbose_name_plural)s selecionados")
+
 
 def scan_device(modeladmin, request, queryset):
     selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
@@ -67,9 +79,10 @@ def scan_device(modeladmin, request, queryset):
 scan_device.short_description = ugettext_lazy(
     "Escanear %(verbose_name_plural)s selecionados")
 
+
 class AdminDvbTuner(admin.ModelAdmin):
     actions = [start_device, stop_device, scan_device]
-    list_display = ('frequency', 'symbol_rate', 'polarization',
+    list_display = ('description', 'frequency', 'symbol_rate', 'polarization',
                     'modulation', 'fec', 'server', 'adapter',
                     'antenna', 'tuned', 'switch_link')
     form = forms.DvbTunerForm
@@ -100,8 +113,8 @@ class UniqueIPInline(generic.GenericTabularInline):
 
 
 class AdminFileInput(admin.ModelAdmin):
-    inlines = [UniqueIPInline,]
-    list_display = ('filename', 'server', 'repeat', 'switch_link')
+    inlines = [UniqueIPInline, ]
+    list_display = ('filename', 'description', 'server', 'repeat', 'switch_link')
     form = forms.FileInputForm
 
 
@@ -110,13 +123,13 @@ class AdminMulticastOutput(admin.ModelAdmin):
         'server', 'interface', 'switch_link')
     fieldsets = (
         (_(u'Servidor'), {
-            'fields' : ('server',)
+            'fields': ('server',)
         }),
         (_(u'Entrada'), {
-            'fields' : ('nic_sink', 'content_type', 'object_id')
+            'fields': ('nic_sink', 'content_type', 'object_id')
         }),
         (_(u'Saída'), {
-            'fields' : ('interface', 'ip', 'port', 'protocol')
+            'fields': ('interface', 'ip', 'port', 'protocol')
         }),
     )
     form = forms.MulticastOutputForm
@@ -129,7 +142,7 @@ class AdminDemuxedService(admin.ModelAdmin):
 
 
 class AdminStreamRecorder(admin.ModelAdmin):
-    list_display = ('server', 'start_time', 'rotate',
+    list_display = ('server', 'description', 'start_time', 'rotate',
                     'keep_time', 'channel', 'switch_link')
     form = forms.StreamRecorderForm
 
@@ -139,16 +152,47 @@ class AdminUniqueIP(admin.ModelAdmin):
     exclude = ('sequential',)
     fieldsets = (
         (None, {
-            'fields' : ('ip', 'port')
+            'fields': ('ip', 'port')
         }),
         (_(u'Entrada'), {
-            'fields' : ('content_type', 'object_id')
+            'fields': ('content_type', 'object_id')
         }),
     )
     form = forms.UniqueIPForm
 
+
+class AdminSoftTranscoder(admin.ModelAdmin):
+    list_display = ('audio_codec', 'switch_link')
+    fieldsets = (
+        (_(u'Conexão com outros devices'), {
+            'fields': ('server', 'nic_sink', 'nic_src', 'content_type',
+                'object_id')
+        }),
+        (_(u'Transcodificador de Áudio'), {
+            'fields': ('transcode_audio', 'audio_codec', 'audio_bitrate',
+                'sync_on_audio_track')
+        }),
+        (_(u'Ganho no Áudio'), {
+            'classes': ('collapse', ),
+            'fields': ('apply_gain', 'gain_value')
+        }),
+        (_(u'Compressor Dinâmico de Áudio'), {
+            'classes': ('collapse',),
+            'fields': ('apply_compressor', 'compressor_rms_peak',
+            'compressor_attack', 'compressor_release',
+            'compressor_threshold', 'compressor_ratio',
+            'compressor_knee', 'compressor_makeup_gain')
+        }),
+        (_(u'Normalizador de Volume'), {
+            'classes': ('collapse',),
+            'fields': ('apply_normvol',
+                        'normvol_buf_size', 'normvol_max_level')
+        }),
+    )
+    form = forms.SoftTranscoderForm
+
 admin.site.register(models.UniqueIP, AdminUniqueIP)
-admin.site.register(models.Server,AdminServer)
+admin.site.register(models.Server, AdminServer)
 admin.site.register(models.Antenna)
 admin.site.register(models.DvbTuner, AdminDvbTuner)
 admin.site.register(models.IsdbTuner, AdminIsdbTuner)
@@ -158,3 +202,6 @@ admin.site.register(models.FileInput, AdminFileInput)
 admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
+admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
+
+admin.site.unregister(Site)

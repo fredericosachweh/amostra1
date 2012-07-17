@@ -1,8 +1,4 @@
 # -*- encoding:utf-8 -*-
-
-import sys
-import os
-
 from settings import *
 
 DEBUG = True
@@ -26,37 +22,54 @@ else:
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
+            'HOST': '/var/lib/mysql/mysql.sock',
+            'PORT': '',
         }
     }
 
 ROOT_URL = 'tv/'
-MEDIA_URL = '/tvfiles/media/'
+MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'media')
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
+ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
-STATIC_URL = '/tvfiles/static/'
+STATIC_URL = '/tv/static/'
 #ROOT_URLCONF = '/tv'
 
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'lib.middleware.login.RequireLoginMiddleware',
 )
 
 
+# Auxiliar apps configuration
+MULTICAT_COMMAND = '/iptv/bin/multicat'
+MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
+MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
+
+CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
+CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
+CHANNEL_PLAY_PORT = 12000
+
+DVBLAST_COMMAND = '/iptv/bin/dvblast'
+DVBLAST_CONFS_DIR = '/iptv/etc/dvblast/'
+DVBLAST_LOGS_DIR = '/iptv/var/log/dvblast/'
+DVBLAST_SOCKETS_DIR = '/iptv/var/run/dvblast/sockets/'
+
+DVBLASTCTL_COMMAND = '/iptv/bin/dvblastctl'
+
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
 if DEBUG is True:
-    ## Envia todas as mensagens de log para o console
-    #for logger in LOGGING['loggers']:
-    #    LOGGING['loggers'][logger]['handlers'] = ['console']
+    # Envia todas as mensagens de log para o console
+    for logger in LOGGING['loggers']:
+        LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
         import django_extensions
         INSTALLED_APPS += ('django_extensions',)
@@ -77,12 +90,9 @@ if DEBUG is True:
             'debug_toolbar.panels.logger.LoggingPanel',
         )
         INSTALLED_APPS += ('debug_toolbar',)
+        INTERNAL_IPS = ('127.0.0.1',)
         MIDDLEWARE_CLASSES += (
             'debug_toolbar.middleware.DebugToolbarMiddleware',
         )
     except ImportError:
         pass
-
-
-
-INTERNAL_IPS = ('127.0.0.1',)
