@@ -4,7 +4,7 @@
 from django.test import TestCase
 from django.test.client import Client
 from django.core.urlresolvers import reverse
-#from django.core.urlresolvers import resolve
+from django.utils import timezone
 import simplejson as json
 
 from models import *
@@ -73,6 +73,57 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 </star-rating>
 </programme>
 </tv>'''
+
+xml_programme1 = '''<?xml version="1.0" encoding="ISO-8859-1"?>
+<tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
+generator-info-url="http://xmltv.revistaeletronica.com.br">
+<channel id="100">
+<display-name lang="pt">Concert Channel</display-name>
+<icon src="100.png" />
+</channel>
+<channel id="121">
+<display-name lang="pt">Premiere FC 24h</display-name>
+<icon src="121.png" />
+</channel>
+<programme start="20120713033000 -0300" stop="20120713050000 -0300" \
+channel="100" program_id="0000289501">
+<title lang="pt">Austin City Limits 2010</title>
+<title lang="en">Austin City Limits 2010</title>
+<desc>O festival musical que enche durante três dias a cidade texana contou, \
+em 2010, com as atuações de estrelas como The Eagles, Muse, The Strokes, \
+Norah Jones, Sonic Youth, The Black Keys, Miike Snow e Devendra Banhart, entre\
+ muitos outros. - www.revistaeletronica.com.br </desc>
+<date>2010</date>
+<category lang="pt">Espetáculo</category>
+<category lang="pt">Show</category>
+<video>
+<colour>yes</colour>
+</video>
+<rating system="Advisory">
+<value>Programa livre para todas as idades</value>
+</rating>
+</programme>'''
+
+
+class Test_Timezone(TestCase):
+
+    def test_parse_datetime(self):
+        ## '%Y%m%d%H%M%S %z'
+        #from datetime import datetime
+        from dateutil import parser
+        from dateutil import zoneinfo
+        utc = zoneinfo.gettz('UTC')
+        start1 = '20120713033000 -0300'
+        start1utc = '20120713063000 +0000'
+        stop1 = '20120713050000 -0300'
+        stop1utc = '20120713080000 +0000'
+        ## dt1.parse(timestr, default, ignoretz, tzinfos)
+        dt1 = parser.parse(start1)
+        u = dt1.astimezone(utc).strftime('%Y%m%d%H%M%S %z')
+        self.assertEqual(start1utc, u)
+        dt2 = parser.parse(stop1)
+        u = dt2.astimezone(utc).strftime('%Y%m%d%H%M%S %z')
+        self.assertEqual(stop1utc, u)
 
 
 class Test_XML_to_db(object):
