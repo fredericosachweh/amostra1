@@ -16,6 +16,13 @@ from django.core      import serializers
 #usado para converter strings
 from django.utils.encoding import smart_str, smart_unicode
 
+def jsonp(json, request):
+    if request.GET.get('format') == 'jsonp' and request.GET.get('callback') == None:
+        json = 'callback('+json+')'
+    if request.GET.get('callback') != None:
+        json = request.GET.get('callback')+'('+json+')'
+    return json
+
 
 def index(request):
     """
@@ -147,7 +154,7 @@ def programme_info(request):
     }
 
     json = simplejson.dumps(arrMeta)
-
+    json = jsonp(json, request)
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json, content_type='application/json')
 
@@ -247,6 +254,7 @@ def guide_programmes(request):
       "objects": arr
     }
     json = simplejson.dumps(arrMeta)
+    json = jsonp(json, request)
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json, content_type='application/json')
 
@@ -277,6 +285,7 @@ def tvod_list(request):
                                       ]
                             })
     
+    json = jsonp(json, request)
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json,content_type='application/json')  
 
@@ -419,6 +428,7 @@ def guide_mount_line_of_programe(request):
      }
 
     json = simplejson.dumps(arrGuideLineMeta)
+    json = jsonp(json, request)
     # Chama o canal e pega a listagem do aplicativo canal
     return HttpResponse(json, content_type='application/json')
 
