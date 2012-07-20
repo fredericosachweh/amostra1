@@ -352,7 +352,7 @@ def guide_mount_line_of_programe(request):
         print("SEM PROGRAMACAO")
         tTotalStart = int(hoursRangeStart)
         tTotalStop = int(hoursRangeStop)
-        tTotal = tTotalStart + tTotalStop
+        tTotal = ( tTotalStart + tTotalStop ) * 2
         countHours = 0
         staTime = rangeTimeStart
         stoTime = rangeTimeStart + timedelta(hours=1)
@@ -379,8 +379,8 @@ def guide_mount_line_of_programe(request):
                     'y': countY
                     })
             countHours += 1
-            staTime = staTime + timedelta(hours=1)
-            stoTime = staTime + timedelta(hours=1)
+            staTime = staTime + timedelta(minutes=30)
+            stoTime = staTime + timedelta(minutes=30)
             
             start_tm   = int(time.mktime(staTime.timetuple()))
             stop_tm   = int(time.mktime(stoTime.timetuple()))
