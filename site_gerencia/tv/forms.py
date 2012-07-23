@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 from django import forms
-from django.contrib import admin
-from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 from django.utils.translation import ugettext as _
 from device.models import UniqueIP, DemuxedService, StreamRecorder
 from device.models import SoftTranscoder
-
-from django.db.models.fields.related import ManyToOneRel
-from django.contrib.admin.widgets import ForeignKeyRawIdWidget
 
 import fields
 import tv
@@ -19,12 +14,6 @@ from tv.form_utils.forms import BetterModelForm
 class GenericRelationFormWizard(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(GenericRelationFormWizard, self).__init__(*args, **kwargs)
-        try:
-            model = self.instance.content_type.model_class()
-            model_key = model._meta.pk.name
-        except Exception:
-            model = self.Meta.model
-            model_key = 'id'
 
 
 class ChannelForm(forms.ModelForm):
@@ -52,11 +41,9 @@ class DemuxedServiceFormWizard(forms.Form):
     print objects_ids
     print model
     # DemuxedService's Field
-    demuxed_input = forms.ModelChoiceField(model, label=_(u'Entrada'),
-widget=RelatedFieldWidgetWrapper(forms.Select(),
-DemuxedService.server.field.rel, admin.site, True))
+    demuxed_input = forms.ModelChoiceField(model, label=_(u'Entrada'))
 
-    
+
 class InputChooseForm(forms.Form):
     INPUT_TYPES = (('arquivos_de_entrada', 'Arquivos de entrada'),
                     ('entradas_multicast', 'Entradas IP multicast'),
@@ -66,7 +53,7 @@ class InputChooseForm(forms.Form):
     input_types_field = forms.ChoiceField(label=_(u'Tipo de Entrada'),
 choices=INPUT_TYPES,)
     input_stream = fields.DinamicChoiceField(label=_(u'Entrada'))
-    
+
 
 class StreamRecorderForm(GenericRelationFormWizard):
     class Meta:

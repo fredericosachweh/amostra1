@@ -1,18 +1,14 @@
 # -*- encoding:utf-8 -*-
 from device.models import UniqueIP, DemuxedService, StreamRecorder
-from device.models import SoftTranscoder, MulticastOutput
-from django import forms
+from device.models import SoftTranscoder
 from django.contrib.admin.helpers import AdminForm
-from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 from django.contrib.formtools.wizard import FormWizard
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.utils.translation import ugettext as _
 from models import Channel
 from tv.forms import DemuxedServiceFormWizard, InputChooseForm, ChannelForm
 from tv.forms import StreamRecorderForm, AudioConfigsForm
 from django.contrib.contenttypes.models import ContentType
-from django.contrib import admin
 from django.conf import settings
 
 
@@ -57,19 +53,18 @@ class ChannelCreationWizard(FormWizard):
             else:
                 if DemuxedServiceFormWizard in self.form_list:
                     self.form_list.remove(DemuxedServiceFormWizard)
-                           
         # Add optional forms
         next_form_step = self.get_next_form_step(request)
         last_step = next_form_step - 1
         if last_step == step:
             if form.cleaned_data.get('audio_config'):
-                next_form_step = self.insert_optional_form(form, next_form_step,
-    AudioConfigsForm)
+                next_form_step = self.insert_optional_form(form,
+next_form_step, AudioConfigsForm)
             else:
                 self.remove_optional_form(AudioConfigsForm)
             if form.cleaned_data.get('gravar_config'):
-                next_form_step = self.insert_optional_form(form, next_form_step,
-    StreamRecorderForm)
+                next_form_step = self.insert_optional_form(form,
+next_form_step, StreamRecorderForm)
             else:
                 self.remove_optional_form(StreamRecorderForm)
 
@@ -80,13 +75,11 @@ class ChannelCreationWizard(FormWizard):
         image = request.FILES[logo_name]
         image_url = self.get_dir_to_save_image() + channel_id_as_name
         default_storage.save(image_url, ContentFile(image.read()))
-  
         # Thumb
         try:
             import Image
         except ImportError:
             from PIL import Image
-        import os, shutil
         MEDIA_ROOT = '%s/' % (getattr(settings, 'MEDIA_ROOT'))
         thumb_dir = self.get_dir_to_save_thumb()
         image_absolute_url = MEDIA_ROOT + image_url
@@ -200,12 +193,12 @@ context=None, step_title=None):
         returning an HttpResponse object.
         '''
         # Wrap the form into a AdminForm to get the fieldset
-        fieldset = []
+        fieldsets = []
         if form.__class__ == AudioConfigsForm:
             fieldsets = form.fieldsets.__dict__['fieldsets']
         else:
-           fieldsets = [('Passo %d de %d' % (step + 1, self.num_steps()),
-{'fields': form.base_fields.keys()})] 
+            fieldsets = [('Passo %d de %d' % (step + 1, self.num_steps()),
+{'fields': form.base_fields.keys()})]
         form = AdminForm(form, fieldsets, {})
         context = context or {}
         context.update({
@@ -226,12 +219,9 @@ context=None, step_title=None):
         data = {}
         for form in form_list:
             data.update(form.cleaned_data)
-            
         # Verify and set fields to save
         hasDemux = self.has_demux_step(request)
-        logo_name = self.get_logo_name(hasDemux)
         source_id_name = self.get_source_id_name(hasDemux)
-        
         # Create UniqueIP connector between DemuxServer n' Channel
         sink_unique = data['demuxed_input']
         uniqueIp = UniqueIP.create(sink_unique)
@@ -250,10 +240,8 @@ context=None, step_title=None):
         ## TODO: Review
         data['source'].content_type = ContentType.objects.get(id=20)
         data['source'].save()
-        
         logo = request.session['file_name']
         thumb = logo
-        
         # Create channel's values
         channel = Channel.objects.create(
            number=data['number'],
@@ -312,5 +300,4 @@ context=None, step_title=None):
         return self._model_admin.response_add(request, channel)
 
 
-create_canal_wizard = ChannelCreationWizard([InputChooseForm,
-                                             ChannelForm])
+create_canal_wizard = ChannelCreationWizard([InputChooseForm, ChannelForm])

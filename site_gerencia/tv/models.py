@@ -10,7 +10,8 @@ from django.core.urlresolvers import reverse
 from django.db.models import signals
 from django.conf import settings
 
-from device.models import UniqueIP, MulticastOutput
+from device.models import MulticastOutput
+
 
 class Channel(models.Model):
     """
@@ -19,29 +20,29 @@ class Channel(models.Model):
     class Meta:
         ordering = ('number',)
         verbose_name_plural = _('Canais')
-    number      = models.PositiveSmallIntegerField(_('Numero'), unique=True)
-    name        = models.CharField(_('Nome'), max_length=100)
+    number = models.PositiveSmallIntegerField(_('Numero'), unique=True)
+    name = models.CharField(_('Nome'), max_length=100)
     description = models.TextField(_('Descricao'))
-    channelid   = models.CharField(_('ID do Canal'), max_length=255)
-    image       = models.ImageField(_('Logo'), 
-        upload_to = 'tv/channel/image/tmp', 
-        help_text = 'Imagem do canal'
+    channelid = models.CharField(_('ID do Canal'), max_length=255)
+    image = models.ImageField(_('Logo'),
+        upload_to='tv/channel/image/tmp',
+        help_text='Imagem do canal'
     )
-    thumb       = models.ImageField(_('Miniatura'),
-        upload_to = 'tv/channel/image/thumb',
-        help_text = 'Imagem do canal'
+    thumb = models.ImageField(_('Miniatura'),
+        upload_to='tv/channel/image/thumb',
+        help_text='Imagem do canal'
     )
-    updated     = models.DateTimeField(auto_now=True)
-    enabled     = models.BooleanField(_(u'Disponível'), default=False)
-    source      = models.OneToOneField(MulticastOutput, unique=True)
-    
+    updated = models.DateTimeField(auto_now=True)
+    enabled = models.BooleanField(_(u'Disponível'), default=False)
+    source = models.OneToOneField(MulticastOutput, unique=True)
+
     def __unicode__(self):
-        return u"[%d] num=%s %s" %(self.id,self.number,self.name)
-    
+        return u"[%d] num=%s %s" % (self.id, self.number, self.name)
+
     def image_thum(self):
         return u'<img width="40" alt="Thum não existe" src="%s" />' % (
              self.thumb.url)
-    
+
     image_thum.short_description = 'Miniatura'
     image_thum.allow_tags = True
 
@@ -71,7 +72,7 @@ class Channel(models.Model):
         else:
             return '<a href="%s" id="tv_id_%d" style="color:red;">' \
                    'Parado</a>' % (reverse('channel_start',
-                                    kwargs={'pk' : self.pk}), self.pk)
+                                    kwargs={'pk': self.pk}), self.pk)
     switch_link.allow_tags = True
     switch_link.short_description = u'Status'
 
@@ -80,7 +81,7 @@ class Channel(models.Model):
         Limpeza da imagem.
         Remove o logo e o thumbnail ao remover o canal
         """
-        super(Channel,self).delete()
+        super(Channel, self).delete()
         import os
         os.unlink(self.image.path)
         os.unlink(self.thumb.path)
@@ -105,7 +106,6 @@ class Channel(models.Model):
                 obj = obj.sink
             else:
                 break
-            
         return u" --> ".join(ret)
 
 
@@ -126,25 +126,31 @@ def channel_post_save(signal, instance, sender, **kwargs):
             import Image
         except ImportError:
             from PIL import Image
-        import os,shutil
+        import os
+        import shutil
         ## Pegar info da logo
         extensao = instance.image.name.split('.')[-1]
         # Busca a configuração MEDIA_ROOT
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         # Caso não exista, cria o diretório
-        if os.path.exists(os.path.join(MEDIA_ROOT,'tv/channel/image/thumb')) == False:
-            os.mkdir(os.path.join(MEDIA_ROOT,'tv/channel/image/thumb'))
-        if os.path.exists(os.path.join(MEDIA_ROOT,'tv/channel/image/original')) == False:
-            os.mkdir(os.path.join(MEDIA_ROOT,'tv/channel/image/original'))
+        if os.path.exists(os.path.join(MEDIA_ROOT,
+'tv/channel/image/thumb')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/thumb'))
+        if os.path.exists(os.path.join(MEDIA_ROOT,
+'tv/channel/image/original')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/original'))
         # Criação da miniatura
-        instance.thumb.name = 'tv/channel/image/thumb/%d.%s' %(instance.id,extensao)
+        instance.thumb.name = 'tv/channel/image/thumb/%d.%s' % (instance.id,
+extensao)
         thumb = Image.open(instance.image.path)
-        thumb.thumbnail((200,200),Image.ANTIALIAS)
+        thumb.thumbnail((200, 200), Image.ANTIALIAS)
         thumb.save(instance.thumb.path)
         # Imagem original
-        original = 'tv/channel/image/original/%d.%s' %(instance.id,extensao)
-        #print('Copiando:\n%s\n%s'%(instance.logo.path,os.path.join(MEDIA_ROOT,original)))
-        shutil.copyfile(instance.image.path, os.path.join(MEDIA_ROOT,original))
+        original = 'tv/channel/image/original/%d.%s' % (instance.id, extensao)
+        #print('Copiando:\n%s\n%s'%(instance.logo.path,os.path.join(MEDIA_ROOT,
+        #original)))
+        shutil.copyfile(instance.image.path, os.path.join(MEDIA_ROOT,
+original))
         # Remove arquivo temporário
         os.unlink(instance.image.path)
         #instance.thumb.file
