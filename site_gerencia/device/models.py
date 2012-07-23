@@ -693,9 +693,7 @@ class DemuxedService(DeviceServer):
         try:
             log.debug('loading pmt')
             pmt = self.sink._read_ctl('get_pmt %d' % self.sid)
-            result = pmt.find('.//PMT[@program="%d"]' % self.sid)
-            log.debug('pmt=%s', result)
-            pcrpid = result.get('pcrpid')
+            pcrpid = pmt.get('pcrpid')
             log.debug('pcrpid is %s', pcrpid)
         except Exception as ex:
             log.error('ERROR:%s', ex)
