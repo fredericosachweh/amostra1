@@ -118,10 +118,10 @@ next_form_step, StreamRecorderForm)
                 alter_step = str(int(step) + 1)
                 step = alter_step
         if step is not None:
-            if ('2-gravar_config' in request.POST or \
-'1-gravar_config' in request.POST):
-                if not ('2-audio_config' in request.POST or \
-'1-audio_config' in request.POST):
+            if ('2-gravar_config' in request.POST or '1-gravar_config' in \
+request.POST):
+                if not ('2-audio_config' in request.POST or '1-audio_config' \
+in request.POST):
                     step = str(int(step) + 1)
         return title[step]
 
@@ -204,8 +204,8 @@ context=None, step_title=None):
         context.update({
             'media': self._model_admin.media + form.media
         })
-        return super(ChannelCreationWizard, self).render_template(
-            request, form, previous_fields, step, context)
+        return super(ChannelCreationWizard, self).render_template(request,
+form, previous_fields, step, context)
 
     def get_uniqueIP_to_save(self, sequential):
         ip_uniqueIp = settings.EXTERNAL_IP_MASK % \
