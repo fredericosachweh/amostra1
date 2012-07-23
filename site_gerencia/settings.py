@@ -44,17 +44,6 @@ else:
             'PORT': ''
         }
     }
-#    DATABASES = {
-#        'default': {
-#            'ENGINE': 'django.db.backends.mysql',
-#            'NAME': 'iptv',
-#            'USER': 'iptv',
-#            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
-#            'HOST': '/var/lib/mysql/mysql.sock',
-#            'PORT': ''
-#        }
-#
-#    }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
