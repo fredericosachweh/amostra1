@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-from device.models import UniqueIP, DemuxedService, StreamRecorder
+from device.models import UniqueIP, StreamRecorder
 from device.models import SoftTranscoder
 from django.contrib.admin.helpers import AdminForm
 from django.contrib.formtools.wizard import FormWizard
@@ -10,6 +10,9 @@ from tv.forms import DemuxedServiceFormWizard, InputChooseForm, ChannelForm
 from tv.forms import StreamRecorderForm, AudioConfigsForm
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from device.models import DemuxedService
+from django import forms
+from django.utils.translation import ugettext as _
 
 
 class ChannelCreationWizard(FormWizard):
@@ -41,6 +44,11 @@ class ChannelCreationWizard(FormWizard):
     def remove_optional_form(self, model_form):
         if model_form in self.form_list:
             self.form_list.remove(model_form)
+
+    def clean_request_session(self, request):
+        # Remove image name from session
+        request.session['file_name'] = ''
+        request.session.save()
 
     def process_step(self, request, form, step):
         # Add DemuxedServiceFormWizard
@@ -150,9 +158,6 @@ input_type == 'entradas_unicast' or input_type == 'entradas_multicast'
 self.get_dir_to_save_image(), channel_id_value, extension)
             request.session.save()
             self.copy_file(request, logo_name, channel_id_as_name)
-        else:
-            # TODO: del(request.session['file_name'])
-            pass
 
         self._model_admin = admin
         opts = admin.model._meta
@@ -170,21 +175,23 @@ self.get_dir_to_save_image(), channel_id_value, extension)
         })
         return super(ChannelCreationWizard, self).parse_params(request, admin)
 
-    def get_demuxed_input_model(self, input_type):
-        '''
-        Remove already used DemuxedService from model
-        '''
+    def get_content_type_id(self, content_type_key):
+        ''' Values from device_content_type '''
+        content_type = {'dvbs': 26,
+                        'isdb': 27,
+                        'entradas_unicast': 28,
+                        'entradas_multicast': 29}[content_type_key]
+        return content_type
+
+    def demuxed_input_field(self):
         objects_ids = []
         for ip in UniqueIP.objects.all():
             objects_ids.append(ip.object_id)
         model = DemuxedService.objects
-        for object_id in objects_ids:
-            model = model.exclude(deviceserver_ptr_id=object_id)
-        content_type_id = 25 # DVBS
-        if input_type == 'isdb':
-            content_type_id = 26 # ISDB
-        model = model.exclude(content_type_id=content_type_id)
-        return model
+        for ob_id in objects_ids:
+            model = model.exclude(deviceserver_ptr_id=ob_id)
+        demuxed_input = forms.ModelChoiceField(model, label=_(u'Entrada'))
+        return demuxed_input
 
     def render_template(self, request, form, previous_fields, step, \
 context=None, step_title=None):
@@ -192,6 +199,10 @@ context=None, step_title=None):
         Renders the template for the given step,
         returning an HttpResponse object.
         '''
+        if step == 0:
+            self.clean_request_session(request)
+        if step == 1:
+            form.fields['demuxed_input'] = self.demuxed_input_field()
         # Wrap the form into a AdminForm to get the fieldset
         fieldsets = []
         if form.__class__ == AudioConfigsForm:
@@ -208,8 +219,8 @@ context=None, step_title=None):
 form, previous_fields, step, context)
 
     def get_uniqueIP_to_save(self, sequential):
-        ip_uniqueIp = settings.EXTERNAL_IP_MASK % \
-(sequential / 256, sequential % 256)
+        ip_uniqueIp = settings.EXTERNAL_IP_MASK % (sequential / 256,
+sequential % 256)
         return ip_uniqueIp
 
     def done(self, request, form_list):
@@ -236,8 +247,8 @@ form, previous_fields, step, context)
         Atualiza object_id da saída multicast
         '''
         data['source'].object_id = uniqueIp.pk
-        ## Endereço IPv4 multicast
-        ## TODO: Review
+        # Endereço IPv4 multicast
+        # TODO: Review
         data['source'].content_type = ContentType.objects.get(id=20)
         data['source'].save()
         logo = request.session['file_name']
@@ -255,7 +266,7 @@ form, previous_fields, step, context)
 
         if 'audio_codec' in data.keys():
             # Create AudioConfig if filled
-            softtranscoder = SoftTranscoder.objects.create(
+            SoftTranscoder.objects.create(
                 nic_sink=data['nic_sink'],
                 nic_src=data['nic_src'],
                 content_type=data['content_type'],
@@ -287,7 +298,7 @@ form, previous_fields, step, context)
 
         if 'keep_time' in data.keys():
             # Create RecorderConfig if filled
-            streamrecorder = StreamRecorder.objects.create(
+            StreamRecorder.objects.create(
                 keep_time=data['keep_time'],
                 rotate=data['rotate'],
                 description=data['description'],
@@ -296,6 +307,8 @@ form, previous_fields, step, context)
                 server=data['server'],
                 channel=channel,
             )
+
+        self.clean_request_session(request)
 
         return self._model_admin.response_add(request, channel)
 
