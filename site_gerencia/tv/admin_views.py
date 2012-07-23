@@ -148,6 +148,8 @@ input_type == 'entradas_unicast' or input_type == 'entradas_multicast'
             file_name = str(request.FILES[logo_name])
             request.session['file_name'] = self.get_dir_to_save_image() + \
 file_name
+            request.session.save()
+            self.copy_file(request, logo_name)
         else:
             # TODO: del(request.session['file_name'])
             pass
