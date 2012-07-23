@@ -109,7 +109,8 @@ def programme_info(request):
         for title in titles:
             titlesStr += smart_str(title['value']) + " - "
         titlesStr = titlesStr[0:-3]
-        titlesStr = smart_unicode(titlesStr).upper()
+        titlesStr = smart_unicode(titlesStr)
+        
         #Segundo titulos
         secondaryTitlesStr = ""
         secondaryTitles = pro.secondary_titles.all().values()
@@ -205,7 +206,7 @@ def guide_programmes(request):
             for title in titles:
                 titlesStr += smart_str(title['value']) + " - "
             titlesStr = titlesStr[0:-3]
-            titlesStr = smart_unicode(titlesStr).upper()
+            titlesStr = smart_unicode(titlesStr)
             #Segundo titulos
             secondaryTitlesStr = ""
             secondaryTitles = pro.secondary_titles.all().values()
@@ -329,7 +330,7 @@ def guide_mount_line_of_programe(request):
             #Titulos
             titlesStr = ""
             titles = pro.titles.all().values()
-            titlesStr = smart_unicode(titles[0]['value']).upper()
+            titlesStr = smart_unicode(titles[0]['value'])
             arrGuideLine.append({
                 'ch':channelNumber,
                 'c':channelEpgRunNow,
