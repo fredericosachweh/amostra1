@@ -97,12 +97,13 @@ class Server(models.Model):
 
     def execute(self, command, persist=False):
         """Executa um comando no servidor"""
+        log = logging.getLogger('device.remotecall')
+        log.debug('[%s@%s]# %s', self.username, self.name, command)
         try:
             s = self.connect()
             self.msg = 'OK'
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
-            log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             self.save()
             return 'Can not connect'
@@ -118,13 +119,14 @@ class Server(models.Model):
 
     def execute_daemon(self, command, log_path=None):
         "Excuta o processo em background (daemon)"
+        log = logging.getLogger('device.remotecall')
+        log.debug('[%s@%s]#(daemon) %s', self.username, self.name, command)
         try:
             s = self.connect()
             self.msg = 'OK'
         except Exception as ex:
             self.msg = ex
             self.status = False
-            log = logging.getLogger('device.remotecall')
             log.error('[%s]:%s' % (self, ex))
             raise ex
         ret = s.execute_daemon(command, log_path)
@@ -212,19 +214,20 @@ class Server(models.Model):
         Auto create NIC (Network interfaces)
         """
         log = logging.getLogger('debug')
-        log.info('Auto create NIC on %s', self)
+        log.info('---|-Auto create NIC on %s', self)
         nics = []
         for iface in self._list_interfaces():
             nnics = NIC.objects.filter(name=iface['dev'], server=self).count()
             if nnics == 0:
                 nic = NIC.objects.create(name=iface['dev'], server=self,
                     ipv4=iface['ip'])
-                log.info('    New NIC found %s', nic)
+                log.info('   |-New NIC found %s', nic)
             else:
                 nic = NIC.objects.get(name=iface['dev'], server=self)
                 nic.ipv4 = iface['ip']
-                log.info('    Existing NIC %s', nic)
+                log.info('   |-Existing NIC %s', nic)
             nic.ipv4 = iface['ip']
+            nic.save()
             nics.append(nic)
         return nics
 
@@ -372,7 +375,7 @@ class NIC(models.Model):
         unique_together = ('name', 'server')
 
     def __unicode__(self):
-        return u'%s->%s(%s)' % (self.server, self.name, self.ipv4)
+        return u'[%s] %s (%s)' % (self.server, self.name, self.ipv4)
 
 
 class UniqueIP(models.Model):
@@ -684,6 +687,20 @@ class DemuxedService(DeviceServer):
     switch_link.allow_tags = True
     switch_link.short_description = u'Status'
 
+    def get_pcrpid(self):
+        log = logging.getLogger('debug')
+        pcrpid = None
+        try:
+            log.debug('loading pmt')
+            pmt = self.sink._read_ctl('get_pmt %d' % self.sid)
+            result = pmt.find('.//PMT[@program="%d"]' % self.sid)
+            log.debug('pmt=%s', result)
+            pcrpid = result.get('pcrpid')
+            log.debug('pcrpid is %s', pcrpid)
+        except Exception as ex:
+            log.error('ERROR:%s', ex)
+        return pcrpid
+
 
 class InputModel(models.Model):
     "Each model of input type should inherit this"
@@ -748,20 +765,6 @@ class InputModel(models.Model):
         "Creates all the folders dvblast needs"
         log = logging.getLogger('debug')
         log.debug('skip create folders on InputModel')
-        return
-
-        def create_folder(path):
-            try:
-                self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
-                self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
-                    self.server.username, self.server.username, path))
-            except Exception as ex:
-                log = logging.getLogger('debug')
-                log.error(unicode(ex))
-
-        create_folder(settings.DVBLAST_CONFS_DIR)
-        create_folder(settings.DVBLAST_SOCKETS_DIR)
-        create_folder(settings.DVBLAST_LOGS_DIR)
 
     def _clean_sock_file(self):
         self.server.execute('/bin/rm -f %s%d.sock' % (
@@ -801,6 +804,32 @@ class InputModel(models.Model):
     tuned.short_description = _(u'Sinal')
     tuned.allow_tags = True
 
+#DVBlastctl 2.2 (git-f91415d-dirty)
+#Usage: dvblastctl -r <remote socket> [-x <text|xml>] [cmd]
+#Options:
+#  -r --remote-socket <name>       Set socket name to <name>.
+#  -x --print <text|xml>           Choose output format for info commands.
+#Control commands:
+#  reload                          Reload configuration.
+#  shutdown                        Shutdown DVBlast.
+#Status commands:
+#  fe_status                       Read frontend status information.
+#  mmi_status                      Read CAM status.
+#MMI commands:
+#  mmi_slot_status <slot>          Read MMI slot status.
+#  mmi_open <slot>                 Open MMI slot.
+#  mmi_close <slot>                Close MMI slot.
+#  mmi_get <slot>                  Read MMI slot.
+#  mmi_send_text <slot> <text>     Send text to MMI slot.
+#  mmi_send_choice <slot> <choice> Send choice to MMI slot.
+#Demux info commands:
+#  get_pat                         Return last PAT table.
+#  get_cat                         Return last CAT table.
+#  get_nit                         Return last NIT table.
+#  get_sdt                         Return last SDT table.
+#  get_pmt <service_id>            Return last PMT table.
+#  get_pids                        Return info about all pids.
+#  get_pid <pid>                   Return info for chosen pid only.
     def scan(self):
         "Scans the transport stream and creates DemuxedInputs accordingly"
         import time
@@ -814,18 +843,26 @@ class InputModel(models.Model):
             raise InputModel.GotNoLockException("%s" % self)
         pat = self._read_ctl('get_pat')
         programs = pat.findall('.//PROGRAM')
-        sdt = self._read_ctl('get_sdt')
+        try:
+            sdt = self._read_ctl('get_sdt')
+        except:
+            pass
         services = []
         for program in programs:
             number = int(program.get('number'))
             if number is 0:
                 continue  # Program 0 never works
+            pmt = self._read_ctl('get_pmt %d' % number)
+            #print(pmt)
             ct = ContentType.objects.get_for_model(self)
             service, created = \
                 DemuxedService.objects.get_or_create(server=self.server,
                     sid=number, content_type=ct, object_id=self.pk)
-            detail = \
-                sdt.find('.//SERVICE[@sid="%d"]/DESC/SERVICE_DESC' % number)
+            try:
+                detail = sdt.find(
+                    './/SERVICE[@sid="%d"]/DESC/SERVICE_DESC' % number)
+            except:
+                detail = None
             if detail is not None:
                 service.provider = detail.get('provider')
                 service.service_desc = detail.get('service')
@@ -1418,8 +1455,19 @@ class StreamRecorder(OutputModel, DeviceServer):
         # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
         #@239.10.0.1:10000/ifaddr=172.17.0.1 -U -r 97200000000 \
         #-u /iptv/recorder/6
-        cmd = u'%s -r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
+
+        use_pcrpid = ''
+        if settings.get('CHANNEL_RECORD_USE_PCRPID') is True:
+            ## Busca o pid do pcr para o metodo novo de gravação
+            demux = self.sink
+            while type(demux) is not DemuxedService:
+                demux = demux.sink
+            pcrpid = demux.get_pcrpid()
+            use_pcrpid = '-p %s' % pcrpid
+
+        cmd = u'%s %s -r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.MULTICAT_COMMAND,
+            use_pcrpid,
             (self.rotate * 60 * 27000000),
             self.sink.ip,
             self.sink.port,
