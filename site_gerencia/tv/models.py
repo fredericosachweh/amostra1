@@ -33,8 +33,7 @@ class Channel(models.Model):
     )
     updated     = models.DateTimeField(auto_now=True)
     enabled     = models.BooleanField(_(u'Disponível'), default=False)
-    source      = models.OneToOneField(MulticastOutput, unique=True,
-                                       null=True, blank=True)
+    source      = models.OneToOneField(MulticastOutput, unique=True)
     
     def __unicode__(self):
         return u"[%d] num=%s %s" %(self.id,self.number,self.name)
