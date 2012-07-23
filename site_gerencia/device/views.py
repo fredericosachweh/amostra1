@@ -44,8 +44,7 @@ def server_list_interfaces(request):
     log.info('Listing NICs from server (pk=%s)', pk)
     response = '<option selected="selected" value="">---------</option>'
     for i in models.NIC.objects.filter(server=server):
-        response += ('<option value="%s">%s - %s</option>' % (i.pk,
-            i.name, i.ipv4))
+        response += ('<option value="%s">%s</option>' % (i.pk, i))
     return HttpResponse(response)
 
 
