@@ -19,12 +19,12 @@ from django.contrib.sites.models import Site
 
 def test_all_servers(modeladmin, request, queryset):
     for s in queryset:
-        print(s)
         s.connect()
         if s.status is True:
             s.auto_create_nic()
 
-test_all_servers.sort_descritpion = ugettext_lazy('Teste todos os servidores')
+test_all_servers.short_description = ugettext_lazy(
+    u'Testar %(verbose_name_plural)s selecionados')
 
 
 class AdminServer(admin.ModelAdmin):
@@ -114,7 +114,8 @@ class UniqueIPInline(generic.GenericTabularInline):
 
 class AdminFileInput(admin.ModelAdmin):
     inlines = [UniqueIPInline, ]
-    list_display = ('filename', 'description', 'server', 'repeat', 'switch_link')
+    list_display = ('filename', 'description', 'server', 'repeat',
+        'switch_link')
     form = forms.FileInputForm
 
 
