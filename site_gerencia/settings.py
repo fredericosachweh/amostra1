@@ -247,6 +247,7 @@ MULTICAT_COMMAND = '/iptv/bin/multicat'
 MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 
+CHANNEL_RECORD_USE_PCRPID = True
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
 CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
 CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'
