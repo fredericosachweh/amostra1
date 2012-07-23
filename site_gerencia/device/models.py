@@ -1455,7 +1455,7 @@ class StreamRecorder(OutputModel, DeviceServer):
         #-u /iptv/recorder/6
 
         use_pcrpid = ''
-        if settings.get('CHANNEL_RECORD_USE_PCRPID') is True:
+        if settings.CHANNEL_RECORD_USE_PCRPID is True:
             ## Busca o pid do pcr para o metodo novo de gravação
             demux = self.sink
             while type(demux) is not DemuxedService:
