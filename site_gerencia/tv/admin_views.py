@@ -13,8 +13,7 @@ from tv.forms import DemuxedServiceFormWizard, InputChooseForm, ChannelForm
 from tv.forms import StreamRecorderForm, AudioConfigsForm
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
-
-import settings
+from django.conf import settings
 
 
 class ChannelCreationWizard(FormWizard):
@@ -74,28 +73,27 @@ class ChannelCreationWizard(FormWizard):
             else:
                 self.remove_optional_form(StreamRecorderForm)
 
-    def copy_file(self, request, logo_name):
+    def copy_file(self, request, logo_name, channel_id_as_name):
         '''
-        Copy the file selected with ImageField to 'dir'
+        Copy the file selected with ImageField and create the thumb
         '''
-        # TODO: Save image with channel's id as name
         image = request.FILES[logo_name]
-        image_directory = self.get_dir_to_save_image() + str(image)
-        default_storage.save(image_directory, ContentFile(image.read()))
-        
-#        # Thumb
-#        try:
-#            import Image
-#        except ImportError:
-#            from PIL import Image
-#        import os, shutil
-#        thumb_directory = self.get_dir_to_save_thumb() + str(image)
-#        MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
-#        if os.path.exists(MEDIA_ROOT + image_directory) == False:
-#            thumb = Image.open(MEDIA_ROOT + image_directory)
-#            thumb.thumbnail((200, 200), Image.ANTIALIAS)
-#            thumb.save(MEDIA_ROOT + thumb_directory)
-        
+        image_url = self.get_dir_to_save_image() + channel_id_as_name
+        default_storage.save(image_url, ContentFile(image.read()))
+  
+        # Thumb
+        try:
+            import Image
+        except ImportError:
+            from PIL import Image
+        import os, shutil
+        MEDIA_ROOT = '%s/' % (getattr(settings, 'MEDIA_ROOT'))
+        thumb_dir = self.get_dir_to_save_thumb()
+        image_absolute_url = MEDIA_ROOT + image_url
+        thumb_url = '%s%s%s' % (MEDIA_ROOT, thumb_dir, channel_id_as_name)
+        thumb = Image.open(image_absolute_url)
+        thumb.thumbnail((200, 200), Image.ANTIALIAS)
+        thumb.save(thumb_url)
 
     def get_logo_name(self, hasDemux):
         logo_name = '1-image'
@@ -108,6 +106,12 @@ class ChannelCreationWizard(FormWizard):
         if hasDemux:
             source_id_name = '2-source'
         return source_id_name
+
+    def get_channel_id(self, hasDemux):
+        channel_id = '1-channelid'
+        if hasDemux:
+            channel_id = '2-channelid'
+        return channel_id
 
     def get_form_title(self, hasDemux, step, request):
         title = {None: 'Entrada de Fluxo',
@@ -137,19 +141,22 @@ input_type == 'entradas_unicast' or input_type == 'entradas_multicast'
         return hasDemux
 
     def parse_params(self, request, admin=None, *args, **kwargs):
-        hasDemux = self.has_demux_step(request)
-        logo_name = self.get_logo_name(hasDemux)
-        
         '''
         Save into request.session the key 'file_name',
         that contains the local where the image was saved.
         '''
+        hasDemux = self.has_demux_step(request)
         if request.FILES:
+            logo_name = self.get_logo_name(hasDemux)
             file_name = str(request.FILES[logo_name])
-            request.session['file_name'] = self.get_dir_to_save_image() + \
-file_name
+            extension = file_name.split('.')[-1]
+            channel_id_key = self.get_channel_id(hasDemux)
+            channel_id_value = request.POST[channel_id_key]
+            channel_id_as_name = '%s.%s' % (channel_id_value, extension)
+            request.session['file_name'] = '%s%s.%s' % (
+self.get_dir_to_save_image(), channel_id_value, extension)
             request.session.save()
-            self.copy_file(request, logo_name)
+            self.copy_file(request, logo_name, channel_id_as_name)
         else:
             # TODO: del(request.session['file_name'])
             pass
