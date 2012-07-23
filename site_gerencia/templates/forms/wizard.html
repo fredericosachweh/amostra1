@@ -2,26 +2,82 @@
 {% load i18n %}
 
 {% block content %}
+
+<script type="text/javascript">
+	django.jQuery(document).ready(function() {
+		populate_interfaces();
+		// populate_channels();
+		/* Insert the onchange callbacks */
+		django.jQuery('select#id_0-input_types_field').change(populate_interfaces);
+		// django.jQuery('select#id_0-input_satellite').change(populate_channels);
+		// django.jQuery('select#id_0-chan').change(preview_values);
+	});
+	/* Get input adapters list from server and populate the select field */
+	function populate_interfaces() {
+		var type = django.jQuery('select#id_0-input_types_field').val();
+		var field = django.jQuery('select#id_0-input_stream');
+		field.attr("disabled", "disabled");
+		field.empty();
+		if (type) {
+			var query = '{% url tv.views.input_list_interfaces %}' + '?type=' + type;
+			django.jQuery.get(query, function(data) {
+				if (data) {
+					field.append(data);
+					var iface = "{{ original.interface.pk }}";
+					if (iface)
+						field.val(iface);
+				}
+				field.removeAttr("disabled");
+			});
+		}
+	}
+
+	// function populate_channels() {
+		// var sat = django.jQuery('select#id_0-input_satellite').val();
+		// if (sat) {
+			// django.jQuery('select#id_0-chan').attr("disabled", "disabled");
+			// django.jQuery(':submit').attr("disabled", "disabled");
+			// // Fill the channels <select> field
+			// query = "/tv/dvbinfo/channels/dvbs/?sat=" + sat;
+			// if (django.jQuery('input#id_fta').attr('checked'))
+				// query += '&fta=1';
+			// django.jQuery.getJSON(query, function(data) {
+				// django.jQuery('select#id_0-chan').empty();
+				// django.jQuery('select#id_0-chan').append('<option>---</option>');
+				// django.jQuery.each(data, function(key, value) {
+					// var option = '<option value="' + value.pk + '">' + value.fields.name + '</option>';
+					// django.jQuery('select#id_0-chan').append(option);
+				// });
+				// django.jQuery('select#id_0-chan').removeAttr("disabled");
+				// django.jQuery(':submit').removeAttr("disabled");
+			// });
+		// }
+	// }
+</script>
+
 <div id="content-main">
-    <form {% if form.form.is_multipart %}enctype="multipart/form-data" {% endif %}method="post" action="" id="{{ opts.module_name }}_form">{% csrf_token %}
-        <div>
-            {% if form.form.errors %}
-            <p class="errornote">
-                {% blocktrans count form.form.errors|length as counter %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
-            </p>
-            <ul class="errorlist">
-                {% for error in form.form.non_field_errors %}
-                <li>{{ error }}</li>{% endfor %}
-            </ul>
-            {% endif %}
+	<form {% if form.form.is_multipart %}enctype="multipart/form-data" {% endif %}method="post" action="" id="{{ opts.module_name }}_form">
+		{% csrf_token %}
+		<div>
+			{% if form.form.errors %}
+			<p class="errornote">
+				{% blocktrans count form.form.errors|length as counter %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+			</p>
+			<ul class="errorlist">
+				{% for error in form.form.non_field_errors %}
+				<li>
+					{{ error }}
+				</li>
+				{% endfor %}
+			</ul>
+			{% endif %}
 
-            
-            {% for fieldset in form %}
-              {% include "admin/includes/fieldset.html" %}
-            {% endfor %}
+			{% for fieldset in form %}
+			{% include "admin/includes/fieldset.html" %}
+			{% endfor %}
 
-            <input type="hidden" name="{{ step_field }}" value="{{ step0 }}" />
-            {{ previous_fields|safe }}
+			<input type="hidden" name="{{ step_field }}" value="{{ step0 }}" />
+			{{ previous_fields|safe }}
 
             <div class="submit-row">
                 <input type="submit" value="{% ifequal step step_count %}Finalizar{% else %}Próximo &raquo;{% endifequal %}" class="default" name="_save" />
@@ -30,10 +86,12 @@
                 {% endifequal %}
             </div>
 
-            <script type="text/javascript">document.getElementById("{{ form.first_field.auto_id }}").focus();</script>
-            
-        </div>
-    </form>
+
+			<script type="text/javascript">
+				document.getElementById("{{ form.first_field.auto_id }}").focus();
+			</script>
+
+		</div>
+	</form>
 </div>
 {% endblock %}
-
