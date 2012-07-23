@@ -2,7 +2,7 @@
 # -*- encoding:utf8 -*-
 from django import forms
 from django.utils.translation import ugettext as _
-from device.models import UniqueIP, DemuxedService, StreamRecorder
+from device.models import DemuxedService, StreamRecorder
 from device.models import SoftTranscoder
 
 import fields
@@ -31,16 +31,7 @@ required=False)
 
 
 class DemuxedServiceFormWizard(forms.Form):
-    # Remove the used DemuxedServices
-    objects_ids = []
-    for ip in UniqueIP.objects.all():
-        objects_ids.append(ip.object_id)
     model = DemuxedService.objects
-    for id in objects_ids:
-        model = model.exclude(deviceserver_ptr_id=id)
-    print objects_ids
-    print model
-    # DemuxedService's Field
     demuxed_input = forms.ModelChoiceField(model, label=_(u'Entrada'))
 
 
