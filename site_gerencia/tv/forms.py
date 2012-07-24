@@ -2,8 +2,9 @@
 # -*- encoding:utf8 -*-
 from django import forms
 from django.utils.translation import ugettext as _
-from device.models import DemuxedService, StreamRecorder
+from device.models import StreamRecorder
 from device.models import SoftTranscoder
+from epg.models import Channel
 
 import fields
 import tv
@@ -20,19 +21,17 @@ class ChannelForm(forms.ModelForm):
     class Meta:
         model = tv.models.Channel
         fields = ('number', 'name', 'channelid', 'description', 'enabled',
-                  'source',)
-
-    image = fields.ImageField2Wizard(_('Logo'),
-        help_text='Imagem do canal',
-    )
+'source')
+    epg_model = Channel.objects.all()
+    epg_values = []
+    for m in epg_model:
+        epg_values.append((m.channelid, m.channelid))
+    channelid = forms.ChoiceField(label=_(u'ID do EPG'), choices=epg_values)
+    #demuxed_input = forms.CharField(label=_(u'Destino'))
+    image = fields.ImageField2Wizard(_('Logo'), help_text='Imagem do canal')
     audio_config = forms.BooleanField(label="Configurar Audio", required=False)
     gravar_config = forms.BooleanField(label="Configurar Gravação",
 required=False)
-
-
-class DemuxedServiceFormWizard(forms.Form):
-    model = DemuxedService.objects
-    demuxed_input = forms.ModelChoiceField(model, label=_(u'Entrada'))
 
 
 class InputChooseForm(forms.Form):
@@ -44,6 +43,7 @@ class InputChooseForm(forms.Form):
     input_types_field = forms.ChoiceField(label=_(u'Tipo de Entrada'),
 choices=INPUT_TYPES,)
     input_stream = fields.DinamicChoiceField(label=_(u'Entrada'))
+    demuxed_input = fields.DinamicChoiceFieldDemux(label=_(u'Demux'))
 
 
 class StreamRecorderForm(GenericRelationFormWizard):
