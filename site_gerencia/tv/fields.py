@@ -9,7 +9,7 @@ from django.contrib.sessions.models import Session
 from django.utils.encoding import smart_unicode
 import os
 
-__all__ = 'DinamicChoiceField',
+__all__ = 'DinamicChoiceField', 'ImageField2Wizard',
 
 
 class DinamicChoiceField(forms.ChoiceField):
@@ -21,6 +21,19 @@ class DinamicChoiceField(forms.ChoiceField):
     def clean(self, value):
         if bool(value) is False or value == '0':
             raise forms.ValidationError(u'Escolha uma opção válida.')
+        return smart_unicode(value)
+
+
+class DinamicChoiceFieldDemux(forms.ChoiceField):
+    '''
+    Campo ChoiceField dinÃ¢mico, alimentado por Ajax.
+    A validacao deve apenas verificar se o campo esta vazio, nao deve
+    verificar se o valor esta no 'choices'.
+    '''
+    def clean(self, value):
+        if bool(value) is False or value == '0':
+            if value != '-1':
+                raise forms.ValidationError(u'Escolha uma opção válida.')
         return smart_unicode(value)
 
 
