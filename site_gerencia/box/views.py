@@ -106,16 +106,14 @@ def programme_info(request):
         #Titulos
         titlesStr = ""
         titles = pro.titles.all().values()
-        for title in titles:
-            titlesStr += smart_str(title['value']) + " - "
-        titlesStr = titlesStr[0:-3]
-        titlesStr = smart_unicode(titlesStr).upper()
+        titlesStr = smart_unicode(titles[0]['value'])
+        
         #Segundo titulos
         secondaryTitlesStr = ""
         secondaryTitles = pro.secondary_titles.all().values()
-        for secondary_title in secondaryTitles:
-            secondaryTitlesStr += smart_str(secondary_title['value']) + " - "
-        secondaryTitlesStr = secondaryTitlesStr[0:-3]
+        if len(secondaryTitles) > 0:
+            secondaryTitlesStr = smart_unicode( secondaryTitles[0]['value'] )
+        
         rating = smart_str(pro.rating.value)
         #Descricao
         descriptions = ""
@@ -199,20 +197,18 @@ def guide_programmes(request):
             startStr = '{:%H:%M}'.format(guide.start)
             stopStr = '{:%H:%M}'.format(guide.stop)
             duracao = guide.stop - guide.start
+            
             #Titulos
             titlesStr = ""
             titles = pro.titles.all().values()
-            for title in titles:
-                titlesStr += smart_str(title['value']) + " - "
-            titlesStr = titlesStr[0:-3]
-            titlesStr = smart_unicode(titlesStr).upper()
+            titlesStr = smart_unicode(titles[0]['value'])
+            
             #Segundo titulos
             secondaryTitlesStr = ""
             secondaryTitles = pro.secondary_titles.all().values()
-            for secondary_title in secondaryTitles:
-                secondaryTitlesStr += smart_str(secondary_title['value']) +\
-                    " - "
-            secondaryTitlesStr = secondaryTitlesStr[0:-3]
+            if len(secondaryTitles) > 0:
+                secondaryTitlesStr = smart_unicode( secondaryTitles[0]['value'] )
+
             rating = pro.rating.value
             #Descricao
             descriptions = ""
@@ -329,7 +325,7 @@ def guide_mount_line_of_programe(request):
             #Titulos
             titlesStr = ""
             titles = pro.titles.all().values()
-            titlesStr = smart_unicode(titles[0]['value']).upper()
+            titlesStr = smart_unicode(titles[0]['value'])
             arrGuideLine.append({
                 'ch':channelNumber,
                 'c':channelEpgRunNow,
@@ -352,10 +348,10 @@ def guide_mount_line_of_programe(request):
         print("SEM PROGRAMACAO")
         tTotalStart = int(hoursRangeStart)
         tTotalStop = int(hoursRangeStop)
-        tTotal = tTotalStart + tTotalStop
+        tTotal = ( tTotalStart + tTotalStop ) * 2
         countHours = 0
         staTime = rangeTimeStart
-        stoTime = rangeTimeStart + timedelta(hours=1)
+        stoTime = rangeTimeStart + timedelta(minutes=30)
         
         start_tm   = int(time.mktime(staTime.timetuple()))
         stop_tm   = int(time.mktime(stoTime.timetuple()))
@@ -374,13 +370,13 @@ def guide_mount_line_of_programe(request):
                     'sp_tm':stop_tm,
                     't': '',
                     'dcode': divCodePosition,
-                    'd': 60,
+                    'd': 30,
                     'x': countHours,
                     'y': countY
                     })
             countHours += 1
-            staTime = staTime + timedelta(hours=1)
-            stoTime = staTime + timedelta(hours=1)
+            staTime = staTime + timedelta(minutes=30)
+            stoTime = staTime + timedelta(minutes=30)
             
             start_tm   = int(time.mktime(staTime.timetuple()))
             stop_tm   = int(time.mktime(stoTime.timetuple()))
