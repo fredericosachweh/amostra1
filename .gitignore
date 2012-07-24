@@ -7,7 +7,6 @@
 banco.sqlite3
 *.swp
 /*.komodoproject
-/site_gerencia/static
 /site_gerencia/media/videos
 /site_gerencia/.settings*
 /site_gerencia/tvfiles
