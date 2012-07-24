@@ -351,7 +351,7 @@ def guide_mount_line_of_programe(request):
         tTotal = ( tTotalStart + tTotalStop ) * 2
         countHours = 0
         staTime = rangeTimeStart
-        stoTime = rangeTimeStart + timedelta(hours=1)
+        stoTime = rangeTimeStart + timedelta(minutes=30)
         
         start_tm   = int(time.mktime(staTime.timetuple()))
         stop_tm   = int(time.mktime(stoTime.timetuple()))
@@ -370,7 +370,7 @@ def guide_mount_line_of_programe(request):
                     'sp_tm':stop_tm,
                     't': '',
                     'dcode': divCodePosition,
-                    'd': 60,
+                    'd': 30,
                     'x': countHours,
                     'y': countY
                     })
