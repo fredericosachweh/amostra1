@@ -12,6 +12,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from device.models import DemuxedService
 
+import os
+
 
 class ChannelCreationWizard(FormWizard):
     "Formulários de criação do canal"
@@ -58,6 +60,15 @@ next_form_step, StreamRecorderForm)
         '''
         Copy the file selected with ImageField and create the thumb
         '''
+        # Caso não exista, cria o diretório
+        MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
+        if os.path.exists(os.path.join(MEDIA_ROOT,
+'tv/channel/image/thumb')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/thumb'))
+        if os.path.exists(os.path.join(MEDIA_ROOT,
+'tv/channel/image/original')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/original'))
+
         image = request.FILES[logo_name]
         image_url = self.get_dir_to_save_image() + channel_id_as_name
         default_storage.save(image_url, ContentFile(image.read()))
@@ -162,7 +173,6 @@ sequential % 256)
             sink_unique = FileInput.objects.get(id=data['input_stream'])
         uniqueIp = UniqueIP.create(sink_unique)
         sequential = uniqueIp.sequential
-        # TODO: Review
         sequential = sequential + 1
         ip_uniqueIp = self.get_uniqueIP_to_save(sequential)
         uniqueIp.ip = ip_uniqueIp
@@ -227,8 +237,8 @@ sequential % 256)
                 keep_time=data['keep_time'],
                 rotate=data['rotate'],
                 description=data['description'],
-                nic_sink=channel.source.sink.sink.nic_src,
-                object_id=channel.source.sink.pk,
+                nic_sink=channel.source.nic_sink,
+                object_id=uniqueIp.pk,
                 server=data['server'],
                 channel=channel,
             )
