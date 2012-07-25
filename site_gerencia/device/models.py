@@ -1737,5 +1737,5 @@ def StreamRecorder_pre_save(sender, instance, **kwargs):
         channel = instance.channel
         sink = channel.source.sink
         content_type_id = channel.source.content_type_id
-        instance.content_type_id = content_type_id 
+        instance.content_type_id = content_type_id
         instance.nic_sink = sink.sink.nic_src
