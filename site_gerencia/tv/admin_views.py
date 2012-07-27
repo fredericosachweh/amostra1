@@ -88,7 +88,7 @@ next_form_step, StreamRecorderForm)
     def get_form_title(self, step, request):
         title = {None: 'Entrada de Fluxo',
                  '0': 'Adicionar Canal',
-                 '1': 'Configurar Audio',
+                 '1': 'Configurar Áudio',
                  '2': 'Configurar Gravação',
                  '3': None}
         return title[step]
