@@ -51,11 +51,26 @@ class ImageField2Wizard(forms.ImageField):
             if 'file_name' in decoded_session.keys():
                 file_dir = str(decoded_session['file_name'])
                 file_dir = os.path.join(settings.MEDIA_ROOT, file_dir)
-                used_session = session
-                try:
-                    with open(file_dir) as f:
-                        pass
-                except IOError as e:
-                    raise forms.ValidationError(self.error_messages['empty'])
+                file_name = str(decoded_session['file_name'])
+                if os.path.exists(file_dir) and file_name != '':
+                    used_session = session
+                    break
         if used_session is None:
             raise forms.ValidationError(self.error_messages['empty'])
+
+#    def clean(self, data, initial=None):
+#        sessions = Session.objects.all()
+#        used_session = None
+#        for session in sessions:
+#            decoded_session = session.get_decoded()
+#            if 'file_name' in decoded_session.keys():
+#                file_dir = str(decoded_session['file_name'])
+#                file_dir = os.path.join(settings.MEDIA_ROOT, file_dir)
+#                used_session = session
+#                try:
+#                    with open(file_dir) as f:
+#                        pass
+#                except IOError as e:
+#                    raise forms.ValidationError(self.error_messages['empty'])
+#        if used_session is None:
+#            raise forms.ValidationError(self.error_messages['empty'])
