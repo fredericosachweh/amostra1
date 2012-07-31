@@ -23,9 +23,9 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'iptv',
-            'USER': 'root',
-            'PASSWORD': 'cianet',
+            'NAME': 'iptv4',
+            'USER': '',
+            'PASSWORD': '',
             'HOST': '127.0.0.1',
             'PORT': '3306',
         }

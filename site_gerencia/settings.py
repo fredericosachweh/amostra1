@@ -43,7 +43,6 @@ else:
             'HOST': '/var/lib/mysql/mysql.sock',
             'PORT': ''
         }
-
     }
 
 # Local time zone for this installation. Choices can be found here:
@@ -214,7 +213,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     #'south',
     # Gestao de canal
-    #'canal',
+#    'canal',
     # Interface dos setup-box
     'box',
     # Pagina de home

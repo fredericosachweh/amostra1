@@ -1628,50 +1628,50 @@ class SoftTranscoder(DeviceServer):
     sink = generic.GenericForeignKey()
     src = generic.GenericRelation(UniqueIP)
     # Audio transcoder
-    transcode_audio = models.BooleanField()
-    audio_codec = models.CharField(max_length=100,
+    transcode_audio = models.BooleanField(u'Transcodificar áudio')
+    audio_codec = models.CharField(u'Áudio codec', max_length=100,
         choices=AUDIO_CODECS_LIST, null=True, blank=True)
-    audio_bitrate = models.PositiveIntegerField(default=96,
-        null=True, blank=True)
-    sync_on_audio_track = models.BooleanField(
-        default=False)  # --sout-transcode-audio-sync
+    audio_bitrate = models.PositiveIntegerField(u'Taxa de bits de áudio',
+default=96, null=True, blank=True)
+    sync_on_audio_track = models.BooleanField(u'Sincronizar a faixa de áudio',
+default=False)  # --sout-transcode-audio-sync
     # Gain control filter
-    apply_gain = models.BooleanField()
-    gain_value = models.FloatField(u'Gain multiplier',
+    apply_gain = models.BooleanField(u'Aplicar ganho')
+    gain_value = models.FloatField(u'Ganho multiplicador',
         help_text=u'Increase or decrease the gain (default 1.0)',
         default=1.0, null=True, blank=True)  # --gain-value
     # Dynamic range compressor
-    apply_compressor = models.BooleanField()
-    compressor_rms_peak = models.FloatField(u'RMS/peak',
+    apply_compressor = models.BooleanField(u'Aplicar compressor')
+    compressor_rms_peak = models.FloatField(u'RMS/pico',
         help_text=u'Set the RMS/peak (0 ... 1).',
         default=0.0, null=True, blank=True)
-    compressor_attack = models.FloatField(u'Attack time',
+    compressor_attack = models.FloatField(u'Tempo de ataque',
         help_text=u'Set the attack time in milliseconds (1.5 ... 400).',
         default=25.0, null=True, blank=True)
-    compressor_release = models.FloatField(u'Release time',
+    compressor_release = models.FloatField(u'Tempo de liberação',
         help_text=u'Set the release time in milliseconds (2 ... 800).',
         default=100.0, null=True, blank=True)
-    compressor_threshold = models.FloatField(u'Threshold level',
+    compressor_threshold = models.FloatField(u'Nível do limiar',
         help_text=u'Set the threshold level in dB (-30 ... 0).',
         default=-11.0, null=True, blank=True)
-    compressor_ratio = models.FloatField(u'Ratio',
+    compressor_ratio = models.FloatField(u'Taxa',
         help_text=u'Set the ratio (n:1) (1 ... 20).',
         default=8.0, null=True, blank=True)
     compressor_knee = models.FloatField(u'Knee radius',
         help_text=u'Set the knee radius in dB (1 ... 10).',
         default=2.5, null=True, blank=True)
-    compressor_makeup_gain = models.FloatField(u'Makeup gain',
+    compressor_makeup_gain = models.FloatField(u'Makeup ganho',
         help_text=u'Set the makeup gain in dB (0 ... 24).',
         default=7.0, null=True, blank=True)
     # Volume normalizer
-    apply_normvol = models.BooleanField()
-    normvol_buf_size = models.IntegerField(u'Number of audio buffers',
+    apply_normvol = models.BooleanField(u'Aplicar normalização de volume')
+    normvol_buf_size = models.IntegerField(u'Número de buffers de áudio',
         help_text=u'''This is the number of audio buffers on which the power \
         measurement is made. A higher number of buffers will increase the \
         response time of the filter to a spike but will make it less \
         sensitive to short variations.''',
         default=20, null=True, blank=True)
-    normvol_max_level = models.FloatField(u'Maximal volume level',
+    normvol_max_level = models.FloatField(u'Nível de volume máximo',
         help_text=u'''If the average power over the last N buffers is higher \
         than this value, the volume will be normalized. This value is a \
         positive floating point number.\
@@ -1774,3 +1774,14 @@ class SoftTranscoder(DeviceServer):
             raise ValidationError(
                 _(u'Os filtros só serão aplicados se a'
                 u' transcodificação estiver habilitada.'))
+
+
+@receiver(pre_save, sender=StreamRecorder)
+def StreamRecorder_pre_save(sender, instance, **kwargs):
+    "Filling dependent fields from Channel"
+    if instance.channel is not None:
+        channel = instance.channel
+        sink = channel.source.sink
+        content_type_id = channel.source.content_type_id
+        instance.content_type_id = content_type_id
+        instance.nic_sink = sink.sink.nic_src
