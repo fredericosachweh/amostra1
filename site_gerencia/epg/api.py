@@ -3,6 +3,7 @@
 
 import time
 import datetime
+from django.utils import timezone
 from django.conf.urls.defaults import *
 
 from tastypie import fields
@@ -171,9 +172,11 @@ class GuideResource(NamespacedModelResource):
         }
 
     def dehydrate_start_timestamp(self, bundle):
+        #print('start:%s' % bundle.obj.start)
         return time.mktime(bundle.obj.start.timetuple())
 
     def dehydrate_stop_timestamp(self, bundle):
+        #print('stop:%s' % bundle.obj.stop)
         return time.mktime(bundle.obj.stop.timetuple())
 
     def build_filters(self, filters=None):
@@ -185,7 +188,7 @@ class GuideResource(NamespacedModelResource):
                 k = f[:-10]
                 v = filters.get(f)
                 try:
-                    v = datetime.datetime.fromtimestamp(float(v))
+                    v = timezone.datetime.fromtimestamp(float(v))
                 except:
                     v = None
                 newfilter[k] = str(v)

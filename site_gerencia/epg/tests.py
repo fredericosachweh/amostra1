@@ -134,8 +134,10 @@ class Test_XML_to_db(object):
             'Revista Eletronica - Unidade Lorenz Ltda')
         self.assertEquals(self.epg_source.generator_info_url,
             'http://xmltv.revistaeletronica.com.br')
-        self.assertEquals(self.epg_source.minor_start, parse('20120116000500'))
-        self.assertEquals(self.epg_source.major_stop, parse('20120116004500'))
+        self.assertEquals(self.epg_source.minor_start,
+            parse('20120116000500 +0000'))
+        self.assertEquals(self.epg_source.major_stop,
+            parse('20120116004500 +0000'))
         self.assertEquals(self.epg_source.numberofElements, 2)
 
     def test_Channel_1(self):
@@ -254,8 +256,10 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
             'Revista Eletronica - Unidade Lorenz Ltda')
         self.assertEquals(self.epg_source.generator_info_url,
             'http://xmltv.revistaeletronica.com.br')
-        self.assertEquals(self.epg_source.minor_start, parse('20120116000500'))
-        self.assertEquals(self.epg_source.major_stop, parse('20120116034500'))
+        self.assertEquals(self.epg_source.minor_start,
+            parse('20120116000500 +0000'))
+        self.assertEquals(self.epg_source.major_stop,
+            parse('20120116034500 +0000'))
         self.assertEquals(self.epg_source.numberofElements, 8)
 
     def test_Models_count(self):
@@ -477,20 +481,26 @@ aventureiros tentam p\xf4r as m\xe3os numa fortuna.',
         self.assertEquals(response.status_code, 404)
 
     def test_Guide_Query_Timestamp(self):
+        from pprint import pprint
         c = Client()
         url = reverse('epg:api_dispatch_list',
             kwargs={'resource_name': 'guide', 'api_name': 'v1'},
             )
-        response = c.get(url,
-            {'start_timestamp': '1326685500', 'stop_timestamp': '1326692700'})
+        response = c.get(url)
         jobj = json.loads(response.content)
+        #pprint(jobj)
+        response = c.get(url,
+            {'start_timestamp': '1326683100', 'stop_timestamp': '1326685500'})
+        jobj = json.loads(response.content)
+        #pprint(jobj)
         self.assertEqual(1, jobj['meta']['total_count'])
         response = c.get(url,
-            {'start_timestamp': '1326685500'})
+            {'start_timestamp': '1326683100.0'})
         jobj = json.loads(response.content)
+        #pprint(jobj)
         self.assertEqual(1, jobj['meta']['total_count'])
         response = c.get(url,
-            {'stop_timestamp': '1326692700'})
+            {'stop_timestamp': '1326685500'})
         response = c.get(url)
         jobj = json.loads(response.content)
         self.assertContains(response, 'Mario Brega')
