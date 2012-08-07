@@ -156,7 +156,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
@@ -165,13 +165,13 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler'
         },
         'file.debug': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': '%s/debug.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
         'file.device.remotecall': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': '%s/remote-call.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
@@ -185,17 +185,17 @@ LOGGING = {
         },
         'debug': {
             'handlers': ['file.debug'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True
         },
         'device.view': {
             'handlers': ['file.debug'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True
         },
         'device.remotecall': {
             'handlers': ['file.device.remotecall'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True
         }
     }
