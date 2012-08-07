@@ -53,7 +53,7 @@ class CommandsGenerationTest(TestCase):
             fec='34',
             adapter=dvbworld.uniqueid,
         )
-        pixelview = DigitalTunerHardware.objects.create(
+        DigitalTunerHardware.objects.create(
             server=server,
             adapter_nr=1,
         )
@@ -98,7 +98,7 @@ class CommandsGenerationTest(TestCase):
             sink=dvbtuner,
             nic_src=nic,
         )
-        service_c = DemuxedService.objects.create(
+        DemuxedService.objects.create(
             server=server,
             sid=3,
             sink=dvbtuner,
@@ -132,7 +132,7 @@ class CommandsGenerationTest(TestCase):
             port=20000,
             sink=service_a,
         )
-        internal_b = UniqueIP.objects.create(
+        UniqueIP.objects.create(
             port=20000,
             sink=service_b,
         )
@@ -170,7 +170,7 @@ class CommandsGenerationTest(TestCase):
             port=20000,
             sink=soft_transcoder,
         )
-        ipout_a = MulticastOutput.objects.create(
+        MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.3',
             port=10000,
@@ -179,14 +179,14 @@ class CommandsGenerationTest(TestCase):
             sink=internal_a,
             nic_sink=nic,
         )
-        recorder_a = StreamRecorder.objects.create(
+        StreamRecorder.objects.create(
             server=server,
             rotate=60,
             sink=internal_a,
             keep_time=168,
             nic_sink=nic,
         )
-        ipout_b = MulticastOutput.objects.create(
+        MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.4',
             port=10000,
@@ -195,7 +195,7 @@ class CommandsGenerationTest(TestCase):
             sink=internal_c,
             nic_sink=nic,
         )
-        ipout_c = MulticastOutput.objects.create(
+        MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.5',
             port=10000,
@@ -204,7 +204,7 @@ class CommandsGenerationTest(TestCase):
             sink=internal_d,
             nic_sink=nic,
         )
-        ipout_d = MulticastOutput.objects.create(
+        MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.6',
             port=10000,
@@ -213,14 +213,14 @@ class CommandsGenerationTest(TestCase):
             sink=internal_e,
             nic_sink=nic,
         )
-        recorder_b = StreamRecorder.objects.create(
+        StreamRecorder.objects.create(
             server=server,
             rotate=60,
             sink=internal_f,
             keep_time=130,
             nic_sink=nic,
         )
-        ipout_e = MulticastOutput.objects.create(
+        MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.7',
             port=10000,
@@ -229,7 +229,7 @@ class CommandsGenerationTest(TestCase):
             sink=internal_g,
             nic_sink=nic,
         )
-        ipout_soft_transcoder = MulticastOutput.objects.create(
+        MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.8',
             port=10000,
@@ -238,21 +238,23 @@ class CommandsGenerationTest(TestCase):
             sink=soft_to_ipout,
             nic_sink=nic,
         )
-        # TODO - FileInput -> UniqueIP -> SoftTranscoder -> UniqueIP -> MulticastOutput
-        
+        # TODO - FileInput -> UniqueIP -> SoftTranscoder \
+        #-> UniqueIP -> MulticastOutput
 
     def tearDown(self):
         Server.objects.all().delete()
 
     def test_dvbtuner(self):
+        self.maxDiff = None
         tuner = DvbTuner.objects.get(pk=1)
         expected_cmd = (
-            "%s "
+            u"%s "
             "-f 3390000 "
             "-m psk_8 "
             "-s 7400000 "
             "-F 34 "
             "-a 0 "
+            "-w "
             "-c %s%d.conf "
             "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND,
@@ -269,7 +271,8 @@ class CommandsGenerationTest(TestCase):
         for service in tuner._list_all_services():
             self.assertTrue(service.status)
 
-        expected_conf = u'239.1.0.2:20000/udp 1 1\n239.1.0.3:20000/udp 1 2\n'
+        expected_conf = u'239.10.0.2:20000@127.0.0.1/udp 1 1\n\
+239.10.0.3:20000@127.0.0.1/udp 1 2\n'
         self.assertEqual(expected_conf, tuner._get_config())
 
         tuner.stop()
@@ -303,7 +306,7 @@ class CommandsGenerationTest(TestCase):
         for service in tuner._list_all_services():
             self.assertTrue(service.status)
 
-        expected_conf = u'239.1.0.4:20000/udp 1 1\n'
+        expected_conf = u'239.10.0.4:20000/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
 
         tuner.stop()
@@ -334,8 +337,8 @@ class CommandsGenerationTest(TestCase):
         for service in unicastin._list_all_services():
             self.assertTrue(service.status)
 
-        expected_conf = u'239.1.0.5:20000@127.0.0.1/udp 1 \
-1\n239.1.0.6:20000@127.0.0.1/udp 1 2\n'
+        expected_conf = u'239.10.0.5:20000@127.0.0.1/udp 1 \
+1\n239.10.0.6:20000@127.0.0.1/udp 1 2\n'
         self.assertEqual(expected_conf, unicastin._get_config())
 
         unicastin.stop()
@@ -366,7 +369,7 @@ class CommandsGenerationTest(TestCase):
         for service in multicastin._list_all_services():
             self.assertTrue(service.status)
 
-        expected_conf = u'239.1.0.7:20000@127.0.0.1/udp 1 1024\n'
+        expected_conf = u'239.10.0.7:20000@127.0.0.1/udp 1 1024\n'
         self.assertEqual(expected_conf, multicastin._get_config())
 
         multicastin.stop()
@@ -407,8 +410,8 @@ class CommandsGenerationTest(TestCase):
             '%s '
             '-I dummy -v -R '
             '"foobar.mkv" '
-            '--miface-addr 127.0.0.1 '
-            '--sout "#std{access=udp,mux=ts,dst=239.1.0.8:20000}"'
+            '--miface lo '
+            '--sout "#std{access=udp,mux=ts,dst=239.10.0.8:20000}"'
         ) % (settings.VLC_COMMAND)
         self.assertEqual(expected_cmd, fileinput._get_cmd())
 
@@ -423,7 +426,7 @@ class CommandsGenerationTest(TestCase):
         expected_cmd = (
             "%s "
             "-c %s%d.sock "
-            "-u @239.1.0.2:20000 "
+            "-u @239.10.0.2:20000 "
             "-U 239.0.1.3:10000"
         ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
@@ -472,8 +475,9 @@ class CommandsGenerationTest(TestCase):
             "%s "
             "-I dummy "
             "--miface lo "
-            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
-            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
+            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,"
+            "dst=239.10.0.10:20000}\" "
+            "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Unicast input
@@ -482,12 +486,13 @@ class CommandsGenerationTest(TestCase):
             "%s "
             "-I dummy "
             "--miface lo "
-            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
+            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,"
+            "dst=239.10.0.10:20000}\" "
             "udp://@127.0.0.1:20000"
         ) % settings.VLC_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Enable audio transcoding
-        soft_transcoder.sink.ip = '239.1.0.9'
+        soft_transcoder.sink.ip = '239.10.0.9'
         soft_transcoder.transcode_audio = True
         soft_transcoder.audio_codec = 'mp4a'
         expected_cmd = unicode(
@@ -495,8 +500,8 @@ class CommandsGenerationTest(TestCase):
             "-I dummy "
             "--miface lo "
             "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={}}"
-            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
-            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
+            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
+            "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Enable audio filters
@@ -520,12 +525,11 @@ class CommandsGenerationTest(TestCase):
             "--norm-buff-size 20 "
             "--norm-max-level 2.00 "
             "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:volnorm}}"
-            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.1.0.10:20000}\" "
-            "udp://@239.1.0.9:20000/ifaddr=127.0.0.1"
+            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
+            "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
-        
+
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
-        
         soft_transcoder.start()
         self.assertTrue(soft_transcoder.running())
 
