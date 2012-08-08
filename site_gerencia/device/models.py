@@ -1677,6 +1677,7 @@ default=False)  # --sout-transcode-audio-sync
         positive floating point number.\
         A value between 0.5 and 10 seems sensible.''',
         default=2.0, null=True, blank=True)
+    restart = False
 
     class Meta:
         verbose_name = _(u'Transcodificador em Software')
@@ -1760,6 +1761,12 @@ default=False)  # --sout-transcode-audio-sync
             if self.sink.running() is False:
                 self.sink.start(recursive=kwargs.get('recursive'))
 
+    def stop(self, *args, **kwargs):
+        super(SoftTranscoder, self).stop(*args, **kwargs)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is True:
+                self.sink.stop(recursive=kwargs.get('recursive'))
+
     def clean(self):
         from django.core.exceptions import ValidationError
         # You need to specify a codec if transcoding is enabled
@@ -1785,3 +1792,16 @@ def StreamRecorder_pre_save(sender, instance, **kwargs):
         content_type_id = channel.source.content_type_id
         instance.content_type_id = content_type_id
         instance.nic_sink = sink.sink.nic_src
+
+
+@receiver(post_save, sender=SoftTranscoder)
+def SoftTranscoder_post_save(sender, instance, **kwargs):
+    log = logging.getLogger('debug')
+    log.debug('SoftTranscoder::post_save')
+    if instance.restart is True:
+        return
+    if instance.running() is True:
+        instance.restart = True
+        instance.stop()
+        instance.start()
+        instance.restart = False
