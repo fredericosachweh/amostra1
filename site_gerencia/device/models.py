@@ -516,9 +516,12 @@ class DeviceServer(models.Model):
     def _type(self):
         return _(u'undefined')
 
-    def start(self):
+    def start(self, *args, **kwargs):
         log = logging.getLogger('debug')
         log.info('Iniciando device %s', self)
+        if self.sink.running() is False:
+            if kwargs.get('recursive') is True:
+                self.sink.start(*args, **kwargs)
 
     def stop(self, *args, **kwargs):
         """Interrompe processo no servidor"""
@@ -531,6 +534,9 @@ class DeviceServer(models.Model):
         except ValueError:
             print('Execute error: %s' % ValueError)
         self.save()
+        if self.sink.running() is True:
+            if kwargs.get('recursive') is True:
+                self.sink.stop(*args, **kwargs)
         return not self.status
 
     def server_status(self):
@@ -1371,14 +1377,17 @@ class IPOutput(OutputModel, DeviceServer):
         choices=PROTOCOL_CHOICES, default=u'udp')
 
     def start(self, *args, **kwargs):
-        # Create the necessary folders
-        self._create_folders()
-        # Start multicat
-        log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
-        self.pid = self.server.execute_daemon(self._get_cmd(),
-            log_path=log_path)
-        self.status = True
-        self.save()
+        log = logging.getLogger('debug')
+        if self.running() is False:
+            # Start multicat
+            log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
+            self.pid = self.server.execute_daemon(self._get_cmd(),
+                log_path=log_path)
+            self.status = True
+            self.save()
+        else:
+            log.error('Trying to start %s but is runnig with pid %d', self,
+                self.pid)
         if kwargs.get('recursive') is True:
             if self.sink.running() is False:
                 self.sink.start(recursive=kwargs.get('recursive'))
