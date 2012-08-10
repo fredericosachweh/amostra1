@@ -211,13 +211,9 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.markup',
     # South http://south.aeracode.org/docs/
-    #'south',
-    # Gestao de canal
-#    'canal',
+    'south',
     # Interface dos setup-box
     'box',
-    # Pagina de home
-    #'home',
     # Aplicação de controle de stream
     'device',
     # EPG
