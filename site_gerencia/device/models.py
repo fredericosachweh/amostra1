@@ -519,9 +519,6 @@ class DeviceServer(models.Model):
     def start(self, *args, **kwargs):
         log = logging.getLogger('debug')
         log.info('Iniciando device %s', self)
-        if self.sink.running() is False:
-            if kwargs.get('recursive') is True:
-                self.sink.start(*args, **kwargs)
 
     def stop(self, *args, **kwargs):
         """Interrompe processo no servidor"""
@@ -534,9 +531,6 @@ class DeviceServer(models.Model):
         except ValueError:
             print('Execute error: %s' % ValueError)
         self.save()
-        if self.sink.running() is True:
-            if kwargs.get('recursive') is True:
-                self.sink.stop(*args, **kwargs)
         return not self.status
 
     def server_status(self):
