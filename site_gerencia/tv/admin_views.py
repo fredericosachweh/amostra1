@@ -64,6 +64,9 @@ next_form_step, StreamRecorderForm)
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         if os.path.exists(os.path.join(MEDIA_ROOT,
 'tv/channel/image/thumb')) == False:
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv'))
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel'))
+            os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image'))
             os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/thumb'))
         if os.path.exists(os.path.join(MEDIA_ROOT,
 'tv/channel/image/original')) == False:
