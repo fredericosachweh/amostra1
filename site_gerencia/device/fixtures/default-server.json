@@ -3,7 +3,7 @@
     "pk": 1,
     "model": "device.server",
     "fields": {
-      "username": "eduardo",
+      "username": "helber",
       "status": true,
       "name": "local",
       "server_type": "local",
