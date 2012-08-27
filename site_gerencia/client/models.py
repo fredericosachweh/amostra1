@@ -31,3 +31,6 @@ class SetTopBoxParameter(models.Model):
         verbose_name = _(u'Parametro')
         verbose_name_plural = _(u'Parametros')
         unique_together = (('key', 'value', 'settopbox'),)
+
+    def __unicode__(self):
+        return u'%s=%s' % (self.key, self.value)
