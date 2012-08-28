@@ -121,6 +121,7 @@ class APITest(TestCase):
             content_type='application/json')
         self.assertEqual(response.status_code, 202)
         stbs = SetTopBox.objects.all()
+        print(stbs)
         self.assertEqual(5, stbs.count())
         # Try to add new stb with existing serial_number
         response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
@@ -129,4 +130,17 @@ class APITest(TestCase):
         # TODO: Return correct message
         #self.assertContains(response, 'duplicated value serial_number',
         #    status_code=500)
+        # Delete one stb
+        urldelete = reverse('client:api_dispatch_detail',
+            kwargs={'resource_name': 'settopbox', 'api_name': 'v1', 'pk': 2},
+            )
+        response = c.get('/tv/api/client/v1/settopbox/2/')
+        print(response.status_code)
+        print(response.content)
+        print(urldelete)
+        response = c.delete('/tv/api/client/v1/settopbox/2/')
+        print(response.content)
+        self.assertEqual(response.status_code, 204)
+        stbs = SetTopBox.objects.all()
+        print(stbs)
         # Try to edit one settop box
