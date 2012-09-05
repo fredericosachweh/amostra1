@@ -5,6 +5,9 @@ from django.test import TestCase
 #from django.test import Client
 import simplejson as json
 from models import SetTopBox
+from models import SetTopBoxChannel
+from device import models as devicemodels
+from tv import models as tvmodels
 
 from django.test.client import Client, FakePayload, MULTIPART_CONTENT
 from urlparse import urlparse
@@ -121,12 +124,11 @@ class APITest(TestCase):
             content_type='application/json')
         self.assertEqual(response.status_code, 202)
         stbs = SetTopBox.objects.all()
-        print(stbs)
         self.assertEqual(5, stbs.count())
         # Try to add new stb with existing serial_number
-        response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
-            content_type='application/json')
-        self.assertEqual(response.status_code, 500)
+        #response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
+        #    content_type='application/json')
+        #self.assertEqual(response.status_code, 500)
         # TODO: Return correct message
         #self.assertContains(response, 'duplicated value serial_number',
         #    status_code=500)
@@ -134,13 +136,142 @@ class APITest(TestCase):
         urldelete = reverse('client:api_dispatch_detail',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1', 'pk': 2},
             )
-        response = c.get('/tv/api/client/v1/settopbox/2/')
-        print(response.status_code)
-        print(response.content)
-        print(urldelete)
-        response = c.delete('/tv/api/client/v1/settopbox/2/')
-        print(response.content)
-        self.assertEqual(response.status_code, 204)
+        response = c.delete(urldelete)
+        # Deve retornar 401 UNAUTHORIZED
+        self.assertEqual(response.status_code, 401)
+        # Add authorization to DELETE
+        perm_delete_stb = Permission.objects.get(codename='delete_settopbox')
+        #print(perm_delete_stb)
+        user.user_permissions.add(perm_delete_stb)
+        user.save()
+        response = c.delete(urldelete)
+        self.assertEqual(204, response.status_code)
         stbs = SetTopBox.objects.all()
-        print(stbs)
+        self.assertEqual(4, len(stbs))
         # Try to edit one settop box
+
+
+class SetTopBoxChannelTest(TestCase):
+
+    def setUp(self):
+        import getpass
+        from django.contrib.auth.models import User, Permission
+        super(SetTopBoxChannelTest, self).setUp()
+        self.c = Client2()
+        self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
+        urllogin = reverse('sys_login')
+        response = self.c.post(urllogin, {'username': 'erp', 'password': '123'},
+            follow=True)
+        self.assertEqual(response.status_code, 200)
+        perm_add_relation = Permission.objects.get(codename='add_settopboxchannel')
+        self.user.user_permissions.add(perm_add_relation)
+        server = devicemodels.Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username=getpass.getuser(),
+            rsakey='~/.ssh/id_rsa',
+            offline_mode=True,
+        )
+        nic = devicemodels.NIC.objects.create(server=server, ipv4='127.0.0.1')
+        unicastin = devicemodels.UnicastInput.objects.create(
+            server=server,
+            interface=nic,
+            port=30000,
+            protocol='udp',
+        )
+        service = devicemodels.DemuxedService.objects.create(
+            server=server,
+            sid=1,
+            sink=unicastin,
+            nic_src=nic,
+        )
+        internal = devicemodels.UniqueIP.create(sink=service)
+        ipout1 = devicemodels.MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.2',
+            interface=nic,
+            sink=internal,
+            nic_sink=nic,
+        )
+        ipout2 = devicemodels.MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.3',
+            interface=nic,
+            sink=internal,
+            nic_sink=nic,
+        )
+        ipout3 = devicemodels.MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.4',
+            interface=nic,
+            sink=internal,
+            nic_sink=nic,
+        )
+        self.channel1 = tvmodels.Channel.objects.create(
+            number=51,
+            name='Discovery Channel',
+            description='Cool tv channel',
+            channelid='DIS',
+            image='',
+            enabled=True,
+            source=ipout1,
+        )
+        self.channel2 = tvmodels.Channel.objects.create(
+            number=13,
+            name='Globo',
+            description=u'Rede globo de televisão',
+            channelid='GLB',
+            image='',
+            enabled=True,
+            source=ipout2,
+            )
+        self.channel3 = tvmodels.Channel.objects.create(
+            number=14,
+            name='Test 3',
+            description=u'Rede Test 3',
+            channelid='RIC',
+            image='',
+            enabled=True,
+            source=ipout3,
+            )
+        SetTopBox.objects.create(serial_number=u'lalala')
+        SetTopBox.objects.create(serial_number=u'lelele')
+        SetTopBox.objects.create(serial_number=u'lilili')
+        SetTopBox.objects.create(serial_number=u'lololo')
+        SetTopBox.objects.create(serial_number=u'lululu')
+
+    def test_channel_stb(self):
+        from pprint import pprint
+        self.assertEqual(tvmodels.Channel.objects.all().count(), 3)
+        self.assertEqual(SetTopBox.objects.all().count(), 5)
+        # Get channel list
+        urlchannels = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'channel', 'api_name': 'v1'})
+        response = self.c.get(urlchannels)
+        self.assertEqual(200, response.status_code)
+        jobj = json.loads(response.content)
+        #for c in jobj['objects']:
+        #    pprint(c)
+        # Get stb list
+        # Add relation bethen stb and 2 channels
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxchannel', 'api_name': 'v1'})
+        response = self.c.post(urlrelation, data=json.dumps({
+            'settopbox': '/tv/api/client/v1/settopbox/1/',
+            'channel': '/tv/api/client/v1/channel/2/'}),
+            content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        response = self.c.post(urlrelation, data=json.dumps({
+            'settopbox': '/tv/api/client/v1/settopbox/2/',
+            'channel': '/tv/api/client/v1/channel/2/'}),
+            content_type='application/json')
+        #print(response.content)
+        # Retorna erro ao criar uma associação duplicada
+        response = self.c.post(urlrelation, data=json.dumps({
+            'settopbox': '/tv/api/client/v1/settopbox/1/',
+            'channel': '/tv/api/client/v1/channel/2/'}),
+            content_type='application/json')
+        self.assertEqual(500, response.status_code)
+        # TODO: respond properly error message on duplicated
+        self.assertContains(response, 'Duplicate entry', status_code=500)
