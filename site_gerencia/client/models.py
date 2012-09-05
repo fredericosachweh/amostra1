@@ -2,6 +2,7 @@
 
 from django.db import models
 from django.utils.translation import ugettext as _
+from tv.models import Channel
 
 
 class SetTopBox(models.Model):
@@ -33,4 +34,17 @@ class SetTopBoxParameter(models.Model):
         unique_together = (('key', 'value', 'settopbox'),)
 
     def __unicode__(self):
-        return u'%s=%s' % (self.key, self.value)
+        return u'%s {%s=%s}' % (self.settopbox, self.key, self.value)
+
+
+class SetTopBoxChannel(models.Model):
+    u'Class to link access permission to stb on tv.channel'
+
+    settopbox = models.ForeignKey(SetTopBox, db_index=True)
+    channel = models.ForeignKey(Channel, db_index=True)
+
+    class Meta:
+        unique_together = (('settopbox', 'channel',),)
+
+    def __unicode__(self):
+        return u'%s-%s' % (self.channel, self.settopbox)
