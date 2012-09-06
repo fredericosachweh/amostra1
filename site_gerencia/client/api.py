@@ -6,6 +6,8 @@ from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.validation import Validation
+from tastypie.exceptions import BadRequest
+from django.db import IntegrityError
 import models
 from tv.models import Channel
 
@@ -22,6 +24,14 @@ class SetTopBoxResource(NamespacedModelResource):
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
         validation = Validation()
+
+    def obj_create(self, bundle, request=None, **kwargs):
+        try:
+            bundle = super(SetTopBoxResource, self).obj_create(bundle,
+                request, **kwargs)
+        except IntegrityError:
+            raise BadRequest('Duplicate entry for settopbox.serial_number')
+        return bundle
 
 
 class SetTopBoxParameterResource(NamespacedModelResource):
@@ -63,11 +73,19 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         resource_name = 'settopboxchannel'
         authorization = DjangoAuthorization()
         always_return_data = True
+        validation = Validation()
         filtering = {
             "settopbox": ALL,
             "channel": ALL
         }
-        validation = Validation()
+
+    def obj_create(self, bundle, request=None, **kwargs):
+        try:
+            bundle = super(SetTopBoxChannelResource, self).obj_create(bundle,
+                request, **kwargs)
+        except IntegrityError:
+            raise BadRequest('Duplicate entry for settopbox channel')
+        return bundle
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='client')
 api.register(SetTopBoxResource())

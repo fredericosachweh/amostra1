@@ -126,12 +126,13 @@ class APITest(TestCase):
         stbs = SetTopBox.objects.all()
         self.assertEqual(5, stbs.count())
         # Try to add new stb with existing serial_number
-        #response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
-        #    content_type='application/json')
-        #self.assertEqual(response.status_code, 500)
-        # TODO: Return correct message
-        #self.assertContains(response, 'duplicated value serial_number',
-        #    status_code=500)
+        response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
+            content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        # Error message on duplicated serial_number
+        self.assertContains(response,
+            'Duplicate entry for settopbox.serial_number',
+            status_code=400)
         # Delete one stb
         urldelete = reverse('client:api_dispatch_detail',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1', 'pk': 2},
@@ -160,10 +161,12 @@ class SetTopBoxChannelTest(TestCase):
         self.c = Client2()
         self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
         urllogin = reverse('sys_login')
-        response = self.c.post(urllogin, {'username': 'erp', 'password': '123'},
+        response = self.c.post(urllogin,
+            {'username': 'erp', 'password': '123'},
             follow=True)
         self.assertEqual(response.status_code, 200)
-        perm_add_relation = Permission.objects.get(codename='add_settopboxchannel')
+        perm_add_relation = Permission.objects.get(
+            codename='add_settopboxchannel')
         self.user.user_permissions.add(perm_add_relation)
         server = devicemodels.Server.objects.create(
             name='local',
@@ -242,7 +245,6 @@ class SetTopBoxChannelTest(TestCase):
         SetTopBox.objects.create(serial_number=u'lululu')
 
     def test_channel_stb(self):
-        from pprint import pprint
         self.assertEqual(tvmodels.Channel.objects.all().count(), 3)
         self.assertEqual(SetTopBox.objects.all().count(), 5)
         # Get channel list
@@ -251,8 +253,6 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.get(urlchannels)
         self.assertEqual(200, response.status_code)
         jobj = json.loads(response.content)
-        #for c in jobj['objects']:
-        #    pprint(c)
         # Get stb list
         # Add relation bethen stb and 2 channels
         urlrelation = reverse('client:api_dispatch_list', kwargs={
@@ -266,12 +266,11 @@ class SetTopBoxChannelTest(TestCase):
             'settopbox': '/tv/api/client/v1/settopbox/2/',
             'channel': '/tv/api/client/v1/channel/2/'}),
             content_type='application/json')
-        #print(response.content)
         # Retorna erro ao criar uma associação duplicada
         response = self.c.post(urlrelation, data=json.dumps({
             'settopbox': '/tv/api/client/v1/settopbox/1/',
             'channel': '/tv/api/client/v1/channel/2/'}),
             content_type='application/json')
-        self.assertEqual(500, response.status_code)
-        # TODO: respond properly error message on duplicated
-        self.assertContains(response, 'Duplicate entry', status_code=500)
+        self.assertEqual(400, response.status_code)
+        # Respond properly error message on duplicated
+        self.assertContains(response, 'Duplicate entry', status_code=400)
