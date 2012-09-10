@@ -96,3 +96,9 @@ if DEBUG is True:
         )
     except ImportError:
         pass
+
+EPG_IMPORT_CREDENTIALS = {
+    'site': 'revistaeletronica.com.br',
+    'username': '91037581920@revistaeletronica.com.br',
+    'password': '91037581920',
+}

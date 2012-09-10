@@ -1,46 +1,66 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-#FIXME: GMT para importação deve ser corrigido.
-#
-# O valor que vem do XML segue seguinte padrão: yyyyMMddhhmmssmmmm gmt (20120713083000 -0300)
-# Para corrigir é necessário pegar o valor do GMT no fim, aplicar o inverso de horas e minutos
-# na data/hora informada e salvar informando que o valor do timezone está em UTF
-#
-# Assim se for importar horários de outras regiões, não vai dar conflito, pois atualmente
-# após a alteração para timezone ativado do Django, apenas coloquei como a região origem
-# do da data/hora como sendo America/Sao_Paulo (isso é, GMT -0300), isso não vai funcionar
-# Quando a gente importar programação de outras regiões que usem GMT diferente de -0300
-# Por isso a solução descrita acima.
-#
-# Mais informações em: https://docs.djangoproject.com/en/1.4/topics/i18n/timezones/#default-current-time-zone
-#
-# PS2: Não coloque o tzinfo=None, se isso for feito, o Django aplica o tzinfo como padrão
-# Isso é, se o servidor tiver um como GMT -0300, ele vai aplicar -3 horas em toda importação
-# o que vai gerar uma base de dados fora de UTC, por tanto quando for feita uma pesquisa pelo
-# Django por ele vai tentar corrigir o valor novamente, trazendo a informação de
-# data em -6
-#
-# Só vi o erro, uma semana depois que a gente ativou o tz, isso é, quando foi necessário
-# importar a base de dados, pois antes a gente não usava tz e o None fazia com que o
-# Django ignorasse o valor do tzinfo e simplismente salvasse do jeito que a data
-# estava sendo informada.
-
-
-
-import zipfile
-from lxml import etree
+from django.conf import settings
+from django import db
 from django.db import transaction
+from django.core import serializers
+from django.utils.timezone import utc
+
+import re
+import zipfile
+import tempfile
+import shutil
+from lxml import etree
 from datetime import tzinfo, timedelta, datetime
 from dateutil.parser import parse
 from pytz import timezone
 from types import NoneType
-from django.utils.timezone import utc
+from django.contrib.contenttypes.models import ContentType
+from cStringIO import StringIO
 
 from models import *
 
-#from profilehooks import profile
+import hotshot
+import os
+import time
 
+PROFILE_LOG_BASE = "/tmp"
+
+def profile(log_file):
+    """Profile some callable.
+
+    This decorator uses the hotshot profiler to profile some callable (like
+    a view function or method) and dumps the profile data somewhere sensible
+    for later processing and examination.
+
+    It takes one argument, the profile log name. If it's a relative path, it
+    places it under the PROFILE_LOG_BASE. It also inserts a time stamp into the 
+    file name, such that 'my_view.prof' become 'my_view-20100211T170321.prof', 
+    where the time stamp is in UTC. This makes it easy to run and compare 
+    multiple trials.     
+    """
+
+    if not os.path.isabs(log_file):
+        log_file = os.path.join(PROFILE_LOG_BASE, log_file)
+
+    def _outer(f):
+        def _inner(*args, **kwargs):
+            # Add a timestamp to the profile output when the callable
+            # is actually called.
+            (base, ext) = os.path.splitext(log_file)
+            base = base + "-" + time.strftime("%Y%m%dT%H%M%S", time.gmtime())
+            final_log_file = base + ext
+
+            prof = hotshot.Profile(final_log_file)
+            try:
+                ret = prof.runcall(f, *args, **kwargs)
+            finally:
+                prof.close()
+            return ret
+
+        return _inner
+    return _outer
 
 class Zip_to_XML(object):
     '''
@@ -49,7 +69,7 @@ class Zip_to_XML(object):
     a ZIP file with multiple XML files inside
     '''
 
-    def __init__(self, input_file_path):
+    def __init__(self,input_file_path):
         import mimetypes
         file_type, encoding = mimetypes.guess_type(input_file_path)
         if file_type == 'application/zip':
@@ -65,35 +85,89 @@ class Zip_to_XML(object):
     def _get_zip(self):
         ret = []
         for f in self.input_file.namelist():
-            ret.append(self.input_file.open(f))
+            filename = os.path.basename(f)
+            
+            # skip directories
+            if not filename:
+                continue
+        
+            # copy file (taken from zipfile's extract)
+            source = self.input_file.open(f)
+            target = file(os.path.join('/tmp', filename), "w+")
+            shutil.copyfileobj(source, target)
+            source.close()
+            target.seek(0)
+            
+            ret.append(target)
         return ret
-
+    
     # Return a file handle of a XML file
     def _get_xml(self):
-        return (open(self.input_file),)
-
-
+        return ( open(self.input_file), )
+            
 class XML_Epg_Importer(object):
     '''
     Used to import XMLTV compliant files to the database.
     It receives a XML file handle as input.
+    Imports xml into xmltv_source object
     '''
+    
+    def __init__(self, xml, xmltv_source, log=open('/dev/null', 'w')):
+    
+        self.xmltv_source = xmltv_source
+        self.xml = xml
+        self.log = log
+        
+        tree = etree.parse(self.xml.name)
+        # get number of elements
+        self.xmltv_source.numberofElements += tree.xpath("count(//channel)") + \
+            tree.xpath("count(//programme)")
+        # get meta data
+        self.xmltv_source.generator_info_name = \
+            tree.xpath('string(//tv[1]/@generator-info-name)')
+        self.xmltv_source.generator_info_url = \
+            tree.xpath('string(//tv[1]/@generator-info-url)')
+        # save
+        self.xmltv_source.save()
 
-    def __init__(self, xml, epg_source_instance):
-
-        self._epg_source_instance = epg_source_instance
-        if type(xml) == str:
-            # Input is string
-            self.tree = etree.fromstring(xml)
-        else:
-            # Input is a file-like object (provides a read method)
-            self.tree = etree.parse(xml)
+    def serialize(self, obj):
+        # use recursion to iterate
+        try:
+            i = iter(obj)
+            [ self.serialize(o) for o in obj ]
+        except TypeError:
+            pass
+        
+        name = obj.__class__.__name__
+        # check if there is an opened file descriptor for this kind of obj
+        if not self.dump_data['file_handlers'].has_key(name):
+            self.dump_data['file_handlers'][name] = open(
+                '%s/%s.json' % (self.tempdir, name), 'w')
+            self.dump_data['object_ids'][name] = []
+        if self.already_serialized(obj):
+            # already serialized, so skip it
+            return
+        
+        self.dump_data['object_ids'][name].append(obj.id)
+        data = serializers.serialize("json", [obj,], indent=2)
+        self.dump_data['file_handlers'][name].write(data)
+    
+    def already_serialized(self, obj):
+        name = obj.__class__.__name__
+        try:
+            self.dump_data['object_ids'][name].index(obj.id)
+            # already serialized
+            return 1
+        except KeyError:
+            return 0
+        except ValueError:
+            return 0
 
     def count_channel_elements(self):
-        return len(self.tree.findall('channel'))
-
+        return len( self.tree.findall('channel') )
+    
     def count_programme_elements(self):
-        return len(self.tree.findall('programme'))
+        return len( self.tree.findall('programme') )
 
     def get_number_of_elements(self):
         return self.count_channel_elements() + self.count_programme_elements()
@@ -102,286 +176,357 @@ class XML_Epg_Importer(object):
         programmes = self.tree.findall('programme')
         starts = map(lambda p: parse(p.get('start')), programmes)
         stops = map(lambda p: parse(p.get('stop')), programmes)
-        starts.sort()
-        s_start = starts[0]
-        stops.sort(reverse=True)
-        s_stop = stops[0]
+        starts.sort(); s_start = starts[0]
+        stops.sort(reverse=True); s_stop = stops[0]
         return s_start.astimezone(timezone('UTC')).replace(tzinfo=utc), \
             s_stop.astimezone(timezone('UTC')).replace(tzinfo=utc)
-
+            
     def get_xml_info(self):
         tv = self.tree.getroot()
-        return {'source_info_url': tv.get('source-info-url'), \
-            'source_info_name': tv.get('source-info-name'), \
-            'source_data_url': tv.get('source-data-url'), \
-            'generator_info_name': tv.get('generator-info-name'), \
-            'generator_info_url': tv.get('generator-info-url')}
+        return { 'source_info_url' : tv.get('source-info-url'), \
+            'source_info_name' : tv.get('source-info-name'), \
+            'source_data_url' : tv.get('source-data-url'), \
+            'generator_info_name' : tv.get('generator-info-name'), \
+            'generator_info_url' : tv.get('generator-info-url') }
 
     @transaction.commit_on_success
     def _increment_importedElements(self):
-        if isinstance(self._epg_source_instance, Epg_Source):
-            self._epg_source_instance.importedElements += 1
-            self._epg_source_instance.save()
+        if isinstance(self.xmltv_source,Epg_Source):
+            self.xmltv_source.importedElements += 1
+            self.xmltv_source.save()
 
     @transaction.commit_on_success
     def _decrement_importedElements(self):
-        if isinstance(self._epg_source_instance, Epg_Source) and \
-            self._epg_source_instance.importedElements > 0:
-            self._epg_source_instance.importedElements -= 1
-            self._epg_source_instance.save()
+        if isinstance(self.xmltv_source,Epg_Source) and self.xmltv_source.importedElements > 0:
+            self.xmltv_source.importedElements -= 1
+            self.xmltv_source.save()
 
     def _get_dict_for_langs(self):
         # Search for lang attributes in the xml
         lang_set = set()
         for l in self.tree.findall(".//*[@lang]"):
-            lang_set.add(l.get('lang'))    # Auto exclude dupplicates
+            lang_set.add(l.get('lang')) # Auto exclude dupplicates
         langs = dict()
         for lang in lang_set:
             L, created = Lang.objects.get_or_create(value=lang)
-            langs[lang] = L.id
+            langs[lang]=L.id
         return langs
 
+    def grab_info(self):
+        
+        self.log.write('Grabbing meta information')
+        
+        self.xml.seek(0)
+        for event, elem in etree.iterparse(self.xml, tag='tv'):
+            self.xmltv_source.generator_info_name = \
+                elem.get('generator-info-name')
+            self.xmltv_source.generator_info_url = \
+                elem.get('generator-info-url')
+        
+        self.xmltv_source.save()
+
+    #@profile("channel.prof")
     def import_channel_elements(self):
+    
+        self.log.write('Importing Channel elements')
 
-        # Search for lang attributes in the xml
-        langs = self._get_dict_for_langs()
-
-        for e in self.tree.iter('channel'):
-
+        self.xml.seek(0)
+        for event, elem in etree.iterparse(self.xml, tag='channel'):
+            
             try:
-                C = Channel.objects.only('channelid').get(
-                    channelid=e.get('id'))
-                continue
-            except:
-                C = Channel.objects.create(source=self._epg_source_instance,
-                    channelid=e.get('id'))
-            # Display_Names
-            displays = []
-            for d in e.iter('display-name'):
-                D, created = Display_Name.objects.get_or_create(value=d.text,
-                    lang_id=langs[d.get('lang')])
-                displays.append(D)
-            if len(displays) > 0:
-                C.display_names.add(*displays)
-            # Icons
-            icons = []
-            for i in e.iter('icon'):
-                I, created = Icon.objects.get_or_create(src=i.get('src'))
-                icons.append(I)
-            if len(icons) > 0:
-                C.icons.add(*icons)
-            # URLs
-            urls = []
-            for u in e.iter('url'):
-                U, created = Url.objects.get_or_create(value=u.text)
-                urls.append(U)
-            if len(urls) > 0:
-                C.urls.add(*urls)
-            # Update Arquivo_Epg instance, for the progress bar
-            #self._increment_importedElements()
+                C = Channel.objects.get(channelid=elem.get('id'))
+                C.source = self.xmltv_source
+                C.save()
+            except Channel.DoesNotExist:
+                C = Channel.objects.create(
+                    source=self.xmltv_source, channelid=elem.get('id'))
+            
+            for child in elem.iterchildren():
+                if child.tag == 'display-name':
+                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    D, created = Display_Name.objects.get_or_create(
+                        value=child.text, lang=L)
+                    C.display_names.add(D)
+                    self.serialize(D)
+                elif child.tag == 'icon':
+                    I, created = Icon.objects.get_or_create(src=child.get('src'))
+                    C.icons.add(I)
+                    self.serialize(I)
+                elif child.tag == 'url':
+                    U, created = Url.objects.get_or_create(value=child.text)
+                    C.urls.add(U)
+                    self.serialize(U)
 
-    def import_programme_elements(self):
+            self.serialize(C)
+            
+            elem.clear()
+            # Also eliminate now-empty references from the root node to <Title> 
+            while elem.getprevious() is not None:
+                del elem.getparent()[0]
 
+    #@profile("programme.prof")
+    def import_programme_elements(self, limit=0):
+    
+        self.log.write('Importing Programme elements')
         # Get channels from db
         channels = dict()
         for c in Channel.objects.values_list('channelid', 'pk'):
             channels[c[0]] = c[1]
-        # Search for lang attributes in the xml
-        langs = self._get_dict_for_langs()
-        # init guide list
-        guide = []
 
-        for e in self.tree.iter('programme'):
+        imported = 0
 
-            if e.find('date') is not None:
-                date = e.find('date').text
+        self.xml.seek(0)
+        for event, elem in etree.iterparse(self.xml, tag='programme'):
+
+            if elem.find('date') is not None:
+                date=elem.find('date').text
             else:
-                date = None
+                date=None
 
+            try:
+                P = Programme.objects.get(programid=elem.get('program_id'))
+                P.source = self.xmltv_source
+                P.date = date
+                P.save()
+            except Programme.DoesNotExist:
+                P, created = Programme.objects.get_or_create(programid=elem.get('program_id'),
+                    date=date, source=self.xmltv_source)
+            
             # Get time and convert it to UTC
-            start = parse(e.get('start')).astimezone(timezone('UTC')).replace(
+            start = parse(elem.get('start')).astimezone(timezone('UTC')).replace(
                 tzinfo=utc)
-            stop = parse(e.get('stop')).astimezone(timezone('UTC')).replace(
+            stop = parse(elem.get('stop')).astimezone(timezone('UTC')).replace(
                 tzinfo=utc)
-
-            # Try to find the programme in db
-            try:
-                P = Programme.objects.only('programid').get(
-                    programid=e.get('program_id'))
-                # Insert guide
-                G, created = Guide.objects.get_or_create(
-                    source=self._epg_source_instance,
-                    start=start,
-                    stop=stop,
-                    channel_id=channels[e.get('channel')],
-                    programme_id=P.id)
-                continue
-            except:
-                P = Programme.objects.create(
-                    programid=e.get('program_id'),
-                    date=date,
-                    source=self._epg_source_instance)
             # Insert guide
+            channel_id = channels[elem.get('channel')]
             G, created = Guide.objects.get_or_create(
-                source=self._epg_source_instance,
-                start=start,
-                stop=stop,
-                channel_id=channels[e.get('channel')],
-                programme_id=P.id)
-            # Get descriptions
-            for d in e.iter('desc'):
-                if langs.has_key(d.get('lang')):
-                    lang = langs[d.get('lang')]
-                else:
-                    lang = None
-                # Strip the banner ' - www.revistaeletronica.com.br '
-                if len(d.text) > 32:
-                    desc = d.text[:-32]
-                else:
-                    desc = d.text
-                D, created = Description.objects.get_or_create(value=desc,
-                    lang_id=lang)
-                P.descriptions.add(D)
-            # Get titles
-            for t in e.iter('title'):
-                T, created = Title.objects.get_or_create(value=t.text,
-                    lang_id=langs[t.get('lang')])
-                P.titles.add(T)
-            # Get Sub titles
-            for st in e.iter('sub-title'):
-                ST, created = Title.objects.get_or_create(value=st.text,
-                    lang_id=langs[st.get('lang')])
-                P.secondary_titles.add(ST)
-            # Get categories
-            for c in e.iter('category'):
-                C, created = Category.objects.get_or_create(value=c.text,
-                    lang_id=langs[c.get('lang')])
-                P.categories.add(C)
-            # Get <video> element
-            video = e.find('video')
-            if video is not None:
-                if video.find('colour') is not None:
-                    P.video_colour = video.find('colour').text
-                if video.find('present') is not None:
-                    P.video_present = video.find('present').text
-                if video.find('aspect') is not None:
-                    P.video_aspect = video.find('aspect').text
-                if video.find('quality') is not None:
-                    P.video_quality = video.find('quality').text
-            # Get <audio> element
-            audio = e.find('audio')
-            if audio is not None:
-                if audio.find('present') is not None:
-                    P.audio_present = audio.find('present').text
-                if audio.find('stereo') is not None:
-                    P.audio_stereo = audio.find('stereo').text
-            # Get country element
-            try:
-                country = e.find('country').text
-                Ct, created = Country.objects.get_or_create(value=country)
-                P.country = Ct
-            except:
-                pass
-            # Get <rating>
-            rating = e.find('rating')
-            if rating is not None:
-                system = rating.get('system')
-            try:
-                value = e.find('rating').find('value').text
-            except:
-                value = None
-            if (system is not None) and (value is not None):
-                R, created = Rating.objects.get_or_create(system=system,
-                    value=value)
-                P.rating = R
-            # <star-rating>
-            for sr in e.findall('star-rating'):
-                SR, created = Star_Rating.objects.get_or_create(
-                    value=sr.find('value').text, system=sr.get('system'))
-                for i in sr.findall('icon'):
-                    I, created = Icon.objects.get_or_create(src=i.get('src'))
-                    SR.icons.add(I)
-                P.star_ratings.add(SR)
-            # <language>
-            language = e.find('language')
-            if language is not None:
-                L, created = Language.objects.get_or_create(
-                    value=language.text, lang_id=langs[language.get('lang')])
-                P.language = L
-            # <original_language>
-            original_language = e.find('original_language')
-            if original_language is not None:
-                L, created = Language.objects.get_or_create(
-                    value=original_language.text,
-                    lang_id=langs[original_language.get('lang')])
-                P.original_language = L
-            # <subtitles>
-            subtitles = e.find('subtitles')
-            if subtitles is not None:
-                for sub in subtitles.findall('language'):
-                    L, created = Language.objects.get_or_create(value=sub.text,
-                        lang_id=langs[sub.get('lang')])
-                    S, created = Subtitle.objects.get_or_create(language=L,
-                        subtitle_type=sub.get('type'))
-                    P.subtitles.add(S)
-            # <length>
-            length = e.find('length')
-            if length is not None:
-                units = length.get('units')
-                if units == 'seconds':
-                    P.length = int(length.text)
-                elif units == 'minutes':
-                    P.length = int(length.text) * 60
-                elif units == 'hours':
-                    P.length = int(length.text) * 3600
-            # Get <credits>
-            credits = e.find('credits')
-            if credits is not None:
-                for a in credits.findall('actor'):
-                    A, created = Actor.objects.get_or_create(name=a.text,
-                        role=a.get('role'))
-                    P.actors.add(A)
-                for s in credits.findall('director'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.directors.add(S)
-                for s in credits.findall('writer'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.writers.add(S)
-                for s in credits.findall('adapter'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.adapters.add(S)
-                for s in credits.findall('producer'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.producers.add(S)
-                for s in credits.findall('composer'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.composers.add(S)
-                for s in credits.findall('editor'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.editors.add(S)
-                for s in credits.findall('presenter'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.presenters.add(S)
-                for s in credits.findall('commentator'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.commentators.add(S)
-                for s in credits.findall('guest'):
-                    S, created = Staff.objects.get_or_create(name=s.text)
-                    P.guests.add(S)
+                source=self.xmltv_source, start=start, stop=stop, 
+                channel_id=channel_id, programme=P)
+            
+            self.serialize(G)
+            # this enables a huge gain in performance
+            if self.already_serialized(P):
+                continue
+
+            for child in elem.iterchildren():
+                if child.tag == 'desc':
+                    if child.get('lang'):
+                        L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    else:
+                        L = None
+                    if type( child.text ) is NoneType:
+                        continue
+
+                    obj, created = Description.objects.get_or_create(
+                        value=child.text,lang=L)
+                    P.descriptions.add(obj)
+                elif child.tag == 'title':
+                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    obj, created = Title.objects.get_or_create(
+                        value=child.text,lang=L)
+                    P.titles.add(obj)
+                elif child.tag == 'sub-title':
+                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    obj, created = Title.objects.get_or_create(
+                        value=child.text,lang=L)
+                    P.secondary_titles.add(obj)
+                elif child.tag == 'category':
+                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    obj, created = Category.objects.get_or_create(
+                        value=child.text,lang=L)
+                    P.categories.add(obj)
+                elif child.tag == 'video':
+                    for grand_child in child.iterchildren():
+                        if grand_child.tag == 'colour':
+                            P.video_colour=grand_child.text
+                        elif grand_child.tag == 'present':
+                            P.video_present=grand_child.text
+                        elif grand_child.tag == 'aspect':
+                            P.video_aspect=grand_child.text
+                        elif grand_child.tag == 'quality':
+                            P.video_quality=grand_child.text
+                elif child.tag == 'audio':
+                    for grand_child in child.iterchildren():
+                        if grand_child.tag == 'present':
+                            P.audio_present=grand_child.text
+                        elif grand_child.tag == 'stereo':
+                            P.audio_stereo=grand_child.text
+                elif child.tag == 'country':
+                    obj, created = Country.objects.get_or_create(value=child.text)
+                    P.country=obj
+                elif child.tag == 'rating':
+                    obj, created = Rating.objects.get_or_create(
+                        system=child.get('system'),value=child.find('value').text)
+                    P.rating=obj
+                elif child.tag == 'star-rating':
+                    obj, created = Star_Rating.objects.get_or_create(
+                        value=child.find('value').text,system=child.get('system'))
+                    for i in child.iterfind('icon'):
+                        I, created = Icon.objects.get_or_create(src=i.get('src'))
+                        obj.icons.add(I)
+                    P.star_ratings.add(obj)
+                elif child.tag == 'language':
+                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    obj, created = Language.objects.get_or_create(
+                        value=child.text,lang=L)
+                    P.language=obj
+                elif child.tag == 'original_language':
+                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    obj, created = Language.objects.get_or_create(
+                        value=child.text, lang=L)
+                    P.original_language=obj
+                elif child.tag == 'subtitles':
+                    obj = set()
+                    for sub in child.iterchildren('language'):
+                        lang, created = Lang.objects.get_or_create(value=child.get('lang'))
+                        L, created = Language.objects.get_or_create(
+                            value=sub.text, lang=lang)
+                        S, created = Subtitle.objects.get_or_create(
+                            language=L,subtitle_type=sub.get('type'))
+                        P.subtitles.add(S)
+                        obj.add((L,S))
+                elif child.tag == 'length':
+                    units = child.get('units')
+                    if units == 'seconds':
+                        P.length = int(child.text)
+                    elif units == 'minutes':
+                        P.length = int(child.text) * 60
+                    elif units == 'hours':
+                        P.length = int(child.text) * 3600
+                elif child.tag == 'credits':
+                    for grand_child in child.iterchildren():
+                        if grand_child.tag == 'actor':
+                            obj, created = Actor.objects.get_or_create(
+                                name=grand_child.text,
+                                role=grand_child.get('role'))
+                            P.actors.add(obj)
+                        elif grand_child.tag == 'director':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.directors.add(obj)
+                        elif grand_child.tag == 'writer':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.writers.add(obj)
+                        elif grand_child.tag == 'adapter':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.adapters.add(obj)
+                        elif grand_child.tag == 'producer':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.producers.add(obj)
+                        elif grand_child.tag == 'composer':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.composers.add(obj)
+                        elif grand_child.tag == 'editor':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.editors.add(obj)
+                        elif grand_child.tag == 'presenter':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.presenters.add(obj)
+                        elif grand_child.tag == 'commentator':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.commentators.add(obj)
+                        elif grand_child.tag == 'guest':
+                            obj, created = Staff.objects.get_or_create(
+                                name=grand_child.text)
+                            P.guests.add(obj)
+                
+                self.serialize(obj)
+
             P.save()
-            # Update Epg_Source instance, for the progress bar
-            #self._increment_importedElements()
+
+            self.serialize(P)
+            
+            elem.clear()
+            # Also eliminate now-empty references from the root node to <Title> 
+            while elem.getprevious() is not None:
+                del elem.getparent()[0]
+                
+            imported += 1
+            if imported % 100 == 0:
+                db.reset_queries()
+                self.log.write('Imported %d' % imported)
+
+            if limit > 0 and imported >= limit:
+                break
 
     @transaction.commit_on_success
     def import_to_db(self):
+        
+        zip = zipfile.ZipFile(
+            '%s/%dfull.zip' % (os.path.join(settings.MEDIA_ROOT, 'epg'),
+                self.xmltv_source.pk), "w", zipfile.ZIP_DEFLATED)
+        
+        # create temp dir
+        self.tempdir = tempfile.mkdtemp()
+        
+        # init dict with file handlers and 
+        self.dump_data = { 'file_handlers' : {}, 'object_ids' : {} }
+        
+        #self.grab_info()
+        
+        epg_source = self.xmltv_source.epg_source_ptr
+        
         # Import <channel> elements
         self.import_channel_elements()
         # Import <programme> elements
-        self.import_programme_elements()
+        self.import_programme_elements(limit=0)
+        # count elements
+        #epg_source.numberofElements = \
+        #    Programme.objects.filter(source=epg_source).count() + \
+        #    Channel.objects.filter(source=epg_source).count()
         # Update importedElements
-        self._epg_source_instance.importedElements = self._epg_source_instance.numberofElements
-        self._epg_source_instance.save()
+        #epg_source.importedElements = self.xmltv_source.numberofElements
+        # save changes
+        #epg_source.save()
+        #self.xmltv_source.save()
+        
+        self.serialize(epg_source)
+        
+        for k, v in self.dump_data['file_handlers'].items():
+            self.log.write('Writing %d %s objects' % (
+                len(self.dump_data['object_ids'][k]), k))
+            v.flush()
+            v.close()
+            
+            file = open(v.name, 'r+')
+            
+            # edit file
+            data = file.read()
+            output = re.sub(r'^\]\[$', r',', data, flags=re.MULTILINE)
+            file.seek(0)
+            file.truncate(0)
+            file.write(output)
+            file.flush()
 
+            zip.write(file.name, os.path.basename(file.name))
+            file.close()
+            
+        
+        zip.close()
+        # remove temp dir
+        shutil.rmtree(self.tempdir)
+        
+        # generate a diff
+        try:
+            id1 = Epg_Source.objects.filter(
+                lastModification__lt=self.xmltv_source.lastModification).order_by('-lastModification')[0].id
+        except:
+            self.log.write('There is no previous full dump, so will not generate a diff')
+            return 
+        id2 = self.xmltv_source.id
+        self.log.write('Generating a diff between "%s" and "%s"' % (
+            Epg_Source.objects.get(id=id1).lastModification,
+            self.xmltv_source.lastModification))
+        folder = os.path.dirname(self.xmltv_source.filefield.filename)
+        diff_epg_dumps(os.path.join(folder, '%dfull.zip' % id1),
+            os.path.join(folder, '%dfull.zip' % id2))
 
 def get_info_from_epg_source(epg_source):
 
@@ -389,14 +534,14 @@ def get_info_from_epg_source(epg_source):
     numberofElements = 0
     file_list = Zip_to_XML(epg_source.filefield.path)
     for f in file_list.get_all_files():
-        importer = XML_Epg_Importer(f, epg_source_instance=epg_source)
+        importer = XML_Epg_Importer(f,epg_source_instance=epg_source)
         numberofElements += importer.get_number_of_elements()
         # Retrive maximum stop time and minimum start time
-        if (epg_source.minor_start != None) and (epg_source.major_stop != None):
+        if ( epg_source.minor_start != None ) and ( epg_source.major_stop != None):
             minor_start, major_stop = importer.get_period_of_the_file()
-            if (epg_source.minor_start > minor_start):
+            if ( epg_source.minor_start > minor_start ):
                 epg_source.minor_start = minor_start
-            if (epg_source.major_stop < major_stop):
+            if ( epg_source.major_stop < major_stop ):
                 epg_source.major_stop = major_stop
         else:
             epg_source.minor_start, epg_source.major_stop = importer.get_period_of_the_file()
@@ -410,4 +555,41 @@ def get_info_from_epg_source(epg_source):
     epg_source.source_data_url = info['source_data_url']
     epg_source.generator_info_name = info['generator_info_name']
     epg_source.generator_info_url = info['generator_info_url']
+    
+    epg_source.save()
 
+def diff_epg_dumps(input1, input2):
+    "diff 2 zip files containing json object dumps"
+    # create tempdir and output zip file
+    tempdir = tempfile.mkdtemp()
+    zip = zipfile.ZipFile('%sdiff.zip' % input2[:-8],
+        "w", zipfile.ZIP_DEFLATED)
+    # open input zip files
+    z1 = zipfile.ZipFile(input1, 'r')
+    z2 = zipfile.ZipFile(input2, 'r')
+    
+    p = re.compile(r'^,$', re.MULTILINE)
+    for file in z2.namelist():
+        f2 = z2.open(file)
+        try:
+            f1 = z1.open(file)
+        except KeyError:
+            zip.writestr(file, f2.read())
+            f2.close()
+            continue
+        lines1 = f1.read()
+        lines2 = f2.read()
+        set1 = set(filter(None, p.split(lines1[1:-2])))
+        set2 = set(filter(None, p.split(lines2[1:-2])))
+        diff = list(set2 - set1)
+        out = open(os.path.join(tempdir, f2.name), 'w')
+        out.write('[')
+        out.writelines(','.join(diff))
+        out.write(']\n')
+        out.close()
+        f1.close()
+        f2.close()
+        zip.write(out.name, os.path.basename(out.name))
+    # cleanups
+    zip.close()
+    shutil.rmtree(tempdir)
