@@ -253,7 +253,15 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.get(urlchannels)
         self.assertEqual(200, response.status_code)
         jobj = json.loads(response.content)
+        # Ensure there is 3 channels in list
+        self.assertEqual(3, jobj['meta']['total_count'])
         # Get stb list
+        urlstb = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopbox', 'api_name': 'v1'})
+        response = self.c.get(urlstb)
+        jobj = json.loads(response.content)
+        # Ensure there is 5 settopbox in list
+        self.assertEqual(5, jobj['meta']['total_count'])
         # Add relation bethen stb and 2 channels
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxchannel', 'api_name': 'v1'})
