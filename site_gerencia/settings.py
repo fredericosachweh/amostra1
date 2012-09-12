@@ -224,6 +224,8 @@ INSTALLED_APPS = (
     'tv',
     # Tools app
     'tools',
+    # Client
+    'client',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
