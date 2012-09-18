@@ -78,6 +78,9 @@ class Display_Name(models.Model):
     value = models.CharField(max_length=100)
     lang = models.ForeignKey(Lang, blank=True, null=True)
 
+    def __unicode__(self):
+        return self.value
+
 
 class Icon(models.Model):
     src = models.CharField(max_length=10)
@@ -93,8 +96,10 @@ class Channel(models.Model):
     display_names = models.ManyToManyField(Display_Name, blank=True, null=True)
     icons = models.ManyToManyField(Icon, blank=True, null=True)
     urls = models.ManyToManyField(Url, blank=True, null=True)
-#    def __unicode__(self):
-#        return u"%s [%s]" % (self.display_names.values_list()[0][1], self.channelid);
+
+    def __unicode__(self):
+        return u"%s [%s]" % (self.display_names.values_list()[0][1],
+            self.channelid);
 
 
 class Title(models.Model):
