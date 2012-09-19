@@ -18,12 +18,15 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            # 'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'iptv',
             'USER': 'iptv',
-            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
-            'HOST': '/var/lib/mysql/mysql.sock',
-            'PORT': '',
+            'PASSWORD': 'iptv',
+            # 'HOST': '/var/lib/mysql/mysql.sock',
+            'HOST': '127.0.0.1',
+            # 'PORT': '',
+            'PORT': '5433',
         }
     }
 
@@ -98,3 +101,9 @@ if DEBUG is True:
         )
     except ImportError:
         pass
+
+EPG_IMPORT_CREDENTIALS = {
+    'site': 'revistaeletronica.com.br',
+    'username': '91037581920@revistaeletronica.com.br',
+    'password': '91037581920',
+}

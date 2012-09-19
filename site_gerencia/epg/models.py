@@ -3,83 +3,79 @@
 
 from django.db import models
 from django.db.models import signals
-
 from django.utils.translation import ugettext as _
-
-import logging
 
 from dateutil import tz
 from pytz import timezone
+from datetime import datetime
+import os
 
 
 class Epg_Source(models.Model):
+    "EPG source information"
+
+    class Meta:
+        permissions = (
+            ("download_epg", _(u'Permissão para fazer download do EPG')),
+        )
+
+    filefield = models.FileField(_(u'Arquivo a ser importado'),
+        upload_to='epg/')
+    lastModification = models.DateTimeField(
+        _(u'Data da última modificação no servidor da revista eletrônica'),
+        unique=True)
+    # Creation time
+    created = models.DateTimeField(_(u'Data de criação'), auto_now=True)
+    # Total number of elements in the file
+    numberofElements = models.PositiveIntegerField(
+        _(u'Número de elementos neste arquivo'),
+        blank=True, null=True, default=0)
+    # Number of imported elements
+    #importedElements = models.PositiveIntegerField(
+    #    _(u'Número de elementos ja importados'),
+    #    blank=True, null=True, default=0)
+    # Time diference between the smallest and the farthest time
+    minor_start = models.DateTimeField(
+        _(u'Menor tempo de inicio encontrado nos programas'),
+        blank=True, null=True)
+    major_stop = models.DateTimeField(
+        _(u'Maior tempo de final encontrado nos programas'),
+        blank=True, null=True)
+
+    @property
+    def minor_start_local(self):
+        "Returns minimum start time converted to the local timezone"
+        return self.minor_start.replace(
+            tzinfo=timezone('UTC')).astimezone(tz.tzlocal())
+
+    @property
+    def major_stop_local(self):
+        "Returns maxium stop time converted to the local timezone"
+        return self.major_stop.replace(
+            tzinfo=timezone('UTC')).astimezone(tz.tzlocal())
+
+
+class XMLTV_Source(Epg_Source):
+    "Information exclusive to XMLTV format"
+    # Grabbed from <tv> element
+    source_info_url = models.CharField(_(u'Source info url'),
+        max_length=100, blank=True, null=True)
+    source_info_name = models.CharField(_(u'Source info name'),
+        max_length=100, blank=True, null=True)
+    source_data_url = models.CharField(_(u'Source data url'),
+        max_length=100, blank=True, null=True)
+    generator_info_name = models.CharField(_(u'Generator info name'),
+        max_length=100, blank=True, null=True)
+    generator_info_url = models.CharField(_(u'Generator info url'),
+        max_length=100, blank=True, null=True)
 
     class Meta:
         verbose_name = _(u'Arquivo XML/ZIP EPG')
         verbose_name_plural = _(u'Arquivos XML/ZIP EPG')
 
-    filefield = models.FileField(_(u'Arquivo a ser importado'),
-        upload_to='epg/')
-    # Grabbed from <tv> element
-    source_info_url = models.CharField(_(u'Source info url'), max_length=100,
-        blank=True, null=True)
-    source_info_name = models.CharField(_(u'Source info name'), max_length=100,
-        blank=True, null=True)
-    source_data_url = models.CharField(_(u'Source data url'), max_length=100,
-        blank=True, null=True)
-    generator_info_name = models.CharField(_(u'Generator info name'),
-        max_length=100, blank=True, null=True)
-    generator_info_url = models.CharField(_(u'Generator info url'),
-        max_length=100, blank=True, null=True)
-    # Time diference between the smallest and the farthest time
-    minor_start = models.DateTimeField(
-        _(u'Menor tempo de inicio encontrado nos programas'), blank=True,
-        null=True)
-    major_stop = models.DateTimeField(
-        _(u'Maior tempo de final encontrado nos programas'), blank=True,
-        null=True)
-    # Total number of elements in the file
-    numberofElements = models.PositiveIntegerField(
-        _(u'Número de elementos neste arquivo'), blank=True, null=True,
-        default=0)
-    # Number of imported elements
-    importedElements = models.PositiveIntegerField(
-        _(u'Número de elementos ja importados'), blank=True, null=True,
-        default=0)
-    # Creation time
-    created = models.DateTimeField(_(u'Data de criação'), auto_now=True)
-
-    def _get_start_local(self):
-        "Returns minimum start time converted to the local timezone"
-        return self.minor_start.replace(tzinfo=timezone('UTC')).astimezone(
-            tz.tzlocal())
-    minor_start_local = property(_get_start_local)
-
-    def _get_stop_local(self):
-        "Returns maxium stop time converted to the local timezone"
-        return self.major_stop.replace(tzinfo=timezone('UTC')).astimezone(
-        tz.tzlocal())
-    major_stop_local = property(_get_stop_local)
-
     def __unicode__(self):
-        return u'ID: %d - Start: %s - Stop: %s' % (self.id, self.minor_start,
+        return 'ID: %d - Start: %s - Stop: %s' % (self.id, self.minor_start,
             self.major_stop)
-
-    def save(self, *args, **kwargs):
-
-        # It's necessary to get the real file path
-        # Call the "real" save() method.
-        super(Epg_Source, self).save(*args, **kwargs)
-
-        # Check if there is need to update the following fields
-        if self.numberofElements > 0:
-            return
-
-        from data_importer import get_info_from_epg_source
-        get_info_from_epg_source(self)
-
-        # Call the "real" save() method.
-        super(Epg_Source, self).save(*args, **kwargs)
 
 
 class Lang(models.Model):
@@ -89,6 +85,9 @@ class Lang(models.Model):
 class Display_Name(models.Model):
     value = models.CharField(max_length=100)
     lang = models.ForeignKey(Lang, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.value
 
 
 class Icon(models.Model):
@@ -101,7 +100,7 @@ class Url(models.Model):
 
 class Channel(models.Model):
     source = models.ForeignKey(Epg_Source)
-    channelid = models.CharField(max_length=255, unique=True)
+    channelid = models.CharField(max_length=255, unique=True, db_index=True)
     display_names = models.ManyToManyField(Display_Name, blank=True, null=True)
     icons = models.ManyToManyField(Icon, blank=True, null=True)
     urls = models.ManyToManyField(Url, blank=True, null=True)
@@ -167,7 +166,7 @@ class Star_Rating(models.Model):
 
 class Programme(models.Model):
     source = models.ForeignKey(Epg_Source)
-    programid = models.CharField(max_length=10)
+    programid = models.CharField(max_length=10, unique=True)
     titles = models.ManyToManyField(Title, related_name='titles', blank=True,
         null=True)
     secondary_titles = models.ManyToManyField(Title,
@@ -220,21 +219,27 @@ class Guide(models.Model):
     source = models.ForeignKey(Epg_Source)
     programme = models.ForeignKey(Programme)
     channel = models.ForeignKey(Channel)
-    start = models.DateTimeField(blank=True, null=True)
-    stop = models.DateTimeField(blank=True, null=True)
+    start = models.DateTimeField(blank=True, null=True, db_index=True)
+    stop = models.DateTimeField(blank=True, null=True, db_index=True)
 
 
-# Signal used to delete the zip/xml file when a Epg_Source object is deleted \
-#from db
+# Signal used to delete the zip/xml file when a Epg_Source object is deleted
 def dvb_source_post_delete(signal, instance, sender, **kwargs):
-    import os
-    log = logging.getLogger('debug')
     # Delete the archive
-    path = str(instance.filefield.path)
-    log.info('Deletting:%s', path)
+    path_source_file = instance.filefield.path
+    path_epg_full_dump = u'%s/%dfull.zip' % (
+        os.path.dirname(path_source_file), instance.id)
+    path_epg_diff_dump = u'%s/%ddiff.zip' % (
+        os.path.dirname(path_source_file), instance.id)
+
+    if (os.path.exists(path_epg_diff_dump)):
+        print 'Deleting:', path_epg_diff_dump
     try:
-        os.remove(path)
-    except:
-        log.error('Could not remove the file:%s', path)
+        os.remove(path_source_file)
+        os.remove(path_epg_full_dump)
+        if (os.path.exists(path_epg_diff_dump)):
+            os.remove(path_epg_diff_dump)
+    except Exception as e:
+        print 'Could not remove file:', e
 
 signals.post_delete.connect(dvb_source_post_delete, sender=Epg_Source)
