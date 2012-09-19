@@ -22,11 +22,11 @@ else:
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'iptv',
             'USER': 'iptv',
-            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
+            'PASSWORD': 'iptv',
             # 'HOST': '/var/lib/mysql/mysql.sock',
             'HOST': '127.0.0.1',
             # 'PORT': '',
-            'PORT': '5432',
+            'PORT': '5433',
         }
     }
 
