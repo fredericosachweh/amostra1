@@ -37,10 +37,14 @@ Cuidado, alterações que quebrem o processamento podem fazer o processamento pa
 Compilando o NGINX com PUSH-STREAM-MODULE
 -----------------------------------------
 
-Compilar com nginx versão 1.0.4 (recomendado), todos os modulos padrões e + push-stream-module:
+Pré requisito para a instalação do nginx:
 
-    ./build.sh master 1.0.4
-    cd build/nginx-1.0.4
+    sudo yum install pcre-devel
+
+Compilar com nginx versão 1.0.14 (recomendado), todos os modulos padrões e + push-stream-module:
+
+    ./build.sh master 1.0.14
+    cd build/nginx-1.0.14
     sudo make install
     cd ../..
     sudo rm /usr/local/nginx/conf/nginx.conf
