@@ -899,11 +899,11 @@ class ServerTest(TestCase):
         self.assertEqual(200, response.status_code)
         expected = '<option selected="selected" value="">---------</option>'
         self.assertIn(expected, response.content)
-        pk = NIC.objects.get(server=server, name='foo0').pk
-        expected = '<option value="%d">foo0 - 192.168.0.10</option>' % pk
+        nic0 = NIC.objects.get(server=server, name='foo0')
+        expected = '<option value="%d">%s</option>' % (nic0.pk, nic0)
         self.assertIn(expected, response.content)
-        pk = NIC.objects.get(server=server, name='bar0').pk
-        expected = '<option value="%d">bar0 - 172.17.0.2</option>' % pk
+        nic1 = NIC.objects.get(server=server, name='bar0')
+        expected = '<option value="%d">%s</option>' % (nic1.pk, nic1)
         self.assertIn(expected, response.content)
 
     def test_dvbtuners_list_view(self):

@@ -66,6 +66,8 @@ DVBLASTCTL_COMMAND = '/iptv/bin/dvblastctl'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
+TASTYPIE_FULL_DEBUG = True
+
 if DEBUG is True:
     # Envia todas as mensagens de log para o console
     for logger in LOGGING['loggers']:

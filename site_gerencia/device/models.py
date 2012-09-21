@@ -544,7 +544,7 @@ class DeviceServer(models.Model):
     link_status.boolean = True
 
     def running(self):
-        if self.status is True:
+        if self.status == True:
             alive = self.server.process_alive(self.pid)
         else:
             alive = False
@@ -559,12 +559,12 @@ class DeviceServer(models.Model):
            (hasattr(self, 'sink') and self.sink is None):
             return _(u'Desconfigurado')
         running = self.running()
-        if running is False and self.status is True:
+        if running == False and self.status == True:
             url = reverse('%s_recover' % module_name,
                 kwargs={'pk': self.id})
             return 'Crashed<a href="%s" id="%s_id_%s" style="color:red;">' \
                    ' ( Recuperar )</a>' % (url, module_name, self.id)
-        if running is True and self.status is True:
+        if running == True and self.status == True:
             url = reverse('%s_stop' % module_name,
                 kwargs={'pk': self.id})
             return '<a href="%s" id="%s_id_%s" style="color:green;">' \
@@ -973,7 +973,7 @@ class DigitalTuner(InputModel, DeviceServer):
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
                         settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        if self.status is True:
+        if self.status == True:
             # Already running, just reload config
             self.reload_config()
         else:
