@@ -64,4 +64,5 @@ ACTION=="remove", SUBSYSTEM=="dvb", ENV{DVB_DEVICE_TYPE}=="frontend", RUN+="/usr
 MODPROBE_CONF=u"""\
 blacklist dvb_usb
 options dvb_usb_dw2102 debug=255 demod=0
+options dvb_usb_dib0700 force_lna_activation=1
 """
