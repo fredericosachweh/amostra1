@@ -1791,10 +1791,8 @@ def StreamRecorder_pre_save(sender, instance, **kwargs):
     "Filling dependent fields from Channel"
     if instance.channel is not None:
         channel = instance.channel
-        sink = channel.source.sink
         content_type_id = channel.source.content_type_id
         instance.content_type_id = content_type_id
-        instance.nic_sink = sink.sink.nic_src
 
 
 @receiver(post_save, sender=SoftTranscoder)
