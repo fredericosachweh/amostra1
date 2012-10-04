@@ -1100,7 +1100,7 @@ class TestRecord(TestCase):
             rsakey='~/.ssh/id_rsa',
             offline_mode=True,
         )
-        NIC.objects.create(
+        nic_eth0 = NIC.objects.create(
             server=server,
             name='eth0',
             ipv4='192.168.0.10',
@@ -1110,12 +1110,12 @@ class TestRecord(TestCase):
             name='eth1',
             ipv4='10.0.1.10',
         )
-        NIC.objects.create(
+        nic_lo = NIC.objects.create(
             server=server1,
             name='lo',
             ipv4='127.0.0.2',
         )
-        NIC.objects.create(
+        nic_p1p1 = NIC.objects.create(
             server=server1,
             name='p1p1',
             ipv4='10.0.1.11',
@@ -1124,17 +1124,43 @@ class TestRecord(TestCase):
             port=20000,
             ip='239.10.11.12',
         )
+        file = FileInput.objects.create(
+            server=server,
+            filename='/tmp/lala.mpg',
+            repeat=True,
+            nic_src=nic_eth0
+        )
+        moutput = MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.3',
+            port=10000,
+            protocol='udp',
+            interface=nic_lo,
+            sink=ext_ip,
+            nic_sink=nic_lo
+        )
+        moutput1 = MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.4',
+            port=10000,
+            protocol='udp',
+            interface=nic_lo,
+            sink=ext_ip,
+            nic_sink=nic_lo
+        )
         ch1 = Channel.objects.create(
             number=10,
             name='Teste 1',
             description='Teste 1',
-            channelid='TTT'
+            channelid='TTT',
+            source=moutput
         )
         ch2 = Channel.objects.create(
             number=12,
             name='Teste 2',
             description='Teste 2',
-            channelid='TTT'
+            channelid='TTT',
+            source=moutput1
         )
         StreamRecorder.objects.create(
             server=server,
@@ -1142,7 +1168,7 @@ class TestRecord(TestCase):
             folder='/tmp/recording_i',
             keep_time=24,  # horas
             sink=ext_ip,
-            nic_sink=server.nic_set.get(name='eth1'),
+            nic_sink=nic_eth0,
             channel=ch1,
             start_time=start_time
         )
@@ -1152,7 +1178,7 @@ class TestRecord(TestCase):
             folder='/tmp/recording_1',
             keep_time=2,  # horas
             sink=ext_ip,
-            nic_sink=server.nic_set.get(name='eth1'),
+            nic_sink=nic_p1p1,
             channel=ch1,
             start_time=start_time
         )
@@ -1168,6 +1194,8 @@ class TestRecord(TestCase):
         )
 
     def test_record(self):
+        from datetime import datetime, timedelta
+        start_time = datetime.now() + timedelta(0, -(3600 * 3))
         srv = Server.objects.get(name='local')
         ext_ip = UniqueIP.objects.create(
             port=20000,
@@ -1180,6 +1208,8 @@ class TestRecord(TestCase):
             keep_time=130,
             sink=ext_ip,
             nic_sink=srv.nic_set.get(name='eth1'),
+            channel=Channel.objects.all()[0],
+            start_time=start_time
         )
         cmd_expected = '%s \
 -r %d -U -u @127.0.0.1:20000/ifaddr=10.0.1.10 %s/%d' % (
@@ -1188,8 +1218,7 @@ class TestRecord(TestCase):
             recorder.folder,
             recorder.pk,
             )
-        self.assertEqual(recorder._get_cmd(), cmd_expected,
-            'Comando de gravação difere do esperado')
+        self.assertEqual(recorder._get_cmd(), cmd_expected)
         self.assertEqual(cmd_expected, recorder._get_cmd())
 
     def test_view_tvod_list(self):
@@ -1226,15 +1255,20 @@ class TestRecord(TestCase):
     def test_install_cron(self):
         recorders = StreamRecorder.objects.all()
         cron_1 = '*/30 * * * * /iptv/bin/multicat_expire.sh \
-/tmp/recording_i/1/ 25'
-        self.assertEqual(cron_1, recorders[0].get_cron_line(),
-            'Must be equals')
+/tmp/recording_i/4/ 25'
+        self.assertEqual(cron_1, recorders[0].get_cron_line())
         cron_2 = '*/30 * * * * /iptv/bin/multicat_expire.sh \
-/tmp/recording_1/2/ 25'
-        self.assertEqual(cron_2, recorders[1].get_cron_line(),
-            'Must be equals')
+/tmp/recording_1/5/ 25'
+        self.assertEqual(cron_2, recorders[1].get_cron_line())
         cron_3 = '*/30 * * * * /iptv/bin/multicat_expire.sh \
-/tmp/recording_j/3/ 49'
-        self.assertEqual(cron_3, recorders[2].get_cron_line(),
-            'Must be equals')
+/tmp/recording_j/6/ 49'
+        self.assertEqual(cron_3, recorders[2].get_cron_line())
         recorders[0].install_cron()
+
+    def test_change_recorder_nic(self):
+        rec = StreamRecorder.objects.all()[0]
+        new_nic = NIC.objects.get(name='eth1')
+        rec.nic_sink = new_nic
+        rec.save()
+        rec1 = StreamRecorder.objects.all()[0]
+        self.assertEqual(new_nic, rec1.nic_sink)
