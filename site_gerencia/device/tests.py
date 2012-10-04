@@ -675,7 +675,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_xpath(
                 "//option[@value='2']"))
-        self._select('id_interface', 'eth0 - 192.168.0.14')
+        self._select('id_interface', '[local] (eth0 - 192.168.0.14)')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
@@ -697,7 +697,8 @@ class MySeleniumTests(LiveServerTestCase):
                                 reverse('admin:device_multicastinput_add'))
         self.selenium.get(add_new_url)
         self._select('id_server', 'local')
-        self._select('id_interface', 'lo - 127.0.0.1')
+        nic = servers[0].nic_set.all()[0]
+        self._select('id_interface', '%s' % nic)
         ip = self.selenium.find_element_by_name("ip")
         ip.send_keys('239.0.1.1')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
