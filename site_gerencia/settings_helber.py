@@ -18,15 +18,15 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            # 'ENGINE': 'django.db.backends.mysql',
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django.db.backends.mysql',
+            #'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            # 'HOST': '/var/lib/mysql/mysql.sock',
-            'HOST': '127.0.0.1',
-            # 'PORT': '',
-            'PORT': '5433',
+            'HOST': '/var/lib/mysql/mysql.sock',
+            #'HOST': '127.0.0.1',
+            'PORT': '',
+            #'PORT': '5433',
         }
     }
 
