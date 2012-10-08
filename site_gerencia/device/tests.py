@@ -524,7 +524,8 @@ class CommandsGenerationTest(TestCase):
             "--compressor-makeup-gain 7.00 "
             "--norm-buff-size 20 "
             "--norm-max-level 2.00 "
-            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:volnorm}}"
+            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:"
+            "volnorm}}"
             ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
             "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
@@ -538,6 +539,7 @@ class CommandsGenerationTest(TestCase):
 
 
 class AdaptersManipulationTests(TestCase):
+
     def setUp(self):
         import getpass
         Server.objects.create(
@@ -556,11 +558,13 @@ class AdaptersManipulationTests(TestCase):
     def test_update_by_post(self):
         # Create a new adapter
         response = self.client.post(
-            reverse('server_adapter_add'), {'adapter_nr': 0})
+            reverse('server_adapter_add', kwargs={'pk': 1, 'action': 'add'}),
+            {'adapter_nr': 'dvb0.frontend0'})
         self.assertEqual(response.status_code, 200)
         # Delete it
         response = self.client.post(
-            reverse('server_adapter_remove'), {'adapter_nr': 0})
+            reverse('server_adapter_remove', kwargs={'pk': 1}),
+            {'adapter_nr': 'dvb0.frontend0'})
         self.assertEqual(response.status_code, 200)
 
     def test_isdb_adapter_nr(self):
@@ -608,8 +612,8 @@ class MySeleniumTests(LiveServerTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(MySeleniumTests, cls).tearDownClass()
         cls.selenium.quit()
+        super(MySeleniumTests, cls).tearDownClass()
 
     def _login(self, username, password):
         login_url = '%s%s' % (self.live_server_url,
@@ -662,20 +666,17 @@ class MySeleniumTests(LiveServerTestCase):
                          "Login should have failed")
 
     def test_unicastinput(self):
-        fields = {'server': 'local',
-                  'interface': 1,
-        }
         self._login('admin', 'cianet')
         add_new_url = '%s%s' % (self.live_server_url,
-                                reverse('admin:device_unicastinput_add'))
+            reverse('admin:device_unicastinput_add'))
         self.selenium.get(add_new_url)
-        #self._select('id_server', 'local')
         self._select_by_value('id_server', 1)
+        nics = NIC.objects.all()
         # Wait ajax to complete
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_xpath(
                 "//option[@value='2']"))
-        self._select('id_interface', '[local] (eth0 - 192.168.0.14)')
+        self._select('id_interface', '%s' % nics[1])
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
