@@ -296,3 +296,10 @@ if 'test' in sys.argv:
 TASTYPIE_FULL_DEBUG = DEBUG
 
 FORCE_SCRIPT_NAME = ""
+
+EPG_IMPORT_CREDENTIALS = {
+    'site': 'revistaeletronica.com.br',
+    'username': '91037581920@revistaeletronica.com.br',
+    'password': '91037581920',
+}
+
