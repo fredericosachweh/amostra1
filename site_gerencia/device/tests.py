@@ -247,8 +247,8 @@ class CommandsGenerationTest(TestCase):
     def test_dvbtuner(self):
         self.maxDiff = None
         tuner = DvbTuner.objects.get(pk=1)
-        expected_cmd = (
-            u"%s "
+        expected_cmd = unicode(
+            "%s "
             "-f 3390000 "
             "-m psk_8 "
             "-s 7400000 "
@@ -284,12 +284,13 @@ class CommandsGenerationTest(TestCase):
 
     def test_isdbtuner(self):
         tuner = IsdbTuner.objects.get(pk=2)
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-f 587143000 "
             "-m qam_auto "
             "-b 6 "
             "-a 1 "
+            "-w "
             "-c %s%d.conf "
             "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND,
@@ -306,7 +307,7 @@ class CommandsGenerationTest(TestCase):
         for service in tuner._list_all_services():
             self.assertTrue(service.status)
 
-        expected_conf = u'239.10.0.4:20000/udp 1 1\n'
+        expected_conf = u'239.10.0.4:20000@127.0.0.1/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
 
         tuner.stop()
@@ -318,7 +319,7 @@ class CommandsGenerationTest(TestCase):
 
     def test_unicastinput(self):
         unicastin = UnicastInput.objects.get(port=30000)
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-D @127.0.0.1:30000/udp "
             "-c %s%d.conf "
@@ -350,7 +351,7 @@ class CommandsGenerationTest(TestCase):
 
     def test_multicastinput(self):
         multicastin = MulticastInput.objects.get(port=40000)
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-D @224.0.0.1:40000/udp "
             "-c %s%d.conf "
@@ -390,7 +391,6 @@ class CommandsGenerationTest(TestCase):
             service = services[0]
         else:
             self.fail("There is no service attached to this device")
-
         # TODO: coerência entre banco e instância
         service.start()
         # recarregando o banco porque o unicastin atual esta diferente do banco
@@ -406,7 +406,7 @@ class CommandsGenerationTest(TestCase):
 
     def test_fileinput(self):
         fileinput = FileInput.objects.all()[0]
-        expected_cmd = (
+        expected_cmd = unicode(
             '%s '
             '-I dummy -v -R '
             '"foobar.mkv" '
@@ -423,11 +423,11 @@ class CommandsGenerationTest(TestCase):
 
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip='239.0.1.3')
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-c %s%d.sock "
-            "-u @239.10.0.2:20000 "
-            "-U 239.0.1.3:10000"
+            "-u @239.10.0.2:20000/ifaddr=127.0.0.1 "
+            "-U 239.0.1.3:10000@127.0.0.1"
         ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
              )
