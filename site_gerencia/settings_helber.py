@@ -26,7 +26,7 @@ else:
             #'HOST': '/var/lib/mysql/mysql.sock',
             'HOST': '127.0.0.1',
             #'PORT': '',
-            'PORT': '5433',
+            'PORT': '5432',
         }
     }
 
