@@ -1461,12 +1461,13 @@ class StreamRecorder(OutputModel, DeviceServer):
         if settings.CHANNEL_RECORD_USE_PCRPID is True:
             ## Busca o pid do pcr para o metodo novo de gravação
             demux = self.sink
-            while type(demux) is not DemuxedService:
+            while type(demux) is not DemuxedService and demux is not None:
                 demux = demux.sink
-            pcrpid = demux.get_pcrpid()
-            use_pcrpid = '-p %s' % pcrpid
+            if type(demux) is DemuxedService:
+                pcrpid = demux.get_pcrpid()
+                use_pcrpid = '-p %s ' % pcrpid
 
-        cmd = u'%s %s -r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
+        cmd = u'%s %s-r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.MULTICAT_COMMAND,
             use_pcrpid,
             (self.rotate * 60 * 27000000),

@@ -1213,7 +1213,7 @@ class TestRecord(TestCase):
             channel=Channel.objects.all()[0],
             start_time=start_time
         )
-        cmd_expected = '%s \
+        cmd_expected = u'%s \
 -r %d -U -u @127.0.0.1:20000/ifaddr=10.0.1.10 %s/%d' % (
             settings.MULTICAT_COMMAND,
             (60 * 60 * 27000000),
