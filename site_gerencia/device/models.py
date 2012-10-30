@@ -397,8 +397,8 @@ class UniqueIP(models.Model):
     ## Para o relacionamento genérico de origem
     sink = generic.GenericForeignKey()
     content_type = models.ForeignKey(ContentType,
-#        limit_choices_to={"model__in": (
-#            "DemuxedService", "FileInput", "SoftTranscoder")},
+        limit_choices_to={"model__in": (
+            "demuxedservice", "fileinput", "softtranscoder")},
         blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
@@ -649,7 +649,7 @@ class DemuxedService(DeviceServer):
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in":
-            ("DvbTuner", "IsdbTuner", "UnicastInput", "MulticastInput")},
+            ("DvbTuner", "isdbtuner", "unicastinput", "multicastinput")},
          null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
@@ -1324,7 +1324,7 @@ class OutputModel(models.Model):
         abstract = True
 
     content_type = models.ForeignKey(ContentType,
-        #limit_choices_to={"model__in": ("UniqueIP",)},
+        limit_choices_to={"model__in": ("uniqueip",)},
         null=True,
         verbose_name=_(u'Conexão com device'))
     object_id = models.PositiveIntegerField(null=True)
@@ -1449,8 +1449,7 @@ class StreamRecorder(OutputModel, DeviceServer):
             self.keep_time, self.channel, self.start_time)
 
     def _get_cmd(self):
-        # Create the necessary folders
-        #self._create_folders()
+        log = logging.getLogger('debug')
         # Create folder to store record files
         self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
         # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
@@ -1459,6 +1458,7 @@ class StreamRecorder(OutputModel, DeviceServer):
 
         use_pcrpid = ''
         if settings.CHANNEL_RECORD_USE_PCRPID is True:
+            log.info('Record is using pcrpid')
             ## Busca o pid do pcr para o metodo novo de gravação
             demux = self.sink
             while type(demux) is not DemuxedService and demux is not None:
@@ -1466,6 +1466,7 @@ class StreamRecorder(OutputModel, DeviceServer):
             if type(demux) is DemuxedService:
                 pcrpid = demux.get_pcrpid()
                 use_pcrpid = '-p %s ' % pcrpid
+                log.info('pcrpid=%s' % pcrpid)
 
         cmd = u'%s %s-r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.MULTICAT_COMMAND,
@@ -1480,6 +1481,11 @@ class StreamRecorder(OutputModel, DeviceServer):
         return cmd
 
     def start(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Starting new record: %s' % self)
+        # Force start sink on start record
+        if self.sink.running() is False:
+            self.sink.start(recursive=kwargs.get('recursive'))
         # Start multicat
         log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
@@ -1489,9 +1495,9 @@ class StreamRecorder(OutputModel, DeviceServer):
             self.start_time = timezone.now()
             self.status = True
         self.save()
-        if kwargs.get('recursive') is True:
-            if self.sink.running() is False:
-                self.sink.start(recursive=kwargs.get('recursive'))
+        #if kwargs.get('recursive') is True:
+        #    if self.sink.running() is False:
+        #        self.sink.start(recursive=kwargs.get('recursive'))
         # This install all cronjobs to current recorder server
         self.install_cron()
 
@@ -1521,6 +1527,8 @@ class StreamRecorder(OutputModel, DeviceServer):
         (for now full install all recorders)'
         from tempfile import NamedTemporaryFile
         from django.utils import timezone
+        log = logging.getLogger('debug')
+        log.info('Installing new cron on %s' % self.server)
         # Get all running recorders on current recorder server
         recorders = StreamRecorder.objects.filter(
             server=self.server, status=True)
@@ -1531,7 +1539,9 @@ class StreamRecorder(OutputModel, DeviceServer):
         remote_tmpfile = "".join(self.server.execute('/bin/mktemp')).strip()
         for rec in recorders:
             cron += u'# recorder = %s\n' % rec.pk
-            cron += rec.get_cron_line() + u'\n\n'
+            line = rec.get_cron_line()
+            log.info('    cronline:%s' % line)
+            cron += line + u'\n\n'
         tmpfile.file.write(cron)
         tmpfile.file.flush()
         if self.server.offline_mode is False:
@@ -1625,7 +1635,7 @@ class SoftTranscoder(DeviceServer):
     nic_sink = models.ForeignKey(NIC, related_name='soft_transcoder_nic_sink')
     nic_src = models.ForeignKey(NIC, related_name='soft_transcoder_nic_src')
     content_type = models.ForeignKey(ContentType,
-#        limit_choices_to={"model__in": ("UniqueIP",)},
+        limit_choices_to={"model__in": ("uniqueip",)},
         null=True,
         verbose_name=_(u'Conexão com device'))
     object_id = models.PositiveIntegerField(null=True)
