@@ -122,7 +122,7 @@ class XML_Epg_Importer(object):
 
         tree = etree.parse(self.xml.name)
         # get number of elements
-        self.xmltv_source.numberofElements += tree.xpath("count(//channel)") +\
+        self.xmltv_source.numberofElements += tree.xpath("count(//channel)") + \
             tree.xpath("count(//programme)")
         # get meta data
         self.xmltv_source.generator_info_name = \
@@ -267,7 +267,7 @@ class XML_Epg_Importer(object):
             self.serialize(C)
 
             elem.clear()
-            # Also eliminate now-empty references from the root node to <Title> 
+            # Also eliminate now-empty references from the root node to <Title>
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
 
@@ -283,195 +283,198 @@ class XML_Epg_Importer(object):
         imported = 0
 
         self.xml.seek(0)
-        for event, elem in etree.iterparse(self.xml, tag='programme'):
+        try:
+            for event, elem in etree.iterparse(self.xml, tag='programme'):
 
-            if elem.find('date') is not None:
-                date = elem.find('date').text
-            else:
-                date = None
+                if elem.find('date') is not None:
+                    date = elem.find('date').text
+                else:
+                    date = None
 
-            try:
-                P = Programme.objects.get(programid=elem.get('program_id'))
-                P.source = self.xmltv_source
-                P.date = date
-                P.save()
-            except Programme.DoesNotExist:
-                P, created = Programme.objects.get_or_create(
-                    programid=elem.get('program_id'),
-                    date=date, source=self.xmltv_source)
+                try:
+                    P = Programme.objects.get(programid=elem.get('program_id'))
+                    P.source = self.xmltv_source
+                    P.date = date
+                    P.save()
+                except Programme.DoesNotExist:
+                    P, created = Programme.objects.get_or_create(
+                        programid=elem.get('program_id'),
+                        date=date, source=self.xmltv_source)
 
-            # Get time and convert it to UTC
-            start = parse(elem.get('start')).astimezone(
-                timezone('UTC')).replace(tzinfo=utc)
-            stop = parse(elem.get('stop')).astimezone(timezone('UTC')).replace(
-                tzinfo=utc)
-            # Insert guide
-            channel_id = channels[elem.get('channel')]
-            G, created = Guide.objects.get_or_create(
-                source=self.xmltv_source, start=start, stop=stop,
-                channel_id=channel_id, programme=P)
+                # Get time and convert it to UTC
+                start = parse(elem.get('start')).astimezone(
+                    timezone('UTC')).replace(tzinfo=utc)
+                stop = parse(elem.get('stop')).astimezone(timezone('UTC')).replace(
+                    tzinfo=utc)
+                # Insert guide
+                channel_id = channels[elem.get('channel')]
+                G, created = Guide.objects.get_or_create(
+                    source=self.xmltv_source, start=start, stop=stop,
+                    channel_id=channel_id, programme=P)
 
-            self.serialize(G)
-            # this enables a huge gain in performance
-            if self.already_serialized(P):
-                continue
+                self.serialize(G)
+                # this enables a huge gain in performance
+                if self.already_serialized(P):
+                    continue
 
-            for child in elem.iterchildren():
-                if child.tag == 'desc':
-                    if child.get('lang'):
+                for child in elem.iterchildren():
+                    if child.tag == 'desc':
+                        if child.get('lang'):
+                            L, created = Lang.objects.get_or_create(
+                                value=child.get('lang'))
+                        else:
+                            L = None
+                        if type(child.text) is NoneType:
+                            continue
+
+                        obj, created = Description.objects.get_or_create(
+                            value=child.text, lang=L)
+                        P.descriptions.add(obj)
+                    elif child.tag == 'title':
                         L, created = Lang.objects.get_or_create(
                             value=child.get('lang'))
-                    else:
-                        L = None
-                    if type( child.text ) is NoneType:
-                        continue
+                        obj, created = Title.objects.get_or_create(
+                            value=child.text, lang=L)
+                        P.titles.add(obj)
+                    elif child.tag == 'sub-title':
+                        L, created = Lang.objects.get_or_create(
+                            value=child.get('lang'))
+                        obj, created = Title.objects.get_or_create(
+                            value=child.text, lang=L)
+                        P.secondary_titles.add(obj)
+                    elif child.tag == 'category':
+                        L, created = Lang.objects.get_or_create(
+                            value=child.get('lang'))
+                        obj, created = Category.objects.get_or_create(
+                            value=child.text, lang=L)
+                        P.categories.add(obj)
+                    elif child.tag == 'video':
+                        for grand_child in child.iterchildren():
+                            if grand_child.tag == 'colour':
+                                P.video_colour = grand_child.text
+                            elif grand_child.tag == 'present':
+                                P.video_present = grand_child.text
+                            elif grand_child.tag == 'aspect':
+                                P.video_aspect = grand_child.text
+                            elif grand_child.tag == 'quality':
+                                P.video_quality = grand_child.text
+                    elif child.tag == 'audio':
+                        for grand_child in child.iterchildren():
+                            if grand_child.tag == 'present':
+                                P.audio_present = grand_child.text
+                            elif grand_child.tag == 'stereo':
+                                P.audio_stereo = grand_child.text
+                    elif child.tag == 'country':
+                        obj, created = Country.objects.get_or_create(value=child.text)
+                        P.country = obj
+                    elif child.tag == 'rating':
+                        obj, created = Rating.objects.get_or_create(
+                            system=child.get('system'),
+                            value=child.find('value').text)
+                        P.rating = obj
+                    elif child.tag == 'star-rating':
+                        obj, created = Star_Rating.objects.get_or_create(
+                            value=child.find('value').text,
+                            system=child.get('system'))
+                        for i in child.iterfind('icon'):
+                            I, created = Icon.objects.get_or_create(
+                                src=i.get('src'))
+                            obj.icons.add(I)
+                        P.star_ratings.add(obj)
+                    elif child.tag == 'language':
+                        L, created = Lang.objects.get_or_create(
+                            value=child.get('lang'))
+                        obj, created = Language.objects.get_or_create(
+                            value=child.text, lang=L)
+                        P.language = obj
+                    elif child.tag == 'original_language':
+                        L, created = Lang.objects.get_or_create(
+                            value=child.get('lang'))
+                        obj, created = Language.objects.get_or_create(
+                            value=child.text, lang=L)
+                        P.original_language = obj
+                    elif child.tag == 'subtitles':
+                        obj = set()
+                        for sub in child.iterchildren('language'):
+                            lang, created = Lang.objects.get_or_create(value=child.get('lang'))
+                            L, created = Language.objects.get_or_create(
+                                value=sub.text, lang=lang)
+                            S, created = Subtitle.objects.get_or_create(
+                                language=L, subtitle_type=sub.get('type'))
+                            P.subtitles.add(S)
+                            obj.add((L, S))
+                    elif child.tag == 'length':
+                        units = child.get('units')
+                        if units == 'seconds':
+                            P.length = int(child.text)
+                        elif units == 'minutes':
+                            P.length = int(child.text) * 60
+                        elif units == 'hours':
+                            P.length = int(child.text) * 3600
+                    elif child.tag == 'credits':
+                        for grand_child in child.iterchildren():
+                            if grand_child.tag == 'actor':
+                                obj, created = Actor.objects.get_or_create(
+                                    name=grand_child.text,
+                                    role=grand_child.get('role'))
+                                P.actors.add(obj)
+                            elif grand_child.tag == 'director':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.directors.add(obj)
+                            elif grand_child.tag == 'writer':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.writers.add(obj)
+                            elif grand_child.tag == 'adapter':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.adapters.add(obj)
+                            elif grand_child.tag == 'producer':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.producers.add(obj)
+                            elif grand_child.tag == 'composer':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.composers.add(obj)
+                            elif grand_child.tag == 'editor':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.editors.add(obj)
+                            elif grand_child.tag == 'presenter':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.presenters.add(obj)
+                            elif grand_child.tag == 'commentator':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.commentators.add(obj)
+                            elif grand_child.tag == 'guest':
+                                obj, created = Staff.objects.get_or_create(
+                                    name=grand_child.text)
+                                P.guests.add(obj)
 
-                    obj, created = Description.objects.get_or_create(
-                        value=child.text,lang=L)
-                    P.descriptions.add(obj)
-                elif child.tag == 'title':
-                    L, created = Lang.objects.get_or_create(
-                        value=child.get('lang'))
-                    obj, created = Title.objects.get_or_create(
-                        value=child.text, lang=L)
-                    P.titles.add(obj)
-                elif child.tag == 'sub-title':
-                    L, created = Lang.objects.get_or_create(
-                        value=child.get('lang'))
-                    obj, created = Title.objects.get_or_create(
-                        value=child.text, lang=L)
-                    P.secondary_titles.add(obj)
-                elif child.tag == 'category':
-                    L, created = Lang.objects.get_or_create(
-                        value=child.get('lang'))
-                    obj, created = Category.objects.get_or_create(
-                        value=child.text, lang=L)
-                    P.categories.add(obj)
-                elif child.tag == 'video':
-                    for grand_child in child.iterchildren():
-                        if grand_child.tag == 'colour':
-                            P.video_colour = grand_child.text
-                        elif grand_child.tag == 'present':
-                            P.video_present = grand_child.text
-                        elif grand_child.tag == 'aspect':
-                            P.video_aspect = grand_child.text
-                        elif grand_child.tag == 'quality':
-                            P.video_quality = grand_child.text
-                elif child.tag == 'audio':
-                    for grand_child in child.iterchildren():
-                        if grand_child.tag == 'present':
-                            P.audio_present = grand_child.text
-                        elif grand_child.tag == 'stereo':
-                            P.audio_stereo = grand_child.text
-                elif child.tag == 'country':
-                    obj, created = Country.objects.get_or_create(value=child.text)
-                    P.country=obj
-                elif child.tag == 'rating':
-                    obj, created = Rating.objects.get_or_create(
-                        system=child.get('system'),
-                        value=child.find('value').text)
-                    P.rating=obj
-                elif child.tag == 'star-rating':
-                    obj, created = Star_Rating.objects.get_or_create(
-                        value=child.find('value').text,
-                        system=child.get('system'))
-                    for i in child.iterfind('icon'):
-                        I, created = Icon.objects.get_or_create(
-                            src=i.get('src'))
-                        obj.icons.add(I)
-                    P.star_ratings.add(obj)
-                elif child.tag == 'language':
-                    L, created = Lang.objects.get_or_create(
-                        value=child.get('lang'))
-                    obj, created = Language.objects.get_or_create(
-                        value=child.text, lang=L)
-                    P.language=obj
-                elif child.tag == 'original_language':
-                    L, created = Lang.objects.get_or_create(
-                        value=child.get('lang'))
-                    obj, created = Language.objects.get_or_create(
-                        value=child.text, lang=L)
-                    P.original_language=obj
-                elif child.tag == 'subtitles':
-                    obj = set()
-                    for sub in child.iterchildren('language'):
-                        lang, created = Lang.objects.get_or_create(value=child.get('lang'))
-                        L, created = Language.objects.get_or_create(
-                            value=sub.text, lang=lang)
-                        S, created = Subtitle.objects.get_or_create(
-                            language=L,subtitle_type=sub.get('type'))
-                        P.subtitles.add(S)
-                        obj.add((L,S))
-                elif child.tag == 'length':
-                    units = child.get('units')
-                    if units == 'seconds':
-                        P.length = int(child.text)
-                    elif units == 'minutes':
-                        P.length = int(child.text) * 60
-                    elif units == 'hours':
-                        P.length = int(child.text) * 3600
-                elif child.tag == 'credits':
-                    for grand_child in child.iterchildren():
-                        if grand_child.tag == 'actor':
-                            obj, created = Actor.objects.get_or_create(
-                                name=grand_child.text,
-                                role=grand_child.get('role'))
-                            P.actors.add(obj)
-                        elif grand_child.tag == 'director':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.directors.add(obj)
-                        elif grand_child.tag == 'writer':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.writers.add(obj)
-                        elif grand_child.tag == 'adapter':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.adapters.add(obj)
-                        elif grand_child.tag == 'producer':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.producers.add(obj)
-                        elif grand_child.tag == 'composer':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.composers.add(obj)
-                        elif grand_child.tag == 'editor':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.editors.add(obj)
-                        elif grand_child.tag == 'presenter':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.presenters.add(obj)
-                        elif grand_child.tag == 'commentator':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.commentators.add(obj)
-                        elif grand_child.tag == 'guest':
-                            obj, created = Staff.objects.get_or_create(
-                                name=grand_child.text)
-                            P.guests.add(obj)
+                    self.serialize(obj)
 
-                self.serialize(obj)
+                P.save()
 
-            P.save()
+                self.serialize(P)
 
-            self.serialize(P)
+                elem.clear()
+                # Also eliminate now-empty references from the root node to <Title>
+                while elem.getprevious() is not None:
+                    del elem.getparent()[0]
 
-            elem.clear()
-            # Also eliminate now-empty references from the root node to <Title>
-            while elem.getprevious() is not None:
-                del elem.getparent()[0]
+                imported += 1
+                if imported % 100 == 0:
+                    db.reset_queries()
+                    self.log.write('Imported %d' % imported)
 
-            imported += 1
-            if imported % 100 == 0:
-                db.reset_queries()
-                self.log.write('Imported %d' % imported)
-
-            if limit > 0 and imported >= limit:
-                break
+                if limit > 0 and imported >= limit:
+                    break
+        except:
+            pass
 
     @transaction.commit_on_success
     def import_to_db(self):
@@ -483,7 +486,7 @@ class XML_Epg_Importer(object):
         # create temp dir
         self.tempdir = tempfile.mkdtemp()
 
-        # init dict with file handlers and 
+        # init dict with file handlers and
         self.dump_data = {'file_handlers': {}, 'object_ids': {}}
 
         #self.grab_info()

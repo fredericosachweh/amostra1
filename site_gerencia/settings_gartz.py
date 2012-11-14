@@ -8,15 +8,33 @@ from settings import *
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+#DATABASES = {
+#	'default': {
+#	    'ENGINE': 'django.db.backends.sqlite3',
+#	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
+#	    'USER':'',
+#	    'PASSWORD':'',
+#	    'HOST':'',
+#	    'PORT':''
+#	}
+#}
+
 DATABASES = {
-	'default': {
-	    'ENGINE': 'django.db.backends.sqlite3',
-	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-	    'USER':'',
-	    'PASSWORD':'',
-	    'HOST':'',
-	    'PORT':''
-	}
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'iptv',
+#        'USER': 'cioban',
+#        'PASSWORD': 'sergio',
+#        'HOST': '10.1.1.49',
+#        'PORT': '3306'
+    }
 }
 
 ROOT_URL = 'tv/'

@@ -247,8 +247,8 @@ class CommandsGenerationTest(TestCase):
     def test_dvbtuner(self):
         self.maxDiff = None
         tuner = DvbTuner.objects.get(pk=1)
-        expected_cmd = (
-            u"%s "
+        expected_cmd = unicode(
+            "%s "
             "-f 3390000 "
             "-m psk_8 "
             "-s 7400000 "
@@ -284,12 +284,13 @@ class CommandsGenerationTest(TestCase):
 
     def test_isdbtuner(self):
         tuner = IsdbTuner.objects.get(pk=2)
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-f 587143000 "
             "-m qam_auto "
             "-b 6 "
             "-a 1 "
+            "-w "
             "-c %s%d.conf "
             "-r %s%d.sock"
         ) % (settings.DVBLAST_COMMAND,
@@ -306,7 +307,7 @@ class CommandsGenerationTest(TestCase):
         for service in tuner._list_all_services():
             self.assertTrue(service.status)
 
-        expected_conf = u'239.10.0.4:20000/udp 1 1\n'
+        expected_conf = u'239.10.0.4:20000@127.0.0.1/udp 1 1\n'
         self.assertEqual(expected_conf, tuner._get_config())
 
         tuner.stop()
@@ -318,7 +319,7 @@ class CommandsGenerationTest(TestCase):
 
     def test_unicastinput(self):
         unicastin = UnicastInput.objects.get(port=30000)
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-D @127.0.0.1:30000/udp "
             "-c %s%d.conf "
@@ -350,7 +351,7 @@ class CommandsGenerationTest(TestCase):
 
     def test_multicastinput(self):
         multicastin = MulticastInput.objects.get(port=40000)
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-D @224.0.0.1:40000/udp "
             "-c %s%d.conf "
@@ -390,7 +391,6 @@ class CommandsGenerationTest(TestCase):
             service = services[0]
         else:
             self.fail("There is no service attached to this device")
-
         # TODO: coerência entre banco e instância
         service.start()
         # recarregando o banco porque o unicastin atual esta diferente do banco
@@ -406,7 +406,7 @@ class CommandsGenerationTest(TestCase):
 
     def test_fileinput(self):
         fileinput = FileInput.objects.all()[0]
-        expected_cmd = (
+        expected_cmd = unicode(
             '%s '
             '-I dummy -v -R '
             '"foobar.mkv" '
@@ -423,11 +423,11 @@ class CommandsGenerationTest(TestCase):
 
     def test_multicastoutput(self):
         ipout = MulticastOutput.objects.get(ip='239.0.1.3')
-        expected_cmd = (
+        expected_cmd = unicode(
             "%s "
             "-c %s%d.sock "
-            "-u @239.10.0.2:20000 "
-            "-U 239.0.1.3:10000"
+            "-u @239.10.0.2:20000/ifaddr=127.0.0.1 "
+            "-U 239.0.1.3:10000@127.0.0.1"
         ) % (settings.MULTICAT_COMMAND,
              settings.MULTICAT_SOCKETS_DIR, ipout.pk,
              )
@@ -524,7 +524,8 @@ class CommandsGenerationTest(TestCase):
             "--compressor-makeup-gain 7.00 "
             "--norm-buff-size 20 "
             "--norm-max-level 2.00 "
-            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:volnorm}}"
+            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:"
+            "volnorm}}"
             ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
             "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
@@ -538,6 +539,7 @@ class CommandsGenerationTest(TestCase):
 
 
 class AdaptersManipulationTests(TestCase):
+
     def setUp(self):
         import getpass
         Server.objects.create(
@@ -556,11 +558,13 @@ class AdaptersManipulationTests(TestCase):
     def test_update_by_post(self):
         # Create a new adapter
         response = self.client.post(
-            reverse('server_adapter_add'), {'adapter_nr': 0})
+            reverse('server_adapter_add', kwargs={'pk': 1, 'action': 'add'}),
+            {'adapter_nr': 'dvb0.frontend0'})
         self.assertEqual(response.status_code, 200)
         # Delete it
         response = self.client.post(
-            reverse('server_adapter_remove'), {'adapter_nr': 0})
+            reverse('server_adapter_remove', kwargs={'pk': 1}),
+            {'adapter_nr': 'dvb0.frontend0'})
         self.assertEqual(response.status_code, 200)
 
     def test_isdb_adapter_nr(self):
@@ -608,8 +612,8 @@ class MySeleniumTests(LiveServerTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(MySeleniumTests, cls).tearDownClass()
         cls.selenium.quit()
+        super(MySeleniumTests, cls).tearDownClass()
 
     def _login(self, username, password):
         login_url = '%s%s' % (self.live_server_url,
@@ -662,20 +666,17 @@ class MySeleniumTests(LiveServerTestCase):
                          "Login should have failed")
 
     def test_unicastinput(self):
-        fields = {'server': 'local',
-                  'interface': 1,
-        }
         self._login('admin', 'cianet')
         add_new_url = '%s%s' % (self.live_server_url,
-                                reverse('admin:device_unicastinput_add'))
+            reverse('admin:device_unicastinput_add'))
         self.selenium.get(add_new_url)
-        #self._select('id_server', 'local')
         self._select_by_value('id_server', 1)
+        nics = NIC.objects.all()
         # Wait ajax to complete
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_xpath(
                 "//option[@value='2']"))
-        self._select('id_interface', 'eth0 - 192.168.0.14')
+        self._select('id_interface', '%s' % nics[1])
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
         WebDriverWait(self.selenium, 10).until(
             lambda driver: driver.find_element_by_tag_name('body'))
@@ -697,7 +698,8 @@ class MySeleniumTests(LiveServerTestCase):
                                 reverse('admin:device_multicastinput_add'))
         self.selenium.get(add_new_url)
         self._select('id_server', 'local')
-        self._select('id_interface', 'lo - 127.0.0.1')
+        nic = servers[0].nic_set.all()[0]
+        self._select('id_interface', '%s' % nic)
         ip = self.selenium.find_element_by_name("ip")
         ip.send_keys('239.0.1.1')
         self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
@@ -1211,7 +1213,7 @@ class TestRecord(TestCase):
             channel=Channel.objects.all()[0],
             start_time=start_time
         )
-        cmd_expected = '%s \
+        cmd_expected = u'%s \
 -r %d -U -u @127.0.0.1:20000/ifaddr=10.0.1.10 %s/%d' % (
             settings.MULTICAT_COMMAND,
             (60 * 60 * 27000000),

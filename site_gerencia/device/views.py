@@ -347,7 +347,7 @@ def tvod_list(request):
     rec = StreamRecorder.objects.filter(status=True)
     meta = {
         'previous': "",
-        'total_count': 0,
+        'total_count': rec.count(),
         'offset': 0,
         'limit': 0,
         'next': ""
@@ -364,6 +364,7 @@ def tvod_list(request):
             'id': r.id,
             'start': time.mktime(start.timetuple()),
             'start_as_string': str(start),
+            'record_time': int(r.keep_time) * 3600,
             'channel': r.channel.number
             })
     json = simplejson.dumps({'meta': meta, 'objects': obj})
