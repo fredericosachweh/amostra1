@@ -7,11 +7,39 @@
 
 {% block bodyclass %}dashboard{% endblock %}
 
-{% block breadcrumbs %}{% endblock %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url admin:index %}">
+{% trans "Home"%}</a> &rsaquo; {% trans "Server error" %}</div>{% endblock %}
 
 {% block content %}
 <div id="content-main">
-    <h1>Monitoramento</h1>
-<a href="mon/" >TESTEEEEEE</a><BR />
+
+{% for server in mon_servers %}
+<div>
+    <div>
+    {% if server.status %}
+       <img alt="{{ server.name }}" src="{{ STATIC_URL }}admin/img/green.gif">
+    {% else %}
+       <img alt="{{ server.name }}" src="{{ STATIC_URL }}admin/img/red.gif">
+    {% endif %}
+    </div>
+    <div>Servidor: <strong>{{ server.name }}</strong></div>
+    <div>Host: <strong>{{ server.host }}</strong></div>
+    <div>Status: 
+    {% if server.status %}
+        <strong>
+            Monitoramento ativo a 
+            {% if server.status.0 %}
+                {{ server.status.0 }} dia(s) 
+            {% endif %}
+            {{ server.status.1 }}hs
+        </strong>
+    {% else %}
+        <strong style="color: red;">
+        Indispon&iacute;vel!!!</strong><BR />
+    {% endif %}
+    </div>
+</div>
+{% endfor %}
+
 </div>
 {% endblock %}

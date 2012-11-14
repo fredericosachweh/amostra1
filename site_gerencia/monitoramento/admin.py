@@ -9,25 +9,16 @@ __date__ = '03/10/2012 06:08:10 PM'
 
 
 from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import url
 from django.contrib import admin
-from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.core.urlresolvers import reverse
 
-def my_view(request):
-    #return HttpResponse("Hello!")
-    resposta = render_to_response("admin/mon.html",
-        { 'PAGE_NAME': 'Inscerver', }, context_instance=RequestContext(request))
-    return resposta
-    #return render_to_response('admin/%s/questaorespondida_list.html' % app_label,
-    #                              {'objetos': objetos},
-    #                              context_instance=template.RequestContext(request))
-
+from monitoramento.admin_views import mon_list
 
 def get_admin_urls(urls):
     def get_urls():
         my_urls = patterns('',
-            (r'^mon/$', admin.site.admin_view(my_view))
+            url(r'^mon/$', admin.site.admin_view(mon_list), name='monitor')
         )
         return my_urls + urls
     return get_urls

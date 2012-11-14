@@ -25,12 +25,12 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': ''
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'cioban',
+            'PASSWORD': 'sergio',
+            'HOST': '10.5.5.254',
+            'PORT': '3306'
         }
     }
 
