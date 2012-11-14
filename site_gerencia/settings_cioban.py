@@ -1,7 +1,6 @@
 # -*- encoding:utf-8 -*-
 from settings import *
 
-
 import sys
 import os
 
