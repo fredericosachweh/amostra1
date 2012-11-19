@@ -8,7 +8,7 @@
 {% block bodyclass %}dashboard{% endblock %}
 
 {% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url admin:index %}">
-{% trans "Home"%}</a> &rsaquo; {% trans "Server error" %}</div>{% endblock %}
+{% trans "Home"%}</a> &rsaquo; {% trans "Monitoramento" %}</div>{% endblock %}
 
 {% block content %}
 <div id="content-main">
@@ -41,5 +41,12 @@
 </div>
 {% endfor %}
 
+<BR /><BR /><BR /><BR />
+<div>
+{% for channel in html_list %}
+    {{ channel|safe }}
+{% endfor %}
 </div>
+
+
 {% endblock %}

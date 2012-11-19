@@ -9,8 +9,11 @@ from django.template import RequestContext
 from datetime import timedelta
 
 from device.models import Server
+from tv.models import Channel
 
 from pprint import pprint
+import sys
+import cgi
 
 
 def _get_snmp_status(server=None):
@@ -39,6 +42,16 @@ def _get_snmp_status(server=None):
         uptime_h = timedelta(seconds=int(uptime.seconds))
         return [int(uptime.days), str(uptime_h)]
 
+
+
+def html_render(items):
+    try:
+        return "<ul><li>"+str(items.next())+'</li>'+html_render(items)+'</ul>'
+    except StopIteration:
+        return ''
+
+
+
 def mon_list(request):
     servers = Server.objects.all()
     mon_servers = []
@@ -51,10 +64,38 @@ def mon_list(request):
         mon_servers.append(server_data)
         del(server_data)
 
+    channels = Channel.objects.all()
+    channel_list = []
+    html_list = []
+    for ch in channels:
+        sys.stdout.write(' == %s ==\n' % ch)
+        if hasattr(ch, 'source'):
+            #sys.stdout.write(' ((%s/%s))' % (ch.source, type(ch.source)))
+            next_source = ch.source
+            aux_list = []
+            aux_list_html = []
+            while hasattr(next_source, 'sink'):
+                #sys.stdout.write('<<====((%s/%s))' % (next_source,
+                #    type(next_source)))
+                aux_list.append(cgi.escape('((%s/%s))' %
+                    (next_source, type(next_source))))
+                next_source = next_source.sink
+            aux_list.append(cgi.escape(' ## %s ##' % ch))
+            aux_list.reverse()
+            channel_list.append(aux_list)
+
+            html = html_render(iter(aux_list))
+            sys.stdout.write(html)
+            html_list.append(html)
+
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+
 
     #return HttpResponse("Hello!")
     resposta = render_to_response("admin/mon.html",
         { 'title': 'Monitoramento', 'mon_servers': mon_servers,
+        'channel_list': channel_list, 'html_list': html_list,
         }, context_instance=RequestContext(request))
     return resposta
 
