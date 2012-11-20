@@ -68,31 +68,27 @@ def mon_list(request):
     channel_list = []
     html_list = []
     for ch in channels:
-        sys.stdout.write(' == %s ==\n' % ch)
         if hasattr(ch, 'source'):
-            #sys.stdout.write(' ((%s/%s))' % (ch.source, type(ch.source)))
             next_source = ch.source
             aux_list = []
             aux_list_html = []
-            while hasattr(next_source, 'sink'):
-                #sys.stdout.write('<<====((%s/%s))' % (next_source,
-                #    type(next_source)))
+            while True:
                 aux_list.append(cgi.escape('((%s/%s))' %
                     (next_source, type(next_source))))
-                next_source = next_source.sink
-            aux_list.append(cgi.escape(' ## %s ##' % ch))
+                if hasattr(next_source, 'sink'):
+                    next_source = next_source.sink
+                else:
+                    break
+
+            aux_list.append(cgi.escape(' ## %s ## == %s' % (ch, type(ch) )))
             aux_list.reverse()
             channel_list.append(aux_list)
 
             html = html_render(iter(aux_list))
-            sys.stdout.write(html)
             html_list.append(html)
 
-            sys.stdout.write('\n')
             sys.stdout.flush()
 
-
-    #return HttpResponse("Hello!")
     resposta = render_to_response("admin/mon.html",
         { 'title': 'Monitoramento', 'mon_servers': mon_servers,
         'channel_list': channel_list, 'html_list': html_list,
