@@ -11,6 +11,7 @@ from datetime import timedelta
 from device.models import Server
 from tv.models import Channel
 
+
 from pprint import pprint
 import sys
 import cgi
@@ -66,7 +67,6 @@ def mon_list(request):
 
     channels = Channel.objects.all()
     channel_list = []
-    html_list = []
     for ch in channels:
         if hasattr(ch, 'source'):
             next_source = ch.source
@@ -80,19 +80,20 @@ def mon_list(request):
                 else:
                     break
 
-            aux_list.append(cgi.escape(' ## %s ## == %s' % (ch, type(ch) )))
             aux_list.reverse()
-            channel_list.append(aux_list)
-
             html = html_render(iter(aux_list))
-            html_list.append(html)
+            channel_data = {
+                'name': ch.name,
+                'number': ch.number,
+                'html_tree': html,
+                'sink_list': aux_list,
+            }
+            channel_list.append(channel_data)
 
-            sys.stdout.flush()
-
-    resposta = render_to_response("admin/mon.html",
+    response = render_to_response("admin/mon.html",
         { 'title': 'Monitoramento', 'mon_servers': mon_servers,
-        'channel_list': channel_list, 'html_list': html_list,
+        'channel_list': channel_list,
         }, context_instance=RequestContext(request))
-    return resposta
+    return response
 
 

@@ -43,10 +43,10 @@
 
 <BR /><BR /><BR /><BR />
 <div>
-{% for channel in html_list %}
-    {{ channel|safe }}
+{% for channel in channel_list %}
+    Canal: <strong>{{ channel.name }} [{{ channel.number }}]</strong><BR />
+    {{ channel.html_tree|safe }}
 {% endfor %}
 </div>
-
 
 {% endblock %}
