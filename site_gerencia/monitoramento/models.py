@@ -64,6 +64,20 @@ class BaseRepresentative(object):
 
         return response
 
+    def to_html(self):
+        sink_object_html = ''
+        if hasattr(self.original_obj, 'sink'):
+            sink_object = self.original_obj.sink
+            obj_type = str(type(sink_object))
+            obj_type = obj_type.split("'")[1]
+            obj_type = obj_type.split('.').pop()
+            object_representative = eval(obj_type+'_representative')
+            sink_object_representative = object_representative(
+                original_obj = sink_object)
+            sink_object_html = sink_object_representative.to_html()
+
+        return "<ul><li>"+self.to_string()+'</li>'+sink_object_html+'</ul>'
+
     def to_string(self):
         return None
 

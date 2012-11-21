@@ -44,14 +44,11 @@ def _get_snmp_status(server=None):
         uptime_h = timedelta(seconds=int(uptime.seconds))
         return [int(uptime.days), str(uptime_h)]
 
-
-
 def html_render(items):
     try:
         return "<ul><li>"+str(items.next())+'</li>'+html_render(items)+'</ul>'
     except StopIteration:
         return ''
-
 
 def __get_object_str(curr_object):
     obj_type = str(type(curr_object))
@@ -66,7 +63,14 @@ def __get_object_str(curr_object):
 
     return obj_str
 
+def __get_representative_object(curr_object):
+    obj_type = str(type(curr_object))
+    obj_type = obj_type.split("'")[1]
+    obj_type = obj_type.split('.').pop()
+    object_representative = eval(obj_type+'_representative')
+    new_object = object_representative(original_obj=curr_object)
 
+    return new_object
 
 def mon_list(request):
     servers = Server.objects.all()
@@ -84,30 +88,37 @@ def mon_list(request):
     channel_list = []
     for ch in channels:
         if hasattr(ch, 'source'):
-            next_source = ch.source
-            aux_list = []
-            aux_list_html = []
-            while True:
+            #next_source = ch.source
+            #aux_list = []
+            #aux_list_html = []
+            #while True:
 
-                obj_str = __get_object_str(next_source)
+            #    obj_str = __get_object_str(next_source)
 
-                #aux_list.append(cgi.escape('((%s/%s))' %
-                #    (next_source, type(next_source))))
-                aux_list.append(cgi.escape(obj_str))
-                if hasattr(next_source, 'sink'):
-                    next_source = next_source.sink
-                else:
-                    break
+            #    #aux_list.append(cgi.escape('((%s/%s))' %
+            #    #    (next_source, type(next_source))))
+            #    aux_list.append(cgi.escape(obj_str))
+            #    if hasattr(next_source, 'sink'):
+            #        next_source = next_source.sink
+            #    else:
+            #        break
 
-            aux_list.reverse()
-            html = html_render(iter(aux_list))
+            #aux_list.reverse()
+            #html = html_render(iter(aux_list))
+
+            object_r = __get_representative_object(ch.source)
+            #ch_r = MulticastOutput_representative(original_obj=ch.source)
+            #html = ch_r.to_html()
+            html = object_r.to_html()
+
             channel_data = {
                 'name': ch.name,
                 'number': ch.number,
                 'html_tree': html,
-                'sink_list': aux_list,
+                #'sink_list': aux_list,
             }
             channel_list.append(channel_data)
+
 
     response = render_to_response("admin/mon.html",
         { 'title': 'Monitoramento', 'mon_servers': mon_servers,
