@@ -11,6 +11,7 @@ from datetime import timedelta
 from device.models import Server
 from tv.models import Channel
 
+from models import *
 
 from pprint import pprint
 import sys
@@ -52,6 +53,20 @@ def html_render(items):
         return ''
 
 
+def __get_object_str(curr_object):
+    obj_type = str(type(curr_object))
+    obj_type = obj_type.split("'")[1]
+    obj_type = obj_type.split('.').pop()
+    object_representative = eval(obj_type+'_representative')
+    new_object = object_representative(original_obj=curr_object)
+    obj_str = new_object.to_string()
+
+    if obj_str is None:
+        obj_str = str(curr_object)
+
+    return obj_str
+
+
 
 def mon_list(request):
     servers = Server.objects.all()
@@ -73,8 +88,12 @@ def mon_list(request):
             aux_list = []
             aux_list_html = []
             while True:
-                aux_list.append(cgi.escape('((%s/%s))' %
-                    (next_source, type(next_source))))
+
+                obj_str = __get_object_str(next_source)
+
+                #aux_list.append(cgi.escape('((%s/%s))' %
+                #    (next_source, type(next_source))))
+                aux_list.append(cgi.escape(obj_str))
                 if hasattr(next_source, 'sink'):
                     next_source = next_source.sink
                 else:
