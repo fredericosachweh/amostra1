@@ -19,6 +19,10 @@ from device.models import StreamRecorder
 from device.models import StreamPlayer
 from device.models import SoftTranscoder
 from tv.models import Channel
+from django.conf import settings
+
+from cgi import escape
+
 
 from django.dispatch import receiver
 import os
@@ -64,7 +68,7 @@ class BaseRepresentative(object):
 
         return response
 
-    def to_html(self):
+    def to_html_tree(self):
         sink_object_html = ''
         if hasattr(self.original_obj, 'sink'):
             sink_object = self.original_obj.sink
@@ -74,9 +78,32 @@ class BaseRepresentative(object):
             object_representative = eval(obj_type+'_representative')
             sink_object_representative = object_representative(
                 original_obj = sink_object)
-            sink_object_html = sink_object_representative.to_html()
+            sink_object_html = sink_object_representative.to_html_tree()
 
-        return "<ul><li>"+self.to_string()+'</li>'+sink_object_html+'</ul>'
+        return "<ul><li>"+escape(self.to_string())+'</li>'+sink_object_html+'</ul>'
+
+    def to_html_linear(self):
+        sink_object_html = ''
+        object_html = escape(self.to_string())
+        if hasattr(self.original_obj, 'sink'):
+            sink_object = self.original_obj.sink
+            obj_type = str(type(sink_object))
+            obj_type = obj_type.split("'")[1]
+            obj_type = obj_type.split('.').pop()
+            object_representative = eval(obj_type+'_representative')
+            sink_object_representative = object_representative(
+                original_obj = sink_object)
+            sink_object_html = sink_object_representative.to_html_linear()
+
+        if hasattr(self.original_obj, 'status'):
+            object_html += '&nbsp;STATUS:'
+            if self.original_obj.status:
+                object_html +='<img alt="Running" src="'+settings.STATIC_URL+'admin/img/green-ok.gif">'
+            else:
+                object_html +='<img alt="Error" src="'+settings.STATIC_URL+'admin/img/red-error.gif">'
+
+
+        return '<div class="html_linear" >'+object_html+'</div>'+sink_object_html
 
     def to_string(self):
         return None

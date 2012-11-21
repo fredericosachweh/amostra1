@@ -11,7 +11,6 @@
 {% trans "Home"%}</a> &rsaquo; {% trans "Monitoramento" %}</div>{% endblock %}
 
 {% block content %}
-<div id="content-main">
 
 {% for server in mon_servers %}
 <div>
@@ -44,8 +43,10 @@
 <BR /><BR /><BR /><BR />
 <div>
 {% for channel in channel_list %}
-    Canal: <strong>{{ channel.name }} [{{ channel.number }}]</strong><BR />
+    <div>
+    <div class="channel_label">Canal: <strong>{{ channel.name }} - {{ channel.number }}</strong><div>
     {{ channel.html_tree|safe }}
+    </div>
 {% endfor %}
 </div>
 

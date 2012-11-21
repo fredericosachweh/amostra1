@@ -67,7 +67,8 @@ def mon_list(request):
     for ch in channels:
         if hasattr(ch, 'source'):
             object_r = __get_representative_object(ch.source)
-            html = object_r.to_html()
+            #html = object_r.to_html_tree()
+            html = object_r.to_html_linear()
 
             channel_data = {
                 'name': ch.name,
