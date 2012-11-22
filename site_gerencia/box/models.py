@@ -169,6 +169,7 @@ class PushServer(models.Model):
     def _post_init(signal, instance, sender, **kwargs):
         """ Adiciona lista de SetupBox ao PushServer, verificando pelo json do
         push_stream """
+        print(signal)
         if not instance.pk or not instance.port or not instance.address:
             return
         pushserver = PushStream()
@@ -181,18 +182,21 @@ class PushServer(models.Model):
             instance.stored_messages = pushserver.data.stored_messages
             instance.subscribers = pushserver.data.subscribers
             instance.online = True
-            #instance.save()
+            instance.save()
             for channel in pushserver.data.channels_list:
                 try:
-                    setupbox = SetupBox(pushserver=instance, mac=channel)
-                    setupbox.clean_fields()
-                    setupbox.save()
+                    ## TODO: FIX
+                    print(channel)
+                    setupbox = SetupBox.objects.get_or_create(
+                        pushserver=instance, mac=channel)
+                    #setupbox.clean_fields()
+                    #setupbox.save()
                 except:
                     print("Falhou ao criar (provavelmente já existe):"
                         + channel)
         except:
             instance.online = False
-        print "PushServer post_init signal executed."
+        #print "PushServer post_init signal executed."
 
 models.signals.post_init.connect(PushServer._post_init,
                                  sender=PushServer,
@@ -275,7 +279,7 @@ class SetupBox(models.Model):
             pass
         #Connecta sinal do pushserver
         ToggleSignal().pushserver_post_init()
-        print "SetupBox post_init signal executed."
+        #print "SetupBox post_init signal executed."
 
 models.signals.post_init.connect(SetupBox._post_init,
                                  sender=SetupBox,
