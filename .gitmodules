@@ -9,7 +9,7 @@
 	url = git://github.com/django/django.git
 [submodule "modules/django-debug-toolbar"]
 	path = modules/django-debug-toolbar
-	url = git://github.com/robhudson/django-debug-toolbar.git
+	url = git://github.com/django-debug-toolbar/django-debug-toolbar.git
 [submodule "modules/django-extensions"]
 	path = modules/django-extensions
 	url = git://github.com/django-extensions/django-extensions.git
