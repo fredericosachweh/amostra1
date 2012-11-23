@@ -1,6 +1,3 @@
-[submodule "frontend"]
-	path = frontend
-	url = git@10.1.1.200:iptv-frontend.git
 [submodule "django"]
 	path = django
 	url = git://github.com/django/django.git
