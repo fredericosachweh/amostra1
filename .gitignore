@@ -6,5 +6,4 @@ stream/debug
 *.pid
 django_extensions
 debug_toolbar
-django
 log
