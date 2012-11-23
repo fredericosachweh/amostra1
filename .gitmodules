@@ -1,12 +1,12 @@
-[submodule "django"]
-	path = django
-	url = git://github.com/django/django.git
-[submodule "modules/django-debug-toolbar"]
-	path = modules/django-debug-toolbar
+[submodule "vendor/django-debug-toolbar"]
+	path = vendor/django-debug-toolbar
 	url = git://github.com/robhudson/django-debug-toolbar.git
-[submodule "modules/django-extensions"]
-	path = modules/django-extensions
+[submodule "vendor/django-extensions"]
+	path = vendor/django-extensions
 	url = git://github.com/django-extensions/django-extensions.git
-[submodule "modules/django-grappelli"]
-	path = modules/django-grappelli
+[submodule "vendor/django-grappelli"]
+	path = vendor/django-grappelli
 	url = https://github.com/sehmaschine/django-grappelli.git
+[submodule "vendor/django"]
+	path = vendor/django
+	url = git://github.com/django/django.git
