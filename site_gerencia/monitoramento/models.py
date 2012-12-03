@@ -23,6 +23,8 @@ from django.conf import settings
 
 from cgi import escape
 
+from snmplib import get_mcast_info
+
 
 from django.dispatch import receiver
 import os
@@ -170,11 +172,13 @@ class MulticastInput_representative(BaseRepresentative):
             return None
 
     def to_string(self):
-        return_string = 'MulticastInput: %s:%d (%s %s [%s])' % (
+        info = get_mcast_info(self.original_obj.ip, self.original_obj.port,
+            self.original_obj.server.host)
+        return_string = 'MulticastInput: %s:%d (%s %s [%s]) - %s' % (
             self.original_obj.ip, self.original_obj.port,
             self.original_obj.interface.name,
             self.original_obj.interface.ipv4,
-            self.original_obj.interface.server.name )
+            self.original_obj.interface.server.name, info )
         return return_string
 
 class FileInput_representative(BaseRepresentative):
@@ -187,11 +191,13 @@ class MulticastOutput_representative(BaseRepresentative):
             return None
 
     def to_string(self):
-        return_string = 'MulticastOutput: %s:%d (%s %s [%s])' % (
+        info = get_mcast_info(self.original_obj.ip, self.original_obj.port,
+            self.original_obj.server.host)
+        return_string = 'MulticastOutput: %s:%d (%s %s [%s]) - %s' % (
             self.original_obj.ip, self.original_obj.port,
             self.original_obj.interface.name,
             self.original_obj.interface.ipv4,
-            self.original_obj.interface.server.name )
+            self.original_obj.interface.server.name, info )
         return return_string
 
 class StreamRecorder_representative(BaseRepresentative):

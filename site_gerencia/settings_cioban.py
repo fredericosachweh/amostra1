@@ -22,7 +22,7 @@ if 'test' in sys.argv:
             'PORT': ''
         }
     }
-else:
+elif 'dev' in sys.argv:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -30,6 +30,17 @@ else:
             'USER': 'cioban',
             'PASSWORD': 'sergio',
             'HOST': '10.5.5.254',
+            'PORT': '3306'
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'cianet',
+            'PASSWORD': 'cianet',
+            'HOST': '127.0.0.1',
             'PORT': '3306'
         }
     }
