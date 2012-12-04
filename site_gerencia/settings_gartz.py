@@ -21,19 +21,19 @@ TEMPLATE_DEBUG = DEBUG
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptv',
-        'USER': 'iptv',
-        'PASSWORD': 'iptv',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-
-#        'ENGINE': 'django.db.backends.mysql',
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
 #        'NAME': 'iptv',
-#        'USER': 'cioban',
-#        'PASSWORD': 'sergio',
-#        'HOST': '10.1.1.49',
-#        'PORT': '3306'
+#        'USER': 'iptv',
+#        'PASSWORD': 'iptv',
+#        'HOST': '127.0.0.1',
+#        'PORT': '5432',
+
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'iptv',
+        'USER': 'cioban',
+        'PASSWORD': 'sergio',
+        'HOST': '10.1.1.49',
+        'PORT': '3306'
     }
 }
 
