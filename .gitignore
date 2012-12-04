@@ -7,3 +7,5 @@ stream/debug
 django_extensions
 debug_toolbar
 log
+.pydevproject
+.settings
