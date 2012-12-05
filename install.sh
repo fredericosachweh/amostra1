@@ -4,3 +4,4 @@ easy_install simplejson
 easy_install pil
 python-pip install flup
 easy_install lxml
+easy_install django-tastypie
