@@ -10,20 +10,20 @@ PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 
 DEBUG = True
 
-if 'test' in sys.argv:
-    ## Banco de dados teste
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': ''
-        }
-    }
-elif 'dev' in sys.argv:
-    DATABASES = {
+#if 'test' in sys.argv:
+#    ## Banco de dados teste
+#    DATABASES = {
+#        'default': {
+#            'ENGINE': 'django.db.backends.sqlite3',
+#            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+#            'USER': '',
+#            'PASSWORD': '',
+#            'HOST': '',
+#            'PORT': ''
+#        }
+#    }
+#elif 'dev' in sys.argv:
+DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
@@ -33,17 +33,17 @@ elif 'dev' in sys.argv:
             'PORT': '3306'
         }
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'iptv',
-            'USER': 'cianet',
-            'PASSWORD': 'cianet',
-            'HOST': '127.0.0.1',
-            'PORT': '3306'
-        }
-    }
+#else:
+#    DATABASES = {
+#        'default': {
+#            'ENGINE': 'django.db.backends.mysql',
+#            'NAME': 'iptv',
+#            'USER': 'cianet',
+#            'PASSWORD': 'cianet',
+#            'HOST': '127.0.0.1',
+#            'PORT': '3306'
+#        }
+#    }
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
