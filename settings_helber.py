@@ -48,28 +48,18 @@ MIDDLEWARE_CLASSES = (
     #'lib.middleware.login.RequireLoginMiddleware',
 )
 
-
-# Auxiliar apps configuration
-MULTICAT_COMMAND = '/iptv/bin/multicat'
-MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
-MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
-
-CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
-CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
-CHANNEL_PLAY_PORT = 12000
-
-DVBLAST_COMMAND = '/iptv/bin/dvblast'
-DVBLAST_CONFS_DIR = '/iptv/etc/dvblast/'
-DVBLAST_LOGS_DIR = '/iptv/var/log/dvblast/'
-DVBLAST_SOCKETS_DIR = '/iptv/var/run/dvblast/sockets/'
-
-DVBLASTCTL_COMMAND = '/iptv/bin/dvblastctl'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
 
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
-TASTYPIE_FULL_DEBUG = True
+TASTYPIE_FULL_DEBUG = False
 
 if DEBUG is True:
     # Envia todas as mensagens de log para o console

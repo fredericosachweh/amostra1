@@ -160,9 +160,9 @@ def deviceserver_switchlink(request, action, klass, pk):
         url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
     try:
         if action == 'start':
-            device.start()
+            device.start(recursive=True)
         elif action == 'stop':
-            device.stop()
+            device.stop(recursive=True)
         elif action == 'recover':
             device.status = False
             if isinstance(device, models.IsdbTuner):
@@ -283,24 +283,37 @@ def auto_fill_tuner_form(request, ttype):
 
 def tvod(request, channel_number=None, command=None, seek=0):
     u'TVOD commands'
-    resp = 'Not running'
     from datetime import timedelta
     from django.utils import timezone
     from models import StreamPlayer, StreamRecorder
     from tv.models import Channel
+    from django.core.cache import get_cache
+    cache = get_cache('default')
     log = logging.getLogger('device.view')
-    ## Load channel
-    channel = get_object_or_404(Channel, number=channel_number)
+    resp = 'Not running'
+    ## Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
+    ## Find request on cache
+    key = 'tvod_ip_%s' % ip
+    state = cache.get(key)
+    if state is None:
+        cache.set(key, 1)
+    else:
+        log.debug('duplicated request key:%s', key)
+        return HttpResponse(u'DUP REC', mimetype='application/javascript')
     log.info('tvod[%s] client:%s channel:%s seek:%s' % (command, ip,
         channel_number, seek))
+    ## Load channel
+    channel = get_object_or_404(Channel, number=channel_number)
     ## Verifica se existe gravação solicitada
     record_time = timezone.now() - timedelta(0, int(seek))
+    ## Find a recorder with request
     recorders = StreamRecorder.objects.filter(start_time__lte=record_time,
         channel=channel, keep_time__gte=(int(seek) / 3600))
     log.info('avaliable recorders: %s' % recorders)
     if len(recorders) == 0:
         log.info('Record Unavaliable')
+        cache.delete(key)
         return HttpResponse(u'Unavaliable', mimetype='application/javascript')
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
@@ -331,6 +344,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             player.stop()
         resp = 'Stoped'
     log.debug('Player: %s', player)
+    cache.delete(key)
     return HttpResponse(resp, mimetype='application/javascript')
 
 
@@ -347,7 +361,7 @@ def tvod_list(request):
     rec = StreamRecorder.objects.filter(status=True)
     meta = {
         'previous': "",
-        'total_count': rec.count(),
+        'total_count': 0,
         'offset': 0,
         'limit': 0,
         'next': ""
