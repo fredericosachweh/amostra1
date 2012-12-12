@@ -226,6 +226,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+    # Aplicativo de monitoramento
+    'monitoramento',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
