@@ -40,9 +40,25 @@
         </table>
         </div>
     {% endfor %}
+
+    <div class="module">
+    <table>
+    <caption>Monitoramento</caption>
+        <tr>
+            <th scope="row"><a href="{% url admin:monitor %}">Monitoramento</a></th>
+
+            <td>&nbsp;</a></td>
+
+            <td>&nbsp;</a></td>
+        </tr>
+    </table>
+    </div>
+
 {% else %}
     <p>{% trans "You don't have permission to edit anything." %}</p>
 {% endif %}
+
+
 </div>
 {% endblock %}
 
