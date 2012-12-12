@@ -11,6 +11,15 @@
 {% trans "Home"%}</a> &rsaquo; {% trans "Monitoramento" %}</div>{% endblock %}
 
 {% block content %}
+<div>
+<h2>Arvore de canais</h2>
+{% for root in root_graph %}
+    <div>
+       <img src="{{ MEDIA_URL }}mon/roots/{{ root }}">
+    </div>
+    <BR/>
+{% endfor %}
+</div>
 
 {% for server in mon_servers %}
 <div>
@@ -23,6 +32,7 @@
     </div>
     <div>Servidor: <strong>{{ server.name }}</strong></div>
     <div>Host: <strong>{{ server.host }}</strong></div>
+    <div>STATIC: <strong>{{ STATIC_URL }}</strong></div>
     <div>Status: 
     {% if server.status %}
         <strong>
