@@ -78,7 +78,7 @@ def mon_list(request):
             #html = object_r.to_html_linear()
 
             root = object_r.get_root()
-            if root not in roots:
+            if (root is not None) and (root not in roots):
                 roots.append(root)
 
             #channel_data = {
