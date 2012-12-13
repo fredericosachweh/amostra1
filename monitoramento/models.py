@@ -257,6 +257,7 @@ class BaseRepresentative(object):
         sink_object = self.original_obj
         while True:
             if hasattr(sink_object, 'sink'):
+                #if sink_object.sink != None:
                 sink_object = sink_object.sink
             else:
                 break
@@ -371,7 +372,19 @@ class MulticastInput_representative(BaseRepresentative):
         return return_string
 
 class FileInput_representative(BaseRepresentative):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(FileInput_representative, self).__init__(*args, **kwargs)
+        if not self.obj_validate('FileInput'):
+            return None
+
+    def to_string(self, show_info=True):
+        filename = self.original_obj.filename.split('/')
+        return_string = 'FileInput: %s (%s) [server: %s])' % (
+            self.original_obj.description,
+            filename.pop(),
+            self.original_obj.server.name,
+            )
+        return return_string
 
 class MulticastOutput_representative(BaseRepresentative):
     def __init__(self, *args, **kwargs):
