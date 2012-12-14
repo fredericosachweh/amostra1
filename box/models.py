@@ -8,6 +8,7 @@ from django.utils.translation import ugettext as _
 from lib.pushstream.pushstream import PushStream
 
 import urllib2
+import pdb
 
 ###############################################################################
 # Utils                                                                       #
@@ -71,14 +72,6 @@ class ToggleSignal():
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
-###############################################################################
-# Pessoa                                                                      #
-###############################################################################
-
-
-class Pessoa(models.Model):
-    """ Modelo que define a pessoa responsável por um setup box? """
-    nome = models.CharField(_('Nome'), max_length=200)
 
 ###############################################################################
 # PushServer                                                                  #
@@ -158,7 +151,7 @@ class PushServer(models.Model):
         return u'%s://%s:%d' % (self.schema, self.address, self.port)
 
     def setupboxes(self):
-        return SetupBox.objects.filter(pushserver=self.pk).count()
+        return SetupBox.objects.filter(pushserver=self).count()
 
     class Meta:
         verbose_name = _(u"Push Server")
@@ -169,8 +162,9 @@ class PushServer(models.Model):
     def _post_init(signal, instance, sender, **kwargs):
         """ Adiciona lista de SetupBox ao PushServer, verificando pelo json do
         push_stream """
-        print(signal)
         if not instance.pk or not instance.port or not instance.address:
+            return
+        if instance.online:
             return
         pushserver = PushStream()
         try:
@@ -183,14 +177,11 @@ class PushServer(models.Model):
             instance.subscribers = pushserver.data.subscribers
             instance.online = True
             instance.save()
+            #print(pushserver.data.channels_list)
             for channel in pushserver.data.channels_list:
                 try:
-                    ## TODO: FIX
-                    print(channel)
                     setupbox = SetupBox.objects.get_or_create(
                         pushserver=instance, mac=channel)
-                    #setupbox.clean_fields()
-                    #setupbox.save()
                 except:
                     print("Falhou ao criar (provavelmente já existe):"
                         + channel)
@@ -263,7 +254,7 @@ class SetupBox(models.Model):
             return
         pushserver = PushStream()
         #Desconecta sinal do pushserver
-        ToggleSignal().pushserver_post_init()
+        #ToggleSignal().pushserver_post_init()
         try:
 
             pushserver.connect(port=instance.pushserver.port,
