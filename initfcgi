@@ -3,6 +3,7 @@
 SETTINGS=settings
 METHOD=prefork
 DEAMONIZE=false
+DATABASE="default"
 PYTHONPATH=".:.."
 
 if [ $# -gt 1 ];then
@@ -24,15 +25,20 @@ function stop(){
 }
 
 function start() {
-exec /usr/bin/env - \
+# This not work on runfcgi
+#    --database=${DATABASE} \
+cmd="/usr/bin/env - \
   PYTHONPATH=${PYTHONPATH} \
-    python ${PROJECT_DIR}/manage.py runfcgi \
+    python ${PROJECT_DIR}/manage.py \
+    runfcgi \
     --settings=${SETTINGS} daemonize=${DEAMONIZE} \
     maxchildren=10 \
     maxspare=5 \
     minspare=2 \
     method=${METHOD} socket=${PROJECT_DIR}/fcgi.socket \
-    pidfile=${PROJECT_DIR}/fcgi.pid
+    pidfile=${PROJECT_DIR}/fcgi.pid"
+echo $cmd
+exec $cmd
     chmod go+w ${PROJECT_DIR}/fcgi.socket
 }
 
