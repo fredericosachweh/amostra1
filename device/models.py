@@ -1487,7 +1487,7 @@ class StreamRecorder(OutputModel, DeviceServer):
         if self.sink.running() is False:
             self.sink.start(recursive=kwargs.get('recursive'))
         # Start multicat
-        log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
+        log_path = '%srecorder_%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
             log_path=log_path)
         if self.pid > 0:
