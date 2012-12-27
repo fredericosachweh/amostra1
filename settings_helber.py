@@ -18,17 +18,40 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            #'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'iptv',
+            'PASSWORD': 'iptv',
+            'HOST': '/var/lib/mysql/mysql.sock',
+            'PORT': '',
+        },
+        'pglocal': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            #'HOST': '/var/lib/mysql/mysql.sock',
             'HOST': '127.0.0.1',
-            #'PORT': '',
             'PORT': '5432',
+        },
+        'pg92': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'iptv',
+            'USER': 'iptv',
+            'PASSWORD': 'iptv',
+            'HOST': '127.0.0.1',
+            'PORT': '5433',
+        },
+        'my49': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'helber',
+            'PASSWORD': 'helber',
+            'HOST': '10.1.1.49',
+            'PORT': '3306',
         }
     }
+
+DATABASES['default'] = DATABASES['pglocal']
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
