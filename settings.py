@@ -37,7 +37,7 @@ else:
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
             'USER': 'iptv',
-            'PASSWORD': 'b9099d8d71e30342ce95ecf3597c5d79',
+            'PASSWORD': 'iptv',
             'HOST': '/var/lib/mysql/mysql.sock',
             'PORT': ''
         }
@@ -173,7 +173,13 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': '%s/remote-call.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
-        }
+        },
+        'file.stblog': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/stblog.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -193,6 +199,11 @@ LOGGING = {
         },
         'device.remotecall': {
             'handlers': ['file.device.remotecall'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'stblog': {
+            'handlers': ['file.stblog'],
             'level': 'DEBUG',
             'propagate': True
         }

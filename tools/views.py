@@ -1,9 +1,18 @@
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
+import logging
 
 
 @never_cache
 def log(request):
+    log = logging.getLogger('stblog')
+    log.debug('ADDR:%s COOKIE:%s USER_AGENT:%s POST:%s GET:%s',
+        request.META.get('REMOTE_ADDR'),
+        request.META.get('HTTP_COOKIE'),
+        request.META.get('HTTP_USER_AGENT'),
+        request.POST,
+        request.GET,
+    )
     from pprint import pprint
     pprint((
         'Log enviado pelo stdout do Settopbox',
