@@ -99,7 +99,6 @@ class Url(models.Model):
 
 
 class Channel(models.Model):
-    source = models.ForeignKey(Epg_Source)
     channelid = models.CharField(max_length=255, unique=True, db_index=True)
     display_names = models.ManyToManyField(Display_Name, blank=True, null=True)
     icons = models.ManyToManyField(Icon, blank=True, null=True)
@@ -165,7 +164,6 @@ class Star_Rating(models.Model):
 
 
 class Programme(models.Model):
-    source = models.ForeignKey(Epg_Source)
     programid = models.CharField(max_length=10, unique=True)
     titles = models.ManyToManyField(Title, related_name='titles', blank=True,
         null=True)
@@ -216,7 +214,6 @@ class Programme(models.Model):
 
 
 class Guide(models.Model):
-    source = models.ForeignKey(Epg_Source)
     programme = models.ForeignKey(Programme)
     channel = models.ForeignKey(Channel)
     start = models.DateTimeField(blank=True, null=True, db_index=True)

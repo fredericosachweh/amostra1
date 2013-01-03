@@ -122,7 +122,7 @@ class XML_Epg_Importer(object):
 
         tree = etree.parse(self.xml.name)
         # get number of elements
-        self.xmltv_source.numberofElements += tree.xpath("count(//channel)") + \
+        self.xmltv_source.numberofElements += tree.xpath("count(//channel)") +\
             tree.xpath("count(//programme)")
         # get meta data
         self.xmltv_source.generator_info_name = \
@@ -135,7 +135,6 @@ class XML_Epg_Importer(object):
     def serialize(self, obj):
         # use recursion to iterate
         try:
-            i = iter(obj)
             [self.serialize(o) for o in obj]
         except TypeError:
             pass
@@ -240,23 +239,21 @@ class XML_Epg_Importer(object):
         self.xml.seek(0)
         for event, elem in etree.iterparse(self.xml, tag='channel'):
 
-            try:
-                C = Channel.objects.get(channelid=elem.get('id'))
-                C.source = self.xmltv_source
-                C.save()
-            except Channel.DoesNotExist:
-                C = Channel.objects.create(
-                    source=self.xmltv_source, channelid=elem.get('id'))
+            C, created = Channel.objects.get_or_create(
+                channelid=elem.get('id'))
+            #C.save()
 
             for child in elem.iterchildren():
                 if child.tag == 'display-name':
-                    L, created = Lang.objects.get_or_create(value=child.get('lang'))
+                    L, created = Lang.objects.get_or_create(
+                        value=child.get('lang'))
                     D, created = Display_Name.objects.get_or_create(
                         value=child.text, lang=L)
                     C.display_names.add(D)
                     self.serialize(D)
                 elif child.tag == 'icon':
-                    I, created = Icon.objects.get_or_create(src=child.get('src'))
+                    I, created = Icon.objects.get_or_create(
+                        src=child.get('src'))
                     C.icons.add(I)
                     self.serialize(I)
                 elif child.tag == 'url':
@@ -264,7 +261,7 @@ class XML_Epg_Importer(object):
                     C.urls.add(U)
                     self.serialize(U)
 
-            self.serialize(C)
+            #self.serialize(C)
 
             elem.clear()
             # Also eliminate now-empty references from the root node to <Title>
@@ -293,23 +290,22 @@ class XML_Epg_Importer(object):
 
                 try:
                     P = Programme.objects.get(programid=elem.get('program_id'))
-                    P.source = self.xmltv_source
                     P.date = date
                     P.save()
                 except Programme.DoesNotExist:
                     P, created = Programme.objects.get_or_create(
                         programid=elem.get('program_id'),
-                        date=date, source=self.xmltv_source)
+                        date=date)
 
                 # Get time and convert it to UTC
                 start = parse(elem.get('start')).astimezone(
                     timezone('UTC')).replace(tzinfo=utc)
-                stop = parse(elem.get('stop')).astimezone(timezone('UTC')).replace(
-                    tzinfo=utc)
+                stop = parse(elem.get('stop')).astimezone(
+                    timezone('UTC')).replace(tzinfo=utc)
                 # Insert guide
                 channel_id = channels[elem.get('channel')]
                 G, created = Guide.objects.get_or_create(
-                    source=self.xmltv_source, start=start, stop=stop,
+                    start=start, stop=stop,
                     channel_id=channel_id, programme=P)
 
                 self.serialize(G)
@@ -365,7 +361,8 @@ class XML_Epg_Importer(object):
                             elif grand_child.tag == 'stereo':
                                 P.audio_stereo = grand_child.text
                     elif child.tag == 'country':
-                        obj, created = Country.objects.get_or_create(value=child.text)
+                        obj, created = Country.objects.get_or_create(
+                            value=child.text)
                         P.country = obj
                     elif child.tag == 'rating':
                         obj, created = Rating.objects.get_or_create(
@@ -396,7 +393,8 @@ class XML_Epg_Importer(object):
                     elif child.tag == 'subtitles':
                         obj = set()
                         for sub in child.iterchildren('language'):
-                            lang, created = Lang.objects.get_or_create(value=child.get('lang'))
+                            lang, created = Lang.objects.get_or_create(
+                                value=child.get('lang'))
                             L, created = Language.objects.get_or_create(
                                 value=sub.text, lang=lang)
                             S, created = Subtitle.objects.get_or_create(
@@ -462,7 +460,8 @@ class XML_Epg_Importer(object):
                 self.serialize(P)
 
                 elem.clear()
-                # Also eliminate now-empty references from the root node to <Title>
+                # Also eliminate now-empty references
+                # from the root node to <Title>
                 while elem.getprevious() is not None:
                     del elem.getparent()[0]
 
@@ -534,9 +533,11 @@ class XML_Epg_Importer(object):
         # generate a diff
         try:
             id1 = Epg_Source.objects.filter(
-                lastModification__lt=self.xmltv_source.lastModification).order_by('-lastModification')[0].id
+                lastModification__lt=self.xmltv_source.lastModification
+                ).order_by('-lastModification')[0].id
         except:
-            self.log.write('There is no previous full dump, so will not generate a diff')
+            self.log.write(
+                'There is no previous full dump, so will not generate a diff')
             return
         id2 = self.xmltv_source.id
         self.log.write('Generating a diff between "%s" and "%s"' % (
