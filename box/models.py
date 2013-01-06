@@ -272,9 +272,9 @@ class SetupBox(models.Model):
         ToggleSignal().pushserver_post_init()
         #print "SetupBox post_init signal executed."
 
-models.signals.post_init.connect(SetupBox._post_init,
-                                 sender=SetupBox,
-                                 dispatch_uid="SetupBox._post_init")
+#models.signals.post_init.connect(SetupBox._post_init,
+#                                 sender=SetupBox,
+#                                 dispatch_uid="SetupBox._post_init")
 
 
 class SetupBoxCommands(models.Model):

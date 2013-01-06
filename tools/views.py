@@ -40,11 +40,12 @@ def date(request):
     #timestamp = now.strftime("%s")
     #timestamp = time.mktime(time.gmtime())
 
-    timestamp = time.strftime("%s")
+    ts = time.strftime("%s")
     #TODO: tornar dinamico ativar/desativar horario de verao
     #FIXME: o -3600 corrige o horario de verao...
-    timezone = time.timezone - 3600
-    response = '{"timestamp": %s, "timezone": %d}' % (timestamp, timezone)
+    tz = time.timezone - 3600
+    ltz = 0
+    response = '{"timestamp": %s, "timezone": %d, "localtimezone": %d}' % (ts, tz, ltz)
     return HttpResponse(response)
     #return HttpResponse('2012-05-15 17:14:55.702043')
 
