@@ -6,3 +6,8 @@ python-pip install flup
 easy_install lxml
 easy_install django-tastypie
 easy_install pytz
+sudo yum install memcached
+sudo yum install python-memcached
+sudo yum install pydot
+sudo yum install net-snmp
+sudo yum install net-snmp-python
