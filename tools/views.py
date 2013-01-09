@@ -1,9 +1,11 @@
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 import logging
 
 
 @never_cache
+@csrf_exempt
 def log(request):
     log = logging.getLogger('stblog')
     log.debug('ADDR:%s COOKIE:%s USER_AGENT:%s POST:%s GET:%s',
