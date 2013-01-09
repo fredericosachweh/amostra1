@@ -164,7 +164,7 @@ class GuideResource(NamespacedModelResource):
 
     #XXX: Criar next/previus
     class Meta(MetaDefault):
-        queryset = Guide.objects.all()
+        queryset = Guide.objects.all().order_by('start')
         filtering = {
             "channel": ALL_WITH_RELATIONS,
             "start": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],

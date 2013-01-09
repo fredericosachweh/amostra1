@@ -5,9 +5,6 @@ from django.db import models
 from django.db.models import signals
 from django.utils.translation import ugettext as _
 
-from dateutil import tz
-from pytz import timezone
-from datetime import datetime
 import os
 
 
@@ -41,18 +38,6 @@ class Epg_Source(models.Model):
     major_stop = models.DateTimeField(
         _(u'Maior tempo de final encontrado nos programas'),
         blank=True, null=True)
-
-    @property
-    def minor_start_local(self):
-        "Returns minimum start time converted to the local timezone"
-        return self.minor_start.replace(
-            tzinfo=timezone('UTC')).astimezone(tz.tzlocal())
-
-    @property
-    def major_stop_local(self):
-        "Returns maxium stop time converted to the local timezone"
-        return self.major_stop.replace(
-            tzinfo=timezone('UTC')).astimezone(tz.tzlocal())
 
 
 class XMLTV_Source(Epg_Source):
@@ -212,12 +197,22 @@ class Programme(models.Model):
     guests = models.ManyToManyField(Staff, related_name='guest', blank=True,
         null=True)
 
+    def __unicode__(self):
+        return u"%s" % (self.titles.values_list()[0][1])
+
 
 class Guide(models.Model):
     programme = models.ForeignKey(Programme)
     channel = models.ForeignKey(Channel)
     start = models.DateTimeField(blank=True, null=True, db_index=True)
     stop = models.DateTimeField(blank=True, null=True, db_index=True)
+
+    def __unicode__(self):
+        return u'"%s (%s)" %s - %s' % (
+            self.programme,
+            self.channel.channelid,
+            self.start,
+            self.stop)
 
 
 # Signal used to delete the zip/xml file when a Epg_Source object is deleted

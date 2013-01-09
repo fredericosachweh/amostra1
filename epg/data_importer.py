@@ -12,17 +12,17 @@ import zipfile
 import tempfile
 import shutil
 from lxml import etree
-#from datetime import tzinfo, timedelta, datetime
+#from datetime import tzinfo, datetime
+from datetime import timedelta
 from dateutil.parser import parse
-#from pytz import timezone
+from pytz import timezone
 from types import NoneType
-#from django.contrib.contenttypes.models import ContentType
-#from cStringIO import StringIO
 
 from models import *
 
 import hotshot
 import time
+import logging
 
 PROFILE_LOG_BASE = "/tmp"
 
@@ -241,7 +241,6 @@ class XML_Epg_Importer(object):
 
             C, created = Channel.objects.get_or_create(
                 channelid=elem.get('id'))
-            #C.save()
 
             for child in elem.iterchildren():
                 if child.tag == 'display-name':
@@ -261,7 +260,7 @@ class XML_Epg_Importer(object):
                     C.urls.add(U)
                     self.serialize(U)
 
-            #self.serialize(C)
+            self.serialize(C)
 
             elem.clear()
             # Also eliminate now-empty references from the root node to <Title>
@@ -270,7 +269,8 @@ class XML_Epg_Importer(object):
 
     #@profile("programme.prof")
     def import_programme_elements(self, limit=0):
-
+        log = logging.getLogger('debug')
+        log.debug('Importing Programme elements')
         self.log.write('Importing Programme elements')
         # Get channels from db
         channels = dict()
@@ -304,9 +304,34 @@ class XML_Epg_Importer(object):
                     timezone('UTC')).replace(tzinfo=utc)
                 # Insert guide
                 channel_id = channels[elem.get('channel')]
-                G, created = Guide.objects.get_or_create(
-                    start=start, stop=stop,
-                    channel_id=channel_id, programme=P)
+                ## Verify exist Guide
+                guides = Guide.objects.filter(
+                    channel_id=channel_id, programme=P,
+                    start__gte=start - timedelta(minutes=20),
+                    stop__lte=stop + timedelta(minutes=20)).order_by('-id')
+                n = guides.count()
+                if n == 0:
+                    G = Guide.objects.create(
+                        start=start, stop=stop,
+                        channel_id=channel_id, programme=P)
+                else:
+                    G = guides[0]
+                    G.stop = stop
+                    G.start = start
+                    G.save()
+                    if n > 1:
+                        ## Delete other duplicated and log error
+                        log.debug('Delete duplicated guide')
+                        log.debug('Current:%s', Guide(
+                            start=start, stop=stop,
+                            channel_id=channel_id, programme=P))
+                        log.debug('Guide existis:%s', guides)
+                        for d in guides[1:]:
+                            log.debug('del: %s', d)
+                            d.delete()
+                #G, created = Guide.objects.get_or_create(
+                #    start=start, stop=stop,
+                #    channel_id=channel_id, programme=P)
 
                 self.serialize(G)
                 # this enables a huge gain in performance
