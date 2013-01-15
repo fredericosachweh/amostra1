@@ -7,6 +7,7 @@ from dvbinfo.models import State
 from dvbinfo.models import City
 from BeautifulSoup import BeautifulSoup
 import urllib2
+import logging
 
 
 class Command(BaseCommand):
@@ -30,15 +31,25 @@ Lista_de_canais_da_televis%C3%A3o_digital_brasileira'
 
         for e in soup.findAll(['h3', 'h4', 'table']):
             if e.name == 'h3' and e.text:
-                # State
-                state = e.find('span', attrs={'class': 'mw-headline'}).text
-                self.stdout.write('   %s\n' % state)
-                S, created = State.objects.get_or_create(name=state)
+                try:
+                    # State
+                    state = e.find('span', attrs={'class': 'mw-headline'}).text
+                    self.stdout.write('   %s\n' % state)
+                    S, created = State.objects.get_or_create(name=state)
+                except AttributeError:
+                    pass
+                except:
+                    pass
             elif e.name == 'h4' and e.text:
-                # City
-                city = e.find('span', attrs={'class': 'mw-headline'}).text
-                self.stdout.write('      %s\n' % city)
-                C, created = City.objects.get_or_create(name=city, state=S)
+                try:
+                    # City
+                    city = e.find('span', attrs={'class': 'mw-headline'}).text
+                    self.stdout.write('      %s\n' % city)
+                    C, created = City.objects.get_or_create(name=city, state=S)
+                except AttributeError:
+                    pass
+                except:
+                    pass
             elif e.name == 'table':
                 # Channel
                 attrs = dict(e.attrs)
