@@ -490,7 +490,22 @@ class UniqueIP(models.Model):
                 self.sink.start(*args, **kwargs)
 
     def stop(self, *args, **kwargs):
-        self.sink.stop(*args, **kwargs)
+        log = logging.getLogger('debug')
+        src = self.src
+        log.debug('UniqueIP.stop args=%s, kwargs=%s, src:%s',
+            args, kwargs, src)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is True:
+                running = 0
+                for sink in src:
+                    if sink.status == True:
+                        running += 1
+                log.debug('Total running:%d', running)
+                if running == 0:
+                    for sink in src:
+                        if sink.status == True:
+                            sink.stop(*args, **kwargs)
+                    self.sink.stop(*args, **kwargs)
 
     def running(self):
         return self.sink.running()
@@ -578,41 +593,6 @@ class DeviceServer(models.Model):
     switch_link.short_description = u'Status'
 
 
-class Dvblast(DeviceServer):
-    "DEPRECATED: Não utilizado mais???"
-    class Meta:
-        verbose_name = _(u'DVBlast')
-        verbose_name_plural = _(u'DVBlast')
-
-    name = models.CharField(_(u'Nome'), max_length=200)
-    ip = models.IPAddressField(_(u'Endereço IP'))
-    port = models.PositiveSmallIntegerField(_(u'Porta'))
-    is_rtp = models.BooleanField(_(u'RTP'), default=False)
-
-    def __unicode__(self):
-        return '%s (%s:%s)' % (self.name, self.ip, self.port)
-
-    def status(self):
-        from lib.player import Player
-        p = Player()
-        if p.is_playing(self) is True:
-            url = reverse('device.views.stop', kwargs={'streamid': self.id})
-            return '<a href="%s" id="stream_id_%s" style="color:green;" >\
-Rodando</a>' % (url, self.id)
-        url = reverse('device.views.play', kwargs={'streamid': self.id})
-        return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'\
-            % (url, self.id)
-    status.allow_tags = True
-
-    def play(self):
-        'Inicia o fluxo (inicia o processo do multicat)'
-        from lib.player import Player
-        p = Player()
-        pid = p.play_stream(self)
-        self.pid = pid
-        self.save()
-
-
 class Antenna(models.Model):
     class Meta:
         verbose_name = _(u'Antena parabólica')
@@ -649,7 +629,7 @@ class DemuxedService(DeviceServer):
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in":
-            ("DvbTuner", "isdbtuner", "unicastinput", "multicastinput")},
+            ("dvbtuner", "isdbtuner", "unicastinput", "multicastinput")},
          null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
@@ -1499,6 +1479,16 @@ class StreamRecorder(OutputModel, DeviceServer):
         #    if self.sink.running() is False:
         #        self.sink.start(recursive=kwargs.get('recursive'))
         # This install all cronjobs to current recorder server
+        self.install_cron()
+
+    def stop(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Stop record[PID:%s]: %s' % (self.pid, self))
+        if self.running():
+            super(StreamRecorder, self).stop(*args, **kwargs)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is True:
+                self.sink.stop(recursive=kwargs.get('recursive'))
         self.install_cron()
 
     def get_cron_line(self):
