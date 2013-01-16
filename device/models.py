@@ -35,6 +35,7 @@ class Server(models.Model):
                          (u'local', _(u'Servidor local DEMO')),
                          (u'dvb', _(u'Sintonizador DVB')),
                          (u'recording', _(u'Servidor TVoD')),
+                         (u'monitor', _(u'Servidor Monitoramento')),
                          )
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
                                    choices=SERVER_TYPE_CHOICES)
