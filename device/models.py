@@ -60,17 +60,6 @@ class Server(models.Model):
     switch_link.allow_tags = True
     switch_link.short_description = u'Status'
 
-    def clean(self):
-        from django.core.exceptions import ValidationError
-        if str(self.server_type) == 'local' and str(self.host) != '127.0.0.1':
-            raise ValidationError(_(
-                u'Servidor DEMO só pode ser usado com IP local 127.0.0.1.'
-                ))
-
-    @property
-    def is_local(self):
-        return True if str(self.server_type) == 'local' else False
-
     def connect(self):
         """Conecta-se ao servidor"""
         from lib import ssh
