@@ -35,6 +35,7 @@ class Server(models.Model):
                          (u'local', _(u'Servidor local DEMO')),
                          (u'dvb', _(u'Sintonizador DVB')),
                          (u'recording', _(u'Servidor TVoD')),
+                         (u'monitor', _(u'Servidor Monitoramento')),
                          )
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
                                    choices=SERVER_TYPE_CHOICES)
@@ -59,17 +60,6 @@ class Server(models.Model):
 
     switch_link.allow_tags = True
     switch_link.short_description = u'Status'
-
-    def clean(self):
-        from django.core.exceptions import ValidationError
-        if str(self.server_type) == 'local' and str(self.host) != '127.0.0.1':
-            raise ValidationError(_(
-                u'Servidor DEMO só pode ser usado com IP local 127.0.0.1.'
-                ))
-
-    @property
-    def is_local(self):
-        return True if str(self.server_type) == 'local' else False
 
     def connect(self):
         """Conecta-se ao servidor"""
@@ -490,7 +480,22 @@ class UniqueIP(models.Model):
                 self.sink.start(*args, **kwargs)
 
     def stop(self, *args, **kwargs):
-        self.sink.stop(*args, **kwargs)
+        log = logging.getLogger('debug')
+        src = self.src
+        log.debug('UniqueIP.stop args=%s, kwargs=%s, src:%s',
+            args, kwargs, src)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is True:
+                running = 0
+                for sink in src:
+                    if sink.status == True:
+                        running += 1
+                log.debug('Total running:%d', running)
+                if running == 0:
+                    for sink in src:
+                        if sink.status == True:
+                            sink.stop(*args, **kwargs)
+                    self.sink.stop(*args, **kwargs)
 
     def running(self):
         return self.sink.running()
@@ -578,41 +583,6 @@ class DeviceServer(models.Model):
     switch_link.short_description = u'Status'
 
 
-class Dvblast(DeviceServer):
-    "DEPRECATED: Não utilizado mais???"
-    class Meta:
-        verbose_name = _(u'DVBlast')
-        verbose_name_plural = _(u'DVBlast')
-
-    name = models.CharField(_(u'Nome'), max_length=200)
-    ip = models.IPAddressField(_(u'Endereço IP'))
-    port = models.PositiveSmallIntegerField(_(u'Porta'))
-    is_rtp = models.BooleanField(_(u'RTP'), default=False)
-
-    def __unicode__(self):
-        return '%s (%s:%s)' % (self.name, self.ip, self.port)
-
-    def status(self):
-        from lib.player import Player
-        p = Player()
-        if p.is_playing(self) is True:
-            url = reverse('device.views.stop', kwargs={'streamid': self.id})
-            return '<a href="%s" id="stream_id_%s" style="color:green;" >\
-Rodando</a>' % (url, self.id)
-        url = reverse('device.views.play', kwargs={'streamid': self.id})
-        return '<a href="%s" id="stream_id_%s" style="color:red;" >Parado</a>'\
-            % (url, self.id)
-    status.allow_tags = True
-
-    def play(self):
-        'Inicia o fluxo (inicia o processo do multicat)'
-        from lib.player import Player
-        p = Player()
-        pid = p.play_stream(self)
-        self.pid = pid
-        self.save()
-
-
 class Antenna(models.Model):
     class Meta:
         verbose_name = _(u'Antena parabólica')
@@ -649,7 +619,7 @@ class DemuxedService(DeviceServer):
     # Sink (connect to a Tuner or IP input)
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in":
-            ("DvbTuner", "isdbtuner", "unicastinput", "multicastinput")},
+            ("dvbtuner", "isdbtuner", "unicastinput", "multicastinput")},
          null=True)
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
@@ -963,9 +933,9 @@ class DigitalTuner(InputModel, DeviceServer):
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
         return cmd
 
-    def start(self, adapter_num=None):
+    def start(self, adapter_num=None, *args, **kwargs):
         "Starts a dvblast instance based on the current model's configuration"
-        super(DigitalTuner, self).start()
+        super(DigitalTuner, self).start(*args, **kwargs)
         cmd = self._get_cmd(adapter_num)
         conf = self._get_config()
         # Create the necessary folders
@@ -973,7 +943,7 @@ class DigitalTuner(InputModel, DeviceServer):
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
                         settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        if self.status == True:
+        if self.running() == True:
             # Already running, just reload config
             self.reload_config()
         else:
@@ -1085,7 +1055,7 @@ class IsdbTuner(DigitalTuner):
     def __unicode__(self):
         return str(self.frequency)
 
-    def start(self, adapter_num=None):
+    def start(self, adapter_num=None, *args, **kwargs):
         ## TODO: verificar se já está rodando
         if adapter_num is None:
             self.adapter = self.adapter_num
@@ -1449,6 +1419,7 @@ class StreamRecorder(OutputModel, DeviceServer):
             self.keep_time, self.channel, self.start_time)
 
     def _get_cmd(self):
+        import time
         log = logging.getLogger('debug')
         # Create folder to store record files
         self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
@@ -1464,7 +1435,11 @@ class StreamRecorder(OutputModel, DeviceServer):
             while type(demux) is not DemuxedService and demux is not None:
                 demux = demux.sink
             if type(demux) is DemuxedService:
+                time.sleep(3)
                 pcrpid = demux.get_pcrpid()
+                if pcrpid is None:
+                    log.exception('PCRPID cannot be None Demux:%s', demux)
+                    raise 'PCRPID cannot be None'
                 use_pcrpid = '-p %s ' % pcrpid
                 log.info('pcrpid=%s' % pcrpid)
 
@@ -1499,6 +1474,16 @@ class StreamRecorder(OutputModel, DeviceServer):
         #    if self.sink.running() is False:
         #        self.sink.start(recursive=kwargs.get('recursive'))
         # This install all cronjobs to current recorder server
+        self.install_cron()
+
+    def stop(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Stop record[PID:%s]: %s' % (self.pid, self))
+        if self.running():
+            super(StreamRecorder, self).stop(*args, **kwargs)
+        if kwargs.get('recursive') is True:
+            if self.sink.running() is True:
+                self.sink.stop(recursive=kwargs.get('recursive'))
         self.install_cron()
 
     def get_cron_line(self):

@@ -5,7 +5,6 @@ from device.models import Server
 from device.models import NIC
 from device.models import UniqueIP
 from device.models import DeviceServer
-from device.models import Dvblast
 from device.models import Antenna
 from device.models import DemuxedService
 from device.models import DigitalTunerHardware

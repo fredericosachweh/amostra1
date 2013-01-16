@@ -50,8 +50,7 @@ else:
             'PORT': '3306',
         }
     }
-
-DATABASES['default'] = DATABASES['pglocal']
+    DATABASES['default'] = DATABASES['pglocal']
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'

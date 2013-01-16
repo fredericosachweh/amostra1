@@ -158,23 +158,17 @@ def deviceserver_switchlink(request, action, klass, pk):
     url = request.META.get('HTTP_REFERER')
     if url is None:
         url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
-    try:
-        if action == 'start':
-            device.start(recursive=True)
-        elif action == 'stop':
-            device.stop(recursive=True)
-        elif action == 'recover':
-            device.status = False
-            if isinstance(device, models.IsdbTuner):
-                device.adapter = None
-            device.save()
-        else:
-            raise NotImplementedError()
-    except Exception as ex:
-        response = u'%s: %s' % (ex.__class__.__name__, ex)
-        t = loader.get_template('device_500.html')
-        c = RequestContext(request, {'error': response, 'return_url': url})
-        return HttpResponseServerError(t.render(c))
+    if action == 'start':
+        device.start(recursive=True)
+    elif action == 'stop':
+        device.stop(recursive=True)
+    elif action == 'recover':
+        device.status = False
+        if isinstance(device, models.IsdbTuner):
+            device.adapter = None
+        device.save()
+    else:
+        raise NotImplementedError()
     return HttpResponseRedirect(url)
 
 
