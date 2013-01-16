@@ -943,9 +943,9 @@ class DigitalTuner(InputModel, DeviceServer):
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
         return cmd
 
-    def start(self, adapter_num=None):
+    def start(self, adapter_num=None, *args, **kwargs):
         "Starts a dvblast instance based on the current model's configuration"
-        super(DigitalTuner, self).start()
+        super(DigitalTuner, self).start(*args, **kwargs)
         cmd = self._get_cmd(adapter_num)
         conf = self._get_config()
         # Create the necessary folders
@@ -953,7 +953,7 @@ class DigitalTuner(InputModel, DeviceServer):
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
                         settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
-        if self.status == True:
+        if self.running() == True:
             # Already running, just reload config
             self.reload_config()
         else:
@@ -1065,7 +1065,7 @@ class IsdbTuner(DigitalTuner):
     def __unicode__(self):
         return str(self.frequency)
 
-    def start(self, adapter_num=None):
+    def start(self, adapter_num=None, *args, **kwargs):
         ## TODO: verificar se já está rodando
         if adapter_num is None:
             self.adapter = self.adapter_num
