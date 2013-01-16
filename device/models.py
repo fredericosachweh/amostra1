@@ -1429,6 +1429,7 @@ class StreamRecorder(OutputModel, DeviceServer):
             self.keep_time, self.channel, self.start_time)
 
     def _get_cmd(self):
+        import time
         log = logging.getLogger('debug')
         # Create folder to store record files
         self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
@@ -1444,7 +1445,11 @@ class StreamRecorder(OutputModel, DeviceServer):
             while type(demux) is not DemuxedService and demux is not None:
                 demux = demux.sink
             if type(demux) is DemuxedService:
+                time.sleep(3)
                 pcrpid = demux.get_pcrpid()
+                if pcrpid is None:
+                    log.exception('PCRPID cannot be None Demux:%s', demux)
+                    raise 'PCRPID cannot be None'
                 use_pcrpid = '-p %s ' % pcrpid
                 log.info('pcrpid=%s' % pcrpid)
 
