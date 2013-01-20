@@ -73,7 +73,6 @@ USE_L10N = True
 
 MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = '/iptv/var/www/html/tvfiles/media/'
-ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = '/iptv/var/www/html/tvfiles/static/'
 STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'

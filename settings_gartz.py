@@ -7,40 +7,37 @@ from settings import *
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+USE_MY_DB = False
 
-#DATABASES = {
-#	'default': {
-#	    'ENGINE': 'django.db.backends.sqlite3',
-#	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-#	    'USER':'',
-#	    'PASSWORD':'',
-#	    'HOST':'',
-#	    'PORT':''
-#	}
-#}
-
-DATABASES = {
-    'default': {
-#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#        'NAME': 'iptv',
-#        'USER': 'iptv',
-#        'PASSWORD': 'iptv',
-#        'HOST': '127.0.0.1',
-#        'PORT': '5432',
-
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'iptv',
-        'USER': 'cioban',
-        'PASSWORD': 'sergio',
-        'HOST': '10.1.1.49',
-        'PORT': '3306'
+if USE_MY_DB == True:
+    DATABASES = {
+        'default': {
+    #        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #        'NAME': 'iptv',
+    #        'USER': 'iptv',
+    #        'PASSWORD': 'iptv',
+    #        'HOST': '127.0.0.1',
+    #        'PORT': '5432',
+    
+    #        'ENGINE': 'django.db.backends.sqlite3',
+    #	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
+    #	    'USER':'',
+    #	    'PASSWORD':'',
+    #	    'HOST':'',
+    #	    'PORT':''
+    
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'iptv',
+            'USER': 'cioban',
+            'PASSWORD': 'sergio',
+            'HOST': '10.1.1.49',
+            'PORT': '3306'
+        }
     }
-}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tvfiles/media/'
 MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
-ADMIN_MEDIA_PREFIX = '/tvfiles/static/admin/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
 STATIC_URL = '/tvfiles/static/'
 
