@@ -74,7 +74,6 @@ USE_L10N = True
 
 MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = '/var/www/html/tv/media/'
-ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = '/var/www/html/tv/static/'
 STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
