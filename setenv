@@ -2,7 +2,7 @@
 
 SETTINGS=settings
 
-echo "Use: `source setenv user`"
+echo "Use: 'source setenv user'"
 
 if [[ -e settings_$1.py ]] ; then
     SETTINGS="settings_$1"
