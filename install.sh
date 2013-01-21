@@ -8,3 +8,6 @@ python-pip install flup
 easy_install lxml
 easy_install django-tastypie
 easy_install pytz
+python-pip install python-memcached
+python-pip install pydot
+
