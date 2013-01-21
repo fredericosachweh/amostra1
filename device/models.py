@@ -1535,6 +1535,15 @@ class StreamRecorder(OutputModel, DeviceServer):
         tmpfile.close()
 
 
+@receiver(pre_save, sender=StreamRecorder)
+def StreamRecorder_pre_save(sender, instance, **kwargs):
+    "Filling dependent fields from Channel"
+    if instance.channel is not None:
+        channel = instance.channel
+        content_type_id = channel.source.content_type_id
+        instance.content_type_id = content_type_id
+
+
 ## Recuperação:
 # TIME_SHIFT=-$(( 60 * 5 * 27000000 )) # (minutos)
 # FOLDER=ch_53
@@ -1782,15 +1791,6 @@ default=False)  # --sout-transcode-audio-sync
                 u' transcodificação estiver habilitada.'))
 
 
-@receiver(pre_save, sender=StreamRecorder)
-def StreamRecorder_pre_save(sender, instance, **kwargs):
-    "Filling dependent fields from Channel"
-    if instance.channel is not None:
-        channel = instance.channel
-        content_type_id = channel.source.content_type_id
-        instance.content_type_id = content_type_id
-
-
 @receiver(post_save, sender=SoftTranscoder)
 def SoftTranscoder_post_save(sender, instance, **kwargs):
     log = logging.getLogger('debug')
@@ -1802,3 +1802,8 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
         instance.stop()
         instance.start()
         instance.restart = False
+
+
+class RealTimeEncript(models.Model):
+    u"""RealTime to manage stream flow"""
+
