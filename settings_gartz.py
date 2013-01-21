@@ -7,7 +7,7 @@ from settings import *
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-USE_MY_DB = False
+USE_MY_DB = True
 
 if USE_MY_DB == True:
     DATABASES = {
@@ -19,27 +19,30 @@ if USE_MY_DB == True:
     #        'HOST': '127.0.0.1',
     #        'PORT': '5432',
     
-    #        'ENGINE': 'django.db.backends.sqlite3',
-    #	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
-    #	    'USER':'',
-    #	    'PASSWORD':'',
-    #	    'HOST':'',
-    #	    'PORT':''
+#            'ENGINE': 'django.db.backends.sqlite3',
+#    	    'NAME': os.path.join(PROJECT_ROOT_PATH,'sqlite.db'),
+#    	    'USER':'',
+#    	    'PASSWORD':'',
+#    	    'HOST':'',
+#    	    'PORT':''
     
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
             'USER': 'cioban',
             'PASSWORD': 'sergio',
             'HOST': '10.1.1.49',
+#            'USER': 'iptv',
+#            'PASSWORD': 'iptv',
+#            'HOST': 'localhost',
             'PORT': '3306'
         }
     }
 
-ROOT_URL = 'tv/'
-MEDIA_URL = '/tvfiles/media/'
-MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
-STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
-STATIC_URL = '/tvfiles/static/'
+#ROOT_URL = 'tv/'
+#MEDIA_URL = '/tvfiles/media/'
+#MEDIA_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','media')
+#STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH,'tvfiles','static')
+#STATIC_URL = '/tvfiles/static/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx1'
