@@ -10,6 +10,7 @@ from tastypie.exceptions import BadRequest
 from django.db import IntegrityError
 import models
 from tv.models import Channel
+import logging
 
 ## Validation:
 #http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-treat-a-field-as-unique
@@ -26,6 +27,8 @@ class SetTopBoxResource(NamespacedModelResource):
         validation = Validation()
 
     def obj_create(self, bundle, request=None, **kwargs):
+        log = logging.getLogger('debug')
+        log.debug(bundle)
         try:
             bundle = super(SetTopBoxResource, self).obj_create(bundle,
                 request, **kwargs)

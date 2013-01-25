@@ -16,7 +16,7 @@ class SetTopBox(models.Model):
         verbose_name_plural = _(u'SetTopBoxes')
 
     def __unicode__(self):
-        return u'id:%d serial:%s' % (self.id, self.serial_number)
+        return u'serial:%s' % (self.serial_number)
 
 
 class SetTopBoxParameter(models.Model):

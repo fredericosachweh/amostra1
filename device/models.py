@@ -1750,7 +1750,8 @@ default=False)  # --sout-transcode-audio-sync
             if self.apply_normvol:
                 afilters.append('volnorm')
                 cmd += self._get_normvol_filter_options()
-            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' % (
+            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' \
+            % (
                 self.audio_codec, self.audio_bitrate,
                 u':'.join(afilters), output, input_addr
             )

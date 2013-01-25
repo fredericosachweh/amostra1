@@ -51,8 +51,9 @@ for app in settings.INSTALLED_APPS:
     if app.startswith('django.') is False:
         try:
             api = import_module('%s.api' % app)
-            urls = (r'^%sapi/%s/' % (settings.ROOT_URL, app),
+            urls = url(r'^%sapi/%s/' % (settings.ROOT_URL, app),
                 include(api.api.urls, namespace=app, app_name=app))
-            urlpatterns += patterns('', urls)
+            #urlpatterns += patterns('', urls)
+            urlpatterns.append(urls)
         except ImportError:
             pass

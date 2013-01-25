@@ -10,7 +10,20 @@ from device import models as devicemodels
 from tv import models as tvmodels
 
 from django.test.client import Client, FakePayload, MULTIPART_CONTENT
+from django.test import client
 from urlparse import urlparse
+
+
+def patch_request_factory():
+    def _method(self, path, data='', content_type='application/octet-stream', follow=False, **extra):
+        response = self.generic("PATCH", path, data, content_type, **extra)
+        if follow:
+            response = self._handle_redirects(response, **extra)
+        return response
+
+    if not hasattr(client, "_patched"):
+        client._patched = True
+        client.Client.patch = _method
 
 
 class Client2(Client):
@@ -20,8 +33,11 @@ class Client2(Client):
     """
     def patch(self, path, data={}, content_type=MULTIPART_CONTENT, **extra):
         "Construct a PATCH request."
+        print(data)
         patch_data = self._encode_data(data, content_type)
+        print(patch_data)
         parsed = urlparse(path)
+        print(parsed)
         r = {
             'CONTENT_LENGTH': len(patch_data),
             'CONTENT_TYPE':   content_type,
@@ -31,6 +47,7 @@ class Client2(Client):
             'wsgi.input':     FakePayload(patch_data),
         }
         r.update(extra)
+        print(r)
         return self.request(**r)
 
 
@@ -73,6 +90,7 @@ class APITest(TestCase):
 
     def test_SetTopBox(self):
         from django.contrib.auth.models import User, Permission
+        patch_request_factory()
         c = Client2()
         # Buscando o schema
         urlschema = reverse('client:api_get_schema',
@@ -282,3 +300,6 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
         self.assertContains(response, 'Duplicate entry', status_code=400)
+
+
+#class APITestSlumber(TestCase):
