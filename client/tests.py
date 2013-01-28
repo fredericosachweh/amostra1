@@ -2,10 +2,9 @@
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-#from django.test import Client
 import simplejson as json
 from models import SetTopBox
-from models import SetTopBoxChannel
+#from models import SetTopBoxChannel
 from device import models as devicemodels
 from tv import models as tvmodels
 
@@ -29,7 +28,8 @@ def patch_request_factory():
 class Client2(Client):
     """
     Construct a second test client which can do PATCH requests.
-    http://digidayoff.com/2012/03/01/unit-testing-patch-requests-with-djangos-test-client/
+    http://digidayoff.com/2012/03/01/unit-testing-patch-requests-with-djangos-\
+test-client/
     """
     def patch(self, path, data={}, content_type=MULTIPART_CONTENT, **extra):
         "Construct a PATCH request."
@@ -51,7 +51,8 @@ class Client2(Client):
         return self.request(**r)
 
 
-#curl --dump-header - -H "Content-Type: application/json" -X POST --data '{"serial_number": "lala"}' http://127.0.0.1:8000/tv/api/client/v1/settopbox/
+#curl --dump-header - -H "Content-Type: application/json" -X POST --data \
+#'{"serial_number": "lala"}' http://127.0.0.1:8000/tv/api/client/v1/settopbox/
 #HTTP/1.0 201 CREATED
 #Date: Fri, 10 Aug 2012 21:23:43 GMT
 #Server: WSGIServer/0.1 Python/2.7.3
@@ -59,7 +60,10 @@ class Client2(Client):
 #Location: http://127.0.0.1:8000/tv/api/client/v1/settopbox/1/
 
 
-#curl --dump-header - -H "Content-Type: application/json" -X POST --data '{"objects": [{"serial_number": "abc"}, {"serial_number": "efg"}, {"serial_number": "hij"}, {"serial_number": "aeh"}]}' http://127.0.0.1:8000/tv/api/client/v1/settopbox/
+#curl --dump-header - -H "Content-Type: application/json" -X POST --data \
+#'{"objects": [{"serial_number": "abc"}, {"serial_number": "efg"}, \
+#{"serial_number": "hij"}, {"serial_number": "aeh"}]}' \
+#http://127.0.0.1:8000/tv/api/client/v1/settopbox/
 
 
 class APITest(TestCase):
@@ -88,6 +92,11 @@ class APITest(TestCase):
 **Permissão na de execução do usuário (ERP)
     '''
 
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('erp', 'erp@cianet.ind.br',
+            '123')
+
     def test_SetTopBox(self):
         from django.contrib.auth.models import User, Permission
         patch_request_factory()
@@ -95,6 +104,8 @@ class APITest(TestCase):
         # Buscando o schema
         urlschema = reverse('client:api_get_schema',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1'})
+        #self.encoded_creds = "Basic " + "demo:demo".encode("base64")
+        c.login(username='erp', password='123')
         response = c.get(urlschema)
         jschema = json.loads(response.content)
         self.assertEqual('string', jschema['fields']['serial_number']['type'])
@@ -110,7 +121,8 @@ class APITest(TestCase):
             content_type='application/json')
         self.assertEqual(401, response.status_code)
         # Create new user and do login to into middlewer
-        user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
+        #user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
+        user = self.user
         urllogin = reverse('sys_login')
         response = c.post(urllogin, {'username': 'erp', 'password': '123'},
             follow=True)
@@ -130,19 +142,6 @@ class APITest(TestCase):
         stbs = SetTopBox.objects.all()
         self.assertEqual(1, stbs.count())
         self.assertEqual('lalala', stbs[0].serial_number)
-        # Create multiples (4) stbs in one call
-        objects = {'objects': [
-                {'serial_number': 'abc'},
-                {'serial_number': 'efg'},
-                {'serial_number': 'hij'},
-                {'serial_number': 'aeh'}
-            ]}
-        serialized = json.dumps(objects)
-        response = c.patch(url, data=serialized,
-            content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        stbs = SetTopBox.objects.all()
-        self.assertEqual(5, stbs.count())
         # Try to add new stb with existing serial_number
         response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
             content_type='application/json')
@@ -153,21 +152,50 @@ class APITest(TestCase):
             status_code=400)
         # Delete one stb
         urldelete = reverse('client:api_dispatch_detail',
-            kwargs={'resource_name': 'settopbox', 'api_name': 'v1', 'pk': 2},
+            kwargs={'resource_name': 'settopbox', 'api_name': 'v1', 'pk': 1},
             )
         response = c.delete(urldelete)
         # Deve retornar 401 UNAUTHORIZED
         self.assertEqual(response.status_code, 401)
         # Add authorization to DELETE
         perm_delete_stb = Permission.objects.get(codename='delete_settopbox')
-        #print(perm_delete_stb)
-        user.user_permissions.add(perm_delete_stb)
-        user.save()
+        self.user.user_permissions.add(perm_delete_stb)
         response = c.delete(urldelete)
         self.assertEqual(204, response.status_code)
         stbs = SetTopBox.objects.all()
-        self.assertEqual(4, len(stbs))
+        self.assertEqual(0, len(stbs))
         # Try to edit one settop box
+
+    def test_PATCH(self):
+        from django.contrib.auth.models import User, Permission
+        c = Client2()
+        c.login(username='erp', password='123')
+        #urllogin = reverse('sys_login')
+        #response = c.post(urllogin, {'username': 'erp', 'password': '123'},
+        #    follow=True)
+        #self.assertEqual(response.status_code, 200)
+        # Buscando lista
+        url = reverse('client:api_dispatch_list',
+            kwargs={'resource_name': 'settopbox', 'api_name': 'v1'},
+            )
+        # Create multiples (4) stbs in one call
+        objects = {'objects': [
+                {'serial_number': 'abc'},
+                {'serial_number': 'efg'},
+                {'serial_number': 'hij'},
+                {'serial_number': 'aeh'}
+            ]}
+        serialized = json.dumps(objects)
+        p = self.user.user_permissions
+        p.add(Permission.objects.get(codename='add_settopbox'))
+        p.add(Permission.objects.get(codename='change_settopbox'))
+        p.add(Permission.objects.get(codename='delete_settopbox'))
+        #self.user.save()
+        response = c.patch(url, data=serialized,
+            content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        stbs = SetTopBox.objects.all()
+        self.assertEqual(4, stbs.count())
 
 
 class SetTopBoxChannelTest(TestCase):
@@ -273,9 +301,20 @@ class SetTopBoxChannelTest(TestCase):
         jobj = json.loads(response.content)
         # Ensure there is 3 channels in list
         self.assertEqual(3, jobj['meta']['total_count'])
+
+        urllogin = reverse('sys_login')
+        response = self.c.post(urllogin,
+            {'username': 'erp', 'password': '123'},
+            follow=True)
+        self.assertEqual(response.status_code, 200)
+
         # Get stb list
         urlstb = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopbox', 'api_name': 'v1'})
+
+
+        #logged = self.c.login(username='erp', password='123')
+
         response = self.c.get(urlstb)
         jobj = json.loads(response.content)
         # Ensure there is 5 settopbox in list

@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 from tastypie.authorization import DjangoAuthorization, Authorization
+from tastypie.authentication import BasicAuthentication
+from tastypie.authentication import Authentication
+from tastypie.authentication import ApiKeyAuthentication
+from tastypie.authentication import MultiAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 from tastypie import fields
@@ -16,15 +20,31 @@ import logging
 #http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-treat-a-field-as-unique
 
 
+class MyAuthorization(DjangoAuthorization):
+
+    def is_authorized(self, request, object=None):
+        ok = super(MyAuthorization, self).is_authorized(request, object)
+        if ok is False and False:
+            log = logging.getLogger('debug')
+            log.debug('Method:%s', request.method)
+            log.debug('User:%s', request.user)
+            log.debug('OK:%s', ok)
+        return ok
+
+
 class SetTopBoxResource(NamespacedModelResource):
 
     class Meta:
         queryset = models.SetTopBox.objects.all()
         resource_name = 'settopbox'
-        authorization = DjangoAuthorization()
+        authorization = MyAuthorization()
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
         validation = Validation()
+        authentication = MultiAuthentication(
+            Authentication(),
+            BasicAuthentication(),
+            ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
         log = logging.getLogger('debug')
@@ -49,6 +69,7 @@ class SetTopBoxParameterResource(NamespacedModelResource):
         urlconf_namespace = 'client'
         always_return_data = True
         validation = Validation()
+        authentication = Authentication()
         filtering = {
             "settopbox": ALL_WITH_RELATIONS,
             "key": ALL,
@@ -77,6 +98,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         authorization = DjangoAuthorization()
         always_return_data = True
         validation = Validation()
+        authentication = Authentication()
         filtering = {
             "settopbox": ALL,
             "channel": ALL
