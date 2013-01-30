@@ -24,7 +24,7 @@ class MyAuthorization(DjangoAuthorization):
 
     def is_authorized(self, request, object=None):
         ok = super(MyAuthorization, self).is_authorized(request, object)
-        if ok is False and False:
+        if ok is False:
             log = logging.getLogger('debug')
             log.debug('Method:%s', request.method)
             log.debug('User:%s', request.user)
@@ -37,13 +37,13 @@ class SetTopBoxResource(NamespacedModelResource):
     class Meta:
         queryset = models.SetTopBox.objects.all()
         resource_name = 'settopbox'
-        authorization = MyAuthorization()
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
+        authorization = MyAuthorization()
         validation = Validation()
         authentication = MultiAuthentication(
+            BasicAuthentication(realm='cianet-middleware'),
             Authentication(),
-            BasicAuthentication(),
             ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
@@ -64,17 +64,20 @@ class SetTopBoxParameterResource(NamespacedModelResource):
     class Meta:
         queryset = models.SetTopBoxParameter.objects.all()
         resource_name = 'settopboxparameter'
-        authorization = DjangoAuthorization()
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
         always_return_data = True
-        validation = Validation()
-        authentication = Authentication()
         filtering = {
-            "settopbox": ALL_WITH_RELATIONS,
+            "settopbox": ALL,  # ALL_WITH_RELATIONS
             "key": ALL,
             "value": ALL
         }
+        validation = Validation()
+        authorization = MyAuthorization()
+        authentication = MultiAuthentication(
+            BasicAuthentication(realm='cianet-middleware'),
+            Authentication(),
+            ApiKeyAuthentication())
 
 
 class ChannelResource(NamespacedModelResource):
@@ -98,7 +101,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         authorization = DjangoAuthorization()
         always_return_data = True
         validation = Validation()
-        authentication = Authentication()
+        authentication = BasicAuthentication(realm='cianet-middleware')
         filtering = {
             "settopbox": ALL,
             "channel": ALL

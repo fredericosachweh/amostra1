@@ -311,10 +311,6 @@ class SetTopBoxChannelTest(TestCase):
         # Get stb list
         urlstb = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopbox', 'api_name': 'v1'})
-
-
-        #logged = self.c.login(username='erp', password='123')
-
         response = self.c.get(urlstb)
         jobj = json.loads(response.content)
         # Ensure there is 5 settopbox in list
