@@ -25,7 +25,7 @@ class MyAuthorization(DjangoAuthorization):
     def is_authorized(self, request, object=None):
         ok = super(MyAuthorization, self).is_authorized(request, object)
         if ok is False:
-            log = logging.getLogger('debug')
+            log = logging.getLogger('api')
             log.debug('Method:%s', request.method)
             log.debug('User:%s', request.user)
             log.debug('OK:%s', ok)
@@ -47,12 +47,26 @@ class SetTopBoxResource(NamespacedModelResource):
             ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
-        log = logging.getLogger('debug')
-        log.debug(bundle)
+        log = logging.getLogger('api')
+        log.debug('New STB=%s', bundle.data.get('serial_number'))
         try:
             bundle = super(SetTopBoxResource, self).obj_create(bundle,
                 request, **kwargs)
         except IntegrityError:
+            log.error('Duplicate entry for settopbox.serial_number=%s',
+                bundle.data.get('serial_number'))
+            raise BadRequest('Duplicate entry for settopbox.serial_number')
+        return bundle
+
+    def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
+        log = logging.getLogger('api')
+        log.debug('Update STB=%s', bundle.data.get('serial_number'))
+        try:
+            bundle = super(SetTopBoxResource, self).obj_update(bundle,
+                request=request, **kwargs)
+        except IntegrityError:
+            log.error('Duplicate entry for settopbox.serial_number=%s',
+                bundle.data.get('serial_number'))
             raise BadRequest('Duplicate entry for settopbox.serial_number')
         return bundle
 

@@ -180,6 +180,12 @@ LOGGING = {
             'filename': '%s/stblog.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.api': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/api.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -204,6 +210,11 @@ LOGGING = {
         },
         'stblog': {
             'handlers': ['file.stblog'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'api': {
+            'handlers': ['file.api'],
             'level': 'DEBUG',
             'propagate': True
         }
