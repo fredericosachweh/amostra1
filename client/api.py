@@ -112,14 +112,17 @@ class SetTopBoxChannelResource(NamespacedModelResource):
     class Meta:
         queryset = models.SetTopBoxChannel.objects.all()
         resource_name = 'settopboxchannel'
-        authorization = DjangoAuthorization()
         always_return_data = True
-        validation = Validation()
-        authentication = BasicAuthentication(realm='cianet-middleware')
         filtering = {
             "settopbox": ALL,
             "channel": ALL
         }
+        validation = Validation()
+        authorization = MyAuthorization()
+        authentication = MultiAuthentication(
+            BasicAuthentication(realm='cianet-middleware'),
+            Authentication(),
+            ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
         try:

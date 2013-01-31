@@ -214,6 +214,9 @@ class SetTopBoxChannelTest(TestCase):
         perm_add_relation = Permission.objects.get(
             codename='add_settopboxchannel')
         self.user.user_permissions.add(perm_add_relation)
+        perm_delete_relation = Permission.objects.get(
+            codename='delete_settopboxchannel')
+        self.user.user_permissions.add(perm_delete_relation)
         server = devicemodels.Server.objects.create(
             name='local',
             host='127.0.0.1',
