@@ -11,8 +11,6 @@ from django.utils.importlib import import_module
 
 from django.conf import settings
 
-import logging
-
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
@@ -47,17 +45,15 @@ urlpatterns = patterns('',
     (r'^%s$' % settings.ROOT_URL, direct_to_template,
      {'template': 'index.html'}),
 )
-log = logging.getLogger('api')
+
 # This is to auto import urls from APIs. RESTful interface
 for app in settings.INSTALLED_APPS:
     if app.startswith('django.') is False:
         try:
-            log.info('Importing api for app %s', app)
             api = import_module('%s.api' % app)
             urls = url(r'^%sapi/%s/' % (settings.ROOT_URL, app),
                 include(api.api.urls, namespace=app, app_name=app))
             #urlpatterns += patterns('', urls)
             urlpatterns.append(urls)
-            log.info('OK:^%sapi/%s/', settings.ROOT_URL, app)
         except ImportError as e:
-            log.debug('No api for:%s', app)
+            pass
