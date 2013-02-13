@@ -30,6 +30,7 @@ DATABASES = {
             'USER': 'cioban',
             'PASSWORD': 'sergio',
             'HOST': '10.5.5.254',
+            #'HOST': '127.0.0.1',
             'PORT': '3306'
         }
     }

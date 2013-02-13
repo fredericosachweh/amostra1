@@ -13,12 +13,14 @@ from django.conf.urls.defaults import url
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 
-from monitoramento.admin_views import mon_list
+from monitoramento.admin_views import mon_list, mon_export
 
 def get_admin_urls(urls):
     def get_urls():
         my_urls = patterns('',
-            url(r'^mon/$', admin.site.admin_view(mon_list), name='monitor')
+            url(r'^mon/$', admin.site.admin_view(mon_list), name='monitor'),
+            url(r'^monexport/$', admin.site.admin_view(mon_export),
+                name='monexport'),
         )
         return my_urls + urls
     return get_urls
