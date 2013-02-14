@@ -24,7 +24,6 @@ from types import ListType
 from cgi import escape
 import pydot
 
-from snmplib import get_mcast_info
 
 from django.dispatch import receiver
 import os
@@ -434,10 +433,6 @@ class MulticastInput_representative(BaseRepresentative):
             self.original_obj.interface.name,
             self.original_obj.interface.ipv4,
             self.original_obj.interface.server.name)
-        if show_info is True:
-            info = get_mcast_info(self.original_obj.ip, self.original_obj.port,
-                self.original_obj.server.host)
-            return_string = '%s - %s' % (return_string, info)
         return return_string
 
 class FileInput_representative(BaseRepresentative):
@@ -473,10 +468,6 @@ class MulticastOutput_representative(BaseRepresentative):
             self.original_obj.interface.name,
             self.original_obj.interface.ipv4,
             self.original_obj.interface.server.name)
-        if show_info is True:
-            info = get_mcast_info(self.original_obj.ip, self.original_obj.port,
-                self.original_obj.server.host)
-            return_string = '%s - %s' % (return_string, info)
         return return_string
 
 class StreamRecorder_representative(BaseRepresentative):
