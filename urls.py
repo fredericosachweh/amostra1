@@ -53,7 +53,7 @@ for app in settings.INSTALLED_APPS:
             api = import_module('%s.api' % app)
             urls = url(r'^%sapi/%s/' % (settings.ROOT_URL, app),
                 include(api.api.urls, namespace=app, app_name=app))
-            #urlpatterns += patterns('', urls)
-            urlpatterns.append(urls)
-        except ImportError as e:
+            #urlpatterns.insert(0, urls)
+            urlpatterns += patterns('', urls)
+        except ImportError:
             pass
