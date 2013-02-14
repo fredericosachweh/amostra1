@@ -51,7 +51,7 @@ class SetTopBoxResource(NamespacedModelResource):
         log.debug('New STB=%s', bundle.data.get('serial_number'))
         try:
             bundle = super(SetTopBoxResource, self).obj_create(bundle,
-                request, **kwargs)
+                **kwargs)
         except IntegrityError:
             log.error('Duplicate entry for settopbox.serial_number=%s',
                 bundle.data.get('serial_number'))
@@ -127,7 +127,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
     def obj_create(self, bundle, request=None, **kwargs):
         try:
             bundle = super(SetTopBoxChannelResource, self).obj_create(bundle,
-                request, **kwargs)
+                **kwargs)
         except IntegrityError:
             raise BadRequest('Duplicate entry for settopbox channel')
         return bundle

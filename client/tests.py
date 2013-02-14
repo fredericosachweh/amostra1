@@ -33,11 +33,8 @@ test-client/
     """
     def patch(self, path, data={}, content_type=MULTIPART_CONTENT, **extra):
         "Construct a PATCH request."
-        print(data)
         patch_data = self._encode_data(data, content_type)
-        print(patch_data)
         parsed = urlparse(path)
-        print(parsed)
         r = {
             'CONTENT_LENGTH': len(patch_data),
             'CONTENT_TYPE':   content_type,
@@ -47,7 +44,6 @@ test-client/
             'wsgi.input':     FakePayload(patch_data),
         }
         r.update(extra)
-        print(r)
         return self.request(**r)
 
 
