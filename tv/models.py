@@ -46,6 +46,10 @@ class Channel(models.Model):
     image_thum.short_description = 'Miniatura'
     image_thum.allow_tags = True
 
+    @property
+    def sink(self):
+        return self.source
+
     def _is_streaming(self):
         return self.source.running()
 
