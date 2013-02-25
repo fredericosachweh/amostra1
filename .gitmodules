@@ -10,3 +10,6 @@
 [submodule "vendor/django"]
 	path = vendor/django
 	url = git://github.com/django/django.git
+[submodule "vendor/django-dbsettings"]
+	path = vendor/django-dbsettings
+	url = git://github.com/MiriamSexton/django-dbsettings.git

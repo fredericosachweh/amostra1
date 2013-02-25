@@ -101,6 +101,7 @@ class ChannelResource(NamespacedModelResource):
     class Meta:
         queryset = Channel.objects.all()
         resource_name = 'channel'
+        allowed_methods = ['get']
         authorization = Authorization()
 
 
@@ -112,6 +113,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
     class Meta:
         queryset = models.SetTopBoxChannel.objects.all()
         resource_name = 'settopboxchannel'
+        allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         always_return_data = True
         filtering = {
             "settopbox": ALL,
@@ -132,8 +134,99 @@ class SetTopBoxChannelResource(NamespacedModelResource):
             raise BadRequest('Duplicate entry for settopbox channel')
         return bundle
 
+    def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
+        try:
+            bundle = super(SetTopBoxChannelResource, self).obj_update(bundle,
+                **kwargs)
+        except IntegrityError:
+            raise BadRequest('Duplicate entry for settopbox channel')
+        return bundle
+
+
+class SetTopBoxAuthorization(Authorization):
+
+    def is_authorized(self, request, bundle_object=None):
+        log = logging.getLogger('api')
+        if request.user.is_anonymous() is True:
+            return False
+        user = request.user
+        stb = models.SetTopBox.objects.get(serial_number=user.username)
+        log.debug('User:%s, SetTopBox:%s', user, stb)
+        log.debug('Method:%s', request.method)
+        log.debug('User:%s', request.user)
+        return True
+
+
+class SetTopBoxConfigResource(NamespacedModelResource):
+
+    class Meta:
+        queryset = models.SetTopBoxConfig.objects.all()
+        resource_name = 'settopboxconfig'
+        allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
+        urlconf_namespace = 'client'
+        fields = ['key', 'value', 'value_type']
+        filtering = {
+            "key": ALL,
+            "value_type": ALL,
+            "settopbox": ALL
+        }
+        authorization = SetTopBoxAuthorization()
+        validation = Validation()
+        authentication = Authentication()
+
+    def apply_authorization_limits(self, request, object_list):
+        """
+        Filtra para o usuário logado.
+        """
+        log = logging.getLogger('api')
+        if request.user.is_anonymous() is False:
+            log.debug('user:%s', request.user)
+            user = request.user
+            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            if hasattr(self._meta.authorization, 'apply_limits'):
+                object_list = self._meta.authorization.apply_limits(request,
+                    object_list)
+            object_list = object_list.filter(settopbox=stb)
+        else:
+            object_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+        return object_list
+
+    def obj_create(self, bundle, request=None, **kwargs):
+        log = logging.getLogger('api')
+        log.debug('New Parameter:%s=%s (%s)', bundle.data.get('key'),
+            bundle.data.get('value'), bundle.data.get('value_type'))
+        if request.user.is_anonymous() is False:
+            user = request.user
+            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            try:
+                bundle = super(SetTopBoxConfigResource, self).obj_create(
+                    bundle, settopbox=stb, **kwargs)
+            except IntegrityError:
+                log.error('Duplicate entry for settopboxconfig:%s=%s',
+                    bundle.data.get('key'), bundle.data.get('value'))
+                raise BadRequest('Duplicate entry for settopboxconfig:key=%s' %
+                        bundle.data.get('key'))
+        else:
+            raise BadRequest('')
+        return bundle
+
+    def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
+        log = logging.getLogger('api')
+        log.debug('Update STB=%s', bundle.data.get('key'))
+        try:
+            bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
+                request=request, **kwargs)
+        except IntegrityError:
+            log.error('Duplicate entry for settopboxconfig:%s=%s',
+                bundle.data.get('key'), bundle.data.get('value'))
+            raise BadRequest('Duplicate entry for settopboxconfig')
+        return bundle
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
 api.register(ChannelResource())
 api.register(SetTopBoxChannelResource())
+api.register(SetTopBoxConfigResource())

@@ -186,6 +186,12 @@ LOGGING = {
             'filename': '%s/api.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.client': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/client.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -217,6 +223,11 @@ LOGGING = {
             'handlers': ['file.api'],
             'level': 'DEBUG',
             'propagate': True
+        },
+        'client': {
+            'handlers': ['file.client'],
+            'level': 'DEBUG',
+            'propagate': True
         }
     }
 }
@@ -246,6 +257,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+    # AppSettings
+    'dbsettings',
     # Aplicativo de monitoramento
     'monitoramento',
 )

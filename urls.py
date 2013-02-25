@@ -41,6 +41,9 @@ urlpatterns = patterns('',
     (r'^%sdvbinfo/' % settings.ROOT_URL, include('dvbinfo.urls')),
     # Devices em servidores
     (r'^%sdevice/' % settings.ROOT_URL, include('device.urls')),
+    (r'^%sclient/' % settings.ROOT_URL, include('client.urls')),
+    (r'^%ssettings/' % settings.ROOT_URL,
+     include('dbsettings.urls')),
     # Página inicial
     (r'^%s$' % settings.ROOT_URL, direct_to_template,
      {'template': 'index.html'}),
