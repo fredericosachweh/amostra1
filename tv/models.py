@@ -87,8 +87,11 @@ class Channel(models.Model):
         """
         super(Channel, self).delete()
         import os
-        os.unlink(self.image.path)
-        os.unlink(self.thumb.path)
+        try:
+            os.unlink(self.image.path)
+            os.unlink(self.thumb.path)
+        except:
+            pass
 
     def start(self, recursive=True):
         self.source.start(recursive=recursive)
