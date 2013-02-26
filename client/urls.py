@@ -6,6 +6,8 @@ module: client.urls
 from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns('',
-    url(r'^auth/(?P<mac>[0-9A-Fa-f:]{17})/.*$', 'client.views.auth',
-        name='client_auth'),
+    #url(r'^auth/(?P<mac>[0-9A-Fa-f:]{17})/.*$', 'client.views.auth',
+    #    name='client_auth'),
+    url(r'^auth/$', 'client.views.auth', name='client_auth'),
+    url(r'^logoff/$', 'client.views.logoff', name='client_logoff'),
     )

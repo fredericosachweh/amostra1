@@ -8,7 +8,7 @@ from tastypie.authentication import MultiAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 from tastypie import fields
-from tastypie.constants import ALL, ALL_WITH_RELATIONS
+from tastypie.constants import ALL
 from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest
 from django.db import IntegrityError
@@ -22,7 +22,7 @@ import logging
 
 class MyAuthorization(DjangoAuthorization):
 
-    def is_authorized(self, request, object=None):
+    def is_authorized(self, request, bundle_object=None):
         ok = super(MyAuthorization, self).is_authorized(request, object)
         if ok is False:
             log = logging.getLogger('api')
@@ -150,10 +150,14 @@ class SetTopBoxAuthorization(Authorization):
         if request.user.is_anonymous() is True:
             return False
         user = request.user
-        stb = models.SetTopBox.objects.get(serial_number=user.username)
-        log.debug('User:%s, SetTopBox:%s', user, stb)
+        try:
+            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+        except:
+            log.error('No STB for user:%s', user)
+            return False
         log.debug('Method:%s', request.method)
-        log.debug('User:%s', request.user)
+        log.debug('User:%s', user)
         return True
 
 
