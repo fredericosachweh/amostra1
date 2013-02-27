@@ -6,7 +6,7 @@ from django.conf.urls.defaults import include
 from django.conf.urls.defaults import url
 from django.conf.urls.defaults import handler404
 from django.conf.urls.defaults import handler500
-from django.views.generic.simple import direct_to_template
+from django.views.generic import TemplateView
 from django.utils.importlib import import_module
 
 from django.conf import settings
@@ -45,8 +45,8 @@ urlpatterns = patterns('',
     (r'^%ssettings/' % settings.ROOT_URL,
      include('dbsettings.urls')),
     # Página inicial
-    (r'^%s$' % settings.ROOT_URL, direct_to_template,
-     {'template': 'index.html'}),
+    (r'^%s$' % settings.ROOT_URL,
+     TemplateView.as_view(template_name='index.html')),
 )
 
 # This is to auto import urls from APIs. RESTful interface
@@ -58,5 +58,5 @@ for app in settings.INSTALLED_APPS:
                 include(api.api.urls, namespace=app, app_name=app))
             #urlpatterns.insert(0, urls)
             urlpatterns += patterns('', urls)
-        except ImportError:
+        except ImportError as e:
             pass

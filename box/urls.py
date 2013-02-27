@@ -2,7 +2,7 @@
 # -*- encoding:utf8 -*-
 
 from django.conf.urls.defaults import patterns, url
-from django.views.generic.simple import direct_to_template
+from django.views.generic import TemplateView
 from django.conf import settings
 import os
 
@@ -29,7 +29,7 @@ urlpatterns = patterns('',
             'document_root':
                 os.path.join(settings.PROJECT_ROOT_PATH, 'frontend/doc/'),
         }),
-    url(r'^$',     direct_to_template, {'template': 'box/index.html'}),
+    url(r'^$', TemplateView.as_view(template_name='box/index.html')),
     url(r'^(?P<path>.*)$', 'django.views.static.serve', {
             'document_root':
                 os.path.join(settings.PROJECT_ROOT_PATH, 'frontend/dist/'),
