@@ -4,11 +4,12 @@ import logging
 import re
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
+from django.views.decorators.csrf import csrf_exempt
 
 import models
 mac_re = re.compile(r'^([0-9a-fA-F]{2}(:?|$)){6}$')
 
-
+@csrf_exempt
 def auth(request):
     u"""Realiza a autenticação do setupbox atravéz de seu endereço MAC,SN"""
     log = logging.getLogger('client')
@@ -40,11 +41,11 @@ def auth(request):
         log.debug('No user for SetTopBox:%s', stb)
         HttpResponse(status=403)
     log.debug('login: OK, user:%s', a_user)
-    return HttpResponse('{"login": "OK", "User": "%s"}' % (a_user))
+    return HttpResponse('{"login": "OK", "User": "%s"}' % (a_user), content_type='application/json')
 
 
 def logoff(request):
     log = logging.getLogger('client')
     log.debug('logoff user:%s', request.user)
     logout(request)
-    return HttpResponse('Bye')
+    return HttpResponse('Bye', content_type='application/json')
