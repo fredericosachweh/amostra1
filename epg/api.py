@@ -169,6 +169,8 @@ class GuideResource(NamespacedModelResource):
             "channel": ALL_WITH_RELATIONS,
             "start": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
             "stop": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
+            #"start_timestamp": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
+            #"stop_timestamp": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
         }
 
     def dehydrate_start_timestamp(self, bundle):

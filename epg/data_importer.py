@@ -114,15 +114,17 @@ class XML_Epg_Importer(object):
     Imports xml into xmltv_source object
     '''
 
-    def __init__(self, xml, xmltv_source, log=open('/dev/null', 'w')):
+    def __init__(self, xml, xmltv_source=None, epg_source=None,
+            log=open('/dev/null', 'w')):
 
         self.xmltv_source = xmltv_source
+        self.epg_source = epg_source
         self.xml = xml
         self.log = log
 
         self.tree = etree.parse(self.xml.name)
         # get number of elements
-        self.xmltv_source.numberofElements += \
+        self.epg_source.numberofElements += \
             self.tree.xpath("count(//channel)") +\
             self.tree.xpath("count(//programme)")
         # get meta data
@@ -197,16 +199,16 @@ class XML_Epg_Importer(object):
 
     @transaction.commit_on_success
     def _increment_importedElements(self):
-        if isinstance(self.xmltv_source, Epg_Source):
-            self.xmltv_source.importedElements += 1
-            self.xmltv_source.save()
+        if isinstance(self.epg_source, Epg_Source):
+            self.epg_source.importedElements += 1
+            self.epg_source.save()
 
     @transaction.commit_on_success
     def _decrement_importedElements(self):
-        if isinstance(self.xmltv_source, Epg_Source) \
-            and self.xmltv_source.importedElements > 0:
-            self.xmltv_source.importedElements -= 1
-            self.xmltv_source.save()
+        if isinstance(self.epg_source, Epg_Source) \
+            and self.epg_source.importedElements > 0:
+            self.epg_source.importedElements -= 1
+            self.epg_source.save()
 
     def _get_dict_for_langs(self):
         # Search for lang attributes in the xml

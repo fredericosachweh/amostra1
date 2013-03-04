@@ -4,7 +4,7 @@
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
-from epg.models import XMLTV_Source
+from epg.models import XMLTV_Source, Epg_Source
 from epg.data_importer import Zip_to_XML, XML_Epg_Importer
 
 from datetime import datetime
@@ -144,6 +144,8 @@ import anyway.\n' % path)
             xmltv_source = XMLTV_Source.objects.create(filefield=xml_zip_file,
                 lastModification=date.replace(tzinfo=timezone('UTC')))
         file_list = Zip_to_XML(xmltv_source.filefield.path).get_all_files()
+        epg_source = Epg_Source(filefield=xml_zip_file)
         for f in file_list:
             XML_Epg_Importer(xml=f, xmltv_source=xmltv_source,
+                epg_source=epg_source,
                 log=self.stdout).import_to_db()
