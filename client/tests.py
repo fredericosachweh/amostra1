@@ -359,6 +359,13 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(SetTopBox.options.auto_add_channel, False)
         self.assertEqual(SetTopBox.options.use_mac_as_serial, True)
 
+    def test_auth_get(self):
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        response = self.c.get(auth_logoff)
+        response = self.c.get(auth_login, data={'mac': '01:02:03:04:05:06'})
+        self.assertEqual(401, response.status_code)
+
     def test_settopbox_autologin(self):
         import models
         from django.contrib.auth.models import User
@@ -369,13 +376,13 @@ class SetTopBoxChannelTest(TestCase):
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(403, response.status_code)
         ## Define auto_create and execute again
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         ## Busca o ususário criado para o stb
         user = User.objects.get(username=u'01:02:03:04:05:06')
@@ -403,8 +410,8 @@ class SetTopBoxChannelTest(TestCase):
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb,
             channel=ch)
         self.assertEqual(1, stb_ch.count())
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:00',
-            'SN': 123456})
+        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:00',
+            'sn': 123456})
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number=123456)
         ## Busca o ususário criado para o stb
