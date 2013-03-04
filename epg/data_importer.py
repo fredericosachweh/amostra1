@@ -114,21 +114,24 @@ class XML_Epg_Importer(object):
     Imports xml into xmltv_source object
     '''
 
-    def __init__(self, xml, xmltv_source, log=open('/dev/null', 'w')):
+    def __init__(self, xml, xmltv_source=None, epg_source=None,
+            log=open('/dev/null', 'w')):
 
         self.xmltv_source = xmltv_source
+        self.epg_source = epg_source
         self.xml = xml
         self.log = log
 
-        tree = etree.parse(self.xml.name)
+        self.tree = etree.parse(self.xml.name)
         # get number of elements
-        self.xmltv_source.numberofElements += tree.xpath("count(//channel)") +\
-            tree.xpath("count(//programme)")
+        self.epg_source.numberofElements += \
+            self.tree.xpath("count(//channel)") +\
+            self.tree.xpath("count(//programme)")
         # get meta data
         self.xmltv_source.generator_info_name = \
-            tree.xpath('string(//tv[1]/@generator-info-name)')
+            self.tree.xpath('string(//tv[1]/@generator-info-name)')
         self.xmltv_source.generator_info_url = \
-            tree.xpath('string(//tv[1]/@generator-info-url)')
+            self.tree.xpath('string(//tv[1]/@generator-info-url)')
         # save
         self.xmltv_source.save()
 
@@ -196,16 +199,16 @@ class XML_Epg_Importer(object):
 
     @transaction.commit_on_success
     def _increment_importedElements(self):
-        if isinstance(self.xmltv_source, Epg_Source):
-            self.xmltv_source.importedElements += 1
-            self.xmltv_source.save()
+        if isinstance(self.epg_source, Epg_Source):
+            self.epg_source.importedElements += 1
+            self.epg_source.save()
 
     @transaction.commit_on_success
     def _decrement_importedElements(self):
-        if isinstance(self.xmltv_source, Epg_Source) \
-            and self.xmltv_source.importedElements > 0:
-            self.xmltv_source.importedElements -= 1
-            self.xmltv_source.save()
+        if isinstance(self.epg_source, Epg_Source) \
+            and self.epg_source.importedElements > 0:
+            self.epg_source.importedElements -= 1
+            self.epg_source.save()
 
     def _get_dict_for_langs(self):
         # Search for lang attributes in the xml
@@ -235,9 +238,9 @@ class XML_Epg_Importer(object):
     def import_channel_elements(self):
 
         self.log.write('Importing Channel elements')
-
         self.xml.seek(0)
-        for event, elem in etree.iterparse(self.xml, tag='channel'):
+        #for ev, elem in etree.iterparse(self.xml.name, tag='channel'):
+        for elem in self.tree.xpath('channel'):
 
             C, created = Channel.objects.get_or_create(
                 channelid=elem.get('id'))
@@ -281,7 +284,8 @@ class XML_Epg_Importer(object):
 
         self.xml.seek(0)
         try:
-            for event, elem in etree.iterparse(self.xml, tag='programme'):
+            #for event, elem in etree.iterparse(self.xml, tag='programme'):
+            for elem in self.tree.xpath('programme'):
 
                 if elem.find('date') is not None:
                     date = elem.find('date').text
@@ -347,9 +351,10 @@ class XML_Epg_Importer(object):
                             L = None
                         if type(child.text) is NoneType:
                             continue
-
+                        desc = child.text.replace(
+                            ' - www.revistaeletronica.com.br ', '')
                         obj, created = Description.objects.get_or_create(
-                            value=child.text, lang=L)
+                            value=desc, lang=L)
                         P.descriptions.add(obj)
                     elif child.tag == 'title':
                         L, created = Lang.objects.get_or_create(
@@ -515,7 +520,7 @@ class XML_Epg_Importer(object):
 
         #self.grab_info()
 
-        epg_source = self.xmltv_source.epg_source_ptr
+        #epg_source = self.xmltv_source.epg_source_ptr
 
         # Import <channel> elements
         self.import_channel_elements()
@@ -531,7 +536,7 @@ class XML_Epg_Importer(object):
         #epg_source.save()
         #self.xmltv_source.save()
 
-        self.serialize(epg_source)
+        #self.serialize(epg_source)
 
         for k, v in self.dump_data['file_handlers'].items():
             self.log.write('Writing %d %s objects' % (
@@ -556,21 +561,21 @@ class XML_Epg_Importer(object):
         shutil.rmtree(self.tempdir)
 
         # generate a diff
-        try:
-            id1 = Epg_Source.objects.filter(
-                lastModification__lt=self.xmltv_source.lastModification
-                ).order_by('-lastModification')[0].id
-        except:
-            self.log.write(
-                'There is no previous full dump, so will not generate a diff')
-            return
-        id2 = self.xmltv_source.id
-        self.log.write('Generating a diff between "%s" and "%s"' % (
-            Epg_Source.objects.get(id=id1).lastModification,
-            self.xmltv_source.lastModification))
-        folder = os.path.dirname(self.xmltv_source.filefield.path)
-        diff_epg_dumps(os.path.join(folder, '%dfull.zip' % id1),
-            os.path.join(folder, '%dfull.zip' % id2))
+        #try:
+        #    id1 = Epg_Source.objects.filter(
+        #        lastModification__lt=self.xmltv_source.lastModification
+        #        ).order_by('-lastModification')[0].id
+        #except:
+        #    self.log.write(
+        #        'There is no previous full dump, so will not generate a diff')
+        #    return
+        #id2 = self.xmltv_source.id
+        #self.log.write('Generating a diff between "%s" and "%s"' % (
+        #    Epg_Source.objects.get(id=id1).lastModification,
+        #    self.xmltv_source.lastModification))
+        #folder = os.path.dirname(self.xmltv_source.filefield.path)
+        #diff_epg_dumps(os.path.join(folder, '%dfull.zip' % id1),
+        #    os.path.join(folder, '%dfull.zip' % id2))
 
 
 def get_info_from_epg_source(epg_source):
