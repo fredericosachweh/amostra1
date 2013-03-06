@@ -105,6 +105,10 @@ class Command(BaseCommand):
             definition = 'HD'
         elif d == u'Canal 3D':
             definition = '3D'
+        elif d == u'SD - Definição Padrão':
+            definition = 'SD'
+        elif d == u'HD - Alta Definição':
+            definition = 'HD'
         else:
             raise Exception('Unknown definition: %s' % d)
         # Codec and Crypto

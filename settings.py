@@ -15,6 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Emanoel Monster', 'emanoel@cianet.ind.br'),
+    ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -72,7 +73,6 @@ USE_L10N = True
 
 MEDIA_URL = '/tv/media/'
 MEDIA_ROOT = '/iptv/var/www/html/tvfiles/media/'
-ADMIN_MEDIA_PREFIX = '/tv/static/admin/'
 STATIC_ROOT = '/iptv/var/www/html/tvfiles/static/'
 STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
@@ -180,6 +180,18 @@ LOGGING = {
             'filename': '%s/stblog.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.api': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/api.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
+        'file.client': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/client.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -204,6 +216,16 @@ LOGGING = {
         },
         'stblog': {
             'handlers': ['file.stblog'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'api': {
+            'handlers': ['file.api'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'client': {
+            'handlers': ['file.client'],
             'level': 'DEBUG',
             'propagate': True
         }
@@ -235,6 +257,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+    # AppSettings
+    'dbsettings',
     # Aplicativo de monitoramento
     'monitoramento',
 )

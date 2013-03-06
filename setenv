@@ -1,0 +1,13 @@
+#!/bin/bash
+
+SETTINGS=settings
+
+echo "Use: 'source setenv user'"
+
+if [[ -e settings_$1.py ]] ; then
+    SETTINGS="settings_$1"
+else
+    echo "Config não encontrada."
+fi
+
+export DJANGO_SETTINGS_MODULE=${SETTINGS}

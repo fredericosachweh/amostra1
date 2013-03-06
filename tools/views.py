@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 import logging
 
 
@@ -15,41 +16,20 @@ def log(request):
         request.POST,
         request.GET,
     )
-    from pprint import pprint
-    pprint((
-        'Log enviado pelo stdout do Settopbox',
-        request.META.get('REMOTE_ADDR'),
-        request.META.get('HTTP_COOKIE'),
-        request.META.get('HTTP_USER_AGENT'),
-        request.POST,
-        request.GET,
-    ))
-    print('')
-    #print(request)
     return HttpResponse('')
 
 
 @never_cache
 def date(request):
-    #from datetime import datetime
     import time
-
-    #FORCE DATE
-    #now = datetime(2012, 7, 18, 12, 15, 00)
-    #timestamp = int(time.mktime(now.timetuple()))
-
-    #timestamp = time.mktime(now.timetuple())
-    #timestamp = now.strftime("%s")
-    #timestamp = time.mktime(time.gmtime())
-
     ts = time.strftime("%s")
-    #TODO: tornar dinamico ativar/desativar horario de verao
-    #FIXME: o -3600 corrige o horario de verao...
-    tz = time.timezone - 3600
+    #tz = time.timezone - 3600
+    g, l = time.gmtime(), time.localtime()
+    tz = (g.tm_hour - l.tm_hour) * 3600
     ltz = 0
-    response = '{"timestamp": %s, "timezone": %d, "localtimezone": %d}' % (ts, tz, ltz)
-    return HttpResponse(response)
-    #return HttpResponse('2012-05-15 17:14:55.702043')
+    response = '{"timestamp": %s, "timezone": %d, "localtimezone": %d}' % (ts,
+        tz, ltz)
+    return HttpResponse(response, content_type='application/json')
 
 
 @never_cache
@@ -70,4 +50,4 @@ def network(request):
     formatedMac = re.sub("(.{2})", "\\1:", ('FF%010d' % ipAsInt), re.DOTALL)
     mac = formatedMac[0:-1]
     response = '{"mac": "%s", "ip": "%s"}' % (mac, ip)
-    return HttpResponse(response)
+    return HttpResponse(response, content_type='application/json')

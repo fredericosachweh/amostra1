@@ -11,3 +11,4 @@ log
 .settings
 .project
 tvfiles
+.c9*
