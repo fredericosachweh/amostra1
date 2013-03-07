@@ -27,8 +27,8 @@ class Connection(object):
             username = os.environ['LOGNAME']
 
         # Log to a temporary file.
-        templog = tempfile.mkstemp('.txt', 'ssh-')[1]
-        paramiko.util.log_to_file(templog)
+        #templog = tempfile.mkstemp('.txt', 'ssh-')[1]
+        #paramiko.util.log_to_file(templog)
 
         # Begin the SSH transport.
         self._transport = paramiko.Transport((host, port))
