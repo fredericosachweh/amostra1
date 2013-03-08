@@ -12,7 +12,7 @@ from django.test.client import Client, FakePayload, MULTIPART_CONTENT
 from django.test import client
 from urlparse import urlparse
 from client.models import SetTopBoxChannel
-
+import models
 
 def patch_request_factory():
     def _method(self, path, data='', content_type='application/octet-stream', follow=False, **extra):
@@ -367,7 +367,6 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(401, response.status_code)
 
     def test_settopbox_autologin(self):
-        import models
         from django.contrib.auth.models import User
         ## Define auto_create and execute again
         models.SetTopBox.options.auto_create = False
@@ -417,3 +416,32 @@ class SetTopBoxChannelTest(TestCase):
         ## Busca o ususário criado para o stb
         user = User.objects.get(username=u'123456')
         self.assertEqual(user, stb.get_user())
+
+    def test_case_insensitive_mac_sn(self):
+        ## Define auto_create and execute again
+        models.SetTopBox.options.auto_create = False
+        models.SetTopBox.options.auto_add_channel = False
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        ## Define auto_create and execute again
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        ## Now disable auto_create
+        models.SetTopBox.options.auto_create = False
+        models.SetTopBox.options.auto_add_channel = False
+        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:00'})
+        self.assertEqual(403, response.status_code)
+        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06',
+            'sn': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06',
+            'SN': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+

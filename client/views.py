@@ -15,13 +15,13 @@ class Auth(View):
     mac_re = re.compile(r'^([0-9a-fA-F]{2}(:?|$)){6}$')
 
     def get(self, request):
-        return HttpResponse('Invalid request, must post', status=401)
+        return HttpResponse('Invalid request, must be post', status=401)
 
     @method_decorator(csrf_exempt)
     def post(self, request):
         log = logging.getLogger('client')
-        mac = request.POST.get('mac')
-        sn = request.POST.get('sn')
+        mac = request.POST.get('mac') or request.POST.get('MAC')
+        sn = request.POST.get('sn') or request.POST.get('SN')
         log.debug('auth:mac=%s, sn=%s', mac, sn)
         if mac is None:
             return HttpResponse('Invalid request', status=401)

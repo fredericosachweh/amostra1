@@ -70,6 +70,9 @@ class SetTopBoxResource(NamespacedModelResource):
             raise BadRequest('Duplicate entry for settopbox.serial_number')
         return bundle
 
+    #def determine_format(self, request):
+    #    return "application/json"
+
 
 class SetTopBoxParameterResource(NamespacedModelResource):
 
