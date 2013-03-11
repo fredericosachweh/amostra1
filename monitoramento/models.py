@@ -214,11 +214,7 @@ class BaseRepresentative(object):
         my_node = pydot.Node(style="filled")
         my_node.set_name(self.to_string(show_info=False))
         if hasattr(self.original_obj, 'running'):
-            #print type(self.original_obj)
-            if self.original_obj.running():
-                my_node.set_fillcolor("green")
-            else:
-                my_node.set_fillcolor("red")
+            my_node.set_fillcolor("blue")
 
         server = self.get_server()
 
