@@ -45,6 +45,10 @@ class SetTopBox(models.Model):
     def get_user(self):
         return User.objects.get(username=self.serial_number)
 
+    def get_channels(self):
+        channels = Channel.objects.filter(settopboxchannel__settopbox=self)
+        return channels
+
 
 @receiver(post_save, sender=SetTopBox)
 def SetTopBox_post_save(sender, instance, created, **kwargs):
@@ -114,7 +118,8 @@ class SetTopBoxChannel(models.Model):
         unique_together = (('settopbox', 'channel',),)
 
     def __unicode__(self):
-        return u'Channel:%s+SetTopBox:%s' % (self.channel, self.settopbox)
+        return u'SetTopBoxChannel[ch=%s stb=%s]' % (self.channel.number,
+            self.settopbox.serial_number)
 
 
 @receiver(post_save, sender=Channel)

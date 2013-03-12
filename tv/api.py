@@ -15,9 +15,10 @@ from tastypie.authentication import MultiAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 
-from client.models import SetTopBoxChannel, SetTopBox
+from client.models import SetTopBox
 
 import models
+import logging
 
 
 class ChannelResource(NamespacedModelResource):
@@ -39,19 +40,14 @@ class ChannelResource(NamespacedModelResource):
         return '%s:%d' % (bundle.obj.source.ip, bundle.obj.source.port)
 
     def apply_authorization_limits(self, request, object_list):
-        print(request.user.username)
-        object_list = super(ChannelResource, self).apply_authorization_limits(request,
-            object_list)
-        stb = SetTopBox.objects.filter(serial_number=request.user.username)
-        rel = SetTopBoxChannel.objects.filter(settopbox=stb)
-        #models.Channel.objects.filter(channel_id__in=)
-        print(stb)
-        channels = rel.all()
-        print(channels)
-        #object_list = object_list.filter(channel__in=channels)
-        #if request.user.is_superuser:
-        #    return object_list.filter(user__id=request.GET.get('user__id',''))
-        return object_list
+        log = logging.getLogger('api')
+        log.info('ChannelResource User=%s', request.user)
+        object_list = super(ChannelResource, self).apply_authorization_limits(
+            request, object_list)
+        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        channels = stb.get_channels()
+        log.info('Filter for STB=%s, channels=%s', stb, channels)
+        return channels
 
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='tv')
