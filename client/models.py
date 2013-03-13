@@ -20,6 +20,10 @@ class SetTopBoxOptions(dbsettings.Group):
         _(u'Cria automaticamente o vinculo entre settopbox e canal'),
         default=False
         )
+    auto_enable_recorder_access = dbsettings.BooleanValue(
+        _(u'Automaticamente libera o acesso nas gravações do canal'),
+        default=False
+        )
     use_mac_as_serial = dbsettings.BooleanValue(
         _(u'Caso não seja fornecido via post, utiliza o MAC como serial'),
         default=True
@@ -43,11 +47,12 @@ class SetTopBox(models.Model):
         return u'serial=%s,mac=%s' % (self.serial_number, self.mac)
 
     def get_user(self):
+        u'Returns: User related with this SetTopBox'
         return User.objects.get(username=self.serial_number)
 
     def get_channels(self):
-        channels = Channel.objects.filter(settopboxchannel__settopbox=self)
-        return channels
+        u'Returns: a list of tv.channel for relation SetTopBoxChannel'
+        return Channel.objects.filter(settopboxchannel__settopbox=self)
 
 
 @receiver(post_save, sender=SetTopBox)
@@ -74,9 +79,10 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
         ## Auto cria a relação de canais de estiver configurado para tal
         if SetTopBox.options.auto_add_channel is True:
             log.debug('Auto creating channel for SetTopBox')
+            rec = SetTopBox.options.auto_enable_recorder_access or False
             for channel in Channel.objects.all():
                 nrel, created = SetTopBoxChannel.objects.get_or_create(
-                    settopbox=instance, channel=channel)
+                    settopbox=instance, channel=channel, recorder=rec)
                 if created is True:
                     log.debug('Created:%s', nrel)
 
@@ -113,13 +119,14 @@ class SetTopBoxChannel(models.Model):
 
     settopbox = models.ForeignKey(SetTopBox, db_index=True)
     channel = models.ForeignKey(Channel, db_index=True)
+    recorder = models.BooleanField(_(u'Pode acessar conteúdo gravado'))
 
     class Meta:
         unique_together = (('settopbox', 'channel',),)
 
     def __unicode__(self):
-        return u'SetTopBoxChannel[ch=%s stb=%s]' % (self.channel.number,
-            self.settopbox.serial_number)
+        return u'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (self.channel.number,
+            self.settopbox.serial_number, self.recorder)
 
 
 @receiver(post_save, sender=Channel)

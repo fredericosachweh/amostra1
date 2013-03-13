@@ -33,6 +33,7 @@ class ChannelResource(NamespacedModelResource):
         urlconf_namespace = 'tv'
         authentication = MultiAuthentication(
             BasicAuthentication(realm='cianet-middleware'),
+            #jangoAuthorization(),
             Authentication(),
             ApiKeyAuthentication())
 
@@ -41,13 +42,18 @@ class ChannelResource(NamespacedModelResource):
 
     def apply_authorization_limits(self, request, object_list):
         log = logging.getLogger('api')
-        log.info('ChannelResource User=%s', request.user)
+        log.debug('ChannelResource User=%s', request.user)
+        if request.user.is_anonymous():
+            log.debug('Return empt list')
+            return models.Channel.objects.get_empty_query_set()
         object_list = super(ChannelResource, self).apply_authorization_limits(
             request, object_list)
-        stb = SetTopBox.objects.get(serial_number=request.user.username)
-        channels = stb.get_channels()
-        log.info('Filter for STB=%s, channels=%s', stb, channels)
-        return channels
+        if request.user.groups.filter(name='settopbox').exists():
+            stb = SetTopBox.objects.get(serial_number=request.user.username)
+            channels = stb.get_channels()
+            log.debug('Filter for STB=%s, channels=%s', stb, channels)
+            return channels
+        return object_list
 
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='tv')

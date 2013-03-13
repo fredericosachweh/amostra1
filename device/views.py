@@ -351,10 +351,8 @@ def tvod_list(request):
     from django.utils import timezone
     import time
     from models import StreamRecorder
+    from client.models import SetTopBox
     log = logging.getLogger('device.view')
-    ip = request.META.get('REMOTE_ADDR')
-    log.debug('tvod_list from ip=%s' % ip)
-    rec = StreamRecorder.objects.filter(status=True)
     meta = {
         'previous': "",
         'total_count': 0,
@@ -363,6 +361,23 @@ def tvod_list(request):
         'next': ""
     }
     obj = []
+    if request.user.is_anonymous():
+        log.debug('Return empt list to %s', request.user)
+        json = simplejson.dumps({'meta': meta, 'objects': obj})
+        return HttpResponse(json, mimetype='application/javascript')
+    if request.user.groups.filter(name='settopbox').exists():
+        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        log.debug('Filter for STB=%s', stb)
+    else:
+        json = simplejson.dumps({'meta': meta, 'objects': obj})
+        return HttpResponse(json, mimetype='application/javascript')
+    ip = request.META.get('REMOTE_ADDR')
+    log.debug('tvod_list from ip=%s' % ip)
+    rec = StreamRecorder.objects.filter(status=True,
+        channel__settopboxchannel__settopbox=stb,
+        channel__settopboxchannel__recorder=True
+        )
+    log.debug('Recorders:%s', rec)
     for r in rec:
         meta['total_count'] += 1
         rec_time = timezone.now() - timedelta(hours=int(r.keep_time))

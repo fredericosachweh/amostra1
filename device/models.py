@@ -1615,6 +1615,10 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.status = True
         self.save()
 
+    def stop(self, *args, **kwargs):
+        super(StreamPlayer, self).stop(*args, **kwargs)
+        self.server.rm_file(self.control_socket)
+
 
 class SoftTranscoder(DeviceServer):
     "A software transcoder device"
