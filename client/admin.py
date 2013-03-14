@@ -8,3 +8,4 @@ import models
 site.register(models.SetTopBox)
 site.register(models.SetTopBoxParameter)
 site.register(models.SetTopBoxChannel)
+site.register(models.SetTopBoxConfig)

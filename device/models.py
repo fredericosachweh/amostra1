@@ -1535,6 +1535,15 @@ class StreamRecorder(OutputModel, DeviceServer):
         tmpfile.close()
 
 
+@receiver(pre_save, sender=StreamRecorder)
+def StreamRecorder_pre_save(sender, instance, **kwargs):
+    "Filling dependent fields from Channel"
+    if instance.channel is not None:
+        channel = instance.channel
+        content_type_id = channel.source.content_type_id
+        instance.content_type_id = content_type_id
+
+
 ## Recuperação:
 # TIME_SHIFT=-$(( 60 * 5 * 27000000 )) # (minutos)
 # FOLDER=ch_53
@@ -1565,17 +1574,44 @@ class StreamPlayer(OutputModel, DeviceServer):
         Caso esteja rodando um vídeo anterior, interromper este antes de
         executar o novo.
         """
+        log = logging.getLogger('tvod')
+        log.info('PLAY:', self)
         if self.status and self.pid:
             self.stop()
         return self.start(time_shift=time_shift)
 
-    def pause(self):
-        """
+    def pause(self, time_shift=0):
+        ur"""
         Abre o socket da reprodução atual chamando o multicatctl e envia o
         comando pause para o soket específico
         multicatctl -c /xxx/multicat_yy.socket pause
         """
-        pass
+        from django.core.cache import get_cache
+        cache = get_cache('default')
+        log = logging.getLogger('tvod')
+        log.info('PAUSE:', self)
+        if self.status and self.pid:
+            key = 'StreamPlayer[%d].status' % self.id
+            status = cache.get(key)
+            if status == 'paused':
+                cmd = u'%s -r %s play' % (
+                    settings.MULTICATCTL_COMMAND,
+                    self.control_socket,
+                    )
+                new_status = 'play'
+            else:
+                cmd = u'%s -r %s pause' % (
+                    settings.MULTICATCTL_COMMAND,
+                    self.control_socket,
+                    )
+                new_status = 'paused'
+            cache.set(key, new_status)
+            log.info('%s=%s', key, new_status)
+            self.pid = self.server.execute_daemon(cmd)
+            self.status = True
+            self.save()
+        else:
+            log.error('Player not runnig:%s', self)
 
     def _get_cmd(self, time_shift=0):
         self.control_socket = '%sclient_%d.sock' % (
@@ -1598,13 +1634,19 @@ class StreamPlayer(OutputModel, DeviceServer):
         # Create the necessary log folders
         #self._create_folders()
         # Start multicat
-        log = logging.getLogger('debug')
+        log = logging.getLogger('tvod')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
         log.info('StreamPlayer.command:%s' % cmd)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
+
+    def stop(self, *args, **kwargs):
+        log = logging.getLogger('tvod')
+        log.info('STOP:', self)
+        super(StreamPlayer, self).stop(*args, **kwargs)
+        self.server.rm_file(self.control_socket)
 
 
 class SoftTranscoder(DeviceServer):
@@ -1741,7 +1783,8 @@ default=False)  # --sout-transcode-audio-sync
             if self.apply_normvol:
                 afilters.append('volnorm')
                 cmd += self._get_normvol_filter_options()
-            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' % (
+            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' \
+            % (
                 self.audio_codec, self.audio_bitrate,
                 u':'.join(afilters), output, input_addr
             )
@@ -1782,15 +1825,6 @@ default=False)  # --sout-transcode-audio-sync
                 u' transcodificação estiver habilitada.'))
 
 
-@receiver(pre_save, sender=StreamRecorder)
-def StreamRecorder_pre_save(sender, instance, **kwargs):
-    "Filling dependent fields from Channel"
-    if instance.channel is not None:
-        channel = instance.channel
-        content_type_id = channel.source.content_type_id
-        instance.content_type_id = content_type_id
-
-
 @receiver(post_save, sender=SoftTranscoder)
 def SoftTranscoder_post_save(sender, instance, **kwargs):
     log = logging.getLogger('debug')
@@ -1802,3 +1836,8 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
         instance.stop()
         instance.start()
         instance.restart = False
+
+
+class RealTimeEncript(models.Model):
+    u"""RealTime to manage stream flow"""
+

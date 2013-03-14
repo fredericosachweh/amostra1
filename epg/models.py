@@ -20,7 +20,7 @@ class Epg_Source(models.Model):
         upload_to='epg/')
     lastModification = models.DateTimeField(
         _(u'Data da última modificação no servidor da revista eletrônica'),
-        unique=True)
+        unique=True, auto_now=True)
     # Creation time
     created = models.DateTimeField(_(u'Data de criação'), auto_now=True)
     # Total number of elements in the file
@@ -129,7 +129,29 @@ class Episode_Num(models.Model):
 
 class Rating(models.Model):
     system = models.CharField(max_length=100)
-    value = models.CharField(max_length=100)
+    value = models.CharField(max_length=100, db_column='value')
+    int_value = models.PositiveSmallIntegerField(null=True, default=0)
+
+    class Meta:
+        unique_together = (('system', 'value'),)
+
+    def __unicode__(self):
+        return u'%s:%s' % (self.system, self.value)
+
+    def save(self, *args, **kwargs):
+        if self.value == u'Programa livre para todas as idades':
+            self.int_value = 0
+        elif self.value == u'Programa impróprio para menores de 10 anos':
+            self.int_value = 10
+        elif self.value == u'Programa impróprio para menores de 12 anos':
+            self.int_value = 12
+        elif self.value == u'Programa impróprio para menores de 14 anos':
+            self.int_value = 14
+        elif self.value == u'Programa impróprio para menores de 16 anos':
+            self.int_value = 16
+        elif self.value == u'Programa impróprio para menores de 18 anos':
+            self.int_value = 18
+        super(Rating, self).save(*args, **kwargs)
 
 
 class Language(models.Model):

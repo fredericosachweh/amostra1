@@ -180,6 +180,24 @@ LOGGING = {
             'filename': '%s/stblog.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.api': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/api.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
+        'file.client': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/client.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
+        'file.tvod': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/tvod.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -206,7 +224,22 @@ LOGGING = {
             'handlers': ['file.stblog'],
             'level': 'DEBUG',
             'propagate': True
-        }
+        },
+        'api': {
+            'handlers': ['file.api'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'client': {
+            'handlers': ['file.client'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'tvod': {
+            'handlers': ['file.tvod'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
     }
 }
 
@@ -235,6 +268,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+    # AppSettings
+    'dbsettings',
     # Aplicativo de monitoramento
     'monitoramento',
 )
@@ -254,6 +289,7 @@ LOGIN_REQUIRED_URLS = (
 MULTICAT_COMMAND = '/iptv/bin/multicat'
 MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
+MULTICATCTL_COMMAND = '/iptv/bin/multicatctl'
 
 CHANNEL_RECORD_USE_PCRPID = True
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
