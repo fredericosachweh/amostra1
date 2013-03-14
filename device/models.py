@@ -1574,17 +1574,44 @@ class StreamPlayer(OutputModel, DeviceServer):
         Caso esteja rodando um vídeo anterior, interromper este antes de
         executar o novo.
         """
+        log = logging.getLogger('tvod')
+        log.info('PLAY:', self)
         if self.status and self.pid:
             self.stop()
         return self.start(time_shift=time_shift)
 
-    def pause(self):
-        """
+    def pause(self, time_shift=0):
+        ur"""
         Abre o socket da reprodução atual chamando o multicatctl e envia o
         comando pause para o soket específico
         multicatctl -c /xxx/multicat_yy.socket pause
         """
-        pass
+        from django.core.cache import get_cache
+        cache = get_cache('default')
+        log = logging.getLogger('tvod')
+        log.info('PAUSE:', self)
+        if self.status and self.pid:
+            key = 'StreamPlayer[%d].status' % self.id
+            status = cache.get(key)
+            if status == 'paused':
+                cmd = u'%s -r %s play' % (
+                    settings.MULTICATCTL_COMMAND,
+                    self.control_socket,
+                    )
+                new_status = 'play'
+            else:
+                cmd = u'%s -r %s pause' % (
+                    settings.MULTICATCTL_COMMAND,
+                    self.control_socket,
+                    )
+                new_status = 'paused'
+            cache.set(key, new_status)
+            log.info('%s=%s', key, new_status)
+            self.pid = self.server.execute_daemon(cmd)
+            self.status = True
+            self.save()
+        else:
+            log.error('Player not runnig:%s', self)
 
     def _get_cmd(self, time_shift=0):
         self.control_socket = '%sclient_%d.sock' % (
@@ -1607,7 +1634,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         # Create the necessary log folders
         #self._create_folders()
         # Start multicat
-        log = logging.getLogger('debug')
+        log = logging.getLogger('tvod')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
         log.info('StreamPlayer.command:%s' % cmd)
@@ -1616,6 +1643,8 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.save()
 
     def stop(self, *args, **kwargs):
+        log = logging.getLogger('tvod')
+        log.info('STOP:', self)
         super(StreamPlayer, self).stop(*args, **kwargs)
         self.server.rm_file(self.control_socket)
 

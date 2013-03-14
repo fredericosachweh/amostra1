@@ -390,8 +390,10 @@ class SetTopBoxChannelTest(TestCase):
     def test_settopbox_options(self):
         #SetTopBox.options.auto_add_channel = False
         #SetTopBox.options.use_mac_as_serial = True
-        self.assertEqual(SetTopBox.options.auto_add_channel, False)
-        self.assertEqual(SetTopBox.options.use_mac_as_serial, True)
+        self.assertEqual(SetTopBox.options.auto_add_channel, False,
+            'Default value not working')
+        self.assertEqual(SetTopBox.options.use_mac_as_serial, True,
+            'Default value not working')
 
     def test_auth_get(self):
         auth_login = reverse('client_auth')
@@ -557,6 +559,7 @@ class SetTopBoxChannelTest(TestCase):
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         ## Do logoff
@@ -599,10 +602,45 @@ class SetTopBoxChannelTest(TestCase):
         jobj = json.loads(response.content)
         self.assertEqual(3, jobj['meta']['total_count'])
 
-
-
-
-
-
-
-
+    def test_play_record(self):
+        from pprint import pprint
+        log = logging.getLogger('api')
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        ## Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        ## Try play recorder ch=13, 14, 51
+        ## channel_number=None, command=None, seek=0
+        url_play = reverse('device.views.tvod', kwargs={
+            'channel_number': 13,
+            'command': 'play',
+            'seek': 20})
+        self.assertEqual('/tv/device/tvod/13/play/20', url_play)
+        response = self.c.get(url_play)
+        self.assertEqual(401, response.status_code)
+        ## Do login
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        ## No channel
+        response = self.c.get(reverse('device.views.tvod', kwargs={
+            'channel_number': 15,
+            'command': 'play',
+            'seek': 20}))
+        self.assertEqual(404, response.status_code)
+        ## No seek avaliable
+        response = self.c.get(reverse('device.views.tvod', kwargs={
+            'channel_number': 13,
+            'command': 'play',
+            'seek': 200000}))
+        self.assertEqual(404, response.status_code)
+        ## All OK
+        response = self.c.get(reverse('device.views.tvod', kwargs={
+            'channel_number': 13,
+            'command': 'play',
+            'seek': 200}))
+        self.assertEqual(200, response.status_code)
