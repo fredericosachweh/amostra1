@@ -192,6 +192,12 @@ LOGGING = {
             'filename': '%s/client.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.tvod': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/tvod.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -228,7 +234,12 @@ LOGGING = {
             'handlers': ['file.client'],
             'level': 'DEBUG',
             'propagate': True
-        }
+        },
+        'tvod': {
+            'handlers': ['file.tvod'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
     }
 }
 
@@ -278,6 +289,7 @@ LOGIN_REQUIRED_URLS = (
 MULTICAT_COMMAND = '/iptv/bin/multicat'
 MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
+MULTICATCTL_COMMAND = '/iptv/bin/multicatctl'
 
 CHANNEL_RECORD_USE_PCRPID = True
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'

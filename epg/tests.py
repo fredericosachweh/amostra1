@@ -9,6 +9,7 @@ import simplejson as json
 
 from models import *
 from data_importer import XML_Epg_Importer, Zip_to_XML
+import logging
 
 input_xml_1 = '''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
@@ -139,9 +140,12 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 <value>5/5</value>
 </star-rating>
 </programme>
-<programme start="20130227180000 -0300" stop="20130227190000 -0300" channel="100" program_id="0000219575" event_id="00000000000006278834" series_key="">
+<programme start="20130227180000 -0300" stop="20130227190000 -0300" channel="\
+100" program_id="0000219575" event_id="00000000000006278834" series_key="">
 <title lang="pt">Pet Shop Boys no BBC</title>
-<desc>De volta com o esperado 10° disco de estúdio, Yes", e recebendo o Brit Award de 2009, não há um momento melhor para uma retrospectiva da carreira fenomenal dos Pet Shop Boys. "</desc>
+<desc>De volta com o esperado 10° disco de estúdio, Yes", e recebendo o Brit \
+Award de 2009, não há um momento melhor para uma retrospectiva da carreira \
+fenomenal dos Pet Shop Boys. "</desc>
 <category lang="pt">Espetáculo</category>
 <category lang="pt">Musical</category>
 <video>
@@ -151,10 +155,14 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 <value>Programa impróprio para menores de 10 anos</value>
 </rating>
 </programme>
-<programme start="20130227190000 -0300" stop="20130227200000 -0300" channel="100" program_id="0000292544" event_id="00000000000006278835" series_key="">
+<programme start="20130227190000 -0300" stop="20130227200000 -0300" channel="\
+100" program_id="0000292544" event_id="00000000000006278835" series_key="">
 <title lang="pt">Lovebox Festival 2011</title>
 <title lang="en">Lovebox Festival 2011 - Part 2</title>
-<desc>A 2ª parte do festival criado pela dupla de DJs Groove Armada, em 2002, onde apresentam o mais novo da cena eletrônica. E em sua edição de 2011, convidaram Snoop Dogg, Scissor Sisters, Beth Ditto, Santigold, Ziggy Marley e a lenda: Blondie.</desc>
+<desc>A 2ª parte do festival criado pela dupla de DJs Groove Armada, em 2002, \
+onde apresentam o mais novo da cena eletrônica. E em sua edição de 2011, \
+convidaram Snoop Dogg, Scissor Sisters, Beth Ditto, Santigold, Ziggy Marley \
+e a lenda: Blondie.</desc>
 <category lang="pt">Espetáculo</category>
 <category lang="pt">Show</category>
 <video>
@@ -164,10 +172,13 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 <value>Programa livre para todas as idades</value>
 </rating>
 </programme>
-<programme start="20130306100000 -0300" stop="20130306114500 -0300" channel="158" program_id="0000318062" event_id="00000000000005836669" series_key="">
+<programme start="20130306100000 -0300" stop="20130306114500 -0300" channel="\
+158" program_id="0000318062" event_id="00000000000005836669" series_key="">
 <title lang="pt">O Segredo da Cabana</title>
 <title lang="en">The Cabin in the Woods</title>
-<desc>Autoproclamada por seu criadores como "uma revolução no cinema de terror", a história conta as desventuras de cinco amigos "presos" no bosque e prisioneiros de uma verdadeira armadilha mortal.</desc>
+<desc>Autoproclamada por seu criadores como "uma revolução no cinema de terror\
+", a história conta as desventuras de cinco amigos "presos" no bosque e \
+prisioneiros de uma verdadeira armadilha mortal.</desc>
 <credits>
 <director>Drew Goddard</director>
 <actor>Kristen Connolly</actor>
@@ -189,10 +200,13 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 <value>3/5</value>
 </star-rating>
 </programme>
-<programme start="20130308093000 -0300" stop="20130308114500 -0300" channel="159" program_id="0000318080" event_id="00000000000005837088" series_key="">
+<programme start="20130308093000 -0300" stop="20130308114500 -0300" channel="\
+159" program_id="0000318080" event_id="00000000000005837088" series_key="">
 <title lang="pt">Looper: Assassinos do Futuro</title>
 <title lang="en">Looper</title>
-<desc>Joe vive em 2044 e sua função é matar pessoas enviadas do futuro por associações criminosas. O que fará ao descobrir que uma dessas pessoas do futuro que terá que matar será ele próprio?</desc>
+<desc>Joe vive em 2044 e sua função é matar pessoas enviadas do futuro por \
+associações criminosas. O que fará ao descobrir que uma dessas pessoas do \
+futuro que terá que matar será ele próprio?</desc>
 <credits>
 <director>Rian Johnson</director>
 <actor>Bruce Willis</actor>
@@ -239,7 +253,7 @@ class Test_Timezone(TestCase):
 class Test_XML_to_db(object):
 
     def test_Epg_Source(self):
-        from dateutil.parser import parse
+        #from dateutil.parser import parse
         self.maxDiff = None
         self.assertEquals(self.xmltv_source.generator_info_name,
             'Revista Eletronica - Unidade Lorenz Ltda')
@@ -285,7 +299,6 @@ class One_Raw_XML(Test_XML_to_db, TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
-        import os
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.xml', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
@@ -312,7 +325,6 @@ class One_Zipped_XML(Test_XML_to_db, TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
-        import os
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.xml', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
@@ -343,7 +355,6 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
-        import os
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
@@ -367,7 +378,7 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
         self.f.close()
 
     def test_Epg_Source(self):
-        from dateutil.parser import parse
+        #from dateutil.parser import parse
         self.assertEquals(self.xmltv_source.generator_info_name,
             'Revista Eletronica - Unidade Lorenz Ltda')
         self.assertEquals(self.xmltv_source.generator_info_url,
@@ -492,7 +503,6 @@ class APITest(TestCase):
         self.assertEquals(response.status_code, 404)
 
     def test_Programme_REST(self):
-        #import pprint
         self.maxDiff = None
         c = Client()
         expected = [{'actors': [],
@@ -601,6 +611,7 @@ aventureiros tentam p\xf4r as m\xe3os numa fortuna.',
             )
         response = c.get(url)
         jobj = json.loads(response.content)
+        self.assertEqual(jobj['meta']['total_count'], 2)
         response = c.get(url,
             {'start_timestamp': 1326683100 - 3600 * 3,
              'stop_timestamp': 1326685500 - 3600 * 3})
@@ -682,6 +693,7 @@ class ParseRatingTest(TestCase):
         r5.save()
         r0n, c = Rating.objects.get_or_create(system=u'Advisory',
                    value=u'Programa livre para todas as idades')
+        self.assertEqual(r0n.int_value, 0)
         self.assertFalse(c)
 
     def test_get_rating(self):
@@ -697,31 +709,39 @@ class ParseRatingTest(TestCase):
         rating18, created = Rating.objects.get_or_create(
             system=u'Advisory',
             value=u'Programa impróprio para menores de 18 anos')
+        self.assertTrue(created)
         self.assertEqual(18, rating18.int_value)
         rating16, created = Rating.objects.get_or_create(
             system=u'Advisory',
             value=u'Programa impróprio para menores de 16 anos')
+        self.assertTrue(created)
         self.assertEqual(16, rating16.int_value)
 
     def test_rating_api(self):
-        from pprint import pprint
+        #import pprint
         c = Client()
         url = reverse('epg:api_dispatch_list',
             kwargs={'resource_name': 'guide', 'api_name': 'v1'},
             )
         response = c.get(url)
         jobj = json.loads(response.content)
-        #pprint(jobj)
-        #      'resource_uri': '/tv/api/epg/v1/guide/2/',
-        #      'start': '2012-01-15T23:45:00',
-        #      'start_timestamp': 1326689100.0,
-        #      'stop': '2012-01-16T01:45:00',
-        #      'stop_timestamp': 1326696300.0},
-        response = c.get(url,
-            {'start_timestamp': 1326689100 - 3600 * 3,
-             'stop_timestamp': 1326696300 - 3600 * 3})
-        #pprint(response.content)
+        self.assertEqual(len(jobj['objects']), 4)
+        urlguide4 = reverse('epg:api_dispatch_detail',
+            kwargs={'resource_name': 'guide', 'api_name': 'v1', 'pk': '4'},
+            )
+        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/4/')
+        #guide = Guide.objects.get(pk=4)
+        response = c.get(urlguide4)
         jobj = json.loads(response.content)
-        #print(jobj['objects'][0]['programme'])
+        #pprint.pprint(jobj)
+#  'resource_uri': '/tv/api/epg/v1/guide/4/',
+#  'start': '2013-02-27T19:00:00',
+#  'start_timestamp': 1362013200.0,
+#  'stop': '2013-02-27T20:00:00',
+#  'stop_timestamp': 1362016800.0}
+        response = c.get(url,
+            {'start_timestamp': 1362013200 - 3600 * 3,
+             'stop_timestamp': 1362016800 - 3600 * 3})
+        jobj = json.loads(response.content)
         self.assertEqual(jobj['objects'][0]['programme']['rating'],
-            '/tv/api/epg/v1/rating/2/')
+            '/tv/api/epg/v1/rating/1/')

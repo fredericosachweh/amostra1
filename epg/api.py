@@ -2,9 +2,8 @@
 # -*- encoding:utf8 -*-
 
 import time
-import datetime
 from django.utils import timezone
-from django.conf.urls.defaults import *
+#from django.conf.urls.defaults import *
 
 from tastypie import fields
 from tastypie.authorization import Authorization
@@ -12,7 +11,8 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 
-from models import *
+import models
+import logging
 
 
 class MetaDefault:
@@ -22,24 +22,24 @@ class MetaDefault:
 
 class LangResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = Lang.objects.all()
+        queryset = models.Lang.objects.all()
 
 
 class UrlResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = Url.objects.all()
+        queryset = models.Url.objects.all()
 
 
 class IconResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = Icon.objects.all()
+        queryset = models.Icon.objects.all()
 
 
 class Display_NameResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = Display_Name.objects.all()
+        queryset = models.Display_Name.objects.all()
 
 
 class ChannelResource(NamespacedModelResource):
@@ -49,7 +49,7 @@ class ChannelResource(NamespacedModelResource):
 
     class Meta(MetaDefault):
         #XXX: Filtrar apenas canais que sejam relacionados com canais
-        queryset = Channel.objects.all()
+        queryset = models.Channel.objects.all()
         filtering = {
             "channelid": ALL
         }
@@ -64,7 +64,7 @@ class TitleResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = Title.objects.all()
+        queryset = models.Title.objects.all()
 
 
 class DescriptionResource(NamespacedModelResource):
@@ -73,50 +73,50 @@ class DescriptionResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = Description.objects.all()
+        queryset = models.Description.objects.all()
 
 
 class StaffResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = Staff.objects.all()
+        queryset = models.Staff.objects.all()
 
 
 class ActorResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = Actor.objects.all()
+        queryset = models.Actor.objects.all()
 
 
 class RatingResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = Rating.objects.all()
+        queryset = models.Rating.objects.all()
 
 
 class LanguageResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = Language.objects.all()
+        queryset = models.Language.objects.all()
 
 
 class SubtitleResource(NamespacedModelResource):
     language = fields.ForeignKey(LanguageResource, 'language', null=True)
 
     class Meta(MetaDefault):
-        queryset = Subtitle.objects.all()
+        queryset = models.Subtitle.objects.all()
 
 
 class Star_RatingResource(NamespacedModelResource):
     icons = fields.ToManyField(IconResource, 'icons', full=True, null=True)
 
     class Meta(MetaDefault):
-        queryset = Star_Rating.objects.all()
+        queryset = models.Star_Rating.objects.all()
 
 
 class CategoryResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = Category.objects.all()
+        queryset = models.Category.objects.all()
 
 
 class ProgrammeResource(NamespacedModelResource):
@@ -133,7 +133,7 @@ class ProgrammeResource(NamespacedModelResource):
         null=True)
 
     class Meta(MetaDefault):
-        queryset = Programme.objects.all()
+        queryset = models.Programme.objects.all()
         filtering = {
             'video_aspect': ALL,
             'actors': ALL,
@@ -162,26 +162,22 @@ class GuideResource(NamespacedModelResource):
     channel = fields.ToOneField(ChannelResource, 'channel', full=False)
     programme = fields.ToOneField(ProgrammeResource, 'programme', full=True)
 
-    #XXX: Criar next/previus
     class Meta(MetaDefault):
-        queryset = Guide.objects.all().order_by('start')
+        queryset = models.Guide.objects.all().order_by('start')
         filtering = {
             "channel": ALL_WITH_RELATIONS,
             "start": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
             "stop": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
-            #"start_timestamp": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
-            #"stop_timestamp": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],
         }
 
     def dehydrate_start_timestamp(self, bundle):
-        #print('start:%s' % bundle.obj.start)
         return time.mktime(bundle.obj.start.timetuple())
 
     def dehydrate_stop_timestamp(self, bundle):
-        #print('stop:%s' % bundle.obj.stop)
         return time.mktime(bundle.obj.stop.timetuple())
 
     def build_filters(self, filters=None):
+        #log = logging.getLogger('api')
         newfilter = {}
         if filters is None:
             filters = {}
@@ -190,7 +186,9 @@ class GuideResource(NamespacedModelResource):
                 k = f[:-10]
                 v = filters.get(f)
                 try:
-                    v = timezone.datetime.fromtimestamp(float(v))
+                    #log.debug('Filter:%s=%s', k, v)
+                    v = timezone.datetime.fromtimestamp(float(v), timezone.utc)
+                    #log.debug('time:%s', v)
                 except:
                     v = None
                 newfilter[k] = str(v)

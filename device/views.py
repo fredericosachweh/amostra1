@@ -281,48 +281,92 @@ def tvod(request, channel_number=None, command=None, seek=0):
     from django.utils import timezone
     from models import StreamPlayer, StreamRecorder
     from tv.models import Channel
+    from client.models import SetTopBox
     from django.core.cache import get_cache
+    from random import choice
     cache = get_cache('default')
     log = logging.getLogger('device.view')
+    status = cache._cache.get_stats()
+    if len(status) == 0:
+        log.error('Memcached is not running')
+        return HttpResponse('Backend Cache is Down',
+            mimetype='application/javascript',
+            status=500)
     resp = 'Not running'
     ## Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
     ## Find request on cache
     key = 'tvod_ip_%s' % ip
-    state = cache.get(key)
-    if state is None:
+    if cache.get(key) is None:
+        log.info('cache new key="%s"', key)
         cache.set(key, 1)
     else:
-        log.debug('duplicated request key:%s', key)
-        return HttpResponse(u'DUP REC', mimetype='application/javascript')
-    log.info('tvod[%s] client:%s channel:%s seek:%s' % (command, ip,
+        log.debug('duplicated request key:"%s"', key)
+        return HttpResponse(u'DUP REC', mimetype='application/javascript',
+            status=409)
+    log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"' % (command, ip,
         channel_number, seek))
+    ## User
+    if request.user.is_anonymous():
+        log.debug('User="%s" can\'t play', request.user)
+        cache.delete(key)
+        return HttpResponse('Unauthorized', mimetype='application/javascript',
+            status=401)
+    if request.user.groups.filter(name='settopbox').exists():
+        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        log.debug('Filter for STB=%s', stb)
+    else:
+        cache.delete(key)
+        return HttpResponse('Not SetTopBox', mimetype='application/javascript',
+            status=401)
     ## Load channel
-    channel = get_object_or_404(Channel, number=channel_number)
+    try:
+        channel = Channel.objects.get(number=channel_number)
+    except:
+        cache.delete(key)
+        log.warning('Not Found: %s', request.get_full_path())
+        return HttpResponse(u'Unavaliable', mimetype='application/javascript',
+            status=404)
     ## Verifica se existe gravação solicitada
     record_time = timezone.now() - timedelta(0, int(seek))
     ## Find a recorder with request
     log.info('rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
         record_time, channel, (int(seek) / 3600))
-    recorders = StreamRecorder.objects.filter(start_time__lte=record_time,
-        channel=channel, keep_time__gte=(int(seek) / 3600))
+    recorders = StreamRecorder.objects.filter(
+        status=True,
+        channel__settopboxchannel__settopbox=stb,
+        channel__settopboxchannel__recorder=True,
+        start_time__lte=record_time,
+        channel=channel,
+        keep_time__gte=(int(seek) / 3600)
+        )
     log.info('avaliable recorders: %s' % recorders)
-    if len(recorders) == 0:
+    if recorders.count() == 0:
         log.info('Record Unavaliable')
         cache.delete(key)
-        return HttpResponse(u'Unavaliable', mimetype='application/javascript')
+        return HttpResponse(u'Unavaliable', mimetype='application/javascript',
+            status=404)
+    # TODO: Create a method to priorize server for now random.choice
+    recorder = choice(recorders)
+    log.info('Current recorder:%s', recorder)
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
         StreamPlayer.objects.create(
             stb_ip=ip,
-            server=recorders[0].server,
-            recorder=recorders[0]
+            server=recorder.server,
+            recorder=recorder
             )
         log.info('new player created to ip: %s' % ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
-    player.recorder = recorders[0]
-    player.server = recorders[0].server
-    player.save()
+    if player.status and player.pid:
+        pass
+    else:
+        player.recorder = recorder
+        player.server = recorder.server
+        player.save()
+    ## On test
+    #cache.delete(key)
+    #return HttpResponse('Skeep on teste', status=200)
     if command == 'play':
         try:
             player.play(time_shift=int(seek))
@@ -335,13 +379,15 @@ def tvod(request, channel_number=None, command=None, seek=0):
             log.error('Can not start: status=%s pid=%s' % (player.status,
                 player.pid))
             resp = 'Can not start'
+    elif command == 'pause':
+        player.pause(time_shift=int(seek))
     elif command == 'stop':
         if player.pid and player.status:
             player.stop()
         resp = 'Stoped'
     log.debug('Player: %s', player)
     cache.delete(key)
-    return HttpResponse(resp, mimetype='application/javascript')
+    return HttpResponse(resp, mimetype='application/javascript', status=200)
 
 
 def tvod_list(request):
@@ -351,10 +397,8 @@ def tvod_list(request):
     from django.utils import timezone
     import time
     from models import StreamRecorder
+    from client.models import SetTopBox
     log = logging.getLogger('device.view')
-    ip = request.META.get('REMOTE_ADDR')
-    log.debug('tvod_list from ip=%s' % ip)
-    rec = StreamRecorder.objects.filter(status=True)
     meta = {
         'previous': "",
         'total_count': 0,
@@ -363,6 +407,23 @@ def tvod_list(request):
         'next': ""
     }
     obj = []
+    if request.user.is_anonymous():
+        log.debug('Return empt list to %s', request.user)
+        json = simplejson.dumps({'meta': meta, 'objects': obj})
+        return HttpResponse(json, mimetype='application/javascript')
+    if request.user.groups.filter(name='settopbox').exists():
+        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        log.debug('Filter for STB=%s', stb)
+    else:
+        json = simplejson.dumps({'meta': meta, 'objects': obj})
+        return HttpResponse(json, mimetype='application/javascript')
+    ip = request.META.get('REMOTE_ADDR')
+    log.debug('tvod_list from ip=%s' % ip)
+    rec = StreamRecorder.objects.filter(status=True,
+        channel__settopboxchannel__settopbox=stb,
+        channel__settopboxchannel__recorder=True
+        )
+    log.debug('Recorders:%s', rec)
     for r in rec:
         meta['total_count'] += 1
         rec_time = timezone.now() - timedelta(hours=int(r.keep_time))

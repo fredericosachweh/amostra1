@@ -13,7 +13,8 @@ from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest
 from django.db import IntegrityError
 import models
-from tv.models import Channel
+from device import models as devicemodels
+from tv.api import ChannelResource
 import logging
 
 ## Validation:
@@ -70,6 +71,9 @@ class SetTopBoxResource(NamespacedModelResource):
             raise BadRequest('Duplicate entry for settopbox.serial_number')
         return bundle
 
+    #def determine_format(self, request):
+    #    return "application/json"
+
 
 class SetTopBoxParameterResource(NamespacedModelResource):
 
@@ -92,17 +96,6 @@ class SetTopBoxParameterResource(NamespacedModelResource):
             BasicAuthentication(realm='cianet-middleware'),
             Authentication(),
             ApiKeyAuthentication())
-
-
-class ChannelResource(NamespacedModelResource):
-
-    number = fields.CharField(attribute='number', unique=True)
-
-    class Meta:
-        queryset = Channel.objects.all()
-        resource_name = 'channel'
-        allowed_methods = ['get']
-        authorization = Authorization()
 
 
 class SetTopBoxChannelResource(NamespacedModelResource):
@@ -228,9 +221,13 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             raise BadRequest('Duplicate entry for settopboxconfig')
         return bundle
 
+
+class StreamRecorderResource(NamespacedModelResource):
+    class Meta:
+        queryset = devicemodels.StreamRecorder.objects.filter(status=True)
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
-api.register(ChannelResource())
 api.register(SetTopBoxChannelResource())
 api.register(SetTopBoxConfigResource())
