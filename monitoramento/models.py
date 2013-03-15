@@ -30,6 +30,11 @@ import os
 import logging
 
 import pynag.Model
+import pynag.Parsers
+import shutil
+import os.path
+
+
 
 #@receiver(post_save, sender=Server)
 #def Server_enable_mon(sender, instance, created, **kwargs):
@@ -53,6 +58,193 @@ import pynag.Model
 #        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
 #            '/etc/snmp/snmpd.conf' % remote_tmpfile)
 #        instance.execute('/usr/bin/sudo /bin/systemctl restart snmpd.service')
+
+def get_representative_object(curr_object):
+    obj_type = str(type(curr_object))
+    obj_type = obj_type.split("'")[1]
+    obj_type = obj_type.split('.').pop()
+    object_representative = eval(obj_type+'_representative')
+    new_object = object_representative(original_obj=curr_object)
+
+    return new_object
+
+class NagiosConfig:
+    monitoring_servers = []
+    cfg_files = []
+
+    def set_monitor_servers(self):
+        servers = Server.objects.all()
+        for server in servers:
+            if server.server_type == "monitor":
+                self.monitoring_servers.append(server)
+        if len(self.monitoring_servers) == 0:
+            return False
+        else:
+            return True
+
+    def create_file(self, file_name):
+        f = open(file_name, 'w')
+        f.close()
+
+    def export_cfg(self):
+        try:
+            CFG_ROOT = '/tmp/monitoramento/nagios'
+            if os.path.exists(CFG_ROOT) == True:
+                shutil.rmtree(CFG_ROOT)
+
+            os.makedirs(CFG_ROOT)
+            CFG_HOST_FILE = os.path.join(CFG_ROOT, 'hosts.cfg')
+            self.cfg_files.append(CFG_HOST_FILE)
+            CFG_SERVICE_FILE = os.path.join(CFG_ROOT, 'services.cfg')
+            self.cfg_files.append(CFG_SERVICE_FILE)
+            CFG_SERVICEGROUP_FILE = os.path.join(CFG_ROOT, 'servicegroups.cfg')
+            self.cfg_files.append(CFG_SERVICEGROUP_FILE)
+
+            for file_name in self.cfg_files:
+                self.create_file(file_name)
+
+            CFG_TMP_FILE = os.path.join(CFG_ROOT, 'tmp.cfg')
+            self.create_file(CFG_TMP_FILE)
+
+            f = open(CFG_TMP_FILE, 'w')
+            f.write('cfg_file=%s\n' % CFG_HOST_FILE )
+            f.write('cfg_file=%s\n' % CFG_SERVICE_FILE )
+            f.write('cfg_file=%s\n' % CFG_SERVICEGROUP_FILE )
+            f.close()
+
+            pynag.Model.cfg_file = CFG_TMP_FILE
+            config = pynag.Parsers.config(cfg_file = CFG_TMP_FILE)
+            config.parse()
+            pynag.Model.config = config
+
+            service_template = pynag.Model.Service()
+            service_template.name = 'iptv_service'
+            service_template.active_checks_enabled = 1
+            service_template.passive_checks_enabled = 1
+            service_template.obsess_over_service = 0
+            service_template.check_freshness = 0
+            service_template.notifications_enabled = 0
+            service_template.event_handler_enabled = 1
+            service_template.flap_detection_enabled = 1
+            service_template.process_perf_data = 1
+            service_template.retain_status_information = 1
+            service_template.retain_nonstatus_information = 0
+            service_template.register = 0
+            service_template.is_volatile = 0
+            service_template.check_period = '24x7'
+            service_template.max_check_attempts = 5
+            service_template.normal_check_interval = 5
+            service_template.retry_check_interval = 3
+            service_template.notification_interval = 0
+            service_template.notification_period = '24x7'
+            service_template.notification_options = 'c,r'
+            service_template.action_url = '/pnp4nagios/graph?host=$HOSTNAME$&srv=$SERVICEDESC$'
+            service_template.set_filename(CFG_SERVICE_FILE)
+            service_template.save()
+            del(service_template)
+
+            host_template = pynag.Model.Host()
+            host_template.name = 'iptv_server'
+            host_template.event_handler_enabled = 1
+            host_template.flap_detection_enabled = 1
+            host_template.max_check_attempts = 3
+            host_template.notification_options = 'd,r'
+            host_template.notification_interval = 0
+            host_template.notification_period = '24x7'
+            host_template.check_period = '24x7'
+            host_template.notifications_enabled = 0
+            host_template.process_perf_data = 1
+            host_template.active_checks_enabled = 1
+            host_template.passive_checks_enabled = 1
+            host_template.register = 0
+            host_template.action_url = '/pnp4nagios/graph?host=$HOSTNAME$'
+            host_template.set_filename(CFG_HOST_FILE)
+            host_template.save()
+            del(host_template)
+
+            pynag.Model.cfg_file = CFG_TMP_FILE
+            config = pynag.Parsers.config(cfg_file = CFG_TMP_FILE)
+            config.parse()
+            pynag.Model.config = config
+
+            servers = Server.objects.all()
+            for server in servers:
+                my_host = pynag.Model.Host()
+                my_host.use = 'iptv_server'
+                my_host.host_name = server.name.lower()
+                my_host.alias = server.name.upper()
+                my_host.address = server.host
+                my_host.check_command = 'check-host-alive'
+                my_host.set_filename(CFG_HOST_FILE)
+                my_host.save()
+                del(my_host)
+
+                service_cpu = pynag.Model.Service()
+                service_cpu.service_description = 'CPU'
+                service_cpu.use = 'iptv_service'
+                service_cpu.host_name = server.name.lower()
+                service_cpu.set_filename(CFG_SERVICE_FILE)
+                #TODO: Coletar a community SNMP da config ou do model de monitoramento
+                service_cpu.check_command = 'snmp_cpu_total!mmmcast!85!95'
+                service_cpu.save()
+                del(service_cpu)
+
+            channels = Channel.objects.all()
+            for ch in channels:
+                service_group_name = '%d-%s' % (
+                        ch.number, ch.name.replace(' ','_'))
+                service_group = pynag.Model.Servicegroup()
+                service_group.servicegroup_name = service_group_name
+                service_group.alias = "Canal %d - %s" % (
+                        ch.number, ch.name)
+                service_group.set_filename(CFG_SERVICEGROUP_FILE)
+                service_group.save()
+                del(service_group)
+
+                if hasattr(ch, 'source'):
+                    object_r = get_representative_object(ch.source)
+                    sid = object_r.get_channel_sid()
+                    object_r.to_pynag_service(service_group = \
+                        service_group_name,
+                        cfg_file = CFG_SERVICE_FILE, sid = sid)
+            return True
+
+        except Exception, e:
+            print str(e)
+            return False
+
+    def copy_cfg(self):
+        try:
+            for server in self.monitoring_servers:
+                for cfg_file in self.cfg_files:
+                    file_name = os.path.basename(cfg_file)
+                    remote_file = "/etc/nagios/iptv/%s" % file_name
+                    server.put(cfg_file, remote_file)
+                    cmd = '/usr/bin/sudo /bin/chown nagios.nagios'
+                    server.execute('%s %s' % (cmd, remote_file))
+            return True
+        except Exception, e:
+            print str(e)
+            return False
+
+    def nagios_validate(self):
+        try:
+            cmd = '/usr/bin/sudo /usr/sbin/nagios -v /etc/nagios/nagios.cfg'
+            for server in self.monitoring_servers:
+            	server.execute('%s' % cmd)
+        except Exception, e:
+            print str(e)
+            return False
+
+    def nagios_reload(self):
+        try:
+            cmd = '/usr/bin/sudo /bin/systemctl restart nagios.service'
+            for server in self.monitoring_servers:
+            	server.execute('%s' % cmd)
+        except Exception, e:
+            print str(e)
+            return False
+
 
 class BaseRepresentative(object):
     def __init__(self, *args, **kwargs):
