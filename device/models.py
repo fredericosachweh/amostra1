@@ -583,6 +583,15 @@ class DeviceServer(models.Model):
     switch_link.short_description = u'Status'
 
 
+@receiver(pre_delete, sender=DeviceServer)
+def DeviceServer_pre_delete(sender, instance, **kwargs):
+    log = logging.getLogger('debug')
+    log.debug('DELETE: DeviceServer=%s "%s"', instance, sender)
+    if instance.status and instance.pid:
+        log.debug('Force stop recursive on delete')
+        instance.stop(recursive=True)
+
+
 class Antenna(models.Model):
     class Meta:
         verbose_name = _(u'Antena parabólica')
@@ -1567,6 +1576,11 @@ class StreamPlayer(OutputModel, DeviceServer):
         verbose_name = _(u'Reprodutor de fluxo gravado')
         verbose_name_plural = _(u'Reprodutores de fluxo gravado')
 
+    def __unicode__(self):
+        return u'StreamPlayer: STB="%s:%s" ch="%s"' % (self.stb_ip,
+            self.stb_port,
+            self.recorder.channel.number)
+
     def play(self, time_shift=0):
         ur"""
         Localizar um servidor de gravação que tenha o canal gravado no horário
@@ -1575,7 +1589,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         executar o novo.
         """
         log = logging.getLogger('tvod')
-        log.info('PLAY:', self)
+        log.info('PLAY:%s', self)
         if self.status and self.pid:
             self.stop()
         return self.start(time_shift=time_shift)
@@ -1589,7 +1603,7 @@ class StreamPlayer(OutputModel, DeviceServer):
         from django.core.cache import get_cache
         cache = get_cache('default')
         log = logging.getLogger('tvod')
-        log.info('PAUSE:', self)
+        log.info('PAUSE:%s', self)
         if self.status and self.pid:
             key = 'StreamPlayer[%d].status' % self.id
             status = cache.get(key)
@@ -1637,14 +1651,14 @@ class StreamPlayer(OutputModel, DeviceServer):
         log = logging.getLogger('tvod')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
-        log.info('StreamPlayer.command:%s' % cmd)
+        #log.info('StreamPlayer.command:%s' % cmd)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
 
     def stop(self, *args, **kwargs):
         log = logging.getLogger('tvod')
-        log.info('STOP:', self)
+        log.info('STOP:%s', self)
         super(StreamPlayer, self).stop(*args, **kwargs)
         self.server.rm_file(self.control_socket)
 

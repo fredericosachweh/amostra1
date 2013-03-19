@@ -52,7 +52,10 @@ class SetTopBox(models.Model):
 
     def get_channels(self):
         u'Returns: a list of tv.channel for relation SetTopBoxChannel'
-        return Channel.objects.filter(settopboxchannel__settopbox=self)
+        return Channel.objects.filter(
+            settopboxchannel__settopbox=self,
+            enabled=True,
+            source__isnull=False)
 
 
 @receiver(post_save, sender=SetTopBox)

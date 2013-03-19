@@ -364,9 +364,6 @@ def tvod(request, channel_number=None, command=None, seek=0):
         player.recorder = recorder
         player.server = recorder.server
         player.save()
-    ## On test
-    #cache.delete(key)
-    #return HttpResponse('Skeep on teste', status=200)
     if command == 'play':
         try:
             player.play(time_shift=int(seek))
