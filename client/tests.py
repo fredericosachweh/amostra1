@@ -2,6 +2,8 @@
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.test.utils import override_settings
+from django.conf import settings
 import simplejson as json
 from models import SetTopBox
 from device import models as devicemodels
@@ -197,6 +199,11 @@ class APITest(TestCase):
         self.assertEqual(4, stbs.count())
 
 
+@override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
+@override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
+@override_settings(MULTICAT_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(MULTICATCTL_COMMAND=settings.MULTICATCTL_DUMMY)
+@override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class SetTopBoxChannelTest(TestCase):
 
     def setUp(self):
@@ -554,8 +561,6 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(0, jobj['meta']['total_count'])
 
     def test_list_records(self):
-        from pprint import pprint
-        log = logging.getLogger('api')
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
@@ -603,8 +608,6 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(3, jobj['meta']['total_count'])
 
     def test_play_record(self):
-        from pprint import pprint
-        log = logging.getLogger('api')
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
@@ -622,7 +625,8 @@ class SetTopBoxChannelTest(TestCase):
             'seek': 20})
         self.assertEqual('/tv/device/tvod/13/play/20', url_play)
         response = self.c.get(url_play)
-        self.assertEqual(401, response.status_code)
+        self.assertEqual(401, response.status_code, 'ERROR:%s' % (
+            response.content))
         ## Do login
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
@@ -644,3 +648,28 @@ class SetTopBoxChannelTest(TestCase):
             'command': 'play',
             'seek': 200}))
         self.assertEqual(200, response.status_code)
+
+    def test_list_disable_channel(self):
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        ## Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        url_channel = reverse('tv:api_dispatch_list', kwargs={
+            'resource_name': 'channel', 'api_name': 'v1'})
+        self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
+        ## Get list of channels
+        response = self.c.get(url_channel)
+        jobj = json.loads(response.content)
+        self.assertEqual(3, jobj['meta']['total_count'])
+        self.channel2.enabled = False
+        self.channel2.save()
+        response = self.c.get(url_channel)
+        jobj = json.loads(response.content)
+        self.assertEqual(2, jobj['meta']['total_count'])
