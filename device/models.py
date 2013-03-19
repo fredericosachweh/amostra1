@@ -583,6 +583,15 @@ class DeviceServer(models.Model):
     switch_link.short_description = u'Status'
 
 
+@receiver(pre_delete, sender=DeviceServer)
+def DeviceServer_pre_delete(sender, instance, **kwargs):
+    log = logging.getLogger('debug')
+    log.debug('DELETE: DeviceServer=%s "%s"', instance, sender)
+    if instance.status and instance.pid:
+        log.debug('Force stop recursive on delete')
+        instance.stop(recursive=True)
+
+
 class Antenna(models.Model):
     class Meta:
         verbose_name = _(u'Antena parabólica')

@@ -625,7 +625,8 @@ class SetTopBoxChannelTest(TestCase):
             'seek': 20})
         self.assertEqual('/tv/device/tvod/13/play/20', url_play)
         response = self.c.get(url_play)
-        self.assertEqual(401, response.status_code)
+        self.assertEqual(401, response.status_code, 'ERROR:%s' % (
+            response.content))
         ## Do login
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
