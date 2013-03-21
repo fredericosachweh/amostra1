@@ -18,7 +18,16 @@
     <caption>Dashboard de monitoramento</caption>
         <tr>
             <th scope="row">
-            <a href="{% url admin:mon_channel_tree %}">&Aacute;vore de canais</a>
+            <a href="{% url admin:mon_channel_tree %}">&Aacute;vore de canais
+            simples</a>
+            </th>
+            <td>&nbsp;</a></td>
+            <td>&nbsp;</a></td>
+        </tr>
+        <tr>
+            <th scope="row">
+            <a href="{% url admin:mon_channel_tree_status %}">&Aacute;vore de
+            canais completa (Mostranto estado dos servi&ccedil;os)</a>
             </th>
             <td>&nbsp;</a></td>
             <td>&nbsp;</a></td>
@@ -31,6 +40,18 @@
             <td>&nbsp;</a></td>
             <td>&nbsp;</a></td>
         </tr>
+
+{% for server in monitoring_servers %}
+        <tr>
+            <th scope="row">
+            <a href="http://{{ server.host }}/nagios/" target="_blank">Acessar o servidor de monitoramento ({{ server.host }})</a>
+            </th>
+            <td>&nbsp;</a></td>
+            <td>&nbsp;</a></td>
+        </tr>
+{% endfor %}
+
+
     </table>
     </div>
 </div>

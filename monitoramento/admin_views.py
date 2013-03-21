@@ -17,10 +17,25 @@ import sys
 import cgi
 
 def dashboard(request):
-    return direct_to_template(request,'admin/monitoring/dashboard.html')
+    #return direct_to_template(request,'admin/monitoring/dashboard.html')
+    monitoring_servers = Server.objects.filter(server_type='monitor')
+    response = render_to_response("admin/monitoring/dashboard.html",
+        { 'monitoring_servers': monitoring_servers,
+        }, context_instance=RequestContext(request))
+    return response
 
 
 def channel_tree(request):
+    tree_type = request.path.split('/')
+    tree_request = tree_type.pop()
+    if tree_request == '':
+        tree_request = tree_type.pop()
+    pprint(tree_request)
+    if tree_request == 'channel_tree_status':
+        show_status = True
+    else:
+        show_status = False
+
     servers = Server.objects.all()
     mon_servers = []
     server_dot_cluster = {}
@@ -49,7 +64,8 @@ def channel_tree(request):
     for root in roots:
         graph = pydot.Dot(graph_type='digraph', splines='spline')
         object_r = get_representative_object(root)
-        graph = object_r.to_graph(graph, server_dot_cluster)
+        graph = object_r.to_graph(graph, server_dot_cluster,
+        with_status=show_status)
         for name, cluster in server_dot_cluster.iteritems():
             graph.add_subgraph(cluster)
         graph_name = 'graph%d.png' % NUM

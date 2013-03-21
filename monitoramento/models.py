@@ -397,7 +397,7 @@ class BaseRepresentative(object):
 
         return "<ul><li>"+escape(self.to_string())+'</li>'+object_html+'</ul>'
 
-    def to_graph(self, pydot_obj, cluster_dict):
+    def to_graph(self, pydot_obj, cluster_dict, with_status=False):
         if type(pydot_obj) != pydot.Dot:
             return
 
@@ -406,7 +406,13 @@ class BaseRepresentative(object):
         my_node = pydot.Node(style="filled")
         my_node.set_name(self.to_string(show_info=False))
         if hasattr(self.original_obj, 'running'):
-            my_node.set_fillcolor("blue")
+            if with_status is True:
+                if self.original_obj.running():
+                    my_node.set_fillcolor("green")
+                else:
+                    my_node.set_fillcolor("red")
+            else:
+                my_node.set_fillcolor("blue")
 
         server = self.get_server()
 
@@ -438,7 +444,8 @@ class BaseRepresentative(object):
                     my_node,
                     child_node)
                 graph.add_edge(edge)
-                graph = object_representative.to_graph(graph, cluster_dict)
+                graph = object_representative.to_graph(graph, cluster_dict,
+                with_status)
 
         if hasattr(self.original_obj, 'channel'):
             child_object = self.original_obj.channel
