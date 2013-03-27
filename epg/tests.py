@@ -141,7 +141,7 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 </star-rating>
 </programme>
 <programme start="20130227180000 -0300" stop="20130227190000 -0300" channel="\
-100" program_id="0000219575" event_id="00000000000006278834" series_key="">
+505" program_id="0000219575" event_id="00000000000006278834" series_key="">
 <title lang="pt">Pet Shop Boys no BBC</title>
 <desc>De volta com o esperado 10° disco de estúdio, Yes", e recebendo o Brit \
 Award de 2009, não há um momento melhor para uma retrospectiva da carreira \
@@ -156,7 +156,7 @@ fenomenal dos Pet Shop Boys. "</desc>
 </rating>
 </programme>
 <programme start="20130227190000 -0300" stop="20130227200000 -0300" channel="\
-100" program_id="0000292544" event_id="00000000000006278835" series_key="">
+505" program_id="0000292544" event_id="00000000000006278835" series_key="">
 <title lang="pt">Lovebox Festival 2011</title>
 <title lang="en">Lovebox Festival 2011 - Part 2</title>
 <desc>A 2ª parte do festival criado pela dupla de DJs Groove Armada, em 2002, \
@@ -173,7 +173,7 @@ e a lenda: Blondie.</desc>
 </rating>
 </programme>
 <programme start="20130306100000 -0300" stop="20130306114500 -0300" channel="\
-158" program_id="0000318062" event_id="00000000000005836669" series_key="">
+505" program_id="0000318062" event_id="00000000000005836669" series_key="">
 <title lang="pt">O Segredo da Cabana</title>
 <title lang="en">The Cabin in the Woods</title>
 <desc>Autoproclamada por seu criadores como "uma revolução no cinema de terror\
@@ -201,7 +201,7 @@ prisioneiros de uma verdadeira armadilha mortal.</desc>
 </star-rating>
 </programme>
 <programme start="20130308093000 -0300" stop="20130308114500 -0300" channel="\
-159" program_id="0000318080" event_id="00000000000005837088" series_key="">
+505" program_id="0000318080" event_id="00000000000005837088" series_key="">
 <title lang="pt">Looper: Assassinos do Futuro</title>
 <title lang="en">Looper</title>
 <desc>Joe vive em 2044 e sua função é matar pessoas enviadas do futuro por \
@@ -667,7 +667,7 @@ class ParseRatingTest(TestCase):
         zipped = ZipFile(self.f, 'w')
         zipped.writestr('100.xml', input_xml_1)
         zipped.writestr('505.xml', input_xml_2)
-        zipped.writestr('101.xml', input_xml_rating)
+        zipped.writestr('rat.xml', input_xml_rating)
         zipped.close()
         self.epg_source = Epg_Source(filefield=self.f.name)
         self.epg_source.save()
@@ -681,20 +681,37 @@ class ParseRatingTest(TestCase):
     def tearDown(self):
         self.f.close()
 
+    def test_linked_list_guide(self):
+        c = Client()
+        url = reverse('epg:api_dispatch_list',
+            kwargs={'resource_name': 'guide', 'api_name': 'v1'},
+            )
+        response = c.get(url, data={'channel': '2'})
+        jobj = json.loads(response.content)
+        obj = jobj['objects']
+        self.assertEqual(obj[0]['previous'], None)
+        self.assertEqual(obj[0]['resource_uri'], obj[1]['previous'])
+        self.assertEqual(obj[1]['resource_uri'], obj[2]['previous'])
+        self.assertEqual(obj[2]['resource_uri'], obj[3]['previous'])
+        self.assertEqual(obj[3]['resource_uri'], obj[4]['previous'])
+        self.assertEqual(obj[0]['next'], obj[1]['resource_uri'])
+        self.assertEqual(obj[1]['next'], obj[2]['resource_uri'])
+        self.assertEqual(obj[2]['next'], obj[3]['resource_uri'])
+        self.assertEqual(obj[3]['next'], obj[4]['resource_uri'])
+        self.assertEqual(obj[4]['next'], None)
+
     def test_create_rating(self):
+        ratings = Rating.objects.all().order_by('int_value')
+        self.assertEqual(5, len(ratings))
         r2 = Rating(system=u'Advisory',
                    value=u'Programa impróprio para menores de 12 anos')
         r2.save()
-        r4 = Rating(system=u'Advisory',
-                   value=u'Programa impróprio para menores de 16 anos')
-        r4.save()
-        r5 = Rating(system=u'Advisory',
-                   value=u'Programa impróprio para menores de 18 anos')
-        r5.save()
         r0n, c = Rating.objects.get_or_create(system=u'Advisory',
                    value=u'Programa livre para todas as idades')
         self.assertEqual(r0n.int_value, 0)
         self.assertFalse(c)
+        ratings = Rating.objects.all().order_by('int_value')
+        self.assertEqual(6, len(ratings))
 
     def test_get_rating(self):
         rating0 = Rating.objects.get(
@@ -709,39 +726,198 @@ class ParseRatingTest(TestCase):
         rating18, created = Rating.objects.get_or_create(
             system=u'Advisory',
             value=u'Programa impróprio para menores de 18 anos')
-        self.assertTrue(created)
+        self.assertFalse(created)
         self.assertEqual(18, rating18.int_value)
         rating16, created = Rating.objects.get_or_create(
             system=u'Advisory',
             value=u'Programa impróprio para menores de 16 anos')
-        self.assertTrue(created)
+        self.assertFalse(created)
         self.assertEqual(16, rating16.int_value)
 
     def test_rating_api(self):
-        #import pprint
         c = Client()
         url = reverse('epg:api_dispatch_list',
             kwargs={'resource_name': 'guide', 'api_name': 'v1'},
             )
         response = c.get(url)
         jobj = json.loads(response.content)
-        self.assertEqual(len(jobj['objects']), 4)
+        #import pprint
+        #pprint.pprint(jobj)
+        self.assertEqual(len(jobj['objects']), 6)
         urlguide4 = reverse('epg:api_dispatch_detail',
-            kwargs={'resource_name': 'guide', 'api_name': 'v1', 'pk': '4'},
+            kwargs={'resource_name': 'guide', 'api_name': 'v1', 'pk': '7'},
             )
-        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/4/')
-        #guide = Guide.objects.get(pk=4)
+        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/7/')
         response = c.get(urlguide4)
         jobj = json.loads(response.content)
-        #pprint.pprint(jobj)
-#  'resource_uri': '/tv/api/epg/v1/guide/4/',
-#  'start': '2013-02-27T19:00:00',
-#  'start_timestamp': 1362013200.0,
-#  'stop': '2013-02-27T20:00:00',
-#  'stop_timestamp': 1362016800.0}
         response = c.get(url,
             {'start_timestamp': 1362013200 - 3600 * 3,
              'stop_timestamp': 1362016800 - 3600 * 3})
         jobj = json.loads(response.content)
         self.assertEqual(jobj['objects'][0]['programme']['rating'],
             '/tv/api/epg/v1/rating/1/')
+
+
+input_xml_conflict = '''<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
+generator-info-url="http://xmltv.revistaeletronica.com.br">
+<channel id="10"><display-name lang="pt">Band HD</display-name>
+<icon src="10.png" /></channel>
+<programme start="20130301070000 -0300" stop="20130301080000 -0300" \
+channel="10" program_id="1">
+    <title lang="pt">Teste 1</title>
+</programme>
+<programme start="20130301080000 -0300" stop="20130301090000 -0300" \
+    channel="10" program_id="2">
+    <title lang="pt">Teste 2</title>
+</programme>
+<programme channel="10" program_id="3" \
+start="20130301090000 -0300" \
+ stop="20130301100000 -0300" \
+>
+    <title lang="pt">Teste 3</title>
+</programme>
+<programme channel="10" program_id="4" \
+start="20130301100000 -0300" \
+ stop="20130301110000 -0300" \
+>
+    <title lang="pt">Teste 4</title>
+</programme>
+<programme channel="10" program_id="5" \
+start="20130301110000 -0300" \
+ stop="20130301120000 -0300" \
+>
+    <title lang="pt">Teste 5</title>
+</programme>
+<programme channel="10" program_id="6" \
+start="20130301120000 -0300" \
+ stop="20130301130000 -0300" \
+>
+    <title lang="pt">Teste 6</title>
+</programme>
+<programme channel="10" program_id="7" \
+start="20130301130000 -0300" \
+ stop="20130301140000 -0300" \
+>
+    <title lang="pt">Teste 7</title>
+</programme>
+</tv>
+'''
+input_xml_conflict1 = '''
+<programme channel="10" program_id="8" \
+start="20130301110000 -0300" \
+ stop="20130301120000 -0300" \
+>
+    <title lang="pt">Conflito 5</title>
+</programme>
+'''
+
+class GuideConflictTest(TestCase):
+
+    def setUp(self):
+        from tempfile import NamedTemporaryFile
+        from django.conf import settings
+        MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
+        self.f = NamedTemporaryFile(suffix='.zip',
+            dir=os.path.join(MEDIA_ROOT, 'epg/'))
+        from zipfile import ZipFile
+        zipped = ZipFile(self.f, 'w')
+        zipped.writestr('conflict.xml', input_xml_conflict)
+        zipped.close()
+        self.epg_source = Epg_Source(filefield=self.f.name)
+        self.epg_source.save()
+        xmltv_source = XMLTV_Source.objects.create(filefield=self.f.name)
+        file_list = Zip_to_XML(self.epg_source.filefield.path)
+        for f in file_list.get_all_files():
+            XML_Epg_Importer(xml=f,
+                xmltv_source=xmltv_source,
+                epg_source=self.epg_source).import_to_db()
+
+    def tearDown(self):
+        self.f.close()
+
+    def test_create(self):
+        nch = Channel.objects.all().count()
+        self.assertEqual(1, nch)
+        guides = Guide.objects.all()
+        prog = Programme.objects.get(programid=3)
+        guide = Guide.objects.filter(programme=prog)
+        self.assertEqual(guide[0], guides[2])
+
+    def test_delete_conflict(self):
+        from dateutil.parser import parse
+        from django.utils.timezone import utc
+        from pytz import timezone
+        #start="20130301090000 -0300" stop="20130301100000 -0300" \
+        start = parse("20130301085900 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        stop = parse( "20130301100000 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        lang = Lang.objects.get(value=u'pt')
+        title = Title.objects.create(lang=lang, value=u'Novo com conflito')
+        prog = Programme.objects.create(programid=100)
+        prog.titles.add(title)
+        ## Before replace
+        self.assertEqual(Guide.objects.all().count(), 7)
+        G, created = Guide.objects.get_or_create(
+            start=start, stop=stop,
+            channel_id=1, programme=prog)
+        self.assertTrue(created)
+        ## After must be only 6 guides
+        self.assertEqual(Guide.objects.all().count(), 6)
+        self.assertEqual(G.next.programme.id, 4, 'O proximo deveria ser 4')
+        self.assertEqual(G.previous.programme.id, 1, 'O proximo deveria ser 1')
+        self.assertEqual(G.previous.next, G)
+        self.assertEqual(G.next.previous, G)
+        g1 = Guide.objects.get(id=1)
+        self.assertEqual(g1.next, G)
+
+    def test_delete_conflict_start(self):
+        from dateutil.parser import parse
+        from django.utils.timezone import utc
+        from pytz import timezone
+        #start="20130301090000 -0300" stop="20130301100000 -0300" \
+        start = parse("20130301060000 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        stop = parse( "20130301070100 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        self.assertEqual(Guide.objects.all().count(), 7)
+        lang = Lang.objects.get(value=u'pt')
+        title = Title.objects.create(lang=lang, value=u'Novo com conflito')
+        prog = Programme.objects.create(programid=100)
+        prog.titles.add(title)
+        G, created = Guide.objects.get_or_create(
+            start=start, stop=stop,
+            channel_id=1, programme=prog)
+        self.assertTrue(created)
+        self.assertIsNone(G.previous)
+        self.assertEqual(Guide.objects.all().count(), 7)
+        ## Create new on start
+        start = parse("20130301050000 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        stop = parse( "20130301060000 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        G, created = Guide.objects.get_or_create(
+            start=start, stop=stop,
+            channel_id=1, programme=prog)
+        guides = Guide.objects.all()
+
+    def test_delete_conflict_end(self):
+        from dateutil.parser import parse
+        from django.utils.timezone import utc
+        from pytz import timezone
+        #start="20130301090000 -0300" stop="20130301100000 -0300" \
+        start = parse("20130301133000 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        stop = parse( "20130301135000 -0300").astimezone(
+            timezone('UTC')).replace(tzinfo=utc)
+        self.assertEqual(Guide.objects.all().count(), 7)
+        lang = Lang.objects.get(value=u'pt')
+        title = Title.objects.create(lang=lang, value=u'Novo com conflito')
+        prog = Programme.objects.create(programid=100)
+        prog.titles.add(title)
+        G, created = Guide.objects.get_or_create(
+            start=start, stop=stop,
+            channel_id=1, programme=prog)
+        self.assertTrue(created)
+

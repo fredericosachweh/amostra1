@@ -3,9 +3,12 @@
 
 from django.db import models
 from django.db.models import signals
+from django.dispatch import receiver
+from django.db.models.signals import pre_save, post_save
 from django.utils.translation import ugettext as _
 
 import os
+import logging
 
 
 class Epg_Source(models.Model):
@@ -64,23 +67,23 @@ class XMLTV_Source(Epg_Source):
 
 
 class Lang(models.Model):
-    value = models.CharField(max_length=10)
+    value = models.CharField(max_length=10, db_index=True)
 
 
 class Display_Name(models.Model):
-    value = models.CharField(max_length=100)
-    lang = models.ForeignKey(Lang, blank=True, null=True)
+    value = models.CharField(max_length=100, db_index=True)
+    lang = models.ForeignKey(Lang, blank=True, null=True, db_index=True)
 
     def __unicode__(self):
         return self.value
 
 
 class Icon(models.Model):
-    src = models.CharField(max_length=10)
+    src = models.CharField(max_length=10, db_index=True)
 
 
 class Url(models.Model):
-    value = models.CharField(max_length=200)
+    value = models.CharField(max_length=200, db_index=True)
 
 
 class Channel(models.Model):
@@ -95,41 +98,43 @@ class Channel(models.Model):
 
 
 class Title(models.Model):
-    value = models.CharField(max_length=128)
+    value = models.CharField(max_length=128, db_index=True)
     lang = models.ForeignKey(Lang, blank=True, null=True)
 
 
 class Description(models.Model):
-    value = models.CharField(max_length=512, blank=True, null=True)
+    value = models.CharField(max_length=512, blank=True, null=True,
+        db_index=True)
     lang = models.ForeignKey(Lang, blank=True, null=True)
 
 
 class Staff(models.Model):
-    name = models.CharField(max_length=512)
+    name = models.CharField(max_length=512, db_index=True)
 
 
 class Actor(models.Model):
-    name = models.CharField(max_length=512)
-    role = models.CharField(max_length=100, blank=True, null=True)
+    name = models.CharField(max_length=512, db_index=True)
+    role = models.CharField(max_length=100, blank=True, null=True,
+        db_index=True)
 
 
 class Category(models.Model):
-    value = models.CharField(max_length=100)
-    lang = models.ForeignKey(Lang)
+    value = models.CharField(max_length=100, db_index=True)
+    lang = models.ForeignKey(Lang, db_index=True)
 
 
 class Country(models.Model):
-    value = models.CharField(max_length=100)
+    value = models.CharField(max_length=100, db_index=True)
 
 
 class Episode_Num(models.Model):
-    value = models.CharField(max_length=100)
-    system = models.CharField(max_length=100)
+    value = models.CharField(max_length=100, db_index=True)
+    system = models.CharField(max_length=100, db_index=True)
 
 
 class Rating(models.Model):
-    system = models.CharField(max_length=100)
-    value = models.CharField(max_length=100, db_column='value')
+    system = models.CharField(max_length=100, db_index=True)
+    value = models.CharField(max_length=100, db_column='value', db_index=True)
     int_value = models.PositiveSmallIntegerField(null=True, default=0)
 
     class Meta:
@@ -155,23 +160,25 @@ class Rating(models.Model):
 
 
 class Language(models.Model):
-    value = models.CharField(max_length=50)
+    value = models.CharField(max_length=50, db_index=True)
     lang = models.ForeignKey(Lang, blank=True, null=True)
 
 
 class Subtitle(models.Model):
-    subtitle_type = models.CharField(max_length=20, blank=True, null=True)
+    subtitle_type = models.CharField(max_length=20, blank=True, null=True,
+        db_index=True)
     language = models.ForeignKey(Language, blank=True, null=True)
 
 
 class Star_Rating(models.Model):
-    value = models.CharField(max_length=10)
-    system = models.CharField(max_length=100, blank=True, null=True)
+    value = models.CharField(max_length=10, db_index=True)
+    system = models.CharField(max_length=100, blank=True, null=True,
+        db_index=True)
     icons = models.ManyToManyField(Icon, blank=True, null=True)
 
 
 class Programme(models.Model):
-    programid = models.CharField(max_length=10, unique=True)
+    programid = models.PositiveIntegerField(unique=True, db_index=True)
     titles = models.ManyToManyField(Title, related_name='titles', blank=True,
         null=True)
     secondary_titles = models.ManyToManyField(Title,
@@ -220,6 +227,9 @@ class Programme(models.Model):
         null=True)
 
     def __unicode__(self):
+        vlist = self.titles.values_list()
+        if len(vlist) == 0:
+            return u""
         return u"%s" % (self.titles.values_list()[0][1])
 
 
@@ -228,13 +238,91 @@ class Guide(models.Model):
     channel = models.ForeignKey(Channel)
     start = models.DateTimeField(blank=True, null=True, db_index=True)
     stop = models.DateTimeField(blank=True, null=True, db_index=True)
+    previous = models.ForeignKey('self', related_name='previous_set',
+        null=True, blank=True, on_delete=models.SET_NULL)
+    next = models.ForeignKey('self', related_name='next_set',
+        null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ('start',)
 
     def __unicode__(self):
-        return u'"%s (%s)" %s - %s' % (
+        pid = '*'
+        nid = '*'
+        if self.previous is not None:
+            pid = self.previous.id
+        if self.next is not None:
+            nid = self.next.id
+        return u'"(%s-%s-%s) %s (%s)" %s - %s' % (
+            pid,
+            self.id,
+            nid,
             self.programme,
             self.channel.channelid,
             self.start,
             self.stop)
+
+
+@receiver(post_save, sender=Guide)
+def Guide_post_save(sender, instance, created, **kwargs):
+    u"Before save lookup for previous and next guide for channel"
+    if created:
+        log = logging.getLogger('debug')
+        ## Remove conflicts
+        guides_del = Guide.objects.filter(
+            channel=instance.channel,
+            stop__gt=instance.start,
+            start__lt=instance.stop
+            ).exclude(id=instance.id)
+        if len(guides_del) > 0:
+            log.debug('## Conflito:%s - %s', instance, guides_del)
+            n = None
+            p = guides_del[0].previous
+            botton = guides_del.latest('start')
+            if botton is not None:
+                n = botton.next
+                if n is not None:
+                    n.previous = instance
+                    n.save()
+            instance.next = n
+            if p is not None:
+                p.next = instance
+                p.save()
+            instance.previous = p
+            instance.save()
+            guides_del.delete()
+            #log.debug('previous:%s', p)
+            #log.debug('Instance:%s', instance)
+            #log.debug('next:%s', n)
+            return
+        #return
+        ## find previous
+        pr = Guide.objects.filter(
+            channel=instance.channel,
+            start__lt=instance.start
+            ).order_by('-start')[:1]
+        nx = Guide.objects.filter(
+            channel=instance.channel,
+            start__gt=instance.start
+            ).order_by('start')[:1]
+        p = '*'
+        n = '*'
+        if len(pr) > 0:
+            p = pr[0]
+            instance.previous = p
+            p.next = instance
+            #log.debug('PR:%s', p)
+            p.save()
+        if len(nx) > 0:
+            n = nx[0]
+            instance.next = n
+            n.previous = instance
+            #log.debug('NX:%s', n)
+            n.save()
+        instance.save()
+        #log.info('ANT:%s', p)
+        #log.info('ATUAL:%s', instance)
+        #log.info('PROX:%s', n)
 
 
 # Signal used to delete the zip/xml file when a Epg_Source object is deleted

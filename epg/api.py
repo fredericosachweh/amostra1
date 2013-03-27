@@ -161,6 +161,8 @@ class GuideResource(NamespacedModelResource):
     stop_timestamp = fields.IntegerField()
     channel = fields.ToOneField(ChannelResource, 'channel', full=False)
     programme = fields.ToOneField(ProgrammeResource, 'programme', full=True)
+    next = fields.ForeignKey('self', 'next', full=False, null=True)
+    previous = fields.ForeignKey('self', 'previous', full=False, null=True)
 
     class Meta(MetaDefault):
         queryset = models.Guide.objects.all().order_by('start')
@@ -196,7 +198,6 @@ class GuideResource(NamespacedModelResource):
                 newfilter[f] = filters[f]
         orm_filters = super(GuideResource, self).build_filters(newfilter)
         return orm_filters
-
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='epg')
 api.register(ChannelResource())
