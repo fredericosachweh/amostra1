@@ -72,7 +72,7 @@ class Lang(models.Model):
 
 class Display_Name(models.Model):
     value = models.CharField(max_length=100, db_index=True)
-    lang = models.ForeignKey(Lang, blank=True, null=True, db_index=True)
+    lang = models.ForeignKey(Lang, blank=True, null=True)
 
     def __unicode__(self):
         return self.value
@@ -87,7 +87,7 @@ class Url(models.Model):
 
 
 class Channel(models.Model):
-    channelid = models.CharField(max_length=255, unique=True, db_index=True)
+    channelid = models.CharField(max_length=254, unique=True, db_index=True)
     display_names = models.ManyToManyField(Display_Name, blank=True, null=True)
     icons = models.ManyToManyField(Icon, blank=True, null=True)
     urls = models.ManyToManyField(Url, blank=True, null=True)
@@ -103,17 +103,16 @@ class Title(models.Model):
 
 
 class Description(models.Model):
-    value = models.CharField(max_length=512, blank=True, null=True,
-        db_index=True)
+    value = models.CharField(max_length=512, blank=True, null=True)
     lang = models.ForeignKey(Lang, blank=True, null=True)
 
 
 class Staff(models.Model):
-    name = models.CharField(max_length=512, db_index=True)
+    name = models.CharField(max_length=512)
 
 
 class Actor(models.Model):
-    name = models.CharField(max_length=512, db_index=True)
+    name = models.CharField(max_length=512)
     role = models.CharField(max_length=100, blank=True, null=True,
         db_index=True)
 
@@ -165,8 +164,7 @@ class Language(models.Model):
 
 
 class Subtitle(models.Model):
-    subtitle_type = models.CharField(max_length=20, blank=True, null=True,
-        db_index=True)
+    subtitle_type = models.CharField(max_length=20, blank=True, null=True)
     language = models.ForeignKey(Language, blank=True, null=True)
 
 
