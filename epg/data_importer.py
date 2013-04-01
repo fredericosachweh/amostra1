@@ -13,7 +13,7 @@ import tempfile
 import shutil
 from lxml import etree
 #from datetime import tzinfo, datetime
-from datetime import timedelta
+from datetime import timedelta, datetime
 from dateutil.parser import parse
 from pytz import timezone
 from types import NoneType
@@ -238,7 +238,7 @@ class XML_Epg_Importer(object):
 
         self.xmltv_source.save()
 
-    #@profile("channel.prof")
+    @transaction.commit_on_success
     def import_channel_elements(self):
         log = logging.getLogger('epg_import')
         log.info('Importing Channel elements')
@@ -275,6 +275,7 @@ class XML_Epg_Importer(object):
                 del elem.getparent()[0]
 
     #@profile("programme.prof")
+    #@transaction.commit_manually()
     def import_programme_elements(self, limit=0):
         log = logging.getLogger('epg_import')
         log.debug('Importing Programme elements:%s', self.xml.name)
@@ -282,7 +283,9 @@ class XML_Epg_Importer(object):
         channels = dict()
         for c in Channel.objects.values_list('channelid', 'pk'):
             channels[c[0]] = c[1]
-
+        import_start = datetime.now()
+        import_ant = datetime.now()
+        nant = 0
         imported = 0
 
         self.xml.seek(0)
@@ -309,66 +312,9 @@ class XML_Epg_Importer(object):
                     timezone('UTC')).replace(tzinfo=utc)
                 # Insert guide
                 channel_id = channels[elem.get('channel')]
-                ## Verify exist Guide
-                #sa = start - timedelta(minutes=20)
-                #so = stop + timedelta(minutes=20)
-                #log.info('find guides:ch=%s, start=%s, stop=%s', channel_id,
-                #         sa, so)
-                ## to delete:
-                #guides_del = Guide.objects.filter(
-                #    channel_id=channel_id,
-                #    stop__gt=start,
-                #    start__lt=stop
-                #    )
-                #if len(guides_del) > 0:
-                #    log.debug('Conflito:ch=%s, start=%s, stop=%s',
-                #        channel_id,
-                #        start,
-                #        stop
-                #        )
-                #    log.debug('Removendo:%s', guides_del)
-                #    guides_del.delete()
-
                 G, created = Guide.objects.get_or_create(
                     start=start, stop=stop,
                     channel_id=channel_id, programme=P)
-                #G.save()
-                #log.debug('Criado:%s', G)
-
-                #guides = Guide.objects.filter(
-                #    channel_id=channel_id,
-                #    start__gte=sa,
-                #    stop__lte=so).order_by('-id')[:3]
-                #n = len(guides)
-                #if n == 0:
-                #    #log.info('Create new guide')
-                #    G = Guide.objects.create(
-                #        start=start, stop=stop,
-                #        channel_id=channel_id, programme=P)
-                #else:
-                #    G = guides[0]
-                #    #log.debug('Found guide:%s', G)
-                #    G.programme = P
-                #    G.stop = stop
-                #    G.start = start
-                #    G.save()
-                #    if n > 1:
-                #        ## Delete other duplicated and log error
-                #        #log.debug('Delete duplicated guide')
-                #        log.debug('Guide existis:%s', guides)
-                #        for d in guides[1:]:
-                #            log.debug('del: %s', d)
-                #            d.delete()
-
-                #G, created = Guide.objects.get_or_create(
-                #    start=start, stop=stop,
-                #    channel_id=channel_id, programme=P)
-
-                #self.serialize(G)
-                # this enables a huge gain in performance
-                #if self.already_serialized(P):
-                #    continue
-                #log.info('Start child')
                 for child in elem.iterchildren():
                     if child.tag == 'desc':
                         if child.get('lang'):
@@ -522,11 +468,17 @@ class XML_Epg_Importer(object):
 
                 imported += 1
                 if imported % 100 == 0:
+                    nant = imported - nant
+                    db.transaction.autocommit()
+                    db.transaction.commit()
                     db.reset_queries()
+                    delta = datetime.now() - import_ant
+                    vel = nant / delta.total_seconds()
                     percent = (imported / self.total_programme) * 100
-                    log.info('Imported %d/%d (%.2g) ', imported,
-                        self.total_programme, percent)
-
+                    log.info('Imported %d/%d (%.2g) vel=%d i/s', imported,
+                        self.total_programme, percent, vel)
+                    nant = imported
+                    import_ant = datetime.now()
                 if limit > 0 and imported >= limit:
                     break
         except Exception as e:
