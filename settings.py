@@ -35,12 +35,12 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            'HOST': '/var/lib/mysql/mysql.sock',
-            'PORT': ''
+            'HOST': '127.0.0.1',
+            'PORT': '5432'
         }
     }
 
@@ -198,6 +198,12 @@ LOGGING = {
             'filename': '%s/tvod.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.import_epg': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/import_epg.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -240,6 +246,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
+        'epg_import': {
+            'handlers': ['file.import_epg'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
     }
 }
 
@@ -253,7 +264,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.markup',
     # South http://south.aeracode.org/docs/
-    # 'south',
+    'south',
     # Interface dos setup-box
     'box',
     # Aplicação de controle de stream

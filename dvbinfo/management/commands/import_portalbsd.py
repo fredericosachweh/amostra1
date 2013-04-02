@@ -36,7 +36,7 @@ class Command(BaseCommand):
         else:
             sat_info = ''
         # Separate location degrees and direction
-        ((degrees, direction),) = re.findall(u'^(\d+\.?\d*) °([EWSNewsn])$',
+        ((degrees, direction),) = re.findall(u'^-?(\d+\.?\d*) °([EWSNewsn])$',
             sat_location)
         # Create Satellite object
         satellite, created = Satellite.objects.get_or_create(name=sat_name,

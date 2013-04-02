@@ -516,7 +516,7 @@ class SetTopBoxChannelTest(TestCase):
         url_channel = reverse('tv:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
-        print(url_channel)
+        #print(url_channel)
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(2, jobj['meta']['total_count'])
@@ -594,7 +594,7 @@ class SetTopBoxChannelTest(TestCase):
         rec.recorder = True
         rec.save()
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
-        print(stb_ch)
+        #print(stb_ch)
         ## Call tvod_list
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)

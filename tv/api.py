@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
-
-#from django.conf.urls.defaults import *
-
+from django.db import connection
 from tastypie import fields
 from tastypie.authorization import DjangoAuthorization
 from tastypie.authorization import Authorization
@@ -19,10 +17,13 @@ from client.models import SetTopBox
 
 import models
 import logging
+from tv.models import Channel
 
 
 class ChannelResource(NamespacedModelResource):
     source = fields.CharField(blank=True)
+    next = fields.CharField()
+    previous = fields.CharField()
 
     class Meta:
         queryset = models.Channel.objects.filter(enabled=True,
@@ -33,7 +34,7 @@ class ChannelResource(NamespacedModelResource):
         urlconf_namespace = 'tv'
         authentication = MultiAuthentication(
             BasicAuthentication(realm='cianet-middleware'),
-            #jangoAuthorization(),
+            #DjangoAuthorization(),
             Authentication(),
             ApiKeyAuthentication())
 
@@ -55,6 +56,29 @@ class ChannelResource(NamespacedModelResource):
             return channels
         return object_list
 
+    def obj_get_list(self, request=None, **kwargs):
+        obj_list = super(ChannelResource, self).obj_get_list(request, **kwargs)
+        previous = None
+        for o in obj_list:
+            o.next = None
+            if previous is not None:
+                previous.next = o
+            o.previous = previous
+            previous = o
+        return obj_list
+
+    def dehydrate(self, bundle):
+        u"This method populate previour and next (linked list)"
+        if not hasattr(bundle.obj, 'previous'):
+            bundle.data['previous'] = None
+        else:
+            bundle.data['previous'] = self.get_resource_uri(
+                bundle.obj.previous)
+        if not hasattr(bundle.obj, 'next'):
+            bundle.data['next'] = None
+        else:
+            bundle.data['next'] = self.get_resource_uri(bundle.obj.next)
+        return bundle
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='tv')
 api.register(ChannelResource())
