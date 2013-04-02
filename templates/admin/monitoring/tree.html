@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% load adminmedia %}{% admin_media_prefix %}css/dashboard.css" />{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+
+{% block bodyclass %}dashboard{% endblock %}
+
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url admin:index %}">
+{% trans "Home"%}</a> &rsaquo; {% trans "Monitoramento" %} &rsaquo; <a href="{% url admin:mon_dashboard %}">{% trans "Dashboard" %}</a>
+ &rsaquo; <a href="{% url admin:mon_channel_tree %}">{% trans "&Aacute;rvore de canais" %}</a>
+</div>{% endblock %}
+
+{% block content %}
+<div>
+<h2>&Aacute;rvore de canais</h2>
+{% for root in root_graph %}
+    <div>
+       <img src="{{ MEDIA_URL }}mon/roots/{{ root }}">
+    </div>
+    <BR/>
+{% endfor %}
+</div>
+
+
+{% endblock %}

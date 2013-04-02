@@ -30,8 +30,8 @@ else:
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            'PORT': '5432',
+            'HOST': '/var/run/postgresql',
+            'PORT': '',
         },
         'pg92': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',

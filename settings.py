@@ -35,12 +35,12 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            'HOST': '/var/lib/mysql/mysql.sock',
-            'PORT': ''
+            'HOST': '127.0.0.1',
+            'PORT': '5432'
         }
     }
 

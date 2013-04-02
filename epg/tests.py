@@ -741,13 +741,11 @@ class ParseRatingTest(TestCase):
             )
         response = c.get(url)
         jobj = json.loads(response.content)
-        #import pprint
-        #pprint.pprint(jobj)
         self.assertEqual(len(jobj['objects']), 6)
         urlguide4 = reverse('epg:api_dispatch_detail',
-            kwargs={'resource_name': 'guide', 'api_name': 'v1', 'pk': '7'},
+            kwargs={'resource_name': 'guide', 'api_name': 'v1', 'pk': '6'},
             )
-        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/7/')
+        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/6/')
         response = c.get(urlguide4)
         jobj = json.loads(response.content)
         response = c.get(url,
