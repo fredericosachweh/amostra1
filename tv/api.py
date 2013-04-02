@@ -69,12 +69,12 @@ class ChannelResource(NamespacedModelResource):
 
     def dehydrate(self, bundle):
         u"This method populate previour and next (linked list)"
-        if bundle.obj.previous is None:
+        if not hasattr(bundle.obj, 'previous'):
             bundle.data['previous'] = None
         else:
             bundle.data['previous'] = self.get_resource_uri(
                 bundle.obj.previous)
-        if bundle.obj.next is None:
+        if not hasattr(bundle.obj, 'next'):
             bundle.data['next'] = None
         else:
             bundle.data['next'] = self.get_resource_uri(bundle.obj.next)
