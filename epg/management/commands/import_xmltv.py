@@ -143,6 +143,8 @@ import anyway.\n' % path)
         except XMLTV_Source.DoesNotExist:
             xmltv_source = XMLTV_Source.objects.create(filefield=xml_zip_file,
                 lastModification=date.replace(tzinfo=timezone('UTC')))
+        except Exception as e:
+            pass
         file_list = Zip_to_XML(xmltv_source.filefield.path).get_all_files()
         epg_source = Epg_Source(filefield=xml_zip_file)
         for f in file_list:
