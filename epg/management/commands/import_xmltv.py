@@ -137,14 +137,15 @@ import anyway.\n' % path)
             if xmltv_source.filefield:
                 self.stdout.write('Deleting old zip file %s\n' %
                     xmltv_source.filefield.name)
-                os.remove(xmltv_source.filefield.name)
+                try:
+                    os.remove(xmltv_source.filefield.name)
+                except:
+                    pass
             xmltv_source.filefield = xml_zip_file
             xmltv_source.save()
         except XMLTV_Source.DoesNotExist:
             xmltv_source = XMLTV_Source.objects.create(filefield=xml_zip_file,
                 lastModification=date.replace(tzinfo=timezone('UTC')))
-        except Exception as e:
-            pass
         file_list = Zip_to_XML(xmltv_source.filefield.path).get_all_files()
         epg_source = Epg_Source(filefield=xml_zip_file)
         for f in file_list:
