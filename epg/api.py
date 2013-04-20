@@ -173,10 +173,10 @@ class GuideResource(NamespacedModelResource):
         }
 
     def dehydrate_start_timestamp(self, bundle):
-        return time.mktime(bundle.obj.start.timetuple())
+        return time.mktime(timezone.localtime(bundle.obj.start).timetuple())
 
     def dehydrate_stop_timestamp(self, bundle):
-        return time.mktime(bundle.obj.stop.timetuple())
+        return time.mktime(timezone.localtime(bundle.obj.stop).timetuple())
 
     def build_filters(self, filters=None):
         #log = logging.getLogger('api')
