@@ -201,13 +201,13 @@ class XML_Epg_Importer(object):
             'generator_info_url': tv.get('generator-info-url')
         }
 
-    @transaction.commit_on_success
+    #@transaction.commit_on_success
     def _increment_importedElements(self):
         if isinstance(self.epg_source, Epg_Source):
             self.epg_source.importedElements += 1
             self.epg_source.save()
 
-    @transaction.commit_on_success
+    #@transaction.commit_on_success
     def _decrement_importedElements(self):
         if isinstance(self.epg_source, Epg_Source) \
             and self.epg_source.importedElements > 0:
@@ -238,7 +238,7 @@ class XML_Epg_Importer(object):
 
         self.xmltv_source.save()
 
-    @transaction.commit_on_success
+    #@transaction.commit_on_success
     def import_channel_elements(self):
         log = logging.getLogger('epg_import')
         log.info('Importing Channel elements')
@@ -275,7 +275,7 @@ class XML_Epg_Importer(object):
                 del elem.getparent()[0]
 
     #@profile("programme.prof")
-    #@transaction.commit_manually()
+    @transaction.commit_manually
     def import_programme_elements(self, limit=0):
         log = logging.getLogger('epg_import')
         log.debug('Importing Programme elements:%s', self.xml.name)
@@ -469,7 +469,7 @@ class XML_Epg_Importer(object):
                 imported += 1
                 if imported % 100 == 0:
                     nant = imported - nant
-                    db.transaction.autocommit()
+                    #db.transaction.autocommit()
                     db.transaction.commit()
                     db.reset_queries()
                     delta = datetime.now() - import_ant
@@ -483,8 +483,10 @@ class XML_Epg_Importer(object):
                     break
         except Exception as e:
             log.error('Error:%s', e)
+        db.transaction.commit()
+        db.reset_queries()
 
-    @transaction.commit_on_success
+    #@transaction.commit_on_success
     def import_to_db(self):
         log = logging.getLogger('epg_import')
         zip = zipfile.ZipFile(

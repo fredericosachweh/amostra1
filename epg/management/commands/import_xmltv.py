@@ -137,7 +137,10 @@ import anyway.\n' % path)
             if xmltv_source.filefield:
                 self.stdout.write('Deleting old zip file %s\n' %
                     xmltv_source.filefield.name)
-                os.remove(xmltv_source.filefield.name)
+                try:
+                    os.remove(xmltv_source.filefield.name)
+                except:
+                    pass
             xmltv_source.filefield = xml_zip_file
             xmltv_source.save()
         except XMLTV_Source.DoesNotExist:
