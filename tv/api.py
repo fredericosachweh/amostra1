@@ -17,7 +17,6 @@ from client.models import SetTopBox
 
 import models
 import logging
-from tv.models import Channel
 
 
 class ChannelResource(NamespacedModelResource):
@@ -57,7 +56,7 @@ class ChannelResource(NamespacedModelResource):
         return object_list
 
     def obj_get_list(self, request=None, **kwargs):
-        obj_list = super(ChannelResource, self).obj_get_list(request, **kwargs)
+        obj_list = super(ChannelResource, self).obj_get_list(**kwargs)
         previous = None
         for o in obj_list:
             o.next = None
