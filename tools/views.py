@@ -22,10 +22,10 @@ def log(request):
 @never_cache
 def date(request):
     import time
+    import datetime
     ts = time.strftime("%s")
-    #tz = time.timezone - 3600
-    g, l = time.gmtime(), time.localtime()
-    tz = (g.tm_hour - l.tm_hour) * 3600
+    g, l = datetime.datetime.utcnow(), datetime.datetime.now()
+    tz = int(round((g - l).seconds / 3600.0) * 3600)
     ltz = 0
     response = '{"timestamp": %s, "timezone": %d, "localtimezone": %d}' % (ts,
         tz, ltz)
