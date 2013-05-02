@@ -20,6 +20,8 @@ import logging
 ## Validation:
 #http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-treat-a-field-as-unique
 
+#http://10.1.1.52:8100/tv/api/client/v1/settopboxconfig/8/
+#{"key": "app/tv.PARENTAL_CONTROL", "resource_uri": "/tv/api/client/v1/settopboxconfig/8/", "value": "-1", "value_type": "number"}
 
 class MyAuthorization(DjangoAuthorization):
 
@@ -189,12 +191,12 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             object_list = models.SetTopBoxConfig.objects.get_empty_query_set()
         return object_list
 
-    def obj_create(self, bundle, request=None, **kwargs):
+    def obj_create(self, bundle, **kwargs):
         log = logging.getLogger('api')
         log.debug('New Parameter:%s=%s (%s)', bundle.data.get('key'),
             bundle.data.get('value'), bundle.data.get('value_type'))
-        if request.user.is_anonymous() is False:
-            user = request.user
+        if bundle.request.user.is_anonymous() is False:
+            user = bundle.request.user
             stb = models.SetTopBox.objects.get(serial_number=user.username)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             try:
@@ -209,12 +211,12 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             raise BadRequest('')
         return bundle
 
-    def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
+    def obj_update(self, bundle, skip_errors=False, **kwargs):
         log = logging.getLogger('api')
         log.debug('Update STB=%s', bundle.data.get('key'))
         try:
             bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
-                request=request, **kwargs)
+                **kwargs)
         except IntegrityError:
             log.error('Duplicate entry for settopboxconfig:%s=%s',
                 bundle.data.get('key'), bundle.data.get('value'))
