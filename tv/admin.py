@@ -42,7 +42,7 @@ class ChannelAdmin(admin.ModelAdmin):
     fieldsets = ((None, {
         'fields': (
             ('number', 'name', 'channelid', 'enabled'),
-            'description', 'image',
+            'description', 'image', 'buffer_size',
                 ('source'),
             ),
         }),)
@@ -50,7 +50,7 @@ class ChannelAdmin(admin.ModelAdmin):
     #filter_horizontal = ('programa',)
     #fields = ('numero','nome','descricao','logo','sigla','source', )
     list_display = ('image_thum', 'number', 'name', 'channelid', 'source',
-'enabled', 'switch_link')
+        'buffer_size', 'enabled', 'switch_link')
     list_display_links = ('image_thum',)
     list_editable = ('number', 'source', 'name', 'channelid', 'enabled')
     #inline        = (Programa,)

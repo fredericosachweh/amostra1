@@ -1,7 +1,12 @@
 # -*- encoding:utf-8 -*-
 from settings import *
+from dbsettings.utils import set_defaults
 
 DEBUG = True
+
+#from client import models as clientapp
+#set_defaults(clientapp
+#)
 
 if 'test' in sys.argv:
     ## Banco de dados teste
@@ -18,19 +23,19 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'iptv',
+            'USER': 'iptv',
+            'PASSWORD': 'iptv',
+            'HOST': '127.0.0.1',
+            'PORT': 5432,
+        },
+        'mylocal': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
             'HOST': '/var/lib/mysql/mysql.sock',
-            'PORT': '',
-        },
-        'pglocal': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'iptv',
-            'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '/var/run/postgresql',
             'PORT': '',
         },
         'pg92': {
@@ -50,7 +55,17 @@ else:
             'PORT': '3306',
         }
     }
-    DATABASES['default'] = DATABASES['pglocal']
+    #DATABASES['default'] = DATABASES['pglocal']
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '127.0.0.1',
+        'PORT': 5432,
+    }
+}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'

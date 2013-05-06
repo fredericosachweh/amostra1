@@ -10,7 +10,59 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from tv.models import Channel
 
+from django.conf import settings
 import dbsettings
+import Image
+import os
+
+
+class LogoToReplace(dbsettings.ImageValue):
+
+    def get_db_prep_save(self, value):
+        log = logging.getLogger('client')
+        log.debug('Modificando logo=%s', value)
+        val = super(LogoToReplace, self).get_db_prep_save(value)
+        log.debug('Depois do super logo=%s', val)
+        # img/menu.png (450, 164)px
+        # themes/modern/images/logo_menor2.png (100, 26)px
+        if self.attribute_name == 'logo_main':
+            fname = os.path.join(settings.MEDIA_ROOT, val)
+            thumb = Image.open(fname)
+            log.debug('Tamanho:%s', thumb.size)
+            thumb.thumbnail((450, 164), Image.ANTIALIAS)
+            dst = '/iptv/var/www/sites/frontend/dist/img/menu.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
+        if self.attribute_name == 'logo_small':
+            fname = os.path.join(settings.MEDIA_ROOT, val)
+            thumb = Image.open(fname)
+            thumb.thumbnail((100, 26), Image.ANTIALIAS)
+            dst = '/iptv/var/www/sites/frontend/dist/themes/modern/\
+images/logo_menor2.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
+        log.debug('name=%s', self.attribute_name)
+        return val
+
+
+class CompanyLogo(dbsettings.Group):
+    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',
+        help_text=u'Formato PNG transparente 450 x 164 px')
+    logo_small = LogoToReplace(_(u'Logo pequeno'), upload_to='',
+        help_text=u'Formato PNG transparente 100 x 26 px')
+
+    #def save(self, *args, **kwargs):
+    #    log = logging.getLogger('client')
+    #    log.debug('Modificando logo')
+    #    super(CompanyLogo, self).save(*args, **kwargs)
+
+
+@receiver(post_save, sender=CompanyLogo)
+def CompanyLogo_post_save(sender, instance, created, **kwargs):
+    log = logging.getLogger('client')
+    log.debug('Modificando logo')
+
+logo = CompanyLogo(u'Logo da interface')
 
 
 class SetTopBoxOptions(dbsettings.Group):
