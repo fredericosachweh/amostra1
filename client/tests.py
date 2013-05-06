@@ -15,6 +15,7 @@ from django.utils import timezone
 from urlparse import urlparse
 import models
 import logging
+log = logging.getLogger('debug')
 
 
 def patch_request_factory():
@@ -519,7 +520,7 @@ class SetTopBoxChannelTest(TestCase):
         #print(url_channel)
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
-        self.assertEqual(2, jobj['meta']['total_count'])
+        self.assertEqual(3, jobj['meta']['total_count'])
 
     def test_stb_api_tv(self):
         ## Define auto_create and execute again
@@ -555,8 +556,11 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(2, jobj['meta']['total_count'])
         ## Test Anonimous
         response = self.c.get(auth_logoff)
+        log.debug('Logoff:%s', auth_logoff)
         self.assertEqual(200, response.status_code)
         response = self.c.get(url_channel)
+        self.assertEqual(200, response.status_code)
+        log.debug('Canais:%s', response.content)
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
 

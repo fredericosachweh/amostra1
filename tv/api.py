@@ -9,6 +9,7 @@ from tastypie.authentication import BasicAuthentication
 from tastypie.authentication import Authentication
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authentication import MultiAuthentication
+from tastypie.authentication import SessionAuthentication
 
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
@@ -28,12 +29,13 @@ class ChannelResource(NamespacedModelResource):
         queryset = models.Channel.objects.filter(enabled=True,
             source__isnull=False)
         authorization = ReadOnlyAuthorization()
+        #authorization = SetTopBoxAuthorization()
         excludes = ['enabled']
         allowed_methods = ['get']
         urlconf_namespace = 'tv'
         authentication = MultiAuthentication(
             BasicAuthentication(realm='cianet-middleware'),
-            #DjangoAuthorization(),
+            SessionAuthentication(),
             Authentication(),
             ApiKeyAuthentication())
 
@@ -55,8 +57,21 @@ class ChannelResource(NamespacedModelResource):
             return channels
         return object_list
 
-    def obj_get_list(self, request=None, **kwargs):
-        obj_list = super(ChannelResource, self).obj_get_list(**kwargs)
+    def obj_get_list(self, bundle, **kwargs):
+        log = logging.getLogger('api')
+        log.debug('ChannelResource User=%s', bundle.request.user)
+        obj_list = super(ChannelResource, self).obj_get_list(bundle, **kwargs)
+        if bundle.request.user.is_anonymous() is False:
+            log.debug('user:%s', bundle.request.user)
+            user = bundle.request.user
+            stb = SetTopBox.objects.get(serial_number=user.username)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            obj_list = obj_list.filter(
+                settopboxchannel__settopbox=stb,
+                enabled=True,
+                source__isnull=False)
+        else:
+            obj_list = models.Channel.objects.get_empty_query_set()
         previous = None
         for o in obj_list:
             o.next = None
