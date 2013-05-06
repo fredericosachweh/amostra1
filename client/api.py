@@ -23,6 +23,7 @@ import logging
 #http://10.1.1.52:8100/tv/api/client/v1/settopboxconfig/8/
 #{"key": "app/tv.PARENTAL_CONTROL", "resource_uri": "/tv/api/client/v1/settopboxconfig/8/", "value": "-1", "value_type": "number"}
 
+
 class MyAuthorization(DjangoAuthorization):
 
     def is_authorized(self, request, bundle_object=None):
