@@ -41,7 +41,7 @@
                 django.jQuery.get(query, function(data) {
                     if (data) {
                         field.append(data);
-                        var iface = "{{ original.interface.pk }}";
+                        var iface = "{{ original.nic_src.id }}";
                         if (iface)
                             field.val(iface);
                         field.removeAttr("disabled");
