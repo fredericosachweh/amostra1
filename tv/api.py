@@ -44,14 +44,17 @@ class ChannelResource(NamespacedModelResource):
 
     def apply_authorization_limits(self, request, object_list):
         log = logging.getLogger('api')
-        log.debug('ChannelResource User=%s', request.user)
-        if request.user.is_anonymous():
+        user = request.user
+        log.debug('ChannelResource User=%s', user)
+        if user.is_anonymous():
             log.debug('Return empt list')
             return models.Channel.objects.get_empty_query_set()
         object_list = super(ChannelResource, self).apply_authorization_limits(
             request, object_list)
+        if user.is_superuser():
+            return object_list
         if request.user.groups.filter(name='settopbox').exists():
-            stb = SetTopBox.objects.get(serial_number=request.user.username)
+            stb = SetTopBox.objects.get(serial_number=user.username)
             channels = stb.get_channels()
             log.debug('Filter for STB=%s, channels=%s', stb, channels)
             return channels
@@ -59,17 +62,19 @@ class ChannelResource(NamespacedModelResource):
 
     def obj_get_list(self, bundle, **kwargs):
         log = logging.getLogger('api')
-        log.debug('ChannelResource User=%s', bundle.request.user)
+        user = bundle.request.user
+        log.debug('ChannelResource User=%s', user)
         obj_list = super(ChannelResource, self).obj_get_list(bundle, **kwargs)
-        if bundle.request.user.is_anonymous() is False:
-            log.debug('user:%s', bundle.request.user)
-            user = bundle.request.user
-            stb = SetTopBox.objects.get(serial_number=user.username)
-            log.debug('User:%s, SetTopBox:%s', user, stb)
-            obj_list = obj_list.filter(
-                settopboxchannel__settopbox=stb,
-                enabled=True,
-                source__isnull=False)
+        if user.is_anonymous() is False:
+            if not user.is_superuser:
+                stb = SetTopBox.objects.get(serial_number=user.username)
+                log.debug('User:%s, SetTopBox:%s', user, stb)
+                obj_list = obj_list.filter(
+                    settopboxchannel__settopbox=stb,
+                    enabled=True,
+                    source__isnull=False)
+            else:
+                obj_list = models.Channel.objects.all()
         else:
             obj_list = models.Channel.objects.get_empty_query_set()
         previous = None
