@@ -51,7 +51,7 @@ class ChannelResource(NamespacedModelResource):
             return models.Channel.objects.get_empty_query_set()
         object_list = super(ChannelResource, self).apply_authorization_limits(
             request, object_list)
-        if user.is_superuser():
+        if user.is_staff:
             return object_list
         if request.user.groups.filter(name='settopbox').exists():
             stb = SetTopBox.objects.get(serial_number=user.username)
@@ -66,7 +66,7 @@ class ChannelResource(NamespacedModelResource):
         log.debug('ChannelResource User=%s', user)
         obj_list = super(ChannelResource, self).obj_get_list(bundle, **kwargs)
         if user.is_anonymous() is False:
-            if not user.is_superuser:
+            if not user.is_staff:
                 stb = SetTopBox.objects.get(serial_number=user.username)
                 log.debug('User:%s, SetTopBox:%s', user, stb)
                 obj_list = obj_list.filter(
