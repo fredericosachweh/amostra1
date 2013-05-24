@@ -1,0 +1,28 @@
+## System - IPTV
+[Unit]
+Description=Site IPTV - Cianet
+DefaultDependencies=no
+#Requires=mysqld.service
+Requires=postgresql_iptv.service
+Requires=memcached.service
+After=network.target
+#After=mysqld.service
+After=postgresql_iptv.service
+#ConditionPathExists=/var/lib/mysql/mysql.sock
+#ConditionPathExists=/var/run/postgresql/.s.PGSQL.5432
+
+[Service]
+Type=forking
+User=nginx
+Group=nginx
+EnvironmentFile=/etc/sysconfig/site_iptv
+
+PIDFile=${PID_FILE}
+
+ExecStart=/usr/bin/python ${PROJECT_PATH}manage.py runfcgi --settings=${SETTINGS} daemonize=true maxchildren=10 maxspare=5 minspare=2 method=prefork socket=${SOCKET_FILE} pidfile=${PID_FILE}
+ExecStop=/bin/kill $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+
+
