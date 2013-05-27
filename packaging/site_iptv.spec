@@ -1,5 +1,5 @@
 Name:           site_iptv
-Version:        0.9.3.3
+Version:        GIT_CURRENT_VERSION
 Release:        0%{?dist}
 Summary:        Sistema IPTV - Cianet
 
