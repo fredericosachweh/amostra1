@@ -13,6 +13,9 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 
+conn = {}
+
+
 class Server(models.Model):
     """
     Servidor e caracteristicas de conexão.
@@ -64,12 +67,26 @@ class Server(models.Model):
     def connect(self):
         """Conecta-se ao servidor"""
         from lib import ssh
+        log = logging.getLogger('device.remotecall')
         if self.offline_mode:
             raise Server.InvalidOperation(
                 "Shouldn't connect when offline mode is set")
-        s = None
+        log.debug('conn:%s', conn)
+        c = conn.get(self.host)
+        if c is not None:
+            log.debug('-------------------------------:%s', c)
+            if c._transport_live:
+                return c
+            else:
+                c = ssh.Connection(host=self.host,
+                    port=self.ssh_port,
+                    username=self.username,
+                    password=self.password,
+                    private_key=self.rsakey)
+                conn[self.host] = c
         try:
-            s = ssh.Connection(host=self.host,
+            log.debug('************************** new:%s', self)
+            conn[self.host] = ssh.Connection(host=self.host,
                 port=self.ssh_port,
                 username=self.username,
                 password=self.password,
@@ -83,9 +100,9 @@ class Server(models.Model):
             self.status = False
             self.msg = ex
         self.save()
-        return s
+        return conn[self.host]
 
-    def execute(self, command, persist=False):
+    def execute(self, command, persist=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]# %s', self.username, self.name, command)
@@ -99,6 +116,7 @@ class Server(models.Model):
             return 'Can not connect'
         ret = s.execute(command)
         if not persist and self.status:
+            log.debug('Close BY  not persist and self.status')
             s.close()
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0:
@@ -110,7 +128,7 @@ class Server(models.Model):
     def execute_daemon(self, command, log_path=None):
         "Excuta o processo em background (daemon)"
         log = logging.getLogger('device.remotecall')
-        log.debug('[%s@%s]#(daemon) %s', self.username, self.name, command)
+        log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
         try:
             s = self.connect()
             self.msg = 'OK'
@@ -125,8 +143,8 @@ class Server(models.Model):
             raise Server.ExecutionFailure(
                     u'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, u"".join(ret['output'])))
-        pid = ret['pid']
-        s.close()
+        pid = ret.get('pid')
+        #s.close()
         self.save()
         return int(pid)
 
@@ -134,13 +152,13 @@ class Server(models.Model):
         """Copies a file between the remote host and the local host."""
         s = self.connect()
         s.get(remotepath, localpath)
-        s.close()
+        #s.close()
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         s = self.connect()
         s.put(localpath, remotepath)
-        s.close()
+        #s.close()
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
@@ -157,7 +175,7 @@ class Server(models.Model):
         Retorna a lista de processos rodando no servidor
         """
         ps = '/bin/ps -eo pid,comm,args'
-        stdout = self.execute(ps)
+        stdout = self.execute(ps, persist=True)
         ret = []
         for line in stdout[1:]:
             cmd = line.split()
@@ -174,7 +192,7 @@ class Server(models.Model):
             raise Exception('kill_process expect a number as argument')
         s = self.connect()
         resp = s.execute('/bin/kill %d' % pid)
-        s.close()
+        #s.close()
         return resp
 
     def auto_detect_digital_tuners(self):
@@ -1354,7 +1372,9 @@ class IPOutput(OutputModel, DeviceServer):
         if self.running() is False:
             # Start multicat
             log_path = '%s%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
-            self.pid = self.server.execute_daemon(self._get_cmd(),
+            cmd = self._get_cmd()
+            log.debug('IPOutput cmd:%s', cmd)
+            self.pid = self.server.execute_daemon(cmd,
                 log_path=log_path)
             self.status = True
             self.save()
