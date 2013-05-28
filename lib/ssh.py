@@ -4,8 +4,8 @@
 
 import os
 import logging
-import tempfile
 import paramiko
+import time
 
 
 class Connection(object):
@@ -14,10 +14,10 @@ class Connection(object):
 
     def __init__(self,
                  host,
-                 username = None,
-                 private_key = None,
-                 password = None,
-                 port = 22,
+                 username=None,
+                 private_key=None,
+                 password=None,
+                 port=22,
                  ):
         log = logging.getLogger('device.remotecall')
         self._sftp_live = False
@@ -26,19 +26,15 @@ class Connection(object):
         if not username:
             username = os.environ['LOGNAME']
 
-        # Log to a temporary file.
-        #templog = tempfile.mkstemp('.txt', 'ssh-')[1]
-        #paramiko.util.log_to_file(templog)
-
         # Begin the SSH transport.
         self._transport = paramiko.Transport((host, port))
-        #self._transport.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # self._transport.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._transport_live = True
         # Authenticate the transport.
         if password:
             # Using Password.
             log.info('Connection using password')
-            self._transport.connect(username = username, password = password )
+            self._transport.connect(username=username, password=password)
         else:
             # Use Private Key.
             log.info('Connection using rsa key')
@@ -53,7 +49,7 @@ class Connection(object):
                     raise TypeError, "You have not specified a password or key."
             private_key_file = os.path.expanduser(private_key)
             rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
-            self._transport.connect(username = username, pkey = rsa_key)
+            self._transport.connect(username=username, pkey=rsa_key)
 
     def _sftp_connect(self):
         """Establish the SFTP connection."""
@@ -63,7 +59,7 @@ class Connection(object):
             self._sftp = paramiko.SFTPClient.from_transport(self._transport)
             self._sftp_live = True
 
-    def get(self, remotepath, localpath = None):
+    def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
         log = logging.getLogger('device.remotecall')
         log.info('geting file from remote:%s -> %s', remotepath, localpath)
@@ -72,7 +68,7 @@ class Connection(object):
         self._sftp_connect()
         self._sftp.get(remotepath, localpath)
 
-    def put(self, localpath, remotepath = None):
+    def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         log = logging.getLogger('device.remotecall')
         log.info('sending file from local:%s -> %s', localpath, remotepath)
@@ -120,7 +116,7 @@ class Connection(object):
         fullcommand += '%s' % command.strip()
         ret = self.execute(fullcommand)
         pidcommand = "/bin/cat %s" % pidfile_path
-        ## Buscando o pid
+        # # Buscando o pid
         output = self.execute(pidcommand)
         if len(output['output']):
             pid = int(output['output'][0].strip())
@@ -128,7 +124,7 @@ class Connection(object):
             ret['pid'] = pid
         return ret
 
-    def execute_with_timeout(self,command,timeout=10):
+    def execute_with_timeout(self, command, timeout=10):
         """
         Executa comando no servidor com timeout e retorna o stdout concatenado
         com o stderr
@@ -154,7 +150,7 @@ class Connection(object):
         run = True
         while run:
             try:
-                r,w,e = select.select([channel],[],[],timeout)
+                r, w, e = select.select([channel], [], [], timeout)
                 if len(r) > 0:
                     if channel.recv_ready():
                         linha = r[0].recv(1024)
@@ -204,18 +200,22 @@ class Connection(object):
         if self._sftp_live:
             self._sftp.close()
             self._sftp_live = False
+            log.debug('close sftp')
         # Close the SSH Transport.
         if self._transport_live:
             self._transport.close()
             self._transport_live = False
+            log.debug('close ssh')
 
     def __del__(self):
         """Attempt to clean up if not explicitly closed."""
         log = logging.getLogger('device.remotecall')
+        log.debug('__DEL__')
         self.close()
 
     def genKey(self):
         log = logging.getLogger('device.remotecall')
+        log.debug('genKey')
         return paramiko.RSAKey.generate(2048)
 
 
