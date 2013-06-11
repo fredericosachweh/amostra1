@@ -31,6 +31,8 @@ class Server(models.Model):
         blank=True)
     ssh_port = models.PositiveSmallIntegerField(_(u'Porta SSH'),
         blank=True, null=True, default=22)
+    http_port = models.PositiveSmallIntegerField(_(u'Porta HTTP'),
+        blank=True, null=True, default=80)
     modified = models.DateTimeField(_(u'Última modificação'), auto_now=True)
     status = models.BooleanField(_(u'Status'), default=False)
     msg = models.TextField(_(u'Mensagem de retorno'), blank=True)
