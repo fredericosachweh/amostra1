@@ -100,7 +100,7 @@ class Server(models.Model):
             self.status = False
             self.msg = ex
         self.save()
-        return conn[self.host]
+        return conn.get(self.host)
 
     def execute(self, command, persist=True):
         """Executa um comando no servidor"""
@@ -1664,14 +1664,9 @@ class StreamPlayer(OutputModel, DeviceServer):
         return cmd
 
     def start(self, recursive=False, time_shift=0):
-        # Create destination folder
-        # Create the necessary log folders
-        #self._create_folders()
         # Start multicat
-        log = logging.getLogger('tvod')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
-        #log.info('StreamPlayer.command:%s' % cmd)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
