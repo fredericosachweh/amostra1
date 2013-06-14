@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 conn = {}
 
 
-class Server(models.Model):
+class AbstractServer(models.Model):
     """
     Servidor e caracteristicas de conexão.
     """
@@ -31,22 +31,13 @@ class Server(models.Model):
         blank=True)
     ssh_port = models.PositiveSmallIntegerField(_(u'Porta SSH'),
         blank=True, null=True, default=22)
-    http_port = models.PositiveSmallIntegerField(_(u'Porta HTTP'),
-        blank=True, null=True, default=80)
     modified = models.DateTimeField(_(u'Última modificação'), auto_now=True)
     status = models.BooleanField(_(u'Status'), default=False)
     msg = models.TextField(_(u'Mensagem de retorno'), blank=True)
-    SERVER_TYPE_CHOICES = (
-                         (u'local', _(u'Servidor local DEMO')),
-                         (u'dvb', _(u'Sintonizador DVB')),
-                         (u'recording', _(u'Servidor TVoD')),
-                         (u'monitor', _(u'Servidor Monitoramento')),
-                         )
-    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
-                                   choices=SERVER_TYPE_CHOICES)
     offline_mode = models.BooleanField(default=False)
 
     class Meta:
+        abstract = True
         verbose_name = _(u'Servidor de Recursos')
         verbose_name_plural = _(u'Servidores de Recursos')
 
@@ -58,13 +49,6 @@ class Server(models.Model):
 
     def __unicode__(self):
         return '%s' % (self.name)
-
-    def switch_link(self):
-        url = reverse('device.views.server_status', kwargs={'pk': self.id})
-        return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
-
-    switch_link.allow_tags = True
-    switch_link.short_description = u'Status'
 
     def connect(self):
         """Conecta-se ao servidor"""
@@ -318,6 +302,21 @@ class Server(models.Model):
     def create_tempfile(self):
         "Creates a temp file and return it's path"
         return "".join(self.execute('/bin/mktemp')).strip()
+
+class Server(AbstractServer):
+    SERVER_TYPE_CHOICES = [
+                         (u'local', _(u'Servidor local DEMO')),
+                         (u'dvb', _(u'Sintonizador DVB')),
+                         (u'recording', _(u'Servidor TVoD')),
+                         ]
+    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
+                                   choices=SERVER_TYPE_CHOICES)
+    def switch_link(self):
+        url = reverse('device.views.server_status', kwargs={'pk': self.id})
+        return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
 
 
 @receiver(post_save, sender=Server)
