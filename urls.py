@@ -41,6 +41,7 @@ urlpatterns = patterns('',
     (r'^%sdvbinfo/' % settings.ROOT_URL, include('dvbinfo.urls')),
     # Devices em servidores
     (r'^%sdevice/' % settings.ROOT_URL, include('device.urls')),
+    (r'^%smonitoramento/' % settings.ROOT_URL, include('monitoramento.urls')),
     (r'^%sclient/' % settings.ROOT_URL, include('client.urls')),
     (r'^%ssettings/' % settings.ROOT_URL,
      include('dbsettings.urls')),

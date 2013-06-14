@@ -44,7 +44,7 @@
 {% for server in monitoring_servers %}
         <tr>
             <th scope="row">
-            <a href="http://{{ server.host }}/nagios/" target="_blank">Acessar o servidor de monitoramento ({{ server.host }})</a>
+            <a href="http://{{ server.http_username }}:{{ server.http_password }}@{{ server.host }}:{{ server.http_port }}/nagios/" target="_blank">Acessar o servidor de monitoramento ({{ server.host }})</a>
             </th>
             <td>&nbsp;</a></td>
             <td>&nbsp;</a></td>
