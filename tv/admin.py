@@ -52,7 +52,7 @@ class ChannelAdmin(admin.ModelAdmin):
     list_display = ('image_thum', 'number', 'name', 'channelid', 'source',
         'buffer_size', 'enabled', 'switch_link')
     list_display_links = ('image_thum',)
-    list_editable = ('number', 'source', 'name', 'channelid', 'enabled')
+    list_editable = ('number', 'source', 'name', 'channelid', 'enabled', 'buffer_size',)
     #inline        = (Programa,)
     save_as = True
     list_per_page = 10

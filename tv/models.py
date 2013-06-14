@@ -62,7 +62,6 @@ class Channel(models.Model):
         return False
 
     def switch_link(self):
-        print 'chamou switch_link'
         if self.source is None and len(self.streamrecorder_set.all()) is 0:
             return '<a>Desconfigurado</a>'
         ret = []

@@ -149,18 +149,20 @@ class AbstractServer(models.Model):
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
-        for p in self.list_process():
+        for p in self.list_process(pid):
             if p['pid'] == pid:
                 log.info('Process [%d] live on [%s] = True', pid, self)
                 return True
         log.info('Process [%d] live on [%s] = False', pid, self)
         return False
 
-    def list_process(self):
+    def list_process(self, pid=None):
         """
         Retorna a lista de processos rodando no servidor
         """
         ps = '/bin/ps -eo pid,comm,args'
+        if pid is not None:
+            ps = 'echo 1;/bin/ps -eo pid,comm,args | grep %i | grep -v grep ' % pid
         stdout = self.execute(ps, persist=True)
         ret = []
         for line in stdout[1:]:
