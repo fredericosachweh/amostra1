@@ -6,24 +6,18 @@ from django.template import RequestContext
 from datetime import timedelta
 from django.conf import settings
 
-from device.models import Server
+#from models import MonServer
 from tv.models import Channel
 
 from models import *
 from django.views.generic.simple import direct_to_template
 
-from pprint import pprint
-import sys
-import cgi
-
 def dashboard(request):
-    #return direct_to_template(request,'admin/monitoring/dashboard.html')
-    monitoring_servers = Server.objects.filter(server_type='monitor')
+    monitoring_servers = MonServer.objects.filter(server_type='monitor')
     response = render_to_response("admin/monitoring/dashboard.html",
         { 'monitoring_servers': monitoring_servers,
         }, context_instance=RequestContext(request))
     return response
-
 
 def channel_tree(request):
     tree_type = request.path.split('/')
@@ -36,7 +30,7 @@ def channel_tree(request):
     else:
         show_status = False
 
-    servers = Server.objects.all()
+    servers = MonServer.objects.all()
     mon_servers = []
     server_dot_cluster = {}
     for server in servers:

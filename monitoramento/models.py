@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
 from django.db import models
 from django.db.models.signals import post_save
 
+from device.models import AbstractServer
 from device.models import Server
 from device.models import NIC
 from device.models import UniqueIP
@@ -20,6 +24,8 @@ from device.models import SoftTranscoder
 from tv.models import Channel
 from django.conf import settings
 from types import ListType
+from django.utils.translation import ugettext as _
+from django.core.urlresolvers import reverse
 
 from cgi import escape
 import pydot
@@ -36,28 +42,36 @@ import os.path
 
 
 
-#@receiver(post_save, sender=Server)
-#def Server_enable_mon(sender, instance, created, **kwargs):
-#
-#    if created is False:
-#        return
-#
-#    MONITOR_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-#    MONITOR_CONFS = os.path.join(MONITOR_ROOT_PATH, 'conf_templates')
-#    DVB_SNMP_CONF = 'DVB_snmpd.conf'
-#
-#    if instance.server_type == 'dvb':
-#        #from tempfile import NamedTemporaryFile
-#
-#        local_file = os.path.join(MONITOR_CONFS, DVB_SNMP_CONF)
-#        log = logging.getLogger('debug')
-#        log.info("Novo servidor DVB: [%s], adicionando config SNMP", instance)
-#        log.info(" => Arquivo de configuracao %s", local_file)
-#        remote_tmpfile = instance.create_tempfile()
-#        instance.put(local_file, remote_tmpfile)
-#        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
-#            '/etc/snmp/snmpd.conf' % remote_tmpfile)
-#        instance.execute('/usr/bin/sudo /bin/systemctl restart snmpd.service')
+
+
+class MonServer(AbstractServer):
+    """
+    Servidor de monitoramento herdado do device.Sercer
+    """
+    http_port = models.PositiveSmallIntegerField(_(u'Porta HTTP'),
+        blank=True, null=True, default=80)
+    http_username = models.CharField(_(u'Usuário HTTP'), max_length=200, blank=True)
+    http_password = models.CharField(_(u'Senha HTTP'), max_length=200, blank=True)
+    SERVER_TYPE_CHOICES = [(u'monitor', _(u'Servidor Monitoramento')),]
+    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
+                                   choices=SERVER_TYPE_CHOICES)
+
+    class Meta:
+        #db_table = 'monitor_server'
+        verbose_name = _(u'Servidor de monitoramento')
+        verbose_name_plural = _(u'Servidores de monitoramento')
+
+    def __init__(self, *args, **kwargs):
+        super(MonServer, self).__init__(*args, **kwargs)
+        self.server_type = u'monitor'
+
+    def switch_link(self):
+        url = reverse('monitoramento.views.monserver_status', kwargs={'pk': self.id})
+        return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
+
 
 def get_representative_object(curr_object):
     obj_type = str(type(curr_object))
