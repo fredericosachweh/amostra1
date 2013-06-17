@@ -52,7 +52,6 @@ def channel_tree(request):
     GRAPH_ROOT = os.path.join(MEDIA_ROOT, 'mon/roots')
     if os.path.exists(GRAPH_ROOT) == False:
         os.makedirs(GRAPH_ROOT)
-
     root_graph = []
 
     NUM = 1

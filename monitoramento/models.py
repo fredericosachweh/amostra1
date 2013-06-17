@@ -447,9 +447,9 @@ class BaseRepresentative(object):
                 obj_type = str(type(child_object))
                 obj_type = obj_type.split("'")[1]
                 obj_type = obj_type.split('.').pop()
-                object_representative = eval(obj_type+'_representative')
+                object_representative = eval(obj_type + '_representative')
                 object_representative = object_representative(
-                    original_obj = child_object)
+                    original_obj=child_object)
 
                 child_node = pydot.Node(style="filled")
                 child_node.set_name(
@@ -462,27 +462,50 @@ class BaseRepresentative(object):
                 graph = object_representative.to_graph(graph, cluster_dict,
                 with_status)
 
+        if hasattr(self.original_obj, 'channel_set'):
+            if type(self.original_obj.channel_set) == ListType:
+                child_list = self.original_obj.channel_set
+            else:
+                child_list = self.original_obj.channel_set.select_related()
+            for child_object in child_list:
+                if child_object is not None:
+                    obj_type = str(type(child_object))
+                    obj_type = obj_type.split("'")[1]
+                    obj_type = obj_type.split('.').pop()
+                    object_representative = eval(obj_type + '_representative')
+                    object_representative = object_representative(
+                        original_obj=child_object)
+                    child_node = pydot.Node(style="filled")
+                    child_node.set_name(
+                        object_representative.to_string(show_info=False),
+                        )
+                    graph.add_node(child_node)
+                    edge = pydot.Edge(
+                        my_node,
+                        child_node)
+                    graph.add_edge(edge)
+                    graph = object_representative.to_graph(graph, cluster_dict)
+
         if hasattr(self.original_obj, 'channel'):
-            child_object = self.original_obj.channel
+            if type(self.original_obj.channel) == ListType:
+                child_object = self.original_obj.channel
+            else:
+                child_object = self.original_obj.channel
             if child_object is not None:
                 obj_type = str(type(child_object))
                 obj_type = obj_type.split("'")[1]
                 obj_type = obj_type.split('.').pop()
-                object_representative = eval(obj_type+'_representative')
+                object_representative = eval(obj_type + '_representative')
                 object_representative = object_representative(
-                    original_obj = child_object)
-
+                    original_obj=child_object)
                 child_node = pydot.Node(style="filled")
                 child_node.set_name(
                     object_representative.to_string(show_info=False),
                     )
-
-
                 graph.add_node(child_node)
                 edge = pydot.Edge(
                     my_node,
                     child_node)
-
                 graph.add_edge(edge)
                 graph = object_representative.to_graph(graph, cluster_dict)
 
