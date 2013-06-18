@@ -34,7 +34,7 @@ class Channel(models.Model):
     )
     updated = models.DateTimeField(auto_now=True)
     enabled = models.BooleanField(_(u'Disponível'), default=False)
-    source = models.OneToOneField(MulticastOutput, unique=True)
+    source = models.ForeignKey(MulticastOutput, unique=False)
     buffer_size = models.PositiveIntegerField(_(u'STB Buffer (milisegundos)'),
         default=1000, help_text=u'For easy STB 300 > and < 5000')
 
@@ -62,7 +62,6 @@ class Channel(models.Model):
         return False
 
     def switch_link(self):
-        print 'chamou switch_link'
         if self.source is None and len(self.streamrecorder_set.all()) is 0:
             return '<a>Desconfigurado</a>'
         ret = []

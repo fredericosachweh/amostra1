@@ -11,30 +11,30 @@ PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 DEBUG = True
 
 #if 'test' in sys.argv:
-#    ## Banco de dados teste
-#    DATABASES = {
-#        'default': {
-#            'ENGINE': 'django.db.backends.sqlite3',
-#            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-#            'USER': '',
-#            'PASSWORD': '',
-#            'HOST': '',
-#            'PORT': ''
-#        }
-#    }
-#elif 'dev' in sys.argv:
+    ## Banco de dados teste
 DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'iptv',
-            'USER': 'cioban',
-            'PASSWORD': 'sergio',
-            'HOST': '10.1.1.49',
-            #'HOST': '10.5.5.254',
-            #'HOST': '127.0.0.1',
-            'PORT': '3306'
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+            'USER': '',
+            'PASSWORD': '',
+            'HOST': '',
+            'PORT': ''
         }
     }
+#elif 'dev' in sys.argv:
+#DATABASES = {
+#        'default': {
+#            'ENGINE': 'django.db.backends.mysql',
+#            'NAME': 'iptv',
+#            'USER': 'cioban',
+#            'PASSWORD': 'sergio',
+#            'HOST': '10.1.1.49',
+#            #'HOST': '10.5.5.254',
+#            #'HOST': '127.0.0.1',
+#            'PORT': '3306'
+#        }
+#    }
 #else:
 #    DATABASES = {
 #        'default': {

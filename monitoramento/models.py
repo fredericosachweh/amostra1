@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
 from django.db import models
 from django.db.models.signals import post_save
 
+from device.models import AbstractServer
 from device.models import Server
 from device.models import NIC
 from device.models import UniqueIP
@@ -20,6 +24,8 @@ from device.models import SoftTranscoder
 from tv.models import Channel
 from django.conf import settings
 from types import ListType
+from django.utils.translation import ugettext as _
+from django.core.urlresolvers import reverse
 
 from cgi import escape
 import pydot
@@ -35,38 +41,47 @@ import shutil
 import os.path
 
 
+class MonServer(AbstractServer):
+    """
+    Servidor de monitoramento herdado do device.Sercer
+    """
+    http_port = models.PositiveSmallIntegerField(_(u'Porta HTTP'),
+        blank=True, null=True, default=80)
+    http_username = models.CharField(_(u'Usuário HTTP'), max_length=200,
+        blank=True)
+    http_password = models.CharField(_(u'Senha HTTP'), max_length=200,
+        blank=True)
+    SERVER_TYPE_CHOICES = [(u'monitor', _(u'Servidor Monitoramento')), ]
+    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
+        choices=SERVER_TYPE_CHOICES)
 
-#@receiver(post_save, sender=Server)
-#def Server_enable_mon(sender, instance, created, **kwargs):
-#
-#    if created is False:
-#        return
-#
-#    MONITOR_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-#    MONITOR_CONFS = os.path.join(MONITOR_ROOT_PATH, 'conf_templates')
-#    DVB_SNMP_CONF = 'DVB_snmpd.conf'
-#
-#    if instance.server_type == 'dvb':
-#        #from tempfile import NamedTemporaryFile
-#
-#        local_file = os.path.join(MONITOR_CONFS, DVB_SNMP_CONF)
-#        log = logging.getLogger('debug')
-#        log.info("Novo servidor DVB: [%s], adicionando config SNMP", instance)
-#        log.info(" => Arquivo de configuracao %s", local_file)
-#        remote_tmpfile = instance.create_tempfile()
-#        instance.put(local_file, remote_tmpfile)
-#        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
-#            '/etc/snmp/snmpd.conf' % remote_tmpfile)
-#        instance.execute('/usr/bin/sudo /bin/systemctl restart snmpd.service')
+    class Meta:
+        #db_table = 'monitor_server'
+        verbose_name = _(u'Servidor de monitoramento')
+        verbose_name_plural = _(u'Servidores de monitoramento')
+
+    def __init__(self, *args, **kwargs):
+        super(MonServer, self).__init__(*args, **kwargs)
+        self.server_type = u'monitor'
+
+    def switch_link(self):
+        url = reverse('monitoramento.views.monserver_status',
+            kwargs={'pk': self.id})
+        return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
+
 
 def get_representative_object(curr_object):
     obj_type = str(type(curr_object))
     obj_type = obj_type.split("'")[1]
     obj_type = obj_type.split('.').pop()
-    object_representative = eval(obj_type+'_representative')
+    object_representative = eval(obj_type + '_representative')
     new_object = object_representative(original_obj=curr_object)
 
     return new_object
+
 
 class NagiosConfig:
     monitoring_servers = []
@@ -163,7 +178,7 @@ class NagiosConfig:
             del(host_template)
 
             pynag.Model.cfg_file = CFG_TMP_FILE
-            config = pynag.Parsers.config(cfg_file = CFG_TMP_FILE)
+            config = pynag.Parsers.config(cfg_file=CFG_TMP_FILE)
             config.parse()
             pynag.Model.config = config
 
@@ -192,7 +207,7 @@ class NagiosConfig:
             channels = Channel.objects.all()
             for ch in channels:
                 service_group_name = '%d-%s' % (
-                        ch.number, ch.name.replace(' ','_'))
+                        ch.number, ch.name.replace(' ', '_'))
                 service_group = pynag.Model.Servicegroup()
                 service_group.servicegroup_name = service_group_name
                 service_group.alias = "Canal %d - %s" % (
@@ -231,7 +246,7 @@ class NagiosConfig:
         try:
             cmd = '/usr/bin/sudo /usr/sbin/nagios -v /etc/nagios/nagios.cfg'
             for server in self.monitoring_servers:
-            	server.execute('%s' % cmd)
+                server.execute('%s' % cmd)
         except Exception, e:
             print str(e)
             return False
@@ -240,7 +255,7 @@ class NagiosConfig:
         try:
             cmd = '/usr/bin/sudo /bin/systemctl restart nagios.service'
             for server in self.monitoring_servers:
-            	server.execute('%s' % cmd)
+                server.execute('%s' % cmd)
         except Exception, e:
             print str(e)
             return False
@@ -269,13 +284,13 @@ class BaseRepresentative(object):
         #monitored_services_list = ['DvbTuner' ]
 
         def create_service(defined_service_group=None, defined_cfg_file=None,
-                obj_type = None):
+                obj_type=None):
             server = self.get_server()
             service_name = self.to_pynag_string()
 
             pynag.Model.cfg_file = defined_cfg_file
             service_check = pynag.Model.Service.objects.filter(
-                    host_name = server.name.lower(),
+                    host_name=server.name.lower(),
                     service_description = service_name)
 
             if len(service_check) > 0:
@@ -309,20 +324,20 @@ class BaseRepresentative(object):
         this_obj_type = this_obj_type.split('.').pop()
 
         if this_obj_type in monitored_services_list:
-            create_service(defined_service_group = service_group,
-                    defined_cfg_file = cfg_file, obj_type = this_obj_type)
+            create_service(defined_service_group=service_group,
+                defined_cfg_file=cfg_file, obj_type=this_obj_type)
 
         if hasattr(self.original_obj, 'sink'):
             sink_object = self.original_obj.sink
             obj_type = str(type(sink_object))
             obj_type = obj_type.split("'")[1]
             obj_type = obj_type.split('.').pop()
-            object_representative = eval(obj_type+'_representative')
+            object_representative = eval(obj_type + '_representative')
             sink_object_representative = object_representative(
-                original_obj = sink_object)
+                original_obj=sink_object)
 
             sink_object_representative.to_pynag_service(
-            service_group = service_group, cfg_file = cfg_file, sid = sid)
+            service_group=service_group, cfg_file=cfg_file, sid=sid)
 
         return
 
@@ -333,9 +348,9 @@ class BaseRepresentative(object):
             obj_type = str(type(sink_object))
             obj_type = obj_type.split("'")[1]
             obj_type = obj_type.split('.').pop()
-            object_representative = eval(obj_type+'_representative')
+            object_representative = eval(obj_type + '_representative')
             sink_object_representative = object_representative(
-                original_obj = sink_object)
+                original_obj=sink_object)
             sink_object_html = sink_object_representative.to_html_tree()
 
         return "<ul><li>"+escape(self.to_string())+'</li>'+sink_object_html+'</ul>'
@@ -390,9 +405,9 @@ class BaseRepresentative(object):
                 obj_type = str(type(child_object))
                 obj_type = obj_type.split("'")[1]
                 obj_type = obj_type.split('.').pop()
-                object_representative = eval(obj_type+'_representative')
+                object_representative = eval(obj_type + '_representative')
                 object_representative = object_representative(
-                    original_obj = child_object)
+                    original_obj=child_object)
                 object_html += object_representative.to_html_root()
 
         return "<ul><li>"+escape(self.to_string())+'</li>'+object_html+'</ul>'
@@ -432,9 +447,9 @@ class BaseRepresentative(object):
                 obj_type = str(type(child_object))
                 obj_type = obj_type.split("'")[1]
                 obj_type = obj_type.split('.').pop()
-                object_representative = eval(obj_type+'_representative')
+                object_representative = eval(obj_type + '_representative')
                 object_representative = object_representative(
-                    original_obj = child_object)
+                    original_obj=child_object)
 
                 child_node = pydot.Node(style="filled")
                 child_node.set_name(
@@ -447,27 +462,50 @@ class BaseRepresentative(object):
                 graph = object_representative.to_graph(graph, cluster_dict,
                 with_status)
 
+        if hasattr(self.original_obj, 'channel_set'):
+            if type(self.original_obj.channel_set) == ListType:
+                child_list = self.original_obj.channel_set
+            else:
+                child_list = self.original_obj.channel_set.select_related()
+            for child_object in child_list:
+                if child_object is not None:
+                    obj_type = str(type(child_object))
+                    obj_type = obj_type.split("'")[1]
+                    obj_type = obj_type.split('.').pop()
+                    object_representative = eval(obj_type + '_representative')
+                    object_representative = object_representative(
+                        original_obj=child_object)
+                    child_node = pydot.Node(style="filled")
+                    child_node.set_name(
+                        object_representative.to_string(show_info=False),
+                        )
+                    graph.add_node(child_node)
+                    edge = pydot.Edge(
+                        my_node,
+                        child_node)
+                    graph.add_edge(edge)
+                    graph = object_representative.to_graph(graph, cluster_dict)
+
         if hasattr(self.original_obj, 'channel'):
-            child_object = self.original_obj.channel
+            if type(self.original_obj.channel) == ListType:
+                child_object = self.original_obj.channel
+            else:
+                child_object = self.original_obj.channel
             if child_object is not None:
                 obj_type = str(type(child_object))
                 obj_type = obj_type.split("'")[1]
                 obj_type = obj_type.split('.').pop()
-                object_representative = eval(obj_type+'_representative')
+                object_representative = eval(obj_type + '_representative')
                 object_representative = object_representative(
-                    original_obj = child_object)
-
+                    original_obj=child_object)
                 child_node = pydot.Node(style="filled")
                 child_node.set_name(
                     object_representative.to_string(show_info=False),
                     )
-
-
                 graph.add_node(child_node)
                 edge = pydot.Edge(
                     my_node,
                     child_node)
-
                 graph.add_edge(edge)
                 graph = object_representative.to_graph(graph, cluster_dict)
 

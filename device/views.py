@@ -16,6 +16,8 @@ import models
 import forms
 import logging
 
+import thread
+
 
 def home(request):
     return HttpResponseRedirect(reverse('admin:index'))
@@ -199,58 +201,6 @@ def inputmodel_scan(request):
     return TemplateResponse(request, 'scan_result.html', context)
 
 
-def file_start(request, pk=None):
-    log = logging.getLogger('device.view')
-    o = get_object_or_404(models.FileInput, id=pk)
-    log.info('Starting %s', o)
-    o.start()
-    if o.status is True:
-        log.info('File started with pid:%d', o.pid)
-    else:
-        log.warning('File could not start:%s', o)
-    return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
-
-
-def file_stop(request, pk=None):
-    log = logging.getLogger('device.view')
-    o = get_object_or_404(models.FileInput, id=pk)
-    log.info('Stopping %s', o)
-    o.stop()
-    return HttpResponseRedirect(reverse('admin:device_vlc_changelist'))
-
-
-def multicat_start(request, pk=None):
-    print 'multicat_start'
-    o = get_object_or_404(models.MulticastInput, id=pk)
-    o.start()
-    return HttpResponseRedirect(reverse(
-        'admin:device_multicatgeneric_changelist'))
-
-
-def multicat_stop(request, pk=None):
-    print 'multicat_stop'
-    o = get_object_or_404(models.MulticastInput, id=pk)
-    o.stop()
-    return HttpResponseRedirect(reverse(
-        'admin:device_multicatgeneric_changelist'))
-
-
-def multicat_redirect_start(request, pk=None):
-    print 'multicat_redirect_start'
-    o = get_object_or_404(models.MulticastInput, id=pk)
-    o.start()
-    return HttpResponseRedirect(reverse(
-        'admin:device_multicatredirect_changelist'))
-
-
-def multicat_redirect_stop(request, pk=None):
-    print 'multicat_redirect_stop'
-    o = get_object_or_404(models.MulticastInput, id=pk)
-    o.stop()
-    return HttpResponseRedirect(reverse(
-        'admin:device_multicatredirect_changelist'))
-
-
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
         if ttype == 'dvbs':
@@ -273,6 +223,10 @@ def auto_fill_tuner_form(request, ttype):
 '<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");\
 </script>' % \
 (request.POST['freq']))
+
+
+def run_play(player, seektime):
+    player.play(time_shift=int(seektime))
 
 
 def tvod(request, channel_number=None, command=None, seek=0):
@@ -363,19 +317,18 @@ def tvod(request, channel_number=None, command=None, seek=0):
     else:
         player.recorder = recorder
         player.server = recorder.server
+        player.stb_port = settings.CHANNEL_PLAY_PORT
         player.save()
     if command == 'play':
         try:
-            player.play(time_shift=int(seek))
+            if player.status and player.pid:
+                player.stb_port += 1
+            thread.start_new_thread(run_play, (player, seek, ))
+            resp = 'OK'
+            #player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
             resp = 'Error'
-        if player.pid and player.status:
-            resp = 'OK'
-        else:
-            log.error('Can not start: status=%s pid=%s' % (player.status,
-                player.pid))
-            resp = 'Can not start'
     elif command == 'pause':
         player.pause(time_shift=int(seek))
     elif command == 'stop':
@@ -384,7 +337,9 @@ def tvod(request, channel_number=None, command=None, seek=0):
         resp = 'Stoped'
     log.debug('Player: %s', player)
     cache.delete(key)
-    return HttpResponse(resp, mimetype='application/javascript', status=200)
+    return HttpResponse(
+        '{"response":"%s", "port":%d}' % (resp, player.stb_port),
+        mimetype='application/javascript', status=200)
 
 
 def tvod_list(request):

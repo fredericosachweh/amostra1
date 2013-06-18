@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 conn = {}
 
 
-class Server(models.Model):
+class AbstractServer(models.Model):
     """
     Servidor e caracteristicas de conexão.
     """
@@ -34,17 +34,10 @@ class Server(models.Model):
     modified = models.DateTimeField(_(u'Última modificação'), auto_now=True)
     status = models.BooleanField(_(u'Status'), default=False)
     msg = models.TextField(_(u'Mensagem de retorno'), blank=True)
-    SERVER_TYPE_CHOICES = (
-                         (u'local', _(u'Servidor local DEMO')),
-                         (u'dvb', _(u'Sintonizador DVB')),
-                         (u'recording', _(u'Servidor TVoD')),
-                         (u'monitor', _(u'Servidor Monitoramento')),
-                         )
-    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
-                                   choices=SERVER_TYPE_CHOICES)
     offline_mode = models.BooleanField(default=False)
 
     class Meta:
+        abstract = True
         verbose_name = _(u'Servidor de Recursos')
         verbose_name_plural = _(u'Servidores de Recursos')
 
@@ -56,13 +49,6 @@ class Server(models.Model):
 
     def __unicode__(self):
         return '%s' % (self.name)
-
-    def switch_link(self):
-        url = reverse('device.views.server_status', kwargs={'pk': self.id})
-        return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
-
-    switch_link.allow_tags = True
-    switch_link.short_description = u'Status'
 
     def connect(self):
         """Conecta-se ao servidor"""
@@ -100,7 +86,7 @@ class Server(models.Model):
             self.status = False
             self.msg = ex
         self.save()
-        return conn[self.host]
+        return conn.get(self.host)
 
     def execute(self, command, persist=True):
         """Executa um comando no servidor"""
@@ -163,19 +149,24 @@ class Server(models.Model):
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
-        for p in self.list_process():
+        for p in self.list_process(pid):
             if p['pid'] == pid:
                 log.info('Process [%d] live on [%s] = True', pid, self)
                 return True
         log.info('Process [%d] live on [%s] = False', pid, self)
         return False
 
-    def list_process(self):
+    def list_process(self, pid=None):
         """
         Retorna a lista de processos rodando no servidor
         """
         ps = '/bin/ps -eo pid,comm,args'
-        stdout = self.execute(ps, persist=True)
+        if pid is not None:
+            ps = 'echo 1;/bin/ps -eo pid,comm,args | grep %i | grep -v grep ' % pid
+        try:
+            stdout = self.execute(ps, persist=True)
+        except:
+            stdout = []
         ret = []
         for line in stdout[1:]:
             cmd = line.split()
@@ -316,6 +307,21 @@ class Server(models.Model):
     def create_tempfile(self):
         "Creates a temp file and return it's path"
         return "".join(self.execute('/bin/mktemp')).strip()
+
+class Server(AbstractServer):
+    SERVER_TYPE_CHOICES = [
+                         (u'local', _(u'Servidor local DEMO')),
+                         (u'dvb', _(u'Sintonizador DVB')),
+                         (u'recording', _(u'Servidor TVoD')),
+                         ]
+    server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
+                                   choices=SERVER_TYPE_CHOICES)
+    def switch_link(self):
+        url = reverse('device.views.server_status', kwargs={'pk': self.id})
+        return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
 
 
 @receiver(post_save, sender=Server)
@@ -1664,14 +1670,9 @@ class StreamPlayer(OutputModel, DeviceServer):
         return cmd
 
     def start(self, recursive=False, time_shift=0):
-        # Create destination folder
-        # Create the necessary log folders
-        #self._create_folders()
         # Start multicat
-        log = logging.getLogger('tvod')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
-        #log.info('StreamPlayer.command:%s' % cmd)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
         self.save()
