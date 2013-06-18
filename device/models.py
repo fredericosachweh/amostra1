@@ -163,7 +163,10 @@ class AbstractServer(models.Model):
         ps = '/bin/ps -eo pid,comm,args'
         if pid is not None:
             ps = 'echo 1;/bin/ps -eo pid,comm,args | grep %i | grep -v grep ' % pid
-        stdout = self.execute(ps, persist=True)
+        try:
+            stdout = self.execute(ps, persist=True)
+        except:
+            stdout = []
         ret = []
         for line in stdout[1:]:
             cmd = line.split()
