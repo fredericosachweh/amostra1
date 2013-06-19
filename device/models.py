@@ -88,7 +88,7 @@ class AbstractServer(models.Model):
         self.save()
         return conn.get(self.host)
 
-    def execute(self, command, persist=True):
+    def execute(self, command, persist=True, check=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]# %s', self.username, self.name, command)
@@ -105,7 +105,7 @@ class AbstractServer(models.Model):
             log.debug('Close BY  not persist and self.status')
             s.close()
         self.save()
-        if ret.get('exit_code') and ret['exit_code'] is not 0:
+        if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
                     u'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, u"".join(ret['output'])))
@@ -162,11 +162,10 @@ class AbstractServer(models.Model):
         """
         ps = '/bin/ps -eo pid,comm,args'
         if pid is not None:
-            ps = 'echo 1;/bin/ps -eo pid,comm,args | grep %i | grep -v grep ' % pid
-        try:
+            ps = '/bin/ps -o pid,comm,args -p %i' % pid
+            stdout = self.execute(ps, persist=True, check=False)
+        else:
             stdout = self.execute(ps, persist=True)
-        except:
-            stdout = []
         ret = []
         for line in stdout[1:]:
             cmd = line.split()
@@ -308,14 +307,16 @@ class AbstractServer(models.Model):
         "Creates a temp file and return it's path"
         return "".join(self.execute('/bin/mktemp')).strip()
 
+
 class Server(AbstractServer):
     SERVER_TYPE_CHOICES = [
-                         (u'local', _(u'Servidor local DEMO')),
-                         (u'dvb', _(u'Sintonizador DVB')),
-                         (u'recording', _(u'Servidor TVoD')),
-                         ]
+        (u'local', _(u'Servidor local DEMO')),
+        (u'dvb', _(u'Sintonizador DVB')),
+        (u'recording', _(u'Servidor TVoD')),
+        ]
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
-                                   choices=SERVER_TYPE_CHOICES)
+        choices=SERVER_TYPE_CHOICES)
+
     def switch_link(self):
         url = reverse('device.views.server_status', kwargs={'pk': self.id})
         return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
