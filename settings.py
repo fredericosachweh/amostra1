@@ -308,6 +308,10 @@ CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
 CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'
 CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
 CHANNEL_PLAY_PORT = 12000
+CHANNEL_RECORD_DISKCONTROL = '/iptv/bin/diskctrl'
+CHANNEL_RECORD_DISKCONTROL_DIR = '/iptv/var/run/diskctrl'
+CHANNEL_RECORD_DISKCONTROL_VERBOSE = True
+
 
 DVBLAST_COMMAND = '/iptv/bin/dvblast'
 DVBLAST_CONFS_DIR = '/iptv/etc/dvblast/'

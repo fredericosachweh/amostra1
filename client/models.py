@@ -37,8 +37,7 @@ class LogoToReplace(dbsettings.ImageValue):
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((100, 26), Image.ANTIALIAS)
-            dst = '/iptv/var/www/sites/frontend/dist/themes/modern/\
-images/logo_menor2.png'
+            dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         log.debug('name=%s', self.attribute_name)
@@ -118,9 +117,9 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
         log.debug('New SetTopBox')
         try:
             user = User.objects.get(username=instance.serial_number)
-            log.debug('User existis')
+            log.error('User existis')
         except:
-            log.debug('Creating new user')
+            log.info('Creating new user')
             user = User.objects.create_user(instance.serial_number,
                 '%s@middleware.iptvdomain' % (instance.serial_number),
                 instance.serial_number)

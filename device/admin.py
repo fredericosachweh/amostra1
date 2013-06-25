@@ -27,6 +27,10 @@ test_all_servers.short_description = ugettext_lazy(
     u'Testar %(verbose_name_plural)s selecionados')
 
 
+class NICInline(admin.TabularInline):
+    model = models.NIC
+
+
 class AdminServer(admin.ModelAdmin):
     readonly_fields = ('status', 'modified', 'msg',)
     list_display = ('__unicode__', 'server_type', 'status', 'msg',
@@ -42,6 +46,7 @@ class AdminServer(admin.ModelAdmin):
         )
       }),
     )
+    #inlines = [NICInline]
     actions = [test_all_servers]
 
 
