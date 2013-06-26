@@ -1436,6 +1436,10 @@ class Storage(DeviceServer):
         default=settings.CHANNEL_RECORD_DIR, )
     hdd_ssd = models.BooleanField(_(u'Disco SSD (Estado sólido'),
         default=False)
+    peso = models.PositiveIntegerField(
+        _(u'Peso'),
+        help_text=_(u'Prioridade de acesso nas gravações'),
+        default=100)
     limit_rec_hd = models.PositiveIntegerField(
         _(u'Max. Rec. HD'),
         help_text=_(u'Número máximo de gravações de fluxo HD'),
@@ -1453,6 +1457,9 @@ class Storage(DeviceServer):
         help_text=_(u'Número máximo de clientes de fluxo SD'),
         default=0)
 
+    def __unicode__(self):
+        return u'%s (%s)' % (self.description, self.folder)
+
     def control_dir(self):
         return '%s/%s/' % (settings.CHANNEL_RECORD_DISKCONTROL_DIR, self.id)
 
@@ -1465,6 +1472,29 @@ class Storage(DeviceServer):
         cmd = '%s%s -l %s' % (settings.CHANNEL_RECORD_DISKCONTROL, verbose,
             self.control_dir())
         return cmd
+
+    def start(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Iniciando device %s', self)
+        # Criando diskctrl dir
+        self.server.execute('mkdir -p %s' % self.control_dir())
+        log_path = '%sdiskctrl_%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(self._get_cmd(),
+            log_path=log_path)
+        if self.pid > 0:
+            from django.utils import timezone
+            self.start_time = timezone.now()
+            self.status = True
+        self.save()
+
+    def stop(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Stop storage[PID:%s]: %s' % (self.pid, self))
+        ## Stop all records
+        for r in StreamRecorder.objects.filter(storage=self):
+            r.stop(*args, **kwargs)
+        if self.running():
+            super(Storage, self).stop(*args, **kwargs)
 
 
 ## Gravação:
@@ -1487,15 +1517,16 @@ class StreamRecorder(OutputModel, DeviceServer):
     nic_sink = models.ForeignKey(NIC,
         verbose_name=_(u'Interface de rede interna'))
     storage = models.ForeignKey(Storage)
+    ### TODO: hd mecanico e fluxo hd/sd
 
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
 
     def __unicode__(self):
-        return u'id:%d rotate:%d, keep:%d, channel:%s, start:%s' % (
+        return u'id:%d rotate:%d, keep:%d, channel:%s' % (
             self.id, self.rotate,
-            self.keep_time, self.channel, self.start_time)
+            self.keep_time, self.channel.number)
 
     def _get_cmd(self):
         import time
@@ -1511,7 +1542,8 @@ class StreamRecorder(OutputModel, DeviceServer):
             log.info('Record is using pcrpid')
             ## Busca o pid do pcr para o metodo novo de gravação
             demux = self.sink
-            while type(demux) is not DemuxedService and demux is not None:
+            print(type(demux))
+            while type(demux) is not DemuxedService and demux is not None and hasattr(demux, 'sink'):
                 demux = demux.sink
             if type(demux) is DemuxedService:
                 time.sleep(3)
@@ -1563,6 +1595,9 @@ class StreamRecorder(OutputModel, DeviceServer):
         log.info('Stop record[PID:%s]: %s' % (self.pid, self))
         if self.running():
             super(StreamRecorder, self).stop(*args, **kwargs)
+            ## Verifica se existe algum gravador usando o mesmo storage
+            ## Se não existe para o storage
+            StreamRecorder.objects.filter(storage=self.storage, status=True)
         if kwargs.get('recursive') is True:
             if self.sink.running() is True:
                 self.sink.stop(recursive=kwargs.get('recursive'))
@@ -1686,30 +1721,33 @@ class StreamPlayer(OutputModel, DeviceServer):
             status = cache.get(key)
             if status == 'paused':
                 cmd = u'%s -r %s play' % (
-                    settings.CHANNEL_RECORD_PLAY_COMMAND,
+                    settings.MULTICATCTL_COMMAND,
                     self.control_socket,
                     )
                 new_status = 'play'
             else:
                 cmd = u'%s -r %s pause' % (
-                    settings.CHANNEL_RECORD_PLAY_COMMAND,
+                    settings.MULTICATCTL_COMMAND,
                     self.control_socket,
                     )
                 new_status = 'paused'
             cache.set(key, new_status)
             log.info('%s=%s', key, new_status)
-            self.pid = self.server.execute_daemon(cmd)
+            pid = self.server.execute_daemon(cmd)
             self.status = True
             self.save()
         else:
             log.error('Player not runnig:%s', self)
+            new_status = 'not running'
+        return new_status
 
     def _get_cmd(self, time_shift=0):
         self.control_socket = '%sclient_%d.sock' % (
             settings.MULTICAT_SOCKETS_DIR,
             self.pk)
-        cmd = u'%s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
+        cmd = u'%s -l %s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
             settings.CHANNEL_RECORD_PLAY_COMMAND,
+            self.recorder.storage.control_dir(),
             self.control_socket,
             (self.recorder.rotate * 60 * 27000000),
             (time_shift * 27000000),

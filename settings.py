@@ -302,7 +302,7 @@ MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 MULTICATCTL_COMMAND = '/iptv/bin/multicatctl'
 
-CHANNEL_RECORD_USE_PCRPID = True
+CHANNEL_RECORD_USE_PCRPID = False
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
 CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
 CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'

@@ -122,3 +122,8 @@ class UniqueIPForm(GenericRelationForm):
 class SoftTranscoderForm(GenericRelationForm):
     class Meta:
         model = models.SoftTranscoder
+
+
+class StorageForm(forms.ModelForm):
+    class Meta:
+        model = models.Storage

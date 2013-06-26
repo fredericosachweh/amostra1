@@ -149,7 +149,7 @@ class AdminDemuxedService(admin.ModelAdmin):
 
 class AdminStreamRecorder(admin.ModelAdmin):
     list_display = ('server', 'description', 'start_time', 'rotate',
-                    'keep_time', 'channel', 'switch_link')
+                    'keep_time', 'channel', 'storage', 'switch_link')
     form = forms.StreamRecorderForm
 
 
@@ -197,6 +197,12 @@ class AdminSoftTranscoder(admin.ModelAdmin):
     )
     form = forms.SoftTranscoderForm
 
+
+class AdminStorage(admin.ModelAdmin):
+    list_display = ('server', 'description', 'hdd_ssd', 'peso', 'folder', 'switch_link')
+    form = forms.StorageForm
+
+
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server, AdminServer)
 admin.site.register(models.Antenna)
@@ -209,6 +215,6 @@ admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
-admin.site.register(models.Storage)
+admin.site.register(models.Storage, AdminStorage)
 
 admin.site.unregister(Site)
