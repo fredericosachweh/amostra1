@@ -209,5 +209,6 @@ admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
+admin.site.register(models.Storage)
 
 admin.site.unregister(Site)
