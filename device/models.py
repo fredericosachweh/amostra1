@@ -88,7 +88,12 @@ class AbstractServer(models.Model):
         self.save()
         return conn.get(self.host)
 
-    def execute(self, command, persist=True):
+    def disconect(self):
+        c = conn.get(self.host)
+        if c is not None:
+            c.close()
+
+    def execute(self, command, persist=True, check=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]# %s', self.username, self.name, command)
@@ -105,7 +110,7 @@ class AbstractServer(models.Model):
             log.debug('Close BY  not persist and self.status')
             s.close()
         self.save()
-        if ret.get('exit_code') and ret['exit_code'] is not 0:
+        if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
                     u'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, u"".join(ret['output'])))
@@ -162,11 +167,10 @@ class AbstractServer(models.Model):
         """
         ps = '/bin/ps -eo pid,comm,args'
         if pid is not None:
-            ps = 'echo 1;/bin/ps -eo pid,comm,args | grep %i | grep -v grep ' % pid
-        try:
+            ps = '/bin/ps -o pid,comm,args -p %i' % pid
+            stdout = self.execute(ps, persist=True, check=False)
+        else:
             stdout = self.execute(ps, persist=True)
-        except:
-            stdout = []
         ret = []
         for line in stdout[1:]:
             cmd = line.split()
@@ -308,14 +312,16 @@ class AbstractServer(models.Model):
         "Creates a temp file and return it's path"
         return "".join(self.execute('/bin/mktemp')).strip()
 
+
 class Server(AbstractServer):
     SERVER_TYPE_CHOICES = [
-                         (u'local', _(u'Servidor local DEMO')),
-                         (u'dvb', _(u'Sintonizador DVB')),
-                         (u'recording', _(u'Servidor TVoD')),
-                         ]
+        (u'local', _(u'Servidor local DEMO')),
+        (u'dvb', _(u'Sintonizador DVB')),
+        (u'recording', _(u'Servidor TVoD')),
+        ]
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
-                                   choices=SERVER_TYPE_CHOICES)
+        choices=SERVER_TYPE_CHOICES)
+
     def switch_link(self):
         url = reverse('device.views.server_status', kwargs={'pk': self.id})
         return '<a href="%s" id="server_id_%s" >Atualizar</a>' % (url, self.id)
@@ -336,6 +342,7 @@ def Server_post_save(sender, instance, created, **kwargs):
                      "so we couldn't configure it", instance)
             return  # There is nothing we can do
         instance.auto_create_nic()
+        return
         instance.auto_detect_digital_tuners()
         # Create the tmpfiles
         remote_tmpfile = instance.create_tempfile()
@@ -592,7 +599,8 @@ class DeviceServer(models.Model):
             url = reverse('%s_recover' % module_name,
                 kwargs={'pk': self.id})
             return 'Crashed<a href="%s" id="%s_id_%s" style="color:red;">' \
-                   ' ( Recuperar )</a>' % (url, module_name, self.id)
+                   ' ( Recuperar )</a> ' % (
+                    url, module_name, self.id)
         if running == True and self.status == True:
             url = reverse('%s_stop' % module_name,
                 kwargs={'pk': self.id})
@@ -975,7 +983,7 @@ class DigitalTuner(InputModel, DeviceServer):
         #self._create_folders()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
-                        settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
+            settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
         if self.running() == True:
             # Already running, just reload config
             self.reload_config()
@@ -1393,7 +1401,7 @@ class IPOutput(OutputModel, DeviceServer):
 
 
 class MulticastOutput(IPOutput):
-    "Multicast MPEG2TS IP output stream"
+    u"Multicast MPEG2TS IP output stream"
     class Meta:
         verbose_name = _(u'Saída IP multicast')
         verbose_name_plural = _(u'Saídas IP multicast')
@@ -1422,6 +1430,83 @@ class MulticastOutput(IPOutput):
         return cmd
 
 
+class Storage(DeviceServer):
+    u'Class to manage recorder storage'
+
+    folder = models.CharField(_(u'Diretório destino'), max_length=500,
+        default=settings.CHANNEL_RECORD_DIR, )
+    hdd_ssd = models.BooleanField(_(u'Disco SSD (Estado sólido'),
+        default=False)
+    peso = models.PositiveIntegerField(
+        _(u'Peso'),
+        help_text=_(u'Prioridade de acesso nas gravações'),
+        default=100)
+    limit_rec_hd = models.PositiveIntegerField(
+        _(u'Max. Rec. HD'),
+        help_text=_(u'Número máximo de gravações de fluxo HD'),
+        default=0)
+    limit_rec_sd = models.PositiveIntegerField(
+        _(u'Max. Rec. SD'),
+        help_text=_(u'Número máximo de gravações de fluxo SD'),
+        default=0)
+    limit_play_hd = models.PositiveIntegerField(
+        _(u'Max. Cli. HD'),
+        help_text=_(u'Número máximo de clientes de fluxo HD'),
+        default=0)
+    limit_play_sd = models.PositiveIntegerField(
+        _(u'Max. Cli. SD'),
+        help_text=_(u'Número máximo de clientes de fluxo SD'),
+        default=0)
+    n_recorders = models.PositiveIntegerField(_(u'Gravações'), default=0)
+    n_players = models.PositiveIntegerField(_(u'Players'), default=0)
+
+    def __unicode__(self):
+        return u'%s (%s)' % (self.description, self.folder)
+
+    def control_dir(self):
+        return '%s/%s/' % (settings.CHANNEL_RECORD_DISKCONTROL_DIR, self.id)
+
+    def _get_cmd(self):
+        if settings.CHANNEL_RECORD_DISKCONTROL_VERBOSE:
+            verbose = ' -v'
+        else:
+            verbose = ''
+        cmd = '%s%s -l %s' % (settings.CHANNEL_RECORD_DISKCONTROL, verbose,
+            self.control_dir())
+        return cmd
+
+    def start(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Iniciando device %s', self)
+        # Criando diskctrl dir
+        self.server.execute('mkdir -p %s' % self.control_dir())
+        log_path = '%sdiskctrl_%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
+        self.pid = self.server.execute_daemon(self._get_cmd(),
+            log_path=log_path)
+        if self.pid > 0:
+            from django.utils import timezone
+            self.start_time = timezone.now()
+            self.status = True
+            self.n_players = 0
+            self.n_recorders = 0
+        self.save()
+
+    def stop(self, *args, **kwargs):
+        log = logging.getLogger('debug')
+        log.info('Stop storage[PID:%s]: %s' % (self.pid, self))
+        ## Stop all records
+        for r in StreamRecorder.objects.filter(storage=self):
+            ## Stop all players for each record
+            for p in StreamPlayer.objects.filter(recorder=r):
+                if p.pid and p.status:
+                    p.stop()
+            r.stop(*args, **kwargs)
+        if self.running():
+            self.n_players = 0
+            self.n_recorders = 0
+            super(Storage, self).stop(*args, **kwargs)
+
+
 ## Gravação:
 # RT=$((60*60*27000000)) #rotate (minutos)
 # FOLDER=ch_53
@@ -1434,8 +1519,6 @@ class StreamRecorder(OutputModel, DeviceServer):
     """
     rotate = models.PositiveIntegerField(_(u'Tempo em minutos do arquivo'),
         help_text=_(u'Padrão é 60 min.'), default=60)
-    folder = models.CharField(_(u'Diretório destino'), max_length=500,
-        default=settings.CHANNEL_RECORD_DIR, )
     keep_time = models.PositiveIntegerField(_(u'Horas que permanece gravado'),
         help_text=_(u'Padrão: 48'), default=48)
     start_time = models.DateTimeField(_(u'Hora inicial da gravação'),
@@ -1443,21 +1526,25 @@ class StreamRecorder(OutputModel, DeviceServer):
     channel = models.ForeignKey('tv.Channel', null=True, blank=True)
     nic_sink = models.ForeignKey(NIC,
         verbose_name=_(u'Interface de rede interna'))
+    storage = models.ForeignKey(Storage)
+    stream_hd = models.BooleanField(_(u'Fluxo é HD'),
+        help_text=_(u'Marcar se o fluxo do canal for HD'), default=False)
+    ### TODO: hd mecanico e fluxo hd/sd
 
     class Meta:
         verbose_name = _(u'Gravador de fluxo')
         verbose_name_plural = _(u'Gravadores de fluxo')
 
     def __unicode__(self):
-        return u'id:%d rotate:%d, keep:%d, channel:%s, start:%s' % (
+        return u'id:%d rotate:%d, keep:%d, channel:%s' % (
             self.id, self.rotate,
-            self.keep_time, self.channel, self.start_time)
+            self.keep_time, self.channel.number)
 
     def _get_cmd(self):
         import time
         log = logging.getLogger('debug')
         # Create folder to store record files
-        self.server.execute('mkdir -p %s/%d' % (self.folder, self.pk))
+        self.server.execute('mkdir -p %s/%d' % (self.storage.folder, self.pk))
         # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
         #@239.10.0.1:10000/ifaddr=172.17.0.1 -U -r 97200000000 \
         #-u /iptv/recorder/6
@@ -1467,7 +1554,9 @@ class StreamRecorder(OutputModel, DeviceServer):
             log.info('Record is using pcrpid')
             ## Busca o pid do pcr para o metodo novo de gravação
             demux = self.sink
-            while type(demux) is not DemuxedService and demux is not None:
+            print(type(demux))
+            while type(demux) is not DemuxedService and demux is not None and \
+                hasattr(demux, 'sink'):
                 demux = demux.sink
             if type(demux) is DemuxedService:
                 time.sleep(3)
@@ -1478,15 +1567,20 @@ class StreamRecorder(OutputModel, DeviceServer):
                 use_pcrpid = '-p %s ' % pcrpid
                 log.info('pcrpid=%s' % pcrpid)
 
-        cmd = u'%s %s-r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
+        b = ''
+        if self.stream_hd and self.storage.hdd_ssd:
+            b = '-b'
+        cmd = u'%s -l %s %s %s-r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.MULTICAT_COMMAND,
+            self.storage.control_dir(),
+            b,
             use_pcrpid,
             (self.rotate * 60 * 27000000),
             self.sink.ip,
             self.sink.port,
             self.nic_sink.ipv4,
-            self.folder,
-            self.pk
+            self.storage.folder,
+            self.pk,
             )
         return cmd
 
@@ -1496,6 +1590,8 @@ class StreamRecorder(OutputModel, DeviceServer):
         # Force start sink on start record
         if self.sink.running() is False:
             self.sink.start(recursive=kwargs.get('recursive'))
+        if not self.storage.running():
+            self.storage.start()
         # Start multicat
         log_path = '%srecorder_%d' % (settings.MULTICAT_LOGS_DIR, self.pk)
         self.pid = self.server.execute_daemon(self._get_cmd(),
@@ -1504,11 +1600,9 @@ class StreamRecorder(OutputModel, DeviceServer):
             from django.utils import timezone
             self.start_time = timezone.now()
             self.status = True
+            self.storage.n_recorders += 1
+            self.storage.save()
         self.save()
-        #if kwargs.get('recursive') is True:
-        #    if self.sink.running() is False:
-        #        self.sink.start(recursive=kwargs.get('recursive'))
-        # This install all cronjobs to current recorder server
         self.install_cron()
 
     def stop(self, *args, **kwargs):
@@ -1516,6 +1610,11 @@ class StreamRecorder(OutputModel, DeviceServer):
         log.info('Stop record[PID:%s]: %s' % (self.pid, self))
         if self.running():
             super(StreamRecorder, self).stop(*args, **kwargs)
+            ## Verifica se existe algum gravador usando o mesmo storage
+            ## Se não existe para o storage
+            # StreamRecorder.objects.filter(storage=self.storage, status=True)
+            self.storage.n_recorders -= 1
+            self.storage.save()
         if kwargs.get('recursive') is True:
             if self.sink.running() is True:
                 self.sink.stop(recursive=kwargs.get('recursive'))
@@ -1534,11 +1633,11 @@ class StreamRecorder(OutputModel, DeviceServer):
         #*/30 * * * * nginx /iptv/bin/multicat_expire.sh /iptv/recorder/50/ 13
         #*/30 * * * * nginx /iptv/bin/multicat_expire.sh /iptv/recorder/53/ 13
         #*/30 * * * * nginx /iptv/bin/multicat_expire.sh /iptv/recorder/54/ 25
-        #import getpass
-        #user = getpass.getuser()
         elements = (self.keep_time / (self.rotate / 60)) + 1
         cmd = '*/30 * * * * %s %s/%d/ %d' % (
-            settings.CHANNEL_RECORD_CLEAN_COMMAND, self.folder, self.id,
+            settings.CHANNEL_RECORD_CLEAN_COMMAND,
+            self.storage.folder,
+            self.id,
             elements)
         return cmd
 
@@ -1552,10 +1651,12 @@ class StreamRecorder(OutputModel, DeviceServer):
         # Get all running recorders on current recorder server
         recorders = StreamRecorder.objects.filter(
             server=self.server, status=True)
-        if len(recorders) == 0:
-            return
+        #if len(recorders) == 0:
+        #    return
         tmpfile = NamedTemporaryFile()
-        cron = u'# New cronfile: %s \n\n' % timezone.now()
+        start_time = timezone.now()
+        log.debug('CronTime:%s', start_time)
+        cron = u'# New cronfile: %s \n\n' % start_time
         remote_tmpfile = "".join(self.server.execute('/bin/mktemp')).strip()
         for rec in recorders:
             cron += u'# recorder = %s\n' % rec.pk
@@ -1570,13 +1671,13 @@ class StreamRecorder(OutputModel, DeviceServer):
         tmpfile.close()
 
 
-@receiver(pre_save, sender=StreamRecorder)
-def StreamRecorder_pre_save(sender, instance, **kwargs):
-    "Filling dependent fields from Channel"
-    if instance.channel is not None:
-        channel = instance.channel
-        content_type_id = channel.source.content_type_id
-        instance.content_type_id = content_type_id
+#@receiver(pre_save, sender=StreamRecorder)
+#def StreamRecorder_pre_save(sender, instance, **kwargs):
+#    "Filling dependent fields from Channel"
+#    if instance.channel is not None:
+#        channel = instance.channel
+#        content_type_id = channel.source.content_type_id
+#        instance.content_type_id = content_type_id
 
 
 ## Recuperação:
@@ -1597,6 +1698,7 @@ class StreamPlayer(OutputModel, DeviceServer):
     # Socket de controle do aplicativo no servidor
     control_socket = models.CharField(_(u'Socket de controle (auto)'),
         max_length=500)
+    time_shift = models.PositiveIntegerField(_(u'Segundos'), default=0)
 
     class Meta:
         verbose_name = _(u'Reprodutor de fluxo gravado')
@@ -1647,22 +1749,26 @@ class StreamPlayer(OutputModel, DeviceServer):
                 new_status = 'paused'
             cache.set(key, new_status)
             log.info('%s=%s', key, new_status)
-            self.pid = self.server.execute_daemon(cmd)
+            self.server.execute_daemon(cmd)
             self.status = True
+            self.time_shift = time_shift
             self.save()
         else:
             log.error('Player not runnig:%s', self)
+            new_status = 'not running'
+        return new_status
 
     def _get_cmd(self, time_shift=0):
         self.control_socket = '%sclient_%d.sock' % (
             settings.MULTICAT_SOCKETS_DIR,
             self.pk)
-        cmd = u'%s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
-            settings.MULTICAT_COMMAND,
+        cmd = u'%s -l %s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
+            settings.CHANNEL_RECORD_PLAY_COMMAND,
+            self.recorder.storage.control_dir(),
             self.control_socket,
             (self.recorder.rotate * 60 * 27000000),
             (time_shift * 27000000),
-            self.recorder.folder,
+            self.recorder.storage.folder,
             self.recorder.pk,
             self.stb_ip,
             self.stb_port
@@ -1675,12 +1781,20 @@ class StreamPlayer(OutputModel, DeviceServer):
         cmd = self._get_cmd(time_shift=time_shift)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
         self.status = True
+        self.time_shift = time_shift
+        storage = self.recorder.storage
+        storage.n_players += 1
+        storage.save()
         self.save()
 
     def stop(self, *args, **kwargs):
         log = logging.getLogger('tvod')
         log.info('STOP:%s', self)
         super(StreamPlayer, self).stop(*args, **kwargs)
+        storage = self.recorder.storage
+        if storage.n_players > 0:
+            storage.n_players -= 1
+            storage.save()
         self.server.rm_file(self.control_socket)
 
 

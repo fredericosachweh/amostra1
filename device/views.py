@@ -256,8 +256,9 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.set(key, 1)
     else:
         log.debug('duplicated request key:"%s"', key)
-        return HttpResponse(u'DUP REC', mimetype='application/javascript',
-            status=409)
+        if command != 'stop':
+            return HttpResponse(u'DUP REC',
+                mimetype='application/javascript',status=409)
     log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"' % (command, ip,
         channel_number, seek))
     ## User
@@ -330,7 +331,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             log.error(e)
             resp = 'Error'
     elif command == 'pause':
-        player.pause(time_shift=int(seek))
+        resp = player.pause(time_shift=int(seek))
     elif command == 'stop':
         if player.pid and player.status:
             player.stop()

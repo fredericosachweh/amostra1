@@ -7,7 +7,7 @@ from django.db.models.loading import get_model
 # List of models witch should have a switch_link field on the admin
 models = ['dvbtuner', 'isdbtuner', 'unicastinput', 'multicastinput',
         'fileinput', 'demuxedservice', 'multicastoutput', 'streamrecorder',
-        'softtranscoder']
+        'softtranscoder', 'storage']
 urls = []
 for model in models:
     view = 'deviceserver_switchlink'
