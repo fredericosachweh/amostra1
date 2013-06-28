@@ -199,7 +199,8 @@ class AdminSoftTranscoder(admin.ModelAdmin):
 
 
 class AdminStorage(admin.ModelAdmin):
-    list_display = ('server', 'description', 'hdd_ssd', 'peso', 'folder', 'switch_link')
+    list_display = ('server', 'description', 'n_recorders', 'n_players',
+        'hdd_ssd', 'peso', 'folder', 'switch_link')
     form = forms.StorageForm
 
 
@@ -216,5 +217,6 @@ admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
 admin.site.register(models.Storage, AdminStorage)
+# admin.site.register(models.StreamPlayer)
 
 admin.site.unregister(Site)
