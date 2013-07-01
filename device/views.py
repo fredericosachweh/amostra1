@@ -229,6 +229,21 @@ def run_play(player, seektime):
     player.play(time_shift=int(seektime))
 
 
+def get_random_on_storage(recorders):
+    from random import randint
+    log = logging.getLogger('tvod')
+    soma = 0
+    s = 0
+    for r in recorders:
+        soma += r.storage.peso
+    rand = randint(0, soma)
+    log.debug('Soma=%d, Rand=%d', soma, rand)
+    for r in recorders:
+        s += r.storage.peso
+        if s >= rand:
+            return r
+
+
 def tvod(request, channel_number=None, command=None, seek=0):
     u'TVOD commands'
     from datetime import timedelta
@@ -237,9 +252,12 @@ def tvod(request, channel_number=None, command=None, seek=0):
     from tv.models import Channel
     from client.models import SetTopBox
     from django.core.cache import get_cache
-    from random import choice
+    # TODO: Limit number of players
+    # from django.db.models import F
+    # q = StreamRecorder.objects.filter(
+    #     storage__n_players__lt=F('storage__limit_play_hd') + 1)
     cache = get_cache('default')
-    log = logging.getLogger('device.view')
+    log = logging.getLogger('tvod')
     status = cache._cache.get_stats()
     if len(status) == 0:
         log.error('Memcached is not running')
@@ -258,7 +276,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.debug('duplicated request key:"%s"', key)
         if command != 'stop':
             return HttpResponse(u'DUP REC',
-                mimetype='application/javascript',status=409)
+                mimetype='application/javascript', status=409)
     log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"' % (command, ip,
         channel_number, seek))
     ## User
@@ -301,8 +319,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         return HttpResponse(u'Unavaliable', mimetype='application/javascript',
             status=404)
-    # TODO: Create a method to priorize server for now random.choice
-    recorder = choice(recorders)
+    # Priorize server (random)
+    recorder = get_random_on_storage(recorders)
     log.info('Current recorder:%s', recorder)
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
@@ -351,7 +369,7 @@ def tvod_list(request):
     import time
     from models import StreamRecorder
     from client.models import SetTopBox
-    log = logging.getLogger('device.view')
+    log = logging.getLogger('tvod')
     meta = {
         'previous': "",
         'total_count': 0,
