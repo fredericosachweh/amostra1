@@ -279,6 +279,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+	# Node control applications
+	'node',
     # AppSettings
     'dbsettings',
     # Aplicativo de monitoramento
@@ -322,6 +324,10 @@ VLC_LOGS_DIR = '/iptv/var/log/vlc/'
 
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
+
+# Node application settings
+NODE_COMMAND = '/iptv/node/main.js'
+NODE_LOGS_DIR = '/iptv/var/log/node/'
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
