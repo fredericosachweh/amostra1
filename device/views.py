@@ -225,8 +225,9 @@ def auto_fill_tuner_form(request, ttype):
 (request.POST['freq']))
 
 
-def run_play(player, seektime):
+def run_play(player, seektime, cache, key):
     player.play(time_shift=int(seektime))
+    cache.delete(key)
 
 
 def get_random_on_storage(recorders):
@@ -273,7 +274,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.info('cache new key="%s"', key)
         cache.set(key, 1)
     else:
-        log.debug('duplicated request key:"%s"', key)
+        log.error('duplicated request key:"%s"', key)
         if command != 'stop':
             return HttpResponse(u'DUP REC',
                 mimetype='application/javascript', status=409)
@@ -342,8 +343,11 @@ def tvod(request, channel_number=None, command=None, seek=0):
         try:
             if player.status and player.pid:
                 player.stb_port += 1
-            thread.start_new_thread(run_play, (player, seek, ))
+            thread.start_new_thread(run_play, (player, seek, cache, key))
             resp = 'OK'
+            return HttpResponse(
+                '{"response":"%s", "port":%d}' % (resp, player.stb_port),
+                mimetype='application/javascript', status=200)
             #player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
