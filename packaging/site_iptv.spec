@@ -135,6 +135,8 @@ echo "%{__python} %{site_home}/manage.py syncdb"
 echo "%{__python} %{site_home}/manage.py reset client --noinput"
 echo "%{__python} %{site_home}/manage.py reset epg --noinput"
 echo "%{__python} %{site_home}/manage.py collectstatic --noinput"
+echo ""
+echo "Para resetar os ravadores: %{site_home}device/storage_recorder_player.sql"
 echo "========================================================================="
 echo -e "\033[0m"
 
