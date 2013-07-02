@@ -88,7 +88,7 @@ class NagiosConfig:
     cfg_files = []
 
     def set_monitor_servers(self):
-        servers = Server.objects.all()
+        servers = MonServer.objects.all()
         for server in servers:
             if server.server_type == "monitor":
                 self.monitoring_servers.append(server)
@@ -101,7 +101,24 @@ class NagiosConfig:
         f = open(file_name, 'w')
         f.close()
 
+    def _unicode_replace(self, msg):
+        log = logging.getLogger('debug')
+        STR_FROM = [u'à',u'À',u'Õ',u'õ',u'Ã',u'ã',u'Ô',u'ô',u'Â',u'â',u'Ê',
+            u'ê',u'Á',u'á',u'É',u'é',u'Í',u'í',u'Ó',u'ó',u'Ú',u'ú',u'Ç',u'ç']
+        STR_TO   = ['a','A','O','o','A','a','O','o','A','a','E','e','A','a',
+                    'E','e','I','i','O','o','U','u','C','c']
+        COUNT = 0
+        log.debug("Alterar MSG: [%s]", msg)
+        while COUNT != (len(STR_FROM)):
+            if(msg.find(STR_FROM[COUNT]) != -1):
+                msg = msg.replace(unicode(STR_FROM[COUNT]),
+                    unicode(STR_TO[COUNT]))
+            COUNT = COUNT + 1
+        log.debug("Alterado MSG: [%s]", msg)
+        return msg
+
     def export_cfg(self):
+        log = logging.getLogger('debug')
         try:
             CFG_ROOT = '/tmp/monitoramento/nagios'
             if os.path.exists(CFG_ROOT) == True:
@@ -208,10 +225,12 @@ class NagiosConfig:
             for ch in channels:
                 service_group_name = '%d-%s' % (
                         ch.number, ch.name.replace(' ', '_'))
+                service_group_name = self._unicode_replace(service_group_name)
                 service_group = pynag.Model.Servicegroup()
                 service_group.servicegroup_name = service_group_name
-                service_group.alias = "Canal %d - %s" % (
-                        ch.number, ch.name)
+                alias = "Canal %d - %s" % (ch.number, ch.name)
+                alias = self._unicode_replace(alias)
+                service_group.alias = alias
                 service_group.set_filename(CFG_SERVICEGROUP_FILE)
                 service_group.save()
                 del(service_group)
@@ -225,7 +244,7 @@ class NagiosConfig:
             return True
 
         except Exception, e:
-            print str(e)
+            log.error('Erro na exportacao para nagios: %s', str(e))
             return False
 
     def copy_cfg(self):
@@ -239,7 +258,7 @@ class NagiosConfig:
                     server.execute('%s %s' % (cmd, remote_file))
             return True
         except Exception, e:
-            print str(e)
+            log.error('Erro ao copiar o arquivo: %s', str(e))
             return False
 
     def nagios_validate(self):
@@ -248,7 +267,7 @@ class NagiosConfig:
             for server in self.monitoring_servers:
                 server.execute('%s' % cmd)
         except Exception, e:
-            print str(e)
+            log.error('Erro ao validar as configuracaos do nagios: %s', str(e))
             return False
 
     def nagios_reload(self):
@@ -257,7 +276,7 @@ class NagiosConfig:
             for server in self.monitoring_servers:
                 server.execute('%s' % cmd)
         except Exception, e:
-            print str(e)
+            log.error('Erro ao recarregar o nagios: %s', str(e))
             return False
 
 

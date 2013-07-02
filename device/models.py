@@ -1359,7 +1359,8 @@ class OutputModel(models.Model):
         create_folder(settings.MULTICAT_LOGS_DIR)
 
     def stop(self, *args, **kwargs):
-        super(OutputModel, self).stop(*args, **kwargs)
+        if self.running():
+            super(OutputModel, self).stop(*args, **kwargs)
         if kwargs.get('recursive') is True:
             if self.sink.running() is True:
                 self.sink.stop(recursive=kwargs.get('recursive'))
