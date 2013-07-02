@@ -49,7 +49,8 @@ Requires:       pynag-cianet >= 0.1.1
 Requires:       nginxcianet >= 1.4.1
 
 ## Por hora para a versão de demo vai instalar
-Requires:       multicat,dvblast
+Requires:       multicat >= 2.0.1
+Requires:       dvblast >= 2.2.1
 ## Por hora sem migração
 Requires:       Django-south
 
@@ -100,6 +101,7 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/multicat/sockets
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast/sockets
+%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/diskctrl
 #%{__install} -p -d -m 0755 %{buildroot}/%{prefix}/%{_localstatedir}/lib/mysql
 %{__install} -p -d -m 0700 %{buildroot}/%{prefix}/%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
@@ -163,6 +165,7 @@ fi
 %dir %{prefix}/%{_localstatedir}/run/multicat/sockets
 %dir %{prefix}/%{_localstatedir}/run/dvblast
 %dir %{prefix}/%{_localstatedir}/run/dvblast/sockets
+%dir %{prefix}/%{_localstatedir}/run/diskctrl
 %dir %{prefix}/%{_localstatedir}/www
 %dir %{prefix}/%{_localstatedir}/run/%{name}
 %dir %{prefix}/%{_localstatedir}/lib/cache
@@ -183,6 +186,8 @@ fi
 
 
 %changelog
+* Tue Jul 02 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.8.0-0
+- Storage, player and recorder fix
 * Wed May 16 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.2-0
 - Fix erp access on tv.channel API.
 * Tue May 07 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.1-2
