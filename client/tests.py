@@ -229,8 +229,7 @@ class SetTopBoxChannelTest(TestCase):
             host='127.0.0.1',
             ssh_port=22,
             username=getpass.getuser(),
-            rsakey='~/.ssh/id_rsa',
-            offline_mode=True,
+            rsakey='~/.ssh/id_rsa'
         )
         nic = devicemodels.NIC.objects.create(server=server, ipv4='127.0.0.1')
         unicastin = devicemodels.UnicastInput.objects.create(
@@ -301,10 +300,14 @@ class SetTopBoxChannelTest(TestCase):
             enabled=True,
             source=ipout3,
             )
+        storage = devicemodels.Storage.objects.create(
+            folder='/tmp/test_record',
+            server=server
+            )
         self.rec1 = devicemodels.StreamRecorder.objects.create(
             channel=self.channel1,
             rotate=5,
-            folder='/tmp/recs',
+            storage=storage,
             keep_time=10,
             nic_sink=nic,
             server=server
@@ -312,7 +315,7 @@ class SetTopBoxChannelTest(TestCase):
         self.rec2 = devicemodels.StreamRecorder.objects.create(
             channel=self.channel2,
             rotate=5,
-            folder='/tmp/recs',
+            storage=storage,
             keep_time=20,
             nic_sink=nic,
             server=server
@@ -320,7 +323,7 @@ class SetTopBoxChannelTest(TestCase):
         self.rec3 = devicemodels.StreamRecorder.objects.create(
             channel=self.channel3,
             rotate=5,
-            folder='/tmp/recs',
+            storage=storage,
             keep_time=48,
             nic_sink=nic,
             server=server
@@ -677,3 +680,14 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(2, jobj['meta']['total_count'])
+
+
+class MommyTest(TestCase):
+
+    def test_mommy(self):
+        from model_mommy import mommy
+        from device.models import Server
+        stb = mommy.make(SetTopBox)
+        print(stb)
+        srv = mommy.make(Server, host='localhost')
+        print(srv)

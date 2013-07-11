@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 
 urlpatterns = patterns('',
     (r'^import_to_db/(?P<epg_source_id>\d+)/$', 'epg.views.import_to_db'),

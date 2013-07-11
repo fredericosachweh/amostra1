@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from django.conf.urls.defaults import patterns, include
+from django.conf.urls import patterns, include
 from django.db.models.loading import get_model
 
 # List of models witch should have a switch_link field on the admin

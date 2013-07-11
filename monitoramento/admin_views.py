@@ -10,7 +10,6 @@ from django.conf import settings
 from tv.models import Channel
 
 from models import *
-from django.views.generic.simple import direct_to_template
 
 
 def dashboard(request):

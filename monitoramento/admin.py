@@ -8,8 +8,8 @@ __version__ = '1.0'
 __date__ = '03/10/2012 06:08:10 PM'
 
 
-from django.conf.urls.defaults import patterns
-from django.conf.urls.defaults import url
+from django.conf.urls import patterns
+from django.conf.urls import url
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy, ugettext as _
