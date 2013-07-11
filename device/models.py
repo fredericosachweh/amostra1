@@ -902,7 +902,7 @@ class DigitalTunerHardware(models.Model):
             self.adapter_nr, self.driver, self.uniqueid)
 
     def _read_mac_from_dvbworld(self):
-        if self.id_vendor == '04b4':
+        if self.id_vendor in ['04b4', '1131']:
             self.server.execute('/usr/bin/sudo /usr/bin/dvbnet -a %s -p 100'
                             % self.adapter_nr, persist=True)
             mac = self.server.execute('/sbin/ifconfig dvb%s_0 | '
@@ -937,24 +937,56 @@ class DigitalTunerHardware(models.Model):
             udevadm, udevadm, self.adapter_nr), persist=True
             )
         )
-        match = re.search(r'ATTRS\{idVendor\}=="([0-9a-fA-F]+)"', info)
-        self.id_vendor = match.groups()[0]
-        match = re.search(r'ATTRS\{idProduct\}=="([0-9a-fA-F]+)"', info)
-        self.id_product = match.groups()[0]
-        match = re.search(r'KERNELS=="(.*)"', info)
+        #log.info('INFO:%s', info)
+        # ATTRS\{(i?d?[vV])endor\}=="(0x?)([0-9a-fA-F]{4}+)"
+        match = re.search(
+            r'ATTRS\{(idVendor|vendor)\}=="([0x]{2}|)([0-9a-fA-F]{4})"',
+            info)
+        # ATTRS\{(i?d?[vV])endor\}=="([0x]?)([0-9a-fA-F]{4})"
+        # ATTRS\{(i?d?[vV])endor\}=="([0x]{2}|)([0-9a-fA-F]{4})"
+        log.debug('vendor:%s', match.groups())
+        self.id_vendor = match.groups()[2]
+        match = re.search(
+            r'ATTRS\{(idProduct|device)\}=="([0x]{2}|)([0-9a-fA-F]{4})"',
+            info)
+        if match is not None:
+            log.debug('product:%s', match.groups())
+            self.id_product = match.groups()[2]
+        else:
+            self.id_product = ''
+        match = re.search(r'SUBSYSTEMS=="(.*)"', info)
+        log.debug('SUBSYSTEMS:%s', match.groups())
         self.bus = match.groups()[0]
-        match = re.search(r'ATTRS\{devnum\}=="(\d+)"', info)
-        devnum = match.groups()[0]
-        try:
-            ret = self.server.execute(
-                '/usr/bin/lsusb -t | /bin/grep "Dev %s"' % devnum)
-            match = re.search(r'Driver=(.*),', " ".join(ret))
-            self.driver = match.groups()[0]
-        except Server.ExecutionFailure:
-            "Se foi, foi. Se não foi, tudo bem."
-            pass
+        if self.bus == 'usb':
+            match = re.search(r'ATTRS\{devnum\}=="(\d+)"', info)
+            if match is not None:
+                log.debug('devnum:%s', match.groups())
+                devnum = match.groups()[0]
+            else:
+                devnum = self.adapter_nr
+            try:
+                # lspci -k -b -d 1131:7160
+                # Kernel modules: saa716x_tbs-dvb
+                ret = self.server.execute(
+                    '/usr/bin/lsusb -t | /bin/grep "Dev %s"' % devnum)
+                match = re.search(r'Driver=(.*),', " ".join(ret))
+                self.driver = match.groups()[0]
+            except Server.ExecutionFailure as e:
+                "Se foi, foi. Se não foi, tudo bem."
+                log.error('CMD err:%s', e)
+        else:
+            try:
+                # lspci -k -b -d 1131:7160
+                # Kernel modules: saa716x_tbs-dvb
+                ret = self.server.execute(
+                    '/sbin/lspci -k -b -d %s:%s' % (self.id_vendor, self.id_product))
+                match = re.search(r'Kernel modules: (.*)', " ".join(ret))
+                self.driver = match.groups()[0]
+            except Server.ExecutionFailure as e:
+                "Se foi, foi. Se não foi, tudo bem."
+                log.error('CMD err:%s', e)
 
-        if self.id_vendor == '04b4':
+        if self.id_vendor in ['04b4', '1131']:
             self.uniqueid = self._read_mac_from_dvbworld()
 
 

@@ -127,3 +127,8 @@ class SoftTranscoderForm(GenericRelationForm):
 class StorageForm(forms.ModelForm):
     class Meta:
         model = models.Storage
+
+
+class DigitalTunerHardwareForm(forms.ModelForm):
+    class Meta:
+        model = models.DigitalTunerHardware

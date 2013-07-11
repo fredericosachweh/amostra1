@@ -203,6 +203,19 @@ class AdminStorage(admin.ModelAdmin):
         'hdd_ssd', 'peso', 'folder', 'switch_link')
     form = forms.StorageForm
 
+#    server = models.ForeignKey(Server)
+#    id_vendor = models.CharField(max_length=100)
+#    id_product = models.CharField(max_length=100)
+#    bus = models.CharField(max_length=100)
+#    driver = models.CharField(max_length=100)
+#    last_update = models.DateTimeField(auto_now=True)
+#    uniqueid = models.CharField(max_length=100, unique=True, null=True)
+#    adapter_nr = models.PositiveSmallIntegerField()
+
+class AdminDigitalTunerHardware(admin.ModelAdmin):
+    list_display = ('server', 'id_vendor', 'id_product', 'bus', 'driver',
+        'uniqueid', 'adapter_nr')
+    form = forms.DigitalTunerHardwareForm
 
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server, AdminServer)
@@ -217,6 +230,6 @@ admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
 admin.site.register(models.Storage, AdminStorage)
-# admin.site.register(models.StreamPlayer)
+#admin.site.register(models.DigitalTunerHardware, AdminDigitalTunerHardware)
 
 admin.site.unregister(Site)
