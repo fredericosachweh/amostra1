@@ -213,6 +213,8 @@ class SetTopBoxChannelTest(TestCase):
         super(SetTopBoxChannelTest, self).setUp()
         self.c = Client2()
         self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
+        self.user.is_staff = True
+        self.user.save()
         urllogin = reverse('sys_login')
         response = self.c.post(urllogin,
             {'username': 'erp', 'password': '123'},
@@ -523,7 +525,7 @@ class SetTopBoxChannelTest(TestCase):
         #print(url_channel)
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
-        self.assertEqual(3, jobj['meta']['total_count'])
+        self.assertEqual(2, jobj['meta']['total_count'])
 
     def test_stb_api_tv(self):
         ## Define auto_create and execute again
@@ -654,6 +656,11 @@ class SetTopBoxChannelTest(TestCase):
             'channel_number': 13,
             'command': 'play',
             'seek': 200}))
+        self.assertEqual(200, response.status_code)
+        response = self.c.get(reverse('device.views.tvod', kwargs={
+            'channel_number': 13,
+            'command': 'stop',
+            'seek': 20}))
         self.assertEqual(200, response.status_code)
 
     def test_list_disable_channel(self):
