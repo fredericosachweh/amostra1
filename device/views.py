@@ -62,6 +62,8 @@ def server_update_adapter(request, pk, action):
     # The adapter_nr will come in the format dvb1.frontend0, \
     # so I need to post process it
     aux = re.match(r'dvb(\d+)\.frontend\d+', adapter_nr)
+    if aux is None:
+        return HttpResponse('invalid format\r\n', status=401)
     nr = aux.group(1)
     if action == 'add':
         try:
@@ -79,14 +81,16 @@ def server_update_adapter(request, pk, action):
                                    server=server, adapter_nr=nr)
         adapter.delete()
         log.debug(u'o adapter %s foi removido da base de dados' % adapter)
-    return HttpResponse()
+    return HttpResponse('')
 
 
 def server_list_dvbadapters(request):
-    "Returns avaible DVBWorld devices on server, excluding already used"
+    u"Returns avaible DVBWorld devices on server, excluding already used"
+    log = logging.getLogger('debug')
     pk = request.GET.get('server', None)
     server = get_object_or_404(models.Server, pk=pk)
     tuner_type = request.GET.get('type')
+    log.info('List device type:%s on server:%s', tuner_type, server)
     if tuner_type == 'dvb':
         id_vendor = '04b4'  # DVBWorld S/S2
     elif tuner_type == 'isdb':
@@ -99,15 +103,15 @@ def server_list_dvbadapters(request):
     if tuner_pk:
         tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
         response += '<option value="%s">%s</option>' % (tuner.adapter,
-                                        'DVBWorld %s' % tuner.adapter)
+            tuner.adapter)
     # Populate the not used adapters left
     tuners = models.DvbTuner.objects.filter(server=server)
     adapters = models.DigitalTunerHardware.objects.filter(
-        server=server, id_vendor='04b4')  # DVBWorld S/S2
+        server=server, id_vendor__in=['04b4', '1131'])  # DVBWorld S/S2
     for adapter in adapters:
         if not tuners.filter(adapter=adapter.uniqueid).exists():
-            response += '<option value="%s">%s</option>' % (adapter.uniqueid,
-                                            'DVBWorld %s' % adapter.uniqueid)
+            response += '<option value="%s">%s (%s - %s:%s)</option>' % (
+                adapter.uniqueid, adapter.uniqueid, adapter.bus, adapter.id_vendor, adapter.id_product)
     return HttpResponse(response)
 
 
