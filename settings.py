@@ -360,7 +360,7 @@ TASTYPIE_FULL_DEBUG = DEBUG
 FORCE_SCRIPT_NAME = ""
 
 EPG_IMPORT_CREDENTIALS = {
-    'site': 'revistaeletronica.com.br',
+    'site': '83.222.124.34',
     'username': '91037581920@revistaeletronica.com.br',
     'password': '91037581920',
 }
