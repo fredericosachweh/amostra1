@@ -1,5 +1,6 @@
 {% extends "admin/base_site.html" %}
 {% load i18n admin_static %}
+{% load url from future %}
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}" />{% endblock %}
 
@@ -7,8 +8,8 @@
 
 {% block bodyclass %}dashboard{% endblock %}
 
-{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url admin:index %}">
-{% trans "Home"%}</a> &rsaquo; {% trans "Monitoramento" %} &rsaquo; <a href="{% url admin:mon_dashboard %}">{% trans "Dashboard" %}</a>
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">
+{% trans "Home"%}</a> &rsaquo; {% trans "Monitoramento" %} &rsaquo; <a href="{% url 'admin:mon_dashboard' %}">{% trans "Dashboard" %}</a>
 </div>{% endblock %}
 
 {% block content %}
@@ -18,7 +19,7 @@
     <caption>Dashboard de monitoramento</caption>
         <tr>
             <th scope="row">
-            <a href="{% url admin:mon_channel_tree %}">&Aacute;vore de canais
+            <a href="{% url 'admin:mon_channel_tree' %}">&Aacute;vore de canais
             simples</a>
             </th>
             <td>&nbsp;</a></td>
@@ -26,7 +27,7 @@
         </tr>
         <tr>
             <th scope="row">
-            <a href="{% url admin:mon_channel_tree_status %}">&Aacute;vore de
+            <a href="{% url 'admin:mon_channel_tree_status' %}">&Aacute;vore de
             canais completa (Mostranto estado dos servi&ccedil;os)</a>
             </th>
             <td>&nbsp;</a></td>
@@ -35,7 +36,7 @@
 
         <tr>
             <th scope="row">
-            <a href="{% url admin:mon_export %}">Exportar configura&ccedil;&otilde;es de monitoramento</a>
+            <a href="{% url 'admin:mon_export' %}">Exportar configura&ccedil;&otilde;es de monitoramento</a>
             </th>
             <td>&nbsp;</a></td>
             <td>&nbsp;</a></td>

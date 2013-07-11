@@ -1,4 +1,5 @@
 {% extends "admin/change_form.html" %}
+{% load url from future %}
 
 {% block extrahead %}
 
@@ -19,7 +20,7 @@
             field.attr("disabled", "disabled");
             field.empty();
             if (server_id) {
-                var query =  '{% url device.views.server_fileinput_scanfolder %}';
+                var query =  '{% url 'device.views.server_fileinput_scanfolder' %}';
                 query += '?server=' + server_id;
                 django.jQuery.get(query, function(data) {
                     if (data) field.append(data);
@@ -37,7 +38,7 @@
             field.attr("disabled", "disabled");
             field.empty();
             if (server_id) {
-                var query = '{% url device.views.server_list_interfaces %}' + '?server=' + server_id;
+                var query = '{% url 'device.views.server_list_interfaces' %}' + '?server=' + server_id;
                 django.jQuery.get(query, function(data) {
                     if (data) {
                         field.append(data);
