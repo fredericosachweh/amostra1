@@ -1,4 +1,5 @@
 {% extends "admin/change_form.html" %}
+{% load url from future %}
 
 {% block extrahead %}
 
@@ -10,7 +11,7 @@
 			/* Make the free devices field read-only */
 			django.jQuery('input#id_free_adapters').attr("readonly", "readonly");
 			/* Insert the auto-fill hyperlink */
-			{% url device.views.auto_fill_tuner_form ttype='isdb' as the_url %}
+			{% url 'device.views.auto_fill_tuner_form' ttype='isdb' as the_url %}
 			var hyperlink = django.jQuery('<br /><a href="{{ the_url }}">( Auto preencher )</a>');
 			hyperlink.appendTo(django.jQuery('div.form-row.field-frequency p.help'));
 			/* Insert the onchange callbacks */
@@ -30,7 +31,7 @@
 			field.attr("disabled", "disabled");
 			field.empty();
 			if (server_id) {
-				var query =  '{% url device.views.server_available_isdbtuners %}' + '?server=' + server_id;
+				var query =  '{% url 'device.views.server_available_isdbtuners' %}' + '?server=' + server_id;
 				var tuner = "{{ original.pk }}";
 				if (tuner) {
 					query += '&tuner=' + tuner;

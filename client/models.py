@@ -12,7 +12,7 @@ from tv.models import Channel
 
 from django.conf import settings
 import dbsettings
-import Image
+from PIL import Image
 import os
 
 
