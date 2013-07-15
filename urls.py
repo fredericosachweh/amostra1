@@ -61,3 +61,5 @@ for app in settings.INSTALLED_APPS:
             urlpatterns += patterns('', urls)
         except ImportError as e:
             pass
+        except AttributeError as e:
+            pass

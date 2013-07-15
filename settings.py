@@ -124,6 +124,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'lib.middleware.login.APIKeyLoginMiddleware',
     #'lib.middleware.login.RequireLoginMiddleware',
 )
 
@@ -279,6 +280,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+    # Django tastypie
+    'tastypie',
     # AppSettings
     'dbsettings',
     # Aplicativo de monitoramento
