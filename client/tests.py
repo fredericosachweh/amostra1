@@ -695,6 +695,19 @@ class MommyTest(TestCase):
         from model_mommy import mommy
         from device.models import Server
         stb = mommy.make(SetTopBox)
-        print(stb)
+        #print(stb)
         srv = mommy.make(Server, host='localhost')
-        print(srv)
+        #print(srv)
+
+
+class APIKEYTest(TestCase):
+
+    def test_autocreate_key(self):
+        from django.contrib.auth.models import User
+        from tastypie.models import ApiKey
+        from model_mommy import mommy
+        user = mommy.make(User)
+        log.debug('User:%s', user)
+        api_key = ApiKey.objects.get(user=user)
+        log.debug('ApiKey:%s', api_key)
+
