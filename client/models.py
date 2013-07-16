@@ -84,7 +84,8 @@ class SetTopBox(models.Model):
 
     def get_user(self):
         u'Returns: User related with this SetTopBox'
-        return User.objects.get(username=self.serial_number)
+        return User.objects.get(username='%s%s' % (settings.STB_USER_PREFIX,
+            self.serial_number))
 
     def get_channels(self):
         u'Returns: a list of tv.channel for relation SetTopBoxChannel'

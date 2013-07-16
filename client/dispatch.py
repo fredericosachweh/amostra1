@@ -10,8 +10,10 @@ from tastypie.models import create_api_key
 from django.db import models as dbmodels
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
+from django.conf import settings
 from tv.models import Channel
 import models
+
 dbmodels.signals.post_save.connect(create_api_key, sender=User)
 
 
@@ -28,13 +30,16 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
     if created is True:
         log.debug('New SetTopBox')
         try:
-            user = User.objects.get(username=instance.serial_number)
+            user = User.objects.get(username='%s%s' % (
+                settings.STB_USER_PREFIX, instance.serial_number))
             log.error('User existis')
         except:
             log.info('Creating new user')
-            user = User.objects.create_user(instance.serial_number,
+            user = User.objects.create_user('%s%s' % (
+                settings.STB_USER_PREFIX, instance.serial_number),
                 '%s@middleware.iptvdomain' % (instance.serial_number),
                 instance.serial_number)
+            log.info('User:%s', user)
             user.is_active = True
         if user.groups.filter(name='settopbox').count() == 0:
             group, created = Group.objects.get_or_create(name='settopbox')
@@ -57,7 +62,8 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
 def SetTopBox_post_delete(sender, instance, **kwargs):
     log = logging.getLogger('client')
     log.debug('Deleting:%s', instance)
-    users = User.objects.filter(username=instance.serial_number)
+    users = User.objects.filter(username='%s%s' % (
+        settings.STB_USER_PREFIX, instance.serial_number))
     log.debug('User to delete:%s', users)
     users.delete()
 
