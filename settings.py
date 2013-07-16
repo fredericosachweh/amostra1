@@ -124,6 +124,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'lib.middleware.login.APIKeyLoginMiddleware',
     #'lib.middleware.login.RequireLoginMiddleware',
 )
 
@@ -152,6 +153,11 @@ LOGGING = {
             'format': '%(levelname)s\t%(message)s'
         },
     },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
     'handlers': {
         'console': {
             'level': 'DEBUG',
@@ -160,6 +166,7 @@ LOGGING = {
         },
         'mail_admins': {
             'level': 'ERROR',
+            'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
         },
         'file.debug': {
@@ -279,6 +286,8 @@ INSTALLED_APPS = (
     'tools',
     # Client
     'client',
+    # Django tastypie
+    'tastypie',
     # AppSettings
     'dbsettings',
     # Aplicativo de monitoramento
@@ -289,12 +298,7 @@ LOGIN_URL = '/%saccounts/login' % ROOT_URL
 
 LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
 
-#^/canal/(add|remove|edit|delete)/(.*)$
-LOGIN_REQUIRED_URLS = (
-    r'^/%scanal/((?!canallist$))$',
-    r'^/%sadmin/(.*)$',
-)
-
+STB_USER_PREFIX = 'STB_'
 
 # Auxiliar apps configuration
 MULTICAT_COMMAND = '/iptv/bin/multicat'
@@ -364,6 +368,11 @@ EPG_IMPORT_CREDENTIALS = {
     'username': '91037581920@revistaeletronica.com.br',
     'password': '91037581920',
 }
+
+ALLOWED_HOSTS = [
+    '.middleware.iptvdomain'
+]
+INTERNAL_IPS = ('127.0.0.1',)
 
 ## Pacote necessario para o cache: python-memcached.noarch
 CACHES = {

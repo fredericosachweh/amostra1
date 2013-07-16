@@ -291,7 +291,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         return HttpResponse('Unauthorized', mimetype='application/javascript',
             status=401)
     if request.user.groups.filter(name='settopbox').exists():
-        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
+        stb = SetTopBox.objects.get(serial_number=serial)
         log.debug('Filter for STB=%s', stb)
     else:
         cache.delete(key)
@@ -391,7 +392,8 @@ def tvod_list(request):
         json = simplejson.dumps({'meta': meta, 'objects': obj})
         return HttpResponse(json, mimetype='application/javascript')
     if request.user.groups.filter(name='settopbox').exists():
-        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
+        stb = SetTopBox.objects.get(serial_number=serial)
         log.debug('Filter for STB=%s', stb)
     else:
         json = simplejson.dumps({'meta': meta, 'objects': obj})

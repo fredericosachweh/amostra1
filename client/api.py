@@ -12,6 +12,7 @@ from tastypie.constants import ALL
 from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest
 from django.db import IntegrityError
+from django.conf import settings
 import models
 from device import models as devicemodels
 from tv.api import ChannelResource
@@ -146,8 +147,9 @@ class SetTopBoxAuthorization(Authorization):
         if request.user.is_anonymous() is True:
             return False
         user = request.user
+        serial = user.username.replace(settings.STB_USER_PREFIX, '')
         try:
-            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
         except:
             log.error('No STB for user:%s', user)
@@ -182,7 +184,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         if request.user.is_anonymous() is False:
             log.debug('user:%s', request.user)
             user = request.user
-            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             if hasattr(self._meta.authorization, 'apply_limits'):
                 object_list = self._meta.authorization.apply_limits(request,
@@ -198,7 +201,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             bundle.data.get('value'), bundle.data.get('value_type'))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
-            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             try:
                 bundle = super(SetTopBoxConfigResource, self).obj_create(
