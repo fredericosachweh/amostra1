@@ -266,7 +266,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     'south',
     # Interface dos setup-box
-    'box',
+    #'box',
     # Aplicação de controle de stream
     'device',
     # EPG

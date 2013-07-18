@@ -60,7 +60,7 @@ class AbstractServer(models.Model):
         log.debug('conn:%s', conn)
         c = conn.get(self.host)
         if c is not None:
-            log.debug('-------------------------------:%s', c)
+            log.debug('ssh:%s', c)
             if c._transport_live:
                 return c
             else:
@@ -71,7 +71,7 @@ class AbstractServer(models.Model):
                     private_key=self.rsakey)
                 conn[self.host] = c
         try:
-            log.debug('************************** new:%s', self)
+            log.debug('ssh new:%s', self)
             conn[self.host] = ssh.Connection(host=self.host,
                 port=self.ssh_port,
                 username=self.username,
@@ -342,7 +342,6 @@ def Server_post_save(sender, instance, created, **kwargs):
                      "so we couldn't configure it", instance)
             return  # There is nothing we can do
         instance.auto_create_nic()
-        return
         instance.auto_detect_digital_tuners()
         # Create the tmpfiles
         remote_tmpfile = instance.create_tempfile()
