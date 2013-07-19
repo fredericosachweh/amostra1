@@ -4,10 +4,6 @@ from dbsettings.utils import set_defaults
 
 DEBUG = True
 
-#from client import models as clientapp
-#set_defaults(clientapp
-#)
-
 if 'test' in sys.argv:
     ## Banco de dados teste
     DATABASES = {
