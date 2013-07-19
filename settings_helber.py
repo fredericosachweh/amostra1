@@ -1,6 +1,7 @@
 # -*- encoding:utf-8 -*-
 from settings import *
-from dbsettings.utils import set_defaults
+
+#from dbsettings.utils import set_defaults
 
 DEBUG = True
 
@@ -30,6 +31,14 @@ else:
             'HOST': '127.0.0.1',
             'PORT': 5432,
         },
+        'test_iptv': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'test_iptv',
+            'USER': 'test_iptv',
+            'PASSWORD': 'test_iptv',
+            'HOST': '127.0.0.1',
+            'PORT': 5432,
+        },
         'mylocal': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'iptv',
@@ -56,16 +65,16 @@ else:
         }
     }
     #DATABASES['default'] = DATABASES['pglocal']
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptv',
-        'USER': 'iptv',
-        'PASSWORD': 'iptv',
-        'HOST': '127.0.0.1',
-        'PORT': 5432,
-    }
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#        'NAME': 'iptv',
+#        'USER': 'iptv',
+#        'PASSWORD': 'iptv',
+#        'HOST': '127.0.0.1',
+#        'PORT': 5432,
+#    }
+#}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
@@ -75,15 +84,6 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
 STATIC_URL = '/tv/static/'
 #ROOT_URLCONF = '/tv'
 
-
-MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    #'lib.middleware.login.RequireLoginMiddleware',
-)
 
 CACHES = {
     'default': {
@@ -130,7 +130,7 @@ if DEBUG is True:
         pass
 
 EPG_IMPORT_CREDENTIALS = {
-    'site': 'revistaeletronica.com.br',
+    'site': '83.222.124.34',
     'username': '91037581920@revistaeletronica.com.br',
     'password': '91037581920',
 }

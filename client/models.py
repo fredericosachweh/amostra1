@@ -1,19 +1,15 @@
 # -*- encoding:utf-8 -*-
 
 import logging
+from PIL import Image
+import os
 
 from django.db import models
 from django.utils.translation import ugettext as _
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
 from django.contrib.auth.models import User
-from django.contrib.auth.models import Group
-from tv.models import Channel
-
 from django.conf import settings
 import dbsettings
-import Image
-import os
+from tv import models as tvmodels
 
 
 class LogoToReplace(dbsettings.ImageValue):
@@ -37,8 +33,7 @@ class LogoToReplace(dbsettings.ImageValue):
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((100, 26), Image.ANTIALIAS)
-            dst = '/iptv/var/www/sites/frontend/dist/themes/modern/\
-images/logo_menor2.png'
+            dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         log.debug('name=%s', self.attribute_name)
@@ -50,17 +45,6 @@ class CompanyLogo(dbsettings.Group):
         help_text=u'Formato PNG transparente 450 x 164 px')
     logo_small = LogoToReplace(_(u'Logo pequeno'), upload_to='',
         help_text=u'Formato PNG transparente 100 x 26 px')
-
-    #def save(self, *args, **kwargs):
-    #    log = logging.getLogger('client')
-    #    log.debug('Modificando logo')
-    #    super(CompanyLogo, self).save(*args, **kwargs)
-
-
-@receiver(post_save, sender=CompanyLogo)
-def CompanyLogo_post_save(sender, instance, created, **kwargs):
-    log = logging.getLogger('client')
-    log.debug('Modificando logo')
 
 logo = CompanyLogo(u'Logo da interface')
 
@@ -100,55 +84,15 @@ class SetTopBox(models.Model):
 
     def get_user(self):
         u'Returns: User related with this SetTopBox'
-        return User.objects.get(username=self.serial_number)
+        return User.objects.get(username='%s%s' % (settings.STB_USER_PREFIX,
+            self.serial_number))
 
     def get_channels(self):
         u'Returns: a list of tv.channel for relation SetTopBoxChannel'
-        return Channel.objects.filter(
+        return tvmodels.Channel.objects.filter(
             settopboxchannel__settopbox=self,
             enabled=True,
             source__isnull=False)
-
-
-@receiver(post_save, sender=SetTopBox)
-def SetTopBox_post_save(sender, instance, created, **kwargs):
-    log = logging.getLogger('client')
-    ## Verifica se cria canais
-    if created is True:
-        log.debug('New SetTopBox')
-        try:
-            user = User.objects.get(username=instance.serial_number)
-            log.debug('User existis')
-        except:
-            log.debug('Creating new user')
-            user = User.objects.create_user(instance.serial_number,
-                '%s@middleware.iptvdomain' % (instance.serial_number),
-                instance.serial_number)
-            user.is_active = True
-        if user.groups.filter(name='settopbox').count() == 0:
-            group, created = Group.objects.get_or_create(name='settopbox')
-            if created is True:
-                log.debug('Creating group settopbox')
-            log.debug('Put new SetTopBox on group')
-            user.groups.add(group)
-        ## Auto cria a relação de canais de estiver configurado para tal
-        if SetTopBox.options.auto_add_channel is True:
-            log.debug('Auto creating channel for SetTopBox')
-            rec = SetTopBox.options.auto_enable_recorder_access or False
-            for channel in Channel.objects.all():
-                nrel, created = SetTopBoxChannel.objects.get_or_create(
-                    settopbox=instance, channel=channel, recorder=rec)
-                if created is True:
-                    log.debug('Created:%s', nrel)
-
-
-@receiver(post_delete, sender=SetTopBox)
-def SetTopBox_post_delete(sender, instance, **kwargs):
-    log = logging.getLogger('client')
-    log.debug('Deleting:%s', instance)
-    users = User.objects.filter(username=instance.serial_number)
-    log.debug('User to delete:%s', users)
-    users.delete()
 
 
 class SetTopBoxParameter(models.Model):
@@ -173,7 +117,7 @@ class SetTopBoxChannel(models.Model):
     u'Class to link access permission to stb on tv.channel'
 
     settopbox = models.ForeignKey(SetTopBox, db_index=True)
-    channel = models.ForeignKey(Channel, db_index=True)
+    channel = models.ForeignKey(tvmodels.Channel, db_index=True)
     recorder = models.BooleanField(_(u'Pode acessar conteúdo gravado'))
 
     class Meta:
@@ -182,20 +126,6 @@ class SetTopBoxChannel(models.Model):
     def __unicode__(self):
         return u'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (self.channel.number,
             self.settopbox.serial_number, self.recorder)
-
-
-@receiver(post_save, sender=Channel)
-def Channel_post_save(sender, instance, created, **kwargs):
-    if SetTopBox.options.auto_add_channel is not True:
-        return
-    log = logging.getLogger('client')
-    if created is True:
-        log.debug('New Channel auto-create SetTopBox-Channel')
-        for stb in SetTopBox.objects.all():
-            reference, created = SetTopBoxChannel.objects.get_or_create(
-                channel=instance, settopbox=stb)
-            if created is True:
-                log.debug('New SetTopBox-Channel:%s', reference)
 
 
 class SetTopBoxConfig(models.Model):
@@ -215,4 +145,3 @@ class SetTopBoxConfig(models.Model):
 
     def __unicode__(self):
         return u'%s {%s=%s}' % (self.settopbox, self.key, self.value)
-

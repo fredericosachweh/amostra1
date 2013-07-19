@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
-from django.db import connection
+from django.conf import settings
 from tastypie import fields
 from tastypie.authorization import DjangoAuthorization
 from tastypie.authorization import Authorization
@@ -54,7 +54,8 @@ class ChannelResource(NamespacedModelResource):
         if user.is_staff:
             return object_list
         if request.user.groups.filter(name='settopbox').exists():
-            stb = SetTopBox.objects.get(serial_number=user.username)
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = SetTopBox.objects.get(serial_number=serial)
             channels = stb.get_channels()
             log.debug('Filter for STB=%s, channels=%s', stb, channels)
             return channels
@@ -67,7 +68,8 @@ class ChannelResource(NamespacedModelResource):
         obj_list = super(ChannelResource, self).obj_get_list(bundle, **kwargs)
         if user.is_anonymous() is False:
             if not user.is_staff:
-                stb = SetTopBox.objects.get(serial_number=user.username)
+                serial = user.username.replace(settings.STB_USER_PREFIX, '')
+                stb = SetTopBox.objects.get(serial_number=serial)
                 log.debug('User:%s, SetTopBox:%s', user, stb)
                 obj_list = obj_list.filter(
                     settopboxchannel__settopbox=stb,

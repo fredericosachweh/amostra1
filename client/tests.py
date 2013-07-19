@@ -213,6 +213,8 @@ class SetTopBoxChannelTest(TestCase):
         super(SetTopBoxChannelTest, self).setUp()
         self.c = Client2()
         self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
+        self.user.is_staff = True
+        self.user.save()
         urllogin = reverse('sys_login')
         response = self.c.post(urllogin,
             {'username': 'erp', 'password': '123'},
@@ -229,8 +231,7 @@ class SetTopBoxChannelTest(TestCase):
             host='127.0.0.1',
             ssh_port=22,
             username=getpass.getuser(),
-            rsakey='~/.ssh/id_rsa',
-            offline_mode=True,
+            rsakey='~/.ssh/id_rsa'
         )
         nic = devicemodels.NIC.objects.create(server=server, ipv4='127.0.0.1')
         unicastin = devicemodels.UnicastInput.objects.create(
@@ -301,10 +302,14 @@ class SetTopBoxChannelTest(TestCase):
             enabled=True,
             source=ipout3,
             )
+        storage = devicemodels.Storage.objects.create(
+            folder='/tmp/test_record',
+            server=server
+            )
         self.rec1 = devicemodels.StreamRecorder.objects.create(
             channel=self.channel1,
             rotate=5,
-            folder='/tmp/recs',
+            storage=storage,
             keep_time=10,
             nic_sink=nic,
             server=server
@@ -312,7 +317,7 @@ class SetTopBoxChannelTest(TestCase):
         self.rec2 = devicemodels.StreamRecorder.objects.create(
             channel=self.channel2,
             rotate=5,
-            folder='/tmp/recs',
+            storage=storage,
             keep_time=20,
             nic_sink=nic,
             server=server
@@ -320,7 +325,7 @@ class SetTopBoxChannelTest(TestCase):
         self.rec3 = devicemodels.StreamRecorder.objects.create(
             channel=self.channel3,
             rotate=5,
-            folder='/tmp/recs',
+            storage=storage,
             keep_time=48,
             nic_sink=nic,
             server=server
@@ -398,6 +403,11 @@ class SetTopBoxChannelTest(TestCase):
     def test_settopbox_options(self):
         #SetTopBox.options.auto_add_channel = False
         #SetTopBox.options.use_mac_as_serial = True
+        log = logging.getLogger('debug')
+        from dbsettings.models import Setting
+        for s in Setting.objects.all():
+            log.debug('%s.%s.%s.%s=%s', s.site, s.module_name, s.class_name,
+                s.attribute_name, s.value)
         self.assertEqual(SetTopBox.options.auto_add_channel, False,
             'Default value not working')
         self.assertEqual(SetTopBox.options.use_mac_as_serial, True,
@@ -429,7 +439,8 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         ## Busca o ususário criado para o stb
-        user = User.objects.get(username=u'01:02:03:04:05:06')
+        user = User.objects.get(username=settings.STB_USER_PREFIX + \
+            '01:02:03:04:05:06')
         ## Verifica se existe a relação criado nos 3 canais
         # Busca o stb
         stb = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:06')
@@ -459,7 +470,8 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number=123456)
         ## Busca o ususário criado para o stb
-        user = User.objects.get(username=u'123456')
+        user = User.objects.get(username=settings.STB_USER_PREFIX + \
+            '123456')
         self.assertEqual(user, stb.get_user())
 
     def test_case_insensitive_mac_sn(self):
@@ -520,7 +532,7 @@ class SetTopBoxChannelTest(TestCase):
         #print(url_channel)
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
-        self.assertEqual(3, jobj['meta']['total_count'])
+        self.assertEqual(2, jobj['meta']['total_count'])
 
     def test_stb_api_tv(self):
         ## Define auto_create and execute again
@@ -652,6 +664,11 @@ class SetTopBoxChannelTest(TestCase):
             'command': 'play',
             'seek': 200}))
         self.assertEqual(200, response.status_code)
+        response = self.c.get(reverse('device.views.tvod', kwargs={
+            'channel_number': 13,
+            'command': 'stop',
+            'seek': 20}))
+        self.assertEqual(200, response.status_code)
 
     def test_list_disable_channel(self):
         models.SetTopBox.options.auto_create = True
@@ -677,3 +694,65 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(2, jobj['meta']['total_count'])
+
+    def test_api_key_channel(self):
+        from tastypie.models import ApiKey
+        from django.contrib.auth.models import User
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        ## Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        user = User.objects.get(username=settings.STB_USER_PREFIX + \
+            '01:02:03:04:05:06')
+        self.assertIsNotNone(user)
+        api_key = ApiKey.objects.get(user=user)
+        self.assertIsNotNone(api_key)
+        self.assertContains(response, 'api_key')
+        jobj = json.loads(response.content)
+        api_key = jobj.get('api_key')
+        self.assertIsNotNone(api_key)
+        # Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        url_channel = reverse('tv:api_dispatch_list', kwargs={
+            'resource_name': 'channel', 'api_name': 'v1'})
+        self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
+        ## Get empty list (Anonymous)
+        response = self.c.get(url_channel)
+        jobj = json.loads(response.content)
+        self.assertEqual(0, jobj['meta']['total_count'])
+        ## Get list of channels
+        response = self.c.get(url_channel + '?api_key=%s' % api_key)
+        jobj = json.loads(response.content)
+        self.assertEqual(3, jobj['meta']['total_count'])
+
+
+class MommyTest(TestCase):
+
+    def test_mommy(self):
+        from model_mommy import mommy
+        from device.models import Server
+        stb = mommy.make(SetTopBox)
+        #print(stb)
+        srv = mommy.make(Server, host='localhost')
+        #print(srv)
+
+
+class APIKEYTest(TestCase):
+
+    def test_autocreate_key(self):
+        from django.contrib.auth.models import User
+        from tastypie.models import ApiKey
+        from model_mommy import mommy
+        user = mommy.make(User)
+        log.debug('User:%s', user)
+        api_key = ApiKey.objects.get(user=user)
+        log.debug('ApiKey:%s', api_key)
+        self.assertIsNotNone(api_key, u'A ApiKey não deve ser None')
