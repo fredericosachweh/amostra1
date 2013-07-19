@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.contrib import auth
 import re
+import logging
+log = logging.getLogger('debug')
 
 class RequireLoginMiddleware(object):
     def __init__(self):
