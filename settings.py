@@ -282,6 +282,8 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
+	# Video on demand
+	'vod',
     # Tools app
     'tools',
     # Client
