@@ -1,13 +1,9 @@
 from django.conf import settings
 from django.http import HttpResponseRedirect
-#from django.db.models.loading import get_model
-#from django.utils.importlib import import_module
-from django.middleware.csrf import get_token
 from django.contrib import auth
 import re
 import logging
-log = logging.getLogger('api')
-
+log = logging.getLogger('debug')
 
 class RequireLoginMiddleware(object):
 
@@ -25,13 +21,17 @@ class APIKeyLoginMiddleware(object):
 
     def process_request(self, request):
         from tastypie.models import ApiKey
-        api_key = request.GET.get('api_key', None)
-        #log.debug('KEY:%s', api_key)
-        if api_key is None:
-            #log.debug('Saindo')
+        api_key = request.GET.get('api_key', None) or \
+            request.POST.get('api_key', None) or \
+            request.META.get('HTTP_API_KEY', None)
+        if api_key is not None:
+            log.debug('api_key:%s', api_key)
+            log.debug('META:%s', request.META.get('HTTP_API_KEY', None))
+            log.debug('POST:%s', request.POST.get('api_key', None))
+            log.debug('GET:%s', request.GET.get('api_key', None))
+        else:
             return
         api = ApiKey.objects.get(key=api_key)
-        #log.debug('API:%s', api)
         user = api.user
         #login(request, api.user)
         if user is not None:
@@ -42,5 +42,3 @@ class APIKeyLoginMiddleware(object):
             #auth.login(request, user)
         return
 
-    #def process_response(self, request, response):
-    #    return response

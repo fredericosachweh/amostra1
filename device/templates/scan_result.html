@@ -7,7 +7,6 @@
 <div class="breadcrumbs">
 <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
 &rsaquo; <a href="{% url 'admin:app_list' app_label=app_label %}">{{ app_label|capfirst|escape }}</a>
-&rsaquo; <a href="{% url 'opts'|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
 &rsaquo; {% trans 'Escanear multiplos objetos' %}
 </div>
 {% endblock %}
@@ -17,7 +16,7 @@
     {% for object, result in results %}
         <li>{{ object }}</li>
         {% for service in result %}
-            <ul>{{ service }}</ul>
+            <ul><li>{{ service }}</li></ul>
         {% endfor %}
     {% endfor %}
     <p><a href="#" onclick="javascript: history.go(-1)">{% trans 'Voltar' %}</a></p>
