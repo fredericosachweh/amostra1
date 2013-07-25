@@ -18,10 +18,13 @@ from tv.api import ChannelResource
 import logging
 
 ## Validation:
-#http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-treat-a-field-as-unique
+#http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-
+#treat-a-field-as-unique
 
 #http://10.1.1.52:8100/tv/api/client/v1/settopboxconfig/8/
-#{"key": "app/tv.PARENTAL_CONTROL", "resource_uri": "/tv/api/client/v1/settopboxconfig/8/", "value": "-1", "value_type": "number"}
+#{"key": "app/tv.PARENTAL_CONTROL",
+#    "resource_uri": "/tv/api/client/v1/settopboxconfig/8/", "value": "-1",
+#    "value_type": "number"}
 
 
 class MyAuthorization(DjangoAuthorization):
@@ -38,10 +41,15 @@ class MyAuthorization(DjangoAuthorization):
 
 class SetTopBoxResource(NamespacedModelResource):
 
+    #mac = fields.CharField(u'mac', unique=True, help_text=u'Endereço MAC')
+    #serial_number = fields.CharField(u'serial_number', unique=True,
+    #     help_text=u'Número serial no equipamento')
+
     class Meta:
         queryset = models.SetTopBox.objects.all()
         resource_name = 'settopbox'
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
+        fields = ['serial_number', 'mac']
         urlconf_namespace = 'client'
         authorization = MyAuthorization()
         validation = Validation()
@@ -56,10 +64,11 @@ class SetTopBoxResource(NamespacedModelResource):
         try:
             bundle = super(SetTopBoxResource, self).obj_create(bundle,
                 **kwargs)
-        except IntegrityError:
-            log.error('Duplicate entry for settopbox.serial_number=%s',
-                bundle.data.get('serial_number'))
-            raise BadRequest('Duplicate entry for settopbox.serial_number')
+        except IntegrityError, e:
+            log.error('%s', e.message)
+            from django.db import transaction
+            transaction.rollback()
+            raise BadRequest(e.message)
         return bundle
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
@@ -68,10 +77,11 @@ class SetTopBoxResource(NamespacedModelResource):
         try:
             bundle = super(SetTopBoxResource, self).obj_update(bundle,
                 request=request, **kwargs)
-        except IntegrityError:
-            log.error('Duplicate entry for settopbox.serial_number=%s',
-                bundle.data.get('serial_number'))
-            raise BadRequest('Duplicate entry for settopbox.serial_number')
+        except IntegrityError, e:
+            log.error('%s', e.message)
+            from django.db import transaction
+            transaction.rollback()
+            raise BadRequest(e.message)
         return bundle
 
     #def determine_format(self, request):

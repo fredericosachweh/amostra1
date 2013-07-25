@@ -84,6 +84,9 @@ class StaffResource(NamespacedModelResource):
 class ActorResource(NamespacedModelResource):
     class Meta(MetaDefault):
         queryset = models.Actor.objects.all()
+        filtering = {
+            'name': ALL
+        }
 
 
 class RatingResource(NamespacedModelResource):

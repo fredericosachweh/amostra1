@@ -124,6 +124,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'lib.middleware.login.APIKeyLoginMiddleware',
     #'lib.middleware.login.RequireLoginMiddleware',
 )
 
@@ -266,7 +267,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     'south',
     # Interface dos setup-box
-    'box',
+    #'box',
     # Aplicação de controle de stream
     'device',
     # EPG

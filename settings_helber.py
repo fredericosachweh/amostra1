@@ -4,10 +4,6 @@ from dbsettings.utils import set_defaults
 
 DEBUG = True
 
-#from client import models as clientapp
-#set_defaults(clientapp
-#)
-
 if 'test' in sys.argv:
     ## Banco de dados teste
     DATABASES = {
@@ -82,7 +78,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    #'lib.middleware.login.RequireLoginMiddleware',
+    'lib.middleware.login.APIKeyLoginMiddleware',
 )
 
 CACHES = {

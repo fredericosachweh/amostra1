@@ -16,6 +16,8 @@ from device.models import *
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from tv.models import Channel
+## import getpass
+## getpass.getuser() -> 'nginx'
 
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
@@ -25,12 +27,11 @@ from tv.models import Channel
 @override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class CommandsGenerationTest(TestCase):
     def setUp(self):
-        import getpass
         server = Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username=getpass.getuser(),
+            username='nginx',
             rsakey='~/.ssh/id_rsa',
         )
         nic = NIC.objects.get(ipv4='127.0.0.1')
@@ -179,8 +180,13 @@ class CommandsGenerationTest(TestCase):
             sink=internal_a,
             nic_sink=nic,
         )
+        storage1 = Storage.objects.create(
+            folder='/tmp/recording_1',
+            server=server,
+            )
         StreamRecorder.objects.create(
             server=server,
+            storage=storage1,
             rotate=60,
             sink=internal_a,
             keep_time=168,
@@ -215,6 +221,7 @@ class CommandsGenerationTest(TestCase):
         )
         StreamRecorder.objects.create(
             server=server,
+            storage=storage1,
             rotate=60,
             sink=internal_f,
             keep_time=130,
@@ -546,7 +553,7 @@ class AdaptersManipulationTests(TestCase):
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username=getpass.getuser(),
+            username='nginx',
             rsakey='~/.ssh/id_rsa',
         )
         self.client = Client()
@@ -689,7 +696,7 @@ class MySeleniumTests(LiveServerTestCase):
 
     def test_multicastinput(self):
         import getpass
-        myuser = getpass.getuser()
+        myuser = 'nginx'
         servers = Server.objects.all()
         servers.update(username=myuser)
 
@@ -772,14 +779,14 @@ class ConnectionTest(TestCase):
         srv.name = 'local'
         srv.host = '127.0.0.1'
         srv.ssh_port = 22
-        srv.username = getpass.getuser()
+        srv.username = 'nginx'
         srv.rsakey = '~/.ssh/id_rsa'
         srv.connect()
         ret = srv.execute('/bin/pwd')
         self.assertEqual(
             ret[0],
-            '%s\n' % (os.environ.get('HOME')),
-            'O home deveria ser "%s\n"' % (os.environ.get('HOME'))
+            '/iptv/var/lib/nginx\n',
+            'O home deveria ser "/iptv/var/lib/nginx\n"'
         )
 
     def test_connection_failure(self):
@@ -789,7 +796,7 @@ class ConnectionTest(TestCase):
         srv.name = 'local'
         srv.host = '127.0.0.1'
         srv.ssh_port = 2222
-        srv.username = getpass.getuser()
+        srv.username = 'nginx'
         srv.rsakey = '~/.ssh/id_rsa'
         srv.connect()
         self.assertEqual(str(srv.msg),
@@ -803,7 +810,7 @@ class ConnectionTest(TestCase):
         import getpass
         from lib.ssh import Connection
         conn = Connection('127.0.0.1',
-            username=getpass.getuser(), private_key='~/.ssh/id_rsa')
+            username='nginx', private_key='~/.ssh/id_rsa')
         test_command = '%s/device/helper/test' % (os.path.abspath('.'))
         t = conn.execute_with_timeout(test_command, timeout=2)
         self.assertEqual(
@@ -821,7 +828,7 @@ class ServerTest(TestCase):
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username=getpass.getuser(),
+            username='nginx',
             rsakey='~/.ssh/id_rsa',
         )
         self.client = Client()
@@ -932,13 +939,13 @@ class ServerTest(TestCase):
             id_product='2104',
             adapter_nr=2,
         )
-        expected = '<option value="">---------</option>' \
-                   '<option value="00:00:00:00:00:00">' \
-                   'DVBWorld 00:00:00:00:00:00</option>' \
-                   '<option value="00:00:00:00:00:01">' \
-                   'DVBWorld 00:00:00:00:00:01</option>' \
-                   '<option value="00:00:00:00:00:02">' \
-                   'DVBWorld 00:00:00:00:00:02</option>'
+        expected = '<option value="">---------</option>'\
+        '<option value="00:00:00:00:00:00">00:00:00:00:00:00 ( - 04b4:2104)'\
+        '</option>'\
+        '<option value="00:00:00:00:00:01">00:00:00:00:00:01 ( - 04b4:2104)'\
+        '</option>'\
+        '<option value="00:00:00:00:00:02">00:00:00:00:00:02 ( - 04b4:2104)'\
+        '</option>'
         response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
         # Without any DvbTuner created
         self.assertEqual(expected, response.content)
@@ -962,11 +969,11 @@ class ServerTest(TestCase):
             % server.pk)
         self.assertEqual(expected, response.content)
 
-        expected = '<option value="">---------</option>' \
+        expected = u'<option value="">---------</option>' \
                    '<option value="00:00:00:00:00:01">' \
-                   'DVBWorld 00:00:00:00:00:01</option>' \
+                   '00:00:00:00:00:01 ( - 04b4:2104)</option>' \
                    '<option value="00:00:00:00:00:02">' \
-                   'DVBWorld 00:00:00:00:00:02</option>'
+                   '00:00:00:00:00:02 ( - 04b4:2104)</option>'
         response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
         # With one created DvbTuner, while inserting another one
         self.assertEqual(expected, response.content,
@@ -1023,7 +1030,7 @@ class TestViews(TestCase):
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username=getpass.getuser(),
+            username='nginx',
             rsakey='~/.ssh/id_rsa',
             offline_mode=False,
         )
@@ -1083,21 +1090,20 @@ class TestRecord(TestCase):
     """
 
     def setUp(self):
-        import getpass
         from datetime import datetime, timedelta
         start_time = datetime.now() + timedelta(0, -(3600 * 3))
         self.server = Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
-            username=getpass.getuser(),
+            username='nginx',
             rsakey='~/.ssh/id_rsa',
         )
         self.server1 = Server.objects.create(
             name='local1',
             host='127.0.0.2',
             ssh_port=22,
-            username=getpass.getuser(),
+            username='nginx',
             rsakey='~/.ssh/id_rsa',
         )
         nic_eth0 = NIC.objects.create(
@@ -1263,9 +1269,10 @@ class TestRecord(TestCase):
             'URL invalida')
         self.c = Client()
         response = self.c.get(urlplay)
-        self.assertContains(response, 'Can not start')
+        ## TODO: Fazer autenticação
+        self.assertContains(response, 'Unauthorized', status_code=401)
         response = self.c.get(urlstopOK)
-        self.assertContains(response, 'Stoped')
+        self.assertContains(response, 'Unauthorized', status_code=401)
 
     def test_install_cron(self):
         recorders = StreamRecorder.objects.all()
