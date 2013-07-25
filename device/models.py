@@ -1601,8 +1601,8 @@ class StreamRecorder(OutputModel, DeviceServer):
 
         b = ''
         if self.stream_hd and self.storage.hdd_ssd:
-            b = '-b'
-        cmd = u'%s -l %s %s %s-r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
+            b = ' -b'
+        cmd = u'%s -l %s %s%s-r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.MULTICAT_COMMAND,
             self.storage.control_dir(),
             b,
