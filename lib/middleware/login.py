@@ -5,6 +5,7 @@ import re
 import logging
 log = logging.getLogger('debug')
 
+
 class RequireLoginMiddleware(object):
 
     def __init__(self):
@@ -33,6 +34,7 @@ class APIKeyLoginMiddleware(object):
             return
         api = ApiKey.objects.get(key=api_key)
         user = api.user
+        log.debug('User from api=%s', user)
         #login(request, api.user)
         if user is not None:
             if user.is_active:
