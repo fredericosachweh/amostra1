@@ -743,8 +743,24 @@ class SetTopBoxChannelTest(TestCase):
 class TestRequests(TestCase):
 
     def setUp(self):
-        pass
+        self.c = Client2()
 
     def test_call_login(self):
-        from requests import Session, Request
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertContains(response, 'api_key')
+        key = json.loads(response.content).get('api_key', None)
+        self.assertIsNotNone(key)
+        ## Create new STBconfig
+        url_config = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxconfig', 'api_name': 'v1'})
+        self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
+        response = self.c.post(url_config, data={"key": "VOLUME_LEVEL",
+            "value": "0.5", "value_type": "Number"}, follow=True)
+        #self.assertEqual(response.status_code, 201)
 
