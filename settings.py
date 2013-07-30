@@ -282,8 +282,8 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
-	# Video on demand
-	'vod',
+    # Video on demand
+    'vod',
     # Tools app
     'tools',
     # Client
@@ -362,8 +362,10 @@ if 'test' in sys.argv:
     VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
 
 TASTYPIE_FULL_DEBUG = DEBUG
-
+TASTYPIE_ABSTRACT_APIKEY = True
 FORCE_SCRIPT_NAME = ""
+
+RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv"
 
 EPG_IMPORT_CREDENTIALS = {
     'site': '83.222.124.34',

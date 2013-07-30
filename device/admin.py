@@ -32,7 +32,7 @@ class NICInline(admin.TabularInline):
 
 
 class AdminServer(admin.ModelAdmin):
-    readonly_fields = ('status', 'modified', 'msg',)
+    readonly_fields = ('status', 'modified', 'msg', 'show_versions')
     list_display = ('__unicode__', 'server_type', 'status', 'msg',
         'switch_link',)
     fieldsets = (
@@ -43,6 +43,7 @@ class AdminServer(admin.ModelAdmin):
             ('host', 'ssh_port', ),
             ('username', 'password',),
             ('rsakey'),
+            ('show_versions'),
         )
       }),
     )

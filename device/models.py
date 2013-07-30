@@ -312,6 +312,18 @@ class AbstractServer(models.Model):
         "Creates a temp file and return it's path"
         return "".join(self.execute('/bin/mktemp')).strip()
 
+    def show_versions(self):
+        pkgs = settings.RPM_CHECK_VERSION
+        rpm_cmd = u"export LANG=c && rpmquery --queryformat '%%{name} \
+%%{version} \\n' %s | grep -v 'not installed'" % (pkgs)
+        # %%{release} %%{installtime:date}
+        response = self.execute(rpm_cmd)
+        html = [i.strip() for i in response]
+        return '<br>'.join(html)
+
+    show_versions.allow_tags = True
+    show_versions.short_description = u'Versões'
+
 
 class Server(AbstractServer):
     SERVER_TYPE_CHOICES = [
