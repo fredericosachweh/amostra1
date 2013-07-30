@@ -104,9 +104,11 @@ class NagiosConfig:
     def _unicode_replace(self, msg):
         log = logging.getLogger('debug')
         STR_FROM = [u'à',u'À',u'Õ',u'õ',u'Ã',u'ã',u'Ô',u'ô',u'Â',u'â',u'Ê',
-            u'ê',u'Á',u'á',u'É',u'é',u'Í',u'í',u'Ó',u'ó',u'Ú',u'ú',u'Ç',u'ç']
+            u'ê',u'Á',u'á',u'É',u'é',u'Í',u'í',u'Ó',u'ó',u'Ú',u'ú',u'Ç',u'ç',
+            u'!',u'@', u'#', u'$', u'%', u'&', u'*', u'(', u')']
         STR_TO   = ['a','A','O','o','A','a','O','o','A','a','E','e','A','a',
-                    'E','e','I','i','O','o','U','u','C','c']
+                    'E','e','I','i','O','o','U','u','C','c',
+                    '-', '-', '-', '-', '-', '-', '-', '-', '-',]
         COUNT = 0
         log.debug("Alterar MSG: [%s]", msg)
         while COUNT != (len(STR_FROM)):
@@ -248,6 +250,7 @@ class NagiosConfig:
             return False
 
     def copy_cfg(self):
+        log = logging.getLogger('debug')
         try:
             for server in self.monitoring_servers:
                 for cfg_file in self.cfg_files:
@@ -262,6 +265,7 @@ class NagiosConfig:
             return False
 
     def nagios_validate(self):
+        log = logging.getLogger('debug')
         try:
             cmd = '/usr/bin/sudo /usr/sbin/nagios -v /etc/nagios/nagios.cfg'
             for server in self.monitoring_servers:
@@ -271,6 +275,7 @@ class NagiosConfig:
             return False
 
     def nagios_reload(self):
+        log = logging.getLogger('debug')
         try:
             cmd = '/usr/bin/sudo /bin/systemctl restart nagios.service'
             for server in self.monitoring_servers:

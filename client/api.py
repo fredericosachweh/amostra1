@@ -10,8 +10,9 @@ from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL
 from tastypie.validation import Validation
-from tastypie.exceptions import BadRequest
+from tastypie.exceptions import BadRequest, NotFound
 from django.db import IntegrityError
+from django.conf import settings
 import models
 from device import models as devicemodels
 from tv.api import ChannelResource
@@ -136,16 +137,24 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         try:
             bundle = super(SetTopBoxChannelResource, self).obj_create(bundle,
                 **kwargs)
-        except IntegrityError:
-            raise BadRequest('Duplicate entry for settopbox channel')
+        except IntegrityError, e:
+            log = logging.getLogger('api')
+            log.error('%s', e.message)
+            from django.db import transaction
+            transaction.rollback()
+            raise BadRequest(e.message)
         return bundle
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
         try:
             bundle = super(SetTopBoxChannelResource, self).obj_update(bundle,
                 **kwargs)
-        except IntegrityError:
-            raise BadRequest('Duplicate entry for settopbox channel')
+        except IntegrityError, e:
+            log = logging.getLogger('api')
+            log.error('%s', e.message)
+            from django.db import transaction
+            transaction.rollback()
+            raise BadRequest(e.message)
         return bundle
 
 
@@ -156,8 +165,9 @@ class SetTopBoxAuthorization(Authorization):
         if request.user.is_anonymous() is True:
             return False
         user = request.user
+        serial = user.username.replace(settings.STB_USER_PREFIX, '')
         try:
-            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
         except:
             log.error('No STB for user:%s', user)
@@ -182,17 +192,23 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         }
         authorization = SetTopBoxAuthorization()
         validation = Validation()
-        authentication = Authentication()
+        authentication = MultiAuthentication(
+            ApiKeyAuthentication(),
+            BasicAuthentication(realm='cianet-middleware'),
+            Authentication(),
+            )
 
     def apply_authorization_limits(self, request, object_list):
         """
         Filtra para o usuário logado.
         """
         log = logging.getLogger('api')
+        log.debug('User=%s', request.user)
         if request.user.is_anonymous() is False:
             log.debug('user:%s', request.user)
             user = request.user
-            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             if hasattr(self._meta.authorization, 'apply_limits'):
                 object_list = self._meta.authorization.apply_limits(request,
@@ -208,31 +224,61 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             bundle.data.get('value'), bundle.data.get('value_type'))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
-            stb = models.SetTopBox.objects.get(serial_number=user.username)
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             try:
                 bundle = super(SetTopBoxConfigResource, self).obj_create(
                     bundle, settopbox=stb, **kwargs)
-            except IntegrityError:
-                log.error('Duplicate entry for settopboxconfig:%s=%s',
-                    bundle.data.get('key'), bundle.data.get('value'))
-                raise BadRequest('Duplicate entry for settopboxconfig:key=%s' %
-                        bundle.data.get('key'))
+            except IntegrityError, e:
+                log.error('%s', e.message)
+                from django.db import transaction
+                transaction.rollback()
+                raise BadRequest(e.message)
+            return bundle
         else:
             raise BadRequest('')
         return bundle
 
     def obj_update(self, bundle, skip_errors=False, **kwargs):
         log = logging.getLogger('api')
-        log.debug('Update STB=%s', bundle.data.get('key'))
+        log.debug('Update key=%s', bundle.data.get('key', None))
+        if bundle.request.user.is_anonymous() is False:
+            user = bundle.request.user
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            # TODO: Não deixar um STB moduficar as configs de outro STB
+            #if bundle.obj.settopbox != stb:
+            #    raise NotFound('')
         try:
+            #print(dir(bundle.obj))
             bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
                 **kwargs)
-        except IntegrityError:
-            log.error('Duplicate entry for settopboxconfig:%s=%s',
-                bundle.data.get('key'), bundle.data.get('value'))
-            raise BadRequest('Duplicate entry for settopboxconfig')
+        except IntegrityError, e:
+            log.error('%s', e.message)
+            from django.db import transaction
+            transaction.rollback()
+            raise BadRequest(e.message)
         return bundle
+
+    def obj_get_list(self, bundle, **kwargs):
+        log = logging.getLogger('api')
+        user = bundle.request.user
+        log.debug('User=%s', user)
+        #obj_list = super(SetTopBoxConfigResource, self).obj_get_list(bundle,
+        #    **kwargs)
+        if user.is_anonymous() is False:
+            if not user.is_staff:
+                serial = user.username.replace(settings.STB_USER_PREFIX, '')
+                log.debug('Serial=%s', serial)
+                stb = models.SetTopBox.objects.get(serial_number=serial)
+                log.debug('User:%s, SetTopBox:%s', user, stb)
+                obj_list = super(SetTopBoxConfigResource, self).obj_get_list(
+                    bundle, **kwargs).filter(settopbox=stb)
+            else:
+                obj_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+        return obj_list
 
 
 class StreamRecorderResource(NamespacedModelResource):

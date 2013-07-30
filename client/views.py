@@ -19,6 +19,7 @@ class Auth(View):
 
     @method_decorator(csrf_exempt)
     def post(self, request):
+        from tastypie.models import ApiKey
         log = logging.getLogger('client')
         mac = request.POST.get('mac') or request.POST.get('MAC')
         sn = request.POST.get('sn') or request.POST.get('SN')
@@ -50,7 +51,11 @@ class Auth(View):
             log.debug('No user for SetTopBox:%s', stb)
             HttpResponse(u'{"login": "ERROR"}', status=403)
         log.debug('login: OK, user:%s', a_user)
-        response = HttpResponse('{"login": "OK", "User": "%s"}' % (a_user),
+        api_key = ApiKey.objects.get(user=a_user)
+        log.debug('api_key:%s', api_key.key)
+        response = HttpResponse(
+            '{"login": "OK", "User": "%s", "api_key": "%s"}' % (
+                a_user, api_key.key),
             content_type='application/json')
         response['Cache-Control'] = 'no-cache'
         return response

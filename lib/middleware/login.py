@@ -5,10 +5,12 @@ import re
 import logging
 log = logging.getLogger('debug')
 
+
 class RequireLoginMiddleware(object):
+
     def __init__(self):
         self.urls = tuple([re.compile(url) for url in settings.LOGIN_REQUIRED_URLS])
-    
+
     def process_request(self, request):
         for url in self.urls:
             if url.match(request.path) and request.user.is_anonymous():
@@ -20,9 +22,6 @@ class APIKeyLoginMiddleware(object):
 
     def process_request(self, request):
         from tastypie.models import ApiKey
-        #log.debug('GET:%s', request.GET)
-        #for i in request.META:
-        #    log.debug('H:%s=%s', i, request.META.get(i))
         api_key = request.GET.get('api_key', None) or \
             request.POST.get('api_key', None) or \
             request.META.get('HTTP_API_KEY', None)
@@ -35,6 +34,7 @@ class APIKeyLoginMiddleware(object):
             return
         api = ApiKey.objects.get(key=api_key)
         user = api.user
+        log.debug('User from api=%s', user)
         #login(request, api.user)
         if user is not None:
             if user.is_active:

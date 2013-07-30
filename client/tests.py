@@ -435,7 +435,8 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         ## Busca o ususário criado para o stb
-        user = User.objects.get(username=u'01:02:03:04:05:06')
+        user = User.objects.get(username=settings.STB_USER_PREFIX + \
+            '01:02:03:04:05:06')
         ## Verifica se existe a relação criado nos 3 canais
         # Busca o stb
         stb = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:06')
@@ -465,7 +466,8 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number=123456)
         ## Busca o ususário criado para o stb
-        user = User.objects.get(username=u'123456')
+        user = User.objects.get(username=settings.STB_USER_PREFIX + \
+            '123456')
         self.assertEqual(user, stb.get_user())
 
     def test_case_insensitive_mac_sn(self):
@@ -689,6 +691,44 @@ class SetTopBoxChannelTest(TestCase):
         jobj = json.loads(response.content)
         self.assertEqual(2, jobj['meta']['total_count'])
 
+    def test_api_key_channel(self):
+        from tastypie.models import ApiKey
+        from django.contrib.auth.models import User
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        ## Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        user = User.objects.get(username=settings.STB_USER_PREFIX + \
+            '01:02:03:04:05:06')
+        self.assertIsNotNone(user)
+        api_key = ApiKey.objects.get(user=user)
+        self.assertIsNotNone(api_key)
+        self.assertContains(response, 'api_key')
+        jobj = json.loads(response.content)
+        api_key = jobj.get('api_key')
+        self.assertIsNotNone(api_key)
+        # Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        url_channel = reverse('tv:api_dispatch_list', kwargs={
+            'resource_name': 'channel', 'api_name': 'v1'})
+        self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
+        ## Get empty list (Anonymous)
+        response = self.c.get(url_channel)
+        jobj = json.loads(response.content)
+        self.assertEqual(0, jobj['meta']['total_count'])
+        ## Get list of channels
+        response = self.c.get(url_channel + '?api_key=%s' % api_key)
+        jobj = json.loads(response.content)
+        self.assertEqual(3, jobj['meta']['total_count'])
+
 
 #class MommyTest(TestCase):
 #
@@ -703,7 +743,24 @@ class SetTopBoxChannelTest(TestCase):
 class TestRequests(TestCase):
 
     def setUp(self):
-        pass
+        self.c = Client2()
 
     def test_call_login(self):
-        from requests import Session, Request
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertContains(response, 'api_key')
+        key = json.loads(response.content).get('api_key', None)
+        self.assertIsNotNone(key)
+        ## Create new STBconfig
+        url_config = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxconfig', 'api_name': 'v1'})
+        self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
+        response = self.c.post(url_config, data={"key": "VOLUME_LEVEL",
+            "value": "0.5", "value_type": "Number"}, follow=True)
+        #self.assertEqual(response.status_code, 201)
+
