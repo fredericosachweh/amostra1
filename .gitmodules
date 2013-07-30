@@ -12,4 +12,7 @@
 	url = git://github.com/django/django.git
 [submodule "vendor/django-dbsettings"]
 	path = vendor/django-dbsettings
-	url = git@github.com:helber/django-dbsettings.git
+	url = git://github.com:helber/django-dbsettings.git
+[submodule "vendor/django-tastypie"]
+	path = vendor/django-tastypie
+	url = https://github.com/toastdriven/django-tastypie.git
