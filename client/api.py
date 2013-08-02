@@ -285,6 +285,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         log = logging.getLogger('api')
         user = bundle.request.user
         log.debug('User=%s', user)
+        obj_list = models.SetTopBoxConfig.objects.get_empty_query_set()
         if user.is_anonymous() is False:
             if not user.is_staff:
                 serial = user.username.replace(settings.STB_USER_PREFIX, '')
