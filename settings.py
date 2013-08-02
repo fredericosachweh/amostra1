@@ -362,7 +362,7 @@ if 'test' in sys.argv:
     VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
 
 TASTYPIE_FULL_DEBUG = DEBUG
-TASTYPIE_ABSTRACT_APIKEY = True
+TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
 
 RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv"
