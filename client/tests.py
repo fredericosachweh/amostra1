@@ -16,6 +16,7 @@ from tv import models as tvmodels
 
 import models
 import logging
+import simplejson
 log = logging.getLogger('debug')
 
 
@@ -397,7 +398,7 @@ class SetTopBoxChannelTest(TestCase):
             content_type='application/json')
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
-        self.assertContains(response, 'Duplicate entry', status_code=400)
+        self.assertContains(response, 'not unique', status_code=400)
         #url_logoff = reverse('sys_logoff')
         self.c.logout()
 
@@ -730,16 +731,6 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(3, jobj['meta']['total_count'])
 
 
-#class MommyTest(TestCase):
-#
-#    def test_mommy(self):
-#        from model_mommy import mommy
-#        from device.models import Server
-#        stb = mommy.make(SetTopBox)
-#        #print(stb)
-#        #srv = mommy.make(Server, host='localhost')
-#        #print(srv)
-
 class TestRequests(TestCase):
 
     def setUp(self):
@@ -760,7 +751,47 @@ class TestRequests(TestCase):
         url_config = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1'})
         self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
-        response = self.c.post(url_config, data={"key": "VOLUME_LEVEL",
-            "value": "0.5", "value_type": "Number"}, follow=True)
-        #self.assertEqual(response.status_code, 201)
+        ## Create a config
+        data = simplejson.dumps({"key": "VOLUME_LEVEL", "value": "0.5",
+            "value_type": "Number"})
+        response = self.c.post(url_config, data=data,
+            content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.has_header('location'))
+        ## load stb config
+        response = self.c.get(url_config)
+        self.assertEqual(response.status_code, 200)
+        jobj = simplejson.loads(response.content)
+        self.assertEqual(jobj['meta']['total_count'], 1)
+        ## login on new STB
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
+        self.assertContains(response, 'api_key')
+        key1 = json.loads(response.content).get('api_key', None)
+        self.assertIsNotNone(key1)
+        data = simplejson.dumps({"key": "VOLUME_LEVEL", "value": "0.3",
+            "value_type": "Number"})
+        response = self.c.post(url_config, data=data,
+            content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.has_header('location'))
+        response = self.c.get(url_config)
+        self.assertEqual(response.status_code, 200)
+        jobj = simplejson.loads(response.content)
+        self.assertEqual(jobj['meta']['total_count'], 1)
+        ## Change volume value
+        url_vol = reverse('client:api_dispatch_detail', kwargs={
+            'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 2})
+        self.assertEqual('/tv/api/client/v1/settopboxconfig/2/', url_vol)
+        data = simplejson.dumps({"value": "0.3"})
+        response = self.c.put(url_vol, data=data,
+            content_type='application/json')
+        self.assertEqual(response.status_code, 204)
+        conf = models.SetTopBoxConfig.objects.get(id=2)
+        self.assertEqual(u'0.3', conf.value)
+        response = self.c.get(auth_logoff)
+        self.assertEqual(response.status_code, 200)
+        response = self.c.get(url_vol + '?api_key=%s' % key)
+        log.debug('status_code=%s, content=%s', response.status_code,
+            response.content)
+        self.assertEqual(response.status_code, 400)
 

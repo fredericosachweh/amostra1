@@ -93,9 +93,29 @@ CACHES = {
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
 TASTYPIE_FULL_DEBUG = False
+##Black       0;30     Dark Gray     1;30
+##Blue        0;34     Light Blue    1;34
+##Green       0;32     Light Green   1;32
+##Cyan        0;36     Light Cyan    1;36
+##Red         0;31     Light Red     1;31
+##Purple      0;35     Light Purple  1;35
+##Brown       0;33     Yellow        1;33
+##Light Gray  0;37     White         1;37
+
+#GREEN="\033[0;32m";
+#BLUE="\033[0;34m";
+#RED="\033[0;31m";
+#GRAY="\033[0;30m";
+#PURPLE="\033[0;35m";
+#LPURPLE="\033[1;35m";
+#NO_COLOUR="\033[0m";
 
 if DEBUG is True:
     # Envia todas as mensagens de log para o console
+    # http://docs.python.org/dev/library/logging.html#logging.LogRecord
+    LOGGING['formatters']['verbose']['format'] = '[\033[0;31m%(name)s\033[0m \
+%(levelname)s %(relativeCreated)d]\t %(message)s [%(funcName)s(\033[0;34m\
+%(filename)s:%(lineno)d\033[0m)]'
     for logger in LOGGING['loggers']:
         LOGGING['loggers'][logger]['handlers'] = ['console']
     try:
