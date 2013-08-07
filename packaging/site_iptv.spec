@@ -1,6 +1,6 @@
 Name:           site_iptv
 Version:        GIT_CURRENT_VERSION
-Release:        0%{?dist}
+Release:        1%{?dist}
 Summary:        Sistema IPTV - Cianet
 
 Group:          Development/Languages
@@ -21,7 +21,22 @@ BuildArch:      noarch
 BuildRequires:  python-devel python-setuptools-devel
 BuildRequires:  systemd-units
 
-Requires:       python-django >= 1.4.5
+
+%if 0%{?fedora} >= 19
+	Requires:       python-pillow
+%else
+	Requires:       python-imaging
+%endif
+
+%if 0%{?fedora} >= 18
+	Requires:       python-django >= 1.5.1
+	BuildRequires:  python-django >= 1.5.1
+%else
+	Requires:       Django >= 1.5
+	BuildRequires:  Django >= 1.5
+%endif
+
+#Requires:       python-django >= 1.4.5
 #Requires:       mysql-server
 #Requires:       MySQL-python
 Requires:       postgresql-server
@@ -52,7 +67,7 @@ Requires:       nginxcianet >= 1.4.1
 Requires:       multicat >= 2.0.1
 Requires:       dvblast >= 2.2.1
 ## Por hora sem migração
-Requires:       Django-south
+# Requires:       Django-south
 
 Prefix:         /iptv
 
