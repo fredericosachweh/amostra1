@@ -16,3 +16,6 @@
 [submodule "vendor/django-tastypie"]
 	path = vendor/django-tastypie
 	url = https://github.com/helber/django-dbsettings.git
+[submodule "vendor/django-south"]
+	path = vendor/django-south
+	url = https://github.com/lambdafu/django-south.git
