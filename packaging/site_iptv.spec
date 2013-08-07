@@ -23,17 +23,17 @@ BuildRequires:  systemd-units
 
 
 %if 0%{?fedora} >= 19
-	Requires:       python-pillow
+Requires:       python-pillow
 %else
-	Requires:       python-imaging
+Requires:       python-imaging
 %endif
 
 %if 0%{?fedora} >= 18
-	Requires:       python-django >= 1.5.1
-	BuildRequires:  python-django >= 1.5.1
+Requires:       python-django >= 1.5.1
+BuildRequires:  python-django >= 1.5.1
 %else
-	Requires:       Django >= 1.5
-	BuildRequires:  Django >= 1.5
+Requires:       Django >= 1.5
+BuildRequires:  Django >= 1.5
 %endif
 
 #Requires:       python-django >= 1.4.5
@@ -147,11 +147,11 @@ echo "su - postgres"
 echo "initdb -D /iptv/var/lib/postgresql"
 echo "su - nginx"
 echo "%{__python} %{site_home}/manage.py syncdb"
-echo "%{__python} %{site_home}/manage.py reset client --noinput"
-echo "%{__python} %{site_home}/manage.py reset epg --noinput"
 echo "%{__python} %{site_home}/manage.py collectstatic --noinput"
 echo ""
-echo "Para resetar os ravadores: %{site_home}device/storage_recorder_player.sql"
+echo "Para resetar algum app:"
+echo "%{__python} %{site_home}/manage.py reset <app> --noinput"
+echo "Para resetar os gravadores: %{site_home}device/storage_recorder_player.sql"
 echo "========================================================================="
 echo -e "\033[0m"
 
@@ -165,6 +165,7 @@ if [ $1 = 0 ]; then
 fi
 
 %postun
+systemctl reload --system
 
 %files
 %defattr(-,%{nginx_user},%{nginx_group},-)
@@ -203,6 +204,9 @@ fi
 
 
 %changelog
+* Wed Aug 07 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.11.2-1
+- Fix recorder command, django-south e django-tastypie
+- Fix rpm spec
 * Tue Jul 02 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.8.0-0
 - Storage, player and recorder fix
 * Wed May 16 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.2-0
