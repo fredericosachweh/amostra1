@@ -29,14 +29,13 @@ Requires:       python-imaging
 %endif
 
 %if 0%{?fedora} >= 18
-Requires:       python-django >= 1.5.1
-BuildRequires:  python-django >= 1.5.1
+Requires:       python-django >= 1.4.5
+BuildRequires:  python-django >= 1.4.5
 %else
-Requires:       Django >= 1.5
-BuildRequires:  Django >= 1.5
+Requires:       Django >= 1.4
+BuildRequires:  Django >= 1.4
 %endif
 
-#Requires:       python-django >= 1.4.5
 #Requires:       mysql-server
 #Requires:       MySQL-python
 Requires:       postgresql-server
@@ -44,8 +43,9 @@ Requires:       python-psycopg2
 Requires:       python-imaging
 Requires:       python-flup
 
-# Requires:       django-piston ## Substituido pelo 'django-tastypie'
-Requires:       django-tastypie >= 0.9.14
+## Por hora sem migração Usando embutino no pacote com submodulo
+# Requires:       Django-south
+# Requires:       django-tastypie >= 0.9.14
 Requires:       python-paramiko
 Requires:       python-dateutil
 Requires:       pytz
@@ -66,8 +66,6 @@ Requires:       nginxcianet >= 1.4.1
 ## Por hora para a versão de demo vai instalar
 Requires:       multicat >= 2.0.1
 Requires:       dvblast >= 2.2.1
-## Por hora sem migração
-# Requires:       Django-south
 
 Prefix:         /iptv
 
