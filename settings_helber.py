@@ -1,7 +1,6 @@
 # -*- encoding:utf-8 -*-
+import sys
 from settings import *
-
-#from dbsettings.utils import set_defaults
 
 DEBUG = True
 
@@ -61,16 +60,16 @@ else:
         }
     }
     #DATABASES['default'] = DATABASES['pglocal']
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#        'NAME': 'iptv',
-#        'USER': 'iptv',
-#        'PASSWORD': 'iptv',
-#        'HOST': '127.0.0.1',
-#        'PORT': 5432,
-#    }
-#}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '127.0.0.1',
+        'PORT': 5432,
+    }
+}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
@@ -144,6 +143,8 @@ if DEBUG is True:
         )
     except ImportError:
         pass
+
+TASTYPIE_ABSTRACT_APIKEY = False
 
 EPG_IMPORT_CREDENTIALS = {
     'site': '83.222.124.34',
