@@ -3,18 +3,20 @@
 module: client.dispatch
 @author: helber
 '''
+import sys
 import logging
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
-from tastypie.models import create_api_key
 from django.db import models as dbmodels
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.conf import settings
 from tv.models import Channel
 import models
+from tastypie.models import create_api_key
 
-dbmodels.signals.post_save.connect(create_api_key, sender=User)
+if 'syncdb' not in sys.argv and 'migrate' not in sys.argv:
+    dbmodels.signals.post_save.connect(create_api_key, sender=User)
 
 
 @receiver(post_save, sender=models.CompanyLogo)
