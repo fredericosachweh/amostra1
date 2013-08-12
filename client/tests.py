@@ -152,7 +152,7 @@ class APITest(TestCase):
         self.assertEqual(response.status_code, 400)
         # Error message on duplicated serial_number
         self.assertContains(response,
-            'column mac is not unique',
+            'client_settopbox_serial_number_key',
             status_code=400)
         # Delete one stb
         urldelete = reverse('client:api_dispatch_detail',
@@ -384,7 +384,7 @@ class SetTopBoxChannelTest(TestCase):
             'channel': '/tv/api/tv/v1/channel/2/',
             'recorder': True}),
             content_type='application/json')
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 201, 'Content:%s' % response.content)
         response = self.c.post(urlrelation, data=json.dumps({
             'settopbox': '/tv/api/client/v1/settopbox/2/',
             'channel': '/tv/api/tv/v1/channel/2/',
@@ -398,7 +398,9 @@ class SetTopBoxChannelTest(TestCase):
             content_type='application/json')
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
-        self.assertContains(response, 'not unique', status_code=400)
+        self.assertContains(response,
+            'client_settopboxchannel_settopbox_id_channel_id_key',
+            status_code=400)
         #url_logoff = reverse('sys_logoff')
         self.c.logout()
 
@@ -638,8 +640,7 @@ class SetTopBoxChannelTest(TestCase):
             'seek': 20})
         self.assertEqual('/tv/device/tvod/13/play/20', url_play)
         response = self.c.get(url_play)
-        self.assertEqual(401, response.status_code, 'ERROR:%s' % (
-            response.content))
+        self.assertEqual(401, response.status_code)
         ## Do login
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
