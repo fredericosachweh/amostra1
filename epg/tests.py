@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+from django.utils import timezone
 from django.test import TestCase
 from django.test.client import Client
 from django.core.urlresolvers import reverse
-from django.utils import timezone
 import simplejson as json
 
 from models import *
 from data_importer import XML_Epg_Importer, Zip_to_XML
 import logging
+log = logging.getLogger('debug')
 
 input_xml_1 = '''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
@@ -752,9 +753,19 @@ class ParseRatingTest(TestCase):
             {'start_timestamp': 1362013200 - 3600 * 3,
              'stop_timestamp': 1362016800 - 3600 * 3})
         jobj = json.loads(response.content)
-        self.assertEqual(jobj['objects'][0]['programme']['rating'],
+        self.assertEqual(jobj['objects'][0]['programme']['rating']
+            ['resource_uri'],
             '/tv/api/epg/v1/rating/1/')
 
+    def test_get_rating_limit(self):
+        c = Client()
+        url = reverse('epg:api_dispatch_list',
+            kwargs={'resource_name': 'rating', 'api_name': 'v1'}
+            )
+        self.assertEqual('/tv/api/epg/v1/rating/', url)
+        response = c.get(url + '?limit=0')
+        jobj = json.loads(response.content)
+        self.assertEqual(jobj['meta']['total_count'], 5)
 
 input_xml_conflict = '''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
@@ -810,6 +821,7 @@ start="20130301110000 -0300" \
 </programme>
 '''
 
+
 class GuideConflictTest(TestCase):
 
     def setUp(self):
@@ -847,10 +859,8 @@ class GuideConflictTest(TestCase):
         from django.utils.timezone import utc
         from pytz import timezone
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
-        start = parse("20130301085900 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
-        stop = parse( "20130301100000 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
+        start = parse("20130301085900 -0300").astimezone(utc)
+        stop = parse("20130301100000 -0300").astimezone(utc)
         lang = Lang.objects.get(value=u'pt')
         title = Title.objects.create(lang=lang, value=u'Novo com conflito')
         prog = Programme.objects.create(programid=100)
@@ -875,10 +885,8 @@ class GuideConflictTest(TestCase):
         from django.utils.timezone import utc
         from pytz import timezone
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
-        start = parse("20130301060000 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
-        stop = parse( "20130301070100 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
+        start = parse("20130301060000 -0300").astimezone(utc)
+        stop = parse("20130301070100 -0300").astimezone(utc)
         self.assertEqual(Guide.objects.all().count(), 7)
         lang = Lang.objects.get(value=u'pt')
         title = Title.objects.create(lang=lang, value=u'Novo com conflito')
@@ -891,24 +899,21 @@ class GuideConflictTest(TestCase):
         self.assertIsNone(G.previous)
         self.assertEqual(Guide.objects.all().count(), 7)
         ## Create new on start
-        start = parse("20130301050000 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
-        stop = parse( "20130301060000 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
+        start = parse("20130301050000 -0300").astimezone(utc)
+        stop = parse("20130301060000 -0300").astimezone(utc)
         G, created = Guide.objects.get_or_create(
             start=start, stop=stop,
             channel_id=1, programme=prog)
         guides = Guide.objects.all()
+        self.assertEqual(guides.count(), 8)
 
     def test_delete_conflict_end(self):
         from dateutil.parser import parse
         from django.utils.timezone import utc
         from pytz import timezone
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
-        start = parse("20130301133000 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
-        stop = parse( "20130301135000 -0300").astimezone(
-            timezone('UTC')).replace(tzinfo=utc)
+        start = parse("20130301133000 -0300").astimezone(utc)
+        stop = parse("20130301135000 -0300").astimezone(utc)
         self.assertEqual(Guide.objects.all().count(), 7)
         lang = Lang.objects.get(value=u'pt')
         title = Title.objects.create(lang=lang, value=u'Novo com conflito')

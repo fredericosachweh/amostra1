@@ -313,6 +313,8 @@ class AbstractServer(models.Model):
         return "".join(self.execute('/bin/mktemp')).strip()
 
     def show_versions(self):
+        if self.id is None:
+            return ''
         pkgs = settings.RPM_CHECK_VERSION
         rpm_cmd = u"export LANG=c && rpmquery --queryformat '%%{name} \
 %%{version} \\n' %s | grep -v 'not installed'" % (pkgs)
