@@ -202,6 +202,9 @@ systemctl reload --system
 
 
 %changelog
+* Sun Aug 25 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.12.0-1
+- Release to Netcom and life telecom.
+- Integration with albis STB.
 * Wed Aug 07 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.11.2-1
 - Fix recorder command, django-south e django-tastypie
 - Fix rpm spec
