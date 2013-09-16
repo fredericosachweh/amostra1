@@ -4,7 +4,6 @@
 from django.contrib.admin import site
 import models
 
-
 site.register(models.SetTopBox)
 site.register(models.SetTopBoxParameter)
 site.register(models.SetTopBoxChannel)

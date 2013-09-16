@@ -27,8 +27,12 @@ test_all_servers.short_description = ugettext_lazy(
     u'Testar %(verbose_name_plural)s selecionados')
 
 
+class NICInline(admin.TabularInline):
+    model = models.NIC
+
+
 class AdminServer(admin.ModelAdmin):
-    readonly_fields = ('status', 'modified', 'msg',)
+    readonly_fields = ('status', 'modified', 'msg', 'show_versions')
     list_display = ('__unicode__', 'server_type', 'status', 'msg',
         'switch_link',)
     fieldsets = (
@@ -39,9 +43,11 @@ class AdminServer(admin.ModelAdmin):
             ('host', 'ssh_port', ),
             ('username', 'password',),
             ('rsakey'),
+            ('show_versions'),
         )
       }),
     )
+    #inlines = [NICInline]
     actions = [test_all_servers]
 
 
@@ -144,7 +150,7 @@ class AdminDemuxedService(admin.ModelAdmin):
 
 class AdminStreamRecorder(admin.ModelAdmin):
     list_display = ('server', 'description', 'start_time', 'rotate',
-                    'keep_time', 'channel', 'switch_link')
+                    'keep_time', 'channel', 'storage', 'switch_link')
     form = forms.StreamRecorderForm
 
 
@@ -192,6 +198,26 @@ class AdminSoftTranscoder(admin.ModelAdmin):
     )
     form = forms.SoftTranscoderForm
 
+
+class AdminStorage(admin.ModelAdmin):
+    list_display = ('server', 'description', 'n_recorders', 'n_players',
+        'hdd_ssd', 'peso', 'folder', 'switch_link')
+    form = forms.StorageForm
+
+#    server = models.ForeignKey(Server)
+#    id_vendor = models.CharField(max_length=100)
+#    id_product = models.CharField(max_length=100)
+#    bus = models.CharField(max_length=100)
+#    driver = models.CharField(max_length=100)
+#    last_update = models.DateTimeField(auto_now=True)
+#    uniqueid = models.CharField(max_length=100, unique=True, null=True)
+#    adapter_nr = models.PositiveSmallIntegerField()
+
+class AdminDigitalTunerHardware(admin.ModelAdmin):
+    list_display = ('server', 'id_vendor', 'id_product', 'bus', 'driver',
+        'uniqueid', 'adapter_nr')
+    form = forms.DigitalTunerHardwareForm
+
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server, AdminServer)
 admin.site.register(models.Antenna)
@@ -204,5 +230,7 @@ admin.site.register(models.MulticastOutput, AdminMulticastOutput)
 admin.site.register(models.DemuxedService, AdminDemuxedService)
 admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
+admin.site.register(models.Storage, AdminStorage)
+#admin.site.register(models.DigitalTunerHardware, AdminDigitalTunerHardware)
 
 admin.site.unregister(Site)

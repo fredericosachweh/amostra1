@@ -27,7 +27,7 @@
 		field.attr("disabled", "disabled");
 		field.empty();
 		if (type) {
-			var query = '{% url tv.views.input_list_interfaces %}' + '?type=' + type;
+			var query = '{% url 'tv.views.input_list_interfaces' %}' + '?type=' + type;
 			django.jQuery.get(query, function(data) {
 				if (data) {
 					field.append(data);
@@ -46,7 +46,7 @@
 		field.attr("disabled", "disabled");
 		field.empty();
 		if (entrada) {
-			var query = '{% url tv.views.get_demux_input_list %}' + '?entrada=' + entrada + '&type=' + type;
+			var query = '{% url 'tv.views.get_demux_input_list' %}' + '?entrada=' + entrada + '&type=' + type;
 			django.jQuery.get(query, function(data) {
 				if (data) {
 					field.append(data);

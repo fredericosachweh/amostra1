@@ -84,6 +84,9 @@ class StaffResource(NamespacedModelResource):
 class ActorResource(NamespacedModelResource):
     class Meta(MetaDefault):
         queryset = models.Actor.objects.all()
+        filtering = {
+            'name': ALL
+        }
 
 
 class RatingResource(NamespacedModelResource):
@@ -123,7 +126,7 @@ class ProgrammeResource(NamespacedModelResource):
     title = fields.CharField()
     secondary_title = fields.CharField()
     description = fields.CharField()
-    rating = fields.ForeignKey(RatingResource, 'rating', full=False, null=True)
+    rating = fields.ForeignKey(RatingResource, 'rating', full=True, null=True)
     categories = fields.ToManyField(CategoryResource, 'categories', full=False,
         null=True)
     star_ratings = fields.ToManyField(Star_RatingResource, 'star_ratings',

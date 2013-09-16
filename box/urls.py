@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from django.views.generic import TemplateView
 from django.conf import settings
 import os

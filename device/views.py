@@ -62,6 +62,8 @@ def server_update_adapter(request, pk, action):
     # The adapter_nr will come in the format dvb1.frontend0, \
     # so I need to post process it
     aux = re.match(r'dvb(\d+)\.frontend\d+', adapter_nr)
+    if aux is None:
+        return HttpResponse('invalid format\r\n', status=401)
     nr = aux.group(1)
     if action == 'add':
         try:
@@ -79,14 +81,16 @@ def server_update_adapter(request, pk, action):
                                    server=server, adapter_nr=nr)
         adapter.delete()
         log.debug(u'o adapter %s foi removido da base de dados' % adapter)
-    return HttpResponse()
+    return HttpResponse('')
 
 
 def server_list_dvbadapters(request):
-    "Returns avaible DVBWorld devices on server, excluding already used"
+    u"Returns avaible DVBWorld devices on server, excluding already used"
+    log = logging.getLogger('debug')
     pk = request.GET.get('server', None)
     server = get_object_or_404(models.Server, pk=pk)
     tuner_type = request.GET.get('type')
+    log.info('List device type:%s on server:%s', tuner_type, server)
     if tuner_type == 'dvb':
         id_vendor = '04b4'  # DVBWorld S/S2
     elif tuner_type == 'isdb':
@@ -99,15 +103,15 @@ def server_list_dvbadapters(request):
     if tuner_pk:
         tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
         response += '<option value="%s">%s</option>' % (tuner.adapter,
-                                        'DVBWorld %s' % tuner.adapter)
+            tuner.adapter)
     # Populate the not used adapters left
     tuners = models.DvbTuner.objects.filter(server=server)
     adapters = models.DigitalTunerHardware.objects.filter(
-        server=server, id_vendor='04b4')  # DVBWorld S/S2
+        server=server, id_vendor__in=['04b4', '1131'])  # DVBWorld S/S2
     for adapter in adapters:
         if not tuners.filter(adapter=adapter.uniqueid).exists():
-            response += '<option value="%s">%s</option>' % (adapter.uniqueid,
-                                            'DVBWorld %s' % adapter.uniqueid)
+            response += '<option value="%s">%s (%s - %s:%s)</option>' % (
+                adapter.uniqueid, adapter.uniqueid, adapter.bus, adapter.id_vendor, adapter.id_product)
     return HttpResponse(response)
 
 
@@ -225,8 +229,24 @@ def auto_fill_tuner_form(request, ttype):
 (request.POST['freq']))
 
 
-def run_play(player, seektime):
+def run_play(player, seektime, cache, key):
     player.play(time_shift=int(seektime))
+    cache.delete(key)
+
+
+def get_random_on_storage(recorders):
+    from random import randint
+    log = logging.getLogger('tvod')
+    soma = 0
+    s = 0
+    for r in recorders:
+        soma += r.storage.peso
+    rand = randint(0, soma)
+    log.debug('Soma=%d, Rand=%d', soma, rand)
+    for r in recorders:
+        s += r.storage.peso
+        if s >= rand:
+            return r
 
 
 def tvod(request, channel_number=None, command=None, seek=0):
@@ -237,16 +257,19 @@ def tvod(request, channel_number=None, command=None, seek=0):
     from tv.models import Channel
     from client.models import SetTopBox
     from django.core.cache import get_cache
-    from random import choice
+    # TODO: Limit number of players
+    # from django.db.models import F
+    # q = StreamRecorder.objects.filter(
+    #     storage__n_players__lt=F('storage__limit_play_hd') + 1)
     cache = get_cache('default')
-    log = logging.getLogger('device.view')
+    log = logging.getLogger('tvod')
     status = cache._cache.get_stats()
     if len(status) == 0:
         log.error('Memcached is not running')
-        return HttpResponse('Backend Cache is Down',
+        return HttpResponse('',
             mimetype='application/javascript',
             status=500)
-    resp = 'Not running'
+    resp = ''
     ## Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
     ## Find request on cache
@@ -255,23 +278,25 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.info('cache new key="%s"', key)
         cache.set(key, 1)
     else:
-        log.debug('duplicated request key:"%s"', key)
-        return HttpResponse(u'DUP REC', mimetype='application/javascript',
-            status=409)
+        log.error('duplicated request key:"%s"', key)
+        if command != 'stop':
+            return HttpResponse(u'',
+                mimetype='application/javascript', status=409)
     log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"' % (command, ip,
         channel_number, seek))
     ## User
     if request.user.is_anonymous():
         log.debug('User="%s" can\'t play', request.user)
         cache.delete(key)
-        return HttpResponse('Unauthorized', mimetype='application/javascript',
+        return HttpResponse('', mimetype='application/javascript',
             status=401)
     if request.user.groups.filter(name='settopbox').exists():
-        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
+        stb = SetTopBox.objects.get(serial_number=serial)
         log.debug('Filter for STB=%s', stb)
     else:
         cache.delete(key)
-        return HttpResponse('Not SetTopBox', mimetype='application/javascript',
+        return HttpResponse('', mimetype='application/javascript',
             status=401)
     ## Load channel
     try:
@@ -279,7 +304,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     except:
         cache.delete(key)
         log.warning('Not Found: %s', request.get_full_path())
-        return HttpResponse(u'Unavaliable', mimetype='application/javascript',
+        return HttpResponse(u'', mimetype='application/javascript',
             status=404)
     ## Verifica se existe gravação solicitada
     record_time = timezone.now() - timedelta(0, int(seek))
@@ -298,10 +323,10 @@ def tvod(request, channel_number=None, command=None, seek=0):
     if recorders.count() == 0:
         log.info('Record Unavaliable')
         cache.delete(key)
-        return HttpResponse(u'Unavaliable', mimetype='application/javascript',
+        return HttpResponse(u'', mimetype='application/javascript',
             status=404)
-    # TODO: Create a method to priorize server for now random.choice
-    recorder = choice(recorders)
+    # Priorize server (random)
+    recorder = get_random_on_storage(recorders)
     log.info('Current recorder:%s', recorder)
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
@@ -323,18 +348,22 @@ def tvod(request, channel_number=None, command=None, seek=0):
         try:
             if player.status and player.pid:
                 player.stb_port += 1
-            thread.start_new_thread(run_play, (player, seek, ))
-            resp = 'OK'
+            thread.start_new_thread(run_play, (player, seek, cache, key))
+            resp = ''
+            return HttpResponse(
+                '{"response":"%s", "port":%d}' % (resp, player.stb_port),
+                mimetype='application/javascript', status=200)
             #player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
-            resp = 'Error'
+            resp = ''
     elif command == 'pause':
-        player.pause(time_shift=int(seek))
+        resp = player.pause(time_shift=int(seek))
+        resp = ''
     elif command == 'stop':
         if player.pid and player.status:
             player.stop()
-        resp = 'Stoped'
+        resp = ''
     log.debug('Player: %s', player)
     cache.delete(key)
     return HttpResponse(
@@ -350,7 +379,7 @@ def tvod_list(request):
     import time
     from models import StreamRecorder
     from client.models import SetTopBox
-    log = logging.getLogger('device.view')
+    log = logging.getLogger('tvod')
     meta = {
         'previous': "",
         'total_count': 0,
@@ -364,7 +393,8 @@ def tvod_list(request):
         json = simplejson.dumps({'meta': meta, 'objects': obj})
         return HttpResponse(json, mimetype='application/javascript')
     if request.user.groups.filter(name='settopbox').exists():
-        stb = SetTopBox.objects.get(serial_number=request.user.username)
+        serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
+        stb = SetTopBox.objects.get(serial_number=serial)
         log.debug('Filter for STB=%s', stb)
     else:
         json = simplejson.dumps({'meta': meta, 'objects': obj})

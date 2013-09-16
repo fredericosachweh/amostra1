@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import patterns
-from django.conf.urls.defaults import include
-from django.conf.urls.defaults import url
-from django.conf.urls.defaults import handler404
-from django.conf.urls.defaults import handler500
+from django.conf.urls import patterns
+from django.conf.urls import include
+from django.conf.urls import url
+from django.conf.urls import handler404
+from django.conf.urls import handler500
 from django.views.generic import TemplateView
 from django.utils.importlib import import_module
 
@@ -60,4 +60,6 @@ for app in settings.INSTALLED_APPS:
             #urlpatterns.insert(0, urls)
             urlpatterns += patterns('', urls)
         except ImportError as e:
+            pass
+        except AttributeError as e:
             pass

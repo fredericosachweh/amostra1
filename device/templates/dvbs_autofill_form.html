@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% load url from future %}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="{{ LANGUAGE_CODE }}" xml:lang="{{ LANGUAGE_CODE }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
 	<head>
 		<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}admin/css/base.css" />
@@ -22,7 +22,7 @@
 					django.jQuery('select#id_chan').attr("disabled", "disabled");
 					django.jQuery(':submit').attr("disabled", "disabled");
 				    // Fill the channels <select> field
-				    query =  "{% url dvbinfo.views.get_dvbs_channels %}?sat=" + sat;
+				    query =  "{% url 'dvbinfo.views.get_dvbs_channels' %}?sat=" + sat;
 					if (django.jQuery('input#id_fta').attr('checked')) query += '&fta=1';
 				    django.jQuery.getJSON(query, function(data) {
 						django.jQuery('select#id_chan').empty();
@@ -42,7 +42,7 @@
 			    var chan = django.jQuery('select#id_chan').val();
 				if (chan && !isNaN(chan)) {
 					django.jQuery(':submit').attr("disabled", "disabled");
-					query =  "{% url dvbinfo.views.get_transponders %}?chan=" + chan;
+					query =  "{% url 'dvbinfo.views.get_transponders' %}?chan=" + chan;
 					django.jQuery.getJSON(query, function(data) {
 						var json = data[0];
 						django.jQuery('input#id_freq').val(json.fields.frequency);

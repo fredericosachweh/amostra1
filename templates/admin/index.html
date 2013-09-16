@@ -1,7 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load i18n admin_static %}
+{% load url from future %}
 
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}" />{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}admin/css/dashboard.css" />{% endblock %}
 
 {% block coltype %}colMS{% endblock %}
 
@@ -46,7 +47,7 @@
     <table>
     <caption>Status de monitoramento</caption>
         <tr>
-            <th scope="row"><a href="{% url admin:mon_dashboard %}">Dashboard de monitoramento</a></th>
+            <th scope="row"><a href="{% url 'admin:mon_dashboard' %}">Dashboard de monitoramento</a></th>
 
             <td>&nbsp;</a></td>
 
@@ -58,7 +59,7 @@
     <table>
     <caption>Configuração</caption>
         <tr>
-            <th scope="row"><a href="{% url site_settings %}">Parametros</a></th>
+            <th scope="row"><a href="{% url 'site_settings' %}">Parametros</a></th>
 
             <td>&nbsp;</a></td>
 

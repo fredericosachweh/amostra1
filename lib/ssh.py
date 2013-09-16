@@ -195,22 +195,27 @@ class Connection(object):
 
     def close(self):
         """Closes the connection and cleans up."""
-        log = logging.getLogger('device.remotecall')
+        if logging is not None:
+            log = logging.getLogger('device.remotecall')
         # Close SFTP Connection.
         if self._sftp_live:
             self._sftp.close()
             self._sftp_live = False
-            log.debug('close sftp')
+            if logging is not None:
+                log.debug('close sftp')
         # Close the SSH Transport.
         if self._transport_live:
             self._transport.close()
             self._transport_live = False
-            log.debug('close ssh')
+            if logging is not None:
+                log.debug('close ssh')
 
     def __del__(self):
         """Attempt to clean up if not explicitly closed."""
-        log = logging.getLogger('device.remotecall')
-        log.debug('__DEL__')
+        if logging is not None:
+            pass
+            #log = logging.getLogger('device.remotecall')
+            #log.debug('__DEL__:%s', self)
         self.close()
 
     def genKey(self):

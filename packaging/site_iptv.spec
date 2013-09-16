@@ -1,6 +1,6 @@
 Name:           site_iptv
 Version:        GIT_CURRENT_VERSION
-Release:        0%{?dist}
+Release:        1%{?dist}
 Summary:        Sistema IPTV - Cianet
 
 Group:          Development/Languages
@@ -21,7 +21,21 @@ BuildArch:      noarch
 BuildRequires:  python-devel python-setuptools-devel
 BuildRequires:  systemd-units
 
+
+%if 0%{?fedora} >= 19
+Requires:       python-pillow
+%else
+Requires:       python-imaging
+%endif
+
+%if 0%{?fedora} >= 18
 Requires:       python-django >= 1.4.5
+BuildRequires:  python-django >= 1.4.5
+%else
+Requires:       Django >= 1.4
+BuildRequires:  Django >= 1.4
+%endif
+
 #Requires:       mysql-server
 #Requires:       MySQL-python
 Requires:       postgresql-server
@@ -29,8 +43,9 @@ Requires:       python-psycopg2
 Requires:       python-imaging
 Requires:       python-flup
 
-# Requires:       django-piston ## Substituido pelo 'django-tastypie'
-Requires:       django-tastypie >= 0.9.14
+## Por hora sem migração Usando embutino no pacote com submodulo
+# Requires:       Django-south
+# Requires:       django-tastypie >= 0.9.14
 Requires:       python-paramiko
 Requires:       python-dateutil
 Requires:       pytz
@@ -49,9 +64,8 @@ Requires:       pynag-cianet >= 0.1.1
 Requires:       nginxcianet >= 1.4.1
 
 ## Por hora para a versão de demo vai instalar
-Requires:       multicat,dvblast
-## Por hora sem migração
-Requires:       Django-south
+Requires:       multicat >= 2.0.1
+Requires:       dvblast >= 2.2.1
 
 Prefix:         /iptv
 
@@ -100,6 +114,7 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/multicat/sockets
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast/sockets
+%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/diskctrl
 #%{__install} -p -d -m 0755 %{buildroot}/%{prefix}/%{_localstatedir}/lib/mysql
 %{__install} -p -d -m 0700 %{buildroot}/%{prefix}/%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
@@ -130,9 +145,11 @@ echo "su - postgres"
 echo "initdb -D /iptv/var/lib/postgresql"
 echo "su - nginx"
 echo "%{__python} %{site_home}/manage.py syncdb"
-echo "%{__python} %{site_home}/manage.py reset client --noinput"
-echo "%{__python} %{site_home}/manage.py reset epg --noinput"
 echo "%{__python} %{site_home}/manage.py collectstatic --noinput"
+echo ""
+echo "Para resetar algum app:"
+echo "%{__python} %{site_home}/manage.py reset <app> --noinput"
+echo "Para resetar os gravadores: %{site_home}device/storage_recorder_player.sql"
 echo "========================================================================="
 echo -e "\033[0m"
 
@@ -146,6 +163,7 @@ if [ $1 = 0 ]; then
 fi
 
 %postun
+systemctl reload --system
 
 %files
 %defattr(-,%{nginx_user},%{nginx_group},-)
@@ -163,6 +181,7 @@ fi
 %dir %{prefix}/%{_localstatedir}/run/multicat/sockets
 %dir %{prefix}/%{_localstatedir}/run/dvblast
 %dir %{prefix}/%{_localstatedir}/run/dvblast/sockets
+%dir %{prefix}/%{_localstatedir}/run/diskctrl
 %dir %{prefix}/%{_localstatedir}/www
 %dir %{prefix}/%{_localstatedir}/run/%{name}
 %dir %{prefix}/%{_localstatedir}/lib/cache
@@ -183,6 +202,14 @@ fi
 
 
 %changelog
+* Sun Aug 25 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.12.0-1
+- Release to Netcom and life telecom.
+- Integration with albis STB.
+* Wed Aug 07 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.11.2-1
+- Fix recorder command, django-south e django-tastypie
+- Fix rpm spec
+* Tue Jul 02 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.8.0-0
+- Storage, player and recorder fix
 * Wed May 16 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.2-0
 - Fix erp access on tv.channel API.
 * Tue May 07 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.1-2
