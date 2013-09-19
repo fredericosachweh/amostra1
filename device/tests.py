@@ -1230,7 +1230,7 @@ class TestRecord(TestCase):
             channel=Channel.objects.all()[0],
             start_time=start_time
         )
-        cmd_expected = u'%s -l %s/%d/ \
+        cmd_expected = u'%s -l %s/%d/  \
 -r %d -U -u @127.0.0.1:20000/ifaddr=10.0.1.10 %s/%d' % (
             settings.MULTICAT_COMMAND,
             settings.CHANNEL_RECORD_DISKCONTROL_DIR,
