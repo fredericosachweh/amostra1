@@ -25,7 +25,18 @@ def test_all_servers(modeladmin, request, queryset):
             s.auto_create_nic()
 
 test_all_servers.short_description = ugettext_lazy(
-    u'Testar %(verbose_name_plural)s selecionados')
+    'Testar %(verbose_name_plural)s selecionados')
+
+
+def recovery_server(modeladmin, request, queryset):
+    for s in queryset:
+        devices = models.DeviceServer.objects.filter(server=s, status=True)
+        for d in devices:
+            d.status = False
+            d.save()
+
+recovery_server.short_description = ugettext_lazy(
+    'Recuperar %(verbose_name_plural)s selecionados')
 
 
 class NICInline(admin.TabularInline):
@@ -49,12 +60,13 @@ class AdminServer(admin.ModelAdmin):
       }),
     )
     #inlines = [NICInline]
-    actions = [test_all_servers]
+    actions = [test_all_servers, recovery_server]
 
 
 class AdminDevice(admin.ModelAdmin):
     list_display = ('__unicode__', 'status', 'link_status', 'server_status',
         'switch_link')
+    list_per_page = 20
 
 
 class AdminStream(admin.ModelAdmin):
@@ -145,8 +157,9 @@ class AdminMulticastOutput(admin.ModelAdmin):
 
 class AdminDemuxedService(admin.ModelAdmin):
     list_display = ('sid', 'provider', 'service_desc',
-                    'server', 'sink', 'switch_link')
+                    'server', 'nic_src', 'sink', 'switch_link')
     form = forms.DemuxedServiceForm
+    list_per_page = 20
 
 
 class AdminStreamRecorder(admin.ModelAdmin):
