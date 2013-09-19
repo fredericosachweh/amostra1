@@ -283,7 +283,7 @@ INSTALLED_APPS = (
     # TV
     'tv',
     # Video on demand
-    'vod',
+    #'vod',
     # Tools app
     'tools',
     # Client
@@ -332,6 +332,10 @@ VLC_LOGS_DIR = '/iptv/var/log/vlc/'
 
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
+
+# Node application settings
+NBRIDGE_COMMAND = '/iptv/nbridge/main.js'
+NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
