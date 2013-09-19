@@ -116,3 +116,9 @@ lalala.conf
 224.0.0.17:10000/udp 1 1
 
 
+##### SKY
+#  -m psk_8
+
+/iptv/bin/dvblast -a 0 -f 10722000 -s 30000000
+/iptv/bin/dvblast -a 0 -f 11382000 -s 30000000 -F 3/4
+
