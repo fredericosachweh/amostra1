@@ -2046,9 +2046,11 @@ class RealTimeEncript(models.Model):
 
 class Nbridge(DeviceServer):
     bind_addr = models.CharField(_('Bind'), max_length=100,
-        blank=True, null=True, help_text=_('Ex. /tmp/nbridge.sock'))
+        blank=True, null=True,
+        help_text=_('Ex. /iptv/var/run/nbridge/nbridge.sock'))
     config_file = models.CharField(_('Configuração'), max_length=100,
-        blank=True, null=True, help_text=_('Ex. /iptv/nbridge/config.json'))
+        blank=True, null=True,
+        help_text=_('Ex. /iptv/etc/nbridge/config.json'))
     middleware_addr = models.CharField('Middleware', max_length=100,
         blank=True, null=True, help_text=_('Ex. http://10.1.1.25/'))
 
