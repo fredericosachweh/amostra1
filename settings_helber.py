@@ -60,16 +60,16 @@ else:
         }
     }
     #DATABASES['default'] = DATABASES['pglocal']
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#        'NAME': 'iptv',
-#        'USER': 'iptv',
-#        'PASSWORD': 'iptv',
-#        'HOST': '127.0.0.1',
-#        'PORT': 5432,
-#    }
-#}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '127.0.0.1',
+        'PORT': 5432,
+    }
+}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'

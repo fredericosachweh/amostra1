@@ -32,7 +32,7 @@ urlpatterns = patterns('',
     # Configuração de canais
     (r'^%stv/' % settings.ROOT_URL, include('tv.urls')),
     # Interface dos setupbox
-    (r'^%sbox/' % settings.ROOT_URL, include('box.urls')),
+    #(r'^%sbox/' % settings.ROOT_URL, include('box.urls')),
     # EPG
     (r'^%sepg/' % settings.ROOT_URL, include('epg.urls')),
     # tools

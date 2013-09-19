@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from __future__ import division
+from __future__ import division, unicode_literals
 import logging
 from django.db import models
 from django.utils.translation import ugettext as _
@@ -329,10 +329,12 @@ class AbstractServer(models.Model):
 
 class Server(AbstractServer):
     SERVER_TYPE_CHOICES = [
-        (u'local', _(u'Servidor local DEMO')),
-        (u'dvb', _(u'Sintonizador DVB')),
-        (u'recording', _(u'Servidor TVoD')),
-        ]
+        ('local', _('Servidor local DEMO')),
+        ('dvb', _('Sintonizador DVB')),
+        ('recording', _('Servidor TVoD')),
+        ('nbridge', _('Servidor NBridge')),
+    ]
+
     server_type = models.CharField(_(u'Tipo de Servidor'), max_length=100,
         choices=SERVER_TYPE_CHOICES)
 
@@ -417,6 +419,7 @@ class UniqueIP(models.Model):
     Classe de endereço ip externo (na rede dos clientes)
     """
     class Meta:
+        ordering = ('ip', )
         verbose_name = _(u'Endereço IPv4 multicast')
         verbose_name_plural = _(u'Endereços IPv4 multicast')
     ip = models.IPAddressField(_(u'Endereço IP'),
@@ -1056,6 +1059,7 @@ class DvbTuner(DigitalTuner):
         (u'V', _(u'Vertical (V)')),
         (u'R', _(u'Direita (R)')),
         (u'L', _(u'Esquerda (L)')),
+        (u'U', _(u'Não especificada')),
     )
     FEC_CHOICES = (
         (u'0', u'Off'),
@@ -1108,6 +1112,8 @@ class DvbTuner(DigitalTuner):
                 cmd += ' -v 13'
             elif self.polarization == 'H':
                 cmd += ' -v 18'
+            elif self.polarization == 'U':
+                pass
             else:
                 raise NotImplementedError
         if self.modulation == '8PSK':
@@ -1451,6 +1457,7 @@ class MulticastOutput(IPOutput):
     class Meta:
         verbose_name = _(u'Saída IP multicast')
         verbose_name_plural = _(u'Saídas IP multicast')
+        ordering = ('ip', )
 
     ip = models.IPAddressField(_(u'Endereço IP multicast'), unique=True)
     nic_sink = models.ForeignKey(NIC, related_name='nic_sink',
@@ -2036,3 +2043,60 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
 class RealTimeEncript(models.Model):
     u"""RealTime to manage stream flow"""
 
+
+class Nbridge(DeviceServer):
+    bind_addr = models.CharField(_('Bind'), max_length=100,
+        blank=True, null=True,
+        help_text=_('Ex. /iptv/var/run/nbridge/nbridge.sock'))
+    config_file = models.CharField(_('Configuração'), max_length=100,
+        blank=True, null=True,
+        help_text=_('Ex. /iptv/etc/nbridge/config.json'))
+    middleware_addr = models.CharField('Middleware', max_length=100,
+        blank=True, null=True, help_text=_('Ex. http://10.1.1.25/'))
+
+    def switch_link(self):
+        module_name = self._meta.module_name
+        running = self.running()
+
+        if running == False and self.status == True:
+            url = reverse('%s_recover' % module_name,
+                kwargs={'pk': self.id})
+            return 'Crashed<a href="%s" id="%s_id_%s" style="color:red;">' \
+                   ' ( Recuperar )</a> ' % (
+                    url, module_name, self.id)
+        if running == True and self.status == True:
+            url = reverse('%s_stop' % module_name,
+                kwargs={'pk': self.id})
+            return '<a href="%s" id="%s_id_%s" style="color:green;">' \
+                   'Rodando</a>' % (url, module_name, self.id)
+        url = reverse('%s_start' % module_name,
+            kwargs={'pk': self.id})
+        return '<a href="%s" id="%s_id_%s" style="color:red;">Parado</a>' \
+            % (url, module_name, self.id)
+
+    switch_link.allow_tags = True
+    switch_link.short_description = u'Status'
+
+    def __unicode__(self):
+        return '%s' % self.server.name
+
+    class Meta:
+        ordering = ['server__name']
+        verbose_name = _('Servidor NBridge')
+        verbose_name_plural = _('Servidores NBridge')
+
+    def start(self, *args, **kwargs):
+        cmd = '%s %s ' % (settings.NODEJS_COMMAND, settings.NBRIDGE_COMMAND)
+
+        if (self.bind_addr):
+            cmd += '--bind %s ' % self.bind_addr
+
+        if (self.config_file):
+            cmd += '--config %s ' % self.config_file
+
+        if (self.middleware_addr):
+            cmd += '--middleware %s ' % self.middleware_addr
+
+        self.pid = self.server.execute_daemon(cmd, settings.NBRIDGE_LOGS_DIR)
+        self.status = True
+        self.save()

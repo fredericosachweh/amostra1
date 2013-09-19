@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-# -*- encoding:utf-8 -*-
+# -*- encoding: utf-8 -*-
 
 """
 Modulo administrativo do controle de midias e gravacoes
 """
 
+from __future__ import unicode_literals
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy, ugettext as _
 from django.contrib.contenttypes.models import ContentType
@@ -24,7 +25,18 @@ def test_all_servers(modeladmin, request, queryset):
             s.auto_create_nic()
 
 test_all_servers.short_description = ugettext_lazy(
-    u'Testar %(verbose_name_plural)s selecionados')
+    'Testar %(verbose_name_plural)s selecionados')
+
+
+def recovery_server(modeladmin, request, queryset):
+    for s in queryset:
+        devices = models.DeviceServer.objects.filter(server=s, status=True)
+        for d in devices:
+            d.status = False
+            d.save()
+
+recovery_server.short_description = ugettext_lazy(
+    'Recuperar %(verbose_name_plural)s selecionados')
 
 
 class NICInline(admin.TabularInline):
@@ -48,12 +60,13 @@ class AdminServer(admin.ModelAdmin):
       }),
     )
     #inlines = [NICInline]
-    actions = [test_all_servers]
+    actions = [test_all_servers, recovery_server]
 
 
 class AdminDevice(admin.ModelAdmin):
     list_display = ('__unicode__', 'status', 'link_status', 'server_status',
         'switch_link')
+    list_per_page = 20
 
 
 class AdminStream(admin.ModelAdmin):
@@ -144,8 +157,9 @@ class AdminMulticastOutput(admin.ModelAdmin):
 
 class AdminDemuxedService(admin.ModelAdmin):
     list_display = ('sid', 'provider', 'service_desc',
-                    'server', 'sink', 'switch_link')
+                    'server', 'nic_src', 'sink', 'switch_link')
     form = forms.DemuxedServiceForm
+    list_per_page = 20
 
 
 class AdminStreamRecorder(admin.ModelAdmin):
@@ -218,6 +232,27 @@ class AdminDigitalTunerHardware(admin.ModelAdmin):
         'uniqueid', 'adapter_nr')
     form = forms.DigitalTunerHardwareForm
 
+
+class AdminNbridge(admin.ModelAdmin):
+    list_display = ('server_desc', 'status', 'switch_link') 
+    fieldsets = (
+        (_('Dados Gerais'), {
+            'fields': (
+                'server', 'description'
+            )
+        }),
+        (_('Parametros de Inicialização'),{
+            'fields': (
+                'bind_addr', 'config_file', 'middleware_addr'
+            )
+        })
+    )    
+
+    def server_desc(self, obj):
+        return '%s (%s)' % (obj.description, obj.server.host)
+    server_desc.short_description = _('Descrição')
+
+
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server, AdminServer)
 admin.site.register(models.Antenna)
@@ -232,5 +267,7 @@ admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
 admin.site.register(models.Storage, AdminStorage)
 #admin.site.register(models.DigitalTunerHardware, AdminDigitalTunerHardware)
+admin.site.register(models.Nbridge, AdminNbridge)
+
 
 admin.site.unregister(Site)

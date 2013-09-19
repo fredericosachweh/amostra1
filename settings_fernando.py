@@ -19,11 +19,11 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'iptv_fernandosilva',
-            'USER': 'fernandosilva',
-            'PASSWORD': 'xyz',
+            'NAME': 'iptv',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
             'HOST': '127.0.0.1',
-            'PORT': '5432',
+            'PORT': '5432'
         }
     }
 
@@ -35,7 +35,7 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
 STATIC_URL = '/tv/static/'
 #ROOT_URLCONF = '/tv'
 
-IPTV_LOG_DIR = '/home/fernandosilva/log'
+IPTV_LOG_DIR = '/home/fernando/log'
 
 ## Color: \033[35m \033[0m
 # \t%(module)s->%(funcName)s->%(lineno)d
@@ -169,5 +169,5 @@ EPG_IMPORT_CREDENTIALS = {
 }
 
 # Node application settings
-NBRIDGE_COMMAND = '/home/fernandosilva/iptv/node/main.js'
-NBRIDGE_LOGS_DIR = '/home/fernandosilva/iptv/node/'
+NODE_COMMAND = '/home/fernandosilva/iptv/node/main.js'
+NODE_LOGS_DIR = '/home/fernandosilva/log/'
