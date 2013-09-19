@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 """Friendly Python SSH2 interface."""
-
+from __future__ import unicode_literals
 import os
 import logging
 import paramiko
@@ -46,7 +46,7 @@ class Connection(object):
                     private_key = '~/.ssh/id_dsa'
                 else:
                     log.error('Need password or key to connect')
-                    raise TypeError, "You have not specified a password or key."
+                    raise "You have not specified a password or key."
             private_key_file = os.path.expanduser(private_key)
             rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
             self._transport.connect(username=username, pkey=rsa_key)
@@ -118,80 +118,16 @@ class Connection(object):
         pidcommand = "/bin/cat %s" % pidfile_path
         # # Buscando o pid
         output = self.execute(pidcommand)
+        ## unlink pidfile
+        unlink_cmd = '/usr/bin/unlink %s' % pidfile_path
+        log.debug('Clean pid file:%s', unlink_cmd)
+        self.execute(unlink_cmd)
         if len(output['output']):
             pid = int(output['output'][0].strip())
-            log.info('Daemon started with pid [%d] command:%s', pid, fullcommand)
+            log.info('Daemon started with pid [%d] command:%s', pid,
+                fullcommand)
             ret['pid'] = pid
         return ret
-
-    def execute_with_timeout(self, command, timeout=10):
-        """
-        Executa comando no servidor com timeout e retorna o stdout concatenado
-        com o stderr
-
-        Estudar e possibilidade para melhorar a conexão:
-        EPoll:
-        http://scotdoyle.com/python-epoll-howto.html
-        Select:
-        http://www.doughellmann.com/PyMOTW/select/
-        twisted:
-        http://twistedmatrix.com/trac/
-        """
-        import socket
-        import select
-        import time
-        log = logging.getLogger('device.remotecall')
-        start = time.time()
-        channel = self._transport.open_session()
-        channel.settimeout(timeout)
-        channel.exec_command(command)
-        resp = ''
-        linha = ''
-        run = True
-        while run:
-            try:
-                r, w, e = select.select([channel], [], [], timeout)
-                if len(r) > 0:
-                    if channel.recv_ready():
-                        linha = r[0].recv(1024)
-                    elif channel.recv_stderr_ready():
-                        linha = r[0].recv_stderr(1024)
-                    else:
-                        r[0].send_ready()
-                        r[0].recv(1)
-                if len(e) > 0:
-                    channel.close()
-                    run = False
-                    break
-                if len(w) > 0:
-                    pass
-                if time.time() - start > timeout:
-                    channel.send_exit_status(15)
-                    kcommand = "/bin/kill `ps axw | grep '%s' | grep -v grep | awk '{print $1}'`"
-                    try:
-                        channel.get_transport().open_session().exec_command(\
-                            kcommand % (command)
-                        )
-                    except Exception as e:
-                        log.error('Execption on kill:%s', e)
-                    channel.close()
-                    run = False
-                    break
-            except KeyboardInterrupt as e:
-                channel.send_exit_status(9)
-                channel.close()
-                run = False
-                log.error('KeyboardInterrupt:%s', e)
-                break
-            except socket.timeout as e:
-                channel.close()
-                run = False
-                log.error('Socket timeout:%s', e)
-                break
-            if linha:
-                resp += linha
-                linha = ''
-        return resp
 
     def close(self):
         """Closes the connection and cleans up."""
