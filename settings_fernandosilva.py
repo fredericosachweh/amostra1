@@ -18,12 +18,12 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'iptv',
-            'USER': 'cioban',
-            'PASSWORD': 'sergio',
-            'HOST': '10.1.1.49',
-            'PORT': '3306',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'iptv_fernandosilva',
+            'USER': 'fernandosilva',
+            'PASSWORD': 'xyz',
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
         }
     }
 
@@ -167,3 +167,7 @@ EPG_IMPORT_CREDENTIALS = {
     'username': '91037581920@revistaeletronica.com.br',
     'password': '91037581920',
 }
+
+# Node application settings
+NBRIDGE_COMMAND = '/home/fernandosilva/iptv/node/main.js'
+NBRIDGE_LOGS_DIR = '/home/fernandosilva/iptv/node/'
