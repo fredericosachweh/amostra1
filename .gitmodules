@@ -19,3 +19,6 @@
 [submodule "vendor/django-south"]
 	path = vendor/django-south
 	url = https://github.com/lambdafu/django-south.git
+[submodule "vendor/model_mommy"]
+	path = vendor/model_mommy
+	url = https://github.com/vandersonmota/model_mommy.git
