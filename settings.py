@@ -336,26 +336,35 @@ EXTERNAL_IP_MASK = '239.1.%d.%d'
 # Node application settings
 NBRIDGE_COMMAND = '/iptv/nbridge/main.js'
 NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
+NODEJS_COMMAND = '/bin/node'
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
     # Create a temporary dir for when running tests
     tmpdir = mkdtemp(prefix='iptv-test-')
+    os.chmod(tmpdir, 0777)
     # Change vars to point the new location
     MULTICAT_LOGS_DIR = tmpdir + MULTICAT_LOGS_DIR
     os.makedirs(MULTICAT_LOGS_DIR)
+    os.chmod(MULTICAT_LOGS_DIR, 0777)
     MULTICAT_SOCKETS_DIR = tmpdir + MULTICAT_SOCKETS_DIR
     os.makedirs(MULTICAT_SOCKETS_DIR)
+    os.chmod(MULTICAT_SOCKETS_DIR, 0777)
     DVBLAST_CONFS_DIR = tmpdir + DVBLAST_CONFS_DIR
     os.makedirs(DVBLAST_CONFS_DIR)
+    os.chmod(DVBLAST_CONFS_DIR, 0777)
     DVBLAST_LOGS_DIR = tmpdir + DVBLAST_LOGS_DIR
     os.makedirs(DVBLAST_LOGS_DIR)
+    os.chmod(DVBLAST_LOGS_DIR, 0777)
     DVBLAST_SOCKETS_DIR = tmpdir + DVBLAST_SOCKETS_DIR
     os.makedirs(DVBLAST_SOCKETS_DIR)
+    os.chmod(DVBLAST_SOCKETS_DIR, 0777)
     VLC_VIDEOFILES_DIR = tmpdir + VLC_VIDEOFILES_DIR
     os.makedirs(VLC_VIDEOFILES_DIR)
+    os.chmod(VLC_VIDEOFILES_DIR, 0777)
     CHANNEL_RECORD_DIR = tmpdir + CHANNEL_RECORD_DIR
     os.makedirs(CHANNEL_RECORD_DIR)
+    os.chmod(CHANNEL_RECORD_DIR, 0777)
     # Pseudo executables folder
     HELPER_FOLDER = os.path.join(PROJECT_ROOT_PATH, 'device', 'helper')
     # Settings to replace
