@@ -340,10 +340,11 @@ VLC_LOGS_DIR = '/iptv/var/log/vlc/'
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
 
-# Node application settings
-NBRIDGE_COMMAND = '/iptv/nbridge/main.js'
+NODEJS_COMMAND = '/usr/bin/node'
+NBRIDGE_COMMAND = '/iptv/usr/lib/nbridge/main.js'
 NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
-NODEJS_COMMAND = '/bin/node'
+NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
+
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
