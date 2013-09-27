@@ -258,6 +258,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
+        'nbridge': {
+            'handlers': ['file.nbridge'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
     }
 }
 
@@ -284,6 +289,8 @@ INSTALLED_APPS = (
     'tv',
     # Video on demand
     #'vod',
+    # Node bridge
+    'nbridge',
     # Tools app
     'tools',
     # Client

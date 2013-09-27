@@ -233,25 +233,6 @@ class AdminDigitalTunerHardware(admin.ModelAdmin):
     form = forms.DigitalTunerHardwareForm
 
 
-class AdminNbridge(admin.ModelAdmin):
-    list_display = ('server_desc', 'status', 'switch_link') 
-    fieldsets = (
-        (_('Dados Gerais'), {
-            'fields': (
-                'server', 'description'
-            )
-        }),
-        (_('Parametros de Inicialização'),{
-            'fields': (
-                'bind_addr', 'config_file', 'middleware_addr'
-            )
-        })
-    )    
-
-    def server_desc(self, obj):
-        return '%s (%s)' % (obj.description, obj.server.host)
-    server_desc.short_description = _('Descrição')
-
 
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server, AdminServer)
@@ -267,7 +248,5 @@ admin.site.register(models.StreamRecorder, AdminStreamRecorder)
 admin.site.register(models.SoftTranscoder, AdminSoftTranscoder)
 admin.site.register(models.Storage, AdminStorage)
 #admin.site.register(models.DigitalTunerHardware, AdminDigitalTunerHardware)
-admin.site.register(models.Nbridge, AdminNbridge)
-
 
 admin.site.unregister(Site)
