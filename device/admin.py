@@ -61,6 +61,7 @@ class AdminServer(admin.ModelAdmin):
     )
     #inlines = [NICInline]
     actions = [test_all_servers, recovery_server]
+    list_per_page = 20
 
 
 class AdminDevice(admin.ModelAdmin):
@@ -71,10 +72,12 @@ class AdminDevice(admin.ModelAdmin):
 
 class AdminStream(admin.ModelAdmin):
     list_display = ('__unicode__', 'status',)
+    list_per_page = 20
 
 
 class AdminSource(admin.ModelAdmin):
     list_display = ('__unicode__', 'in_use', 'destinations',)
+    list_per_page = 20
 
 
 def start_device(modeladmin, request, queryset):
@@ -105,12 +108,14 @@ class AdminDvbTuner(admin.ModelAdmin):
                     'modulation', 'fec', 'server', 'adapter',
                     'antenna', 'tuned', 'switch_link')
     form = forms.DvbTunerForm
+    list_per_page = 20
 
 
 class AdminIsdbTuner(admin.ModelAdmin):
     actions = [start_device, stop_device, scan_device]
     list_display = ('server', 'frequency', 'tuned', 'switch_link')
     form = forms.IsdbTunerForm
+    list_per_page = 20
 
 
 class AdminUnicastInput(admin.ModelAdmin):
@@ -118,6 +123,7 @@ class AdminUnicastInput(admin.ModelAdmin):
     list_display = ('port', 'interface', 'protocol',
                     'tuned', 'server', 'switch_link')
     form = forms.UnicastInputForm
+    list_per_page = 20
 
 
 class AdminMulticastInput(admin.ModelAdmin):
@@ -125,10 +131,12 @@ class AdminMulticastInput(admin.ModelAdmin):
     list_display = ('ip', 'port', 'interface', 'server', 'protocol',
         'tuned', 'switch_link')
     form = forms.MulticastInputForm
+    list_per_page = 20
 
 
 class UniqueIPInline(generic.GenericTabularInline):
     model = models.UniqueIP
+    list_per_page = 20
 
 
 class AdminFileInput(admin.ModelAdmin):
@@ -136,6 +144,7 @@ class AdminFileInput(admin.ModelAdmin):
     list_display = ('filename', 'description', 'server', 'repeat',
         'switch_link')
     form = forms.FileInputForm
+    list_per_page = 20
 
 
 class AdminMulticastOutput(admin.ModelAdmin):
@@ -153,6 +162,7 @@ class AdminMulticastOutput(admin.ModelAdmin):
         }),
     )
     form = forms.MulticastOutputForm
+    list_per_page = 20
 
 
 class AdminDemuxedService(admin.ModelAdmin):
@@ -166,6 +176,7 @@ class AdminStreamRecorder(admin.ModelAdmin):
     list_display = ('server', 'description', 'start_time', 'rotate',
                     'keep_time', 'channel', 'storage', 'switch_link')
     form = forms.StreamRecorderForm
+    list_per_page = 20
 
 
 class AdminUniqueIP(admin.ModelAdmin):
@@ -180,6 +191,7 @@ class AdminUniqueIP(admin.ModelAdmin):
         }),
     )
     form = forms.UniqueIPForm
+    list_per_page = 20
 
 
 class AdminSoftTranscoder(admin.ModelAdmin):
@@ -211,26 +223,21 @@ class AdminSoftTranscoder(admin.ModelAdmin):
         }),
     )
     form = forms.SoftTranscoderForm
+    list_per_page = 20
 
 
 class AdminStorage(admin.ModelAdmin):
     list_display = ('server', 'description', 'n_recorders', 'n_players',
         'hdd_ssd', 'peso', 'folder', 'switch_link')
     form = forms.StorageForm
+    list_per_page = 20
 
-#    server = models.ForeignKey(Server)
-#    id_vendor = models.CharField(max_length=100)
-#    id_product = models.CharField(max_length=100)
-#    bus = models.CharField(max_length=100)
-#    driver = models.CharField(max_length=100)
-#    last_update = models.DateTimeField(auto_now=True)
-#    uniqueid = models.CharField(max_length=100, unique=True, null=True)
-#    adapter_nr = models.PositiveSmallIntegerField()
 
 class AdminDigitalTunerHardware(admin.ModelAdmin):
     list_display = ('server', 'id_vendor', 'id_product', 'bus', 'driver',
         'uniqueid', 'adapter_nr')
     form = forms.DigitalTunerHardwareForm
+    list_per_page = 20
 
 
 class AdminNbridge(admin.ModelAdmin):
@@ -246,7 +253,7 @@ class AdminNbridge(admin.ModelAdmin):
                 'bind_addr', 'config_file', 'middleware_addr'
             )
         })
-    )    
+    )
 
     def server_desc(self, obj):
         return '%s (%s)' % (obj.description, obj.server.host)
