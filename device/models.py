@@ -1488,7 +1488,7 @@ class Storage(DeviceServer):
 
     folder = models.CharField(_(u'Diretório destino'), max_length=500,
         default=settings.CHANNEL_RECORD_DIR, )
-    hdd_ssd = models.BooleanField(_(u'Disco SSD (Estado sólido'),
+    hdd_ssd = models.BooleanField(_(u'Disco SSD (Disco Estado Sólido)'),
         default=False)
     peso = models.PositiveIntegerField(
         _(u'Peso'),
@@ -1621,7 +1621,7 @@ class StreamRecorder(OutputModel, DeviceServer):
                 log.info('pcrpid=%s' % pcrpid)
 
         b = ''
-        if self.stream_hd and self.storage.hdd_ssd:
+        if self.stream_hd and not self.storage.hdd_ssd:
             b = ' -b'
         cmd = u'%s -l %s %s%s -r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.CHANNEL_RECORD_COMMAND,
