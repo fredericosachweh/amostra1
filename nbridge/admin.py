@@ -20,6 +20,12 @@ class AdminNbridge(admin.ModelAdmin):
             'fields': (
                 'middleware_addr',
             )
+        }),
+        (_('Debug'), {
+            'fields': (
+                'debug',
+                'debug_port'
+            )
         })
     )
 
