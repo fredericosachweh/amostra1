@@ -1815,8 +1815,12 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.control_socket = '%sclient_%d.sock' % (
             settings.MULTICAT_SOCKETS_DIR,
             self.pk)
-        cmd = u'%s -l %s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
+        b = ''
+        if self.recorder.stream_hd and not self.recorder.storage.hdd_ssd:
+            b = ' -b'
+        cmd = u'%s%s -l %s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
             settings.CHANNEL_RECORD_PLAY_COMMAND,
+            b,
             self.recorder.storage.control_dir(),
             self.control_socket,
             (self.recorder.rotate * 60 * 27000000),
