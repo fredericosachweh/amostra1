@@ -1488,7 +1488,7 @@ class Storage(DeviceServer):
 
     folder = models.CharField(_(u'Diretório destino'), max_length=500,
         default=settings.CHANNEL_RECORD_DIR, )
-    hdd_ssd = models.BooleanField(_(u'Disco SSD (Estado sólido'),
+    hdd_ssd = models.BooleanField(_(u'Disco SSD (Disco Estado Sólido)'),
         default=False)
     peso = models.PositiveIntegerField(
         _(u'Peso'),
@@ -1621,7 +1621,7 @@ class StreamRecorder(OutputModel, DeviceServer):
                 log.info('pcrpid=%s' % pcrpid)
 
         b = ''
-        if self.stream_hd and self.storage.hdd_ssd:
+        if self.stream_hd and not self.storage.hdd_ssd:
             b = ' -b'
         cmd = u'%s -l %s %s%s -r %d -U -u @%s:%d/ifaddr=%s %s/%d' % (
             settings.CHANNEL_RECORD_COMMAND,
@@ -1815,8 +1815,12 @@ class StreamPlayer(OutputModel, DeviceServer):
         self.control_socket = '%sclient_%d.sock' % (
             settings.MULTICAT_SOCKETS_DIR,
             self.pk)
-        cmd = u'%s -l %s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
+        b = ''
+        if self.recorder.stream_hd and not self.recorder.storage.hdd_ssd:
+            b = ' -b'
+        cmd = u'%s%s -l %s -c %s -r %s -k -%s -U %s/%d %s:%d' % (
             settings.CHANNEL_RECORD_PLAY_COMMAND,
+            b,
             self.recorder.storage.control_dir(),
             self.control_socket,
             (self.recorder.rotate * 60 * 27000000),

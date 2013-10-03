@@ -17,6 +17,9 @@ def status_switchlink(request, action, pk):
         nbridge.start(recursive=True)
     elif action == 'stop':
         nbridge.stop(recursive=True)
+    elif action == 'recover':
+        nbridge.status = False
+        nbridge.save()
     else:
         raise NotImplementedError()
 

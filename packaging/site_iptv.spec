@@ -89,16 +89,16 @@ rm -rf $RPM_BUILD_ROOT
 #/var/www/sites/site_iptv
 %{__install} -p -d -m 0755 %{buildroot}%{site_home}
 cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
-%{__ln_s} %{sites_dir}/frontend %{buildroot}%{site_home}/frontend
-%{__mkdir} %{buildroot}%{site_home}/templates/box
-%{__rm} -f %{buildroot}%{site_home}/templates/box/index.html
-%{__ln_s} %{sites_dir}/frontend/dist/index.html %{buildroot}%{site_home}/templates/box/index.html
-%{__install} -p -d -m 0755 %{buildroot}%{www_site_dir}/tvfiles
+#%{__ln_s} %{sites_dir}/frontend %{buildroot}%{site_home}/frontend
+#%{__mkdir} %{buildroot}%{site_home}/templates/box
+#%{__rm} -f %{buildroot}%{site_home}/templates/box/index.html
+#%{__ln_s} %{sites_dir}/frontend/dist/index.html %{buildroot}%{site_home}/templates/box/index.html
+%{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/media
-%{__install} -p -d -m 0755 %{buildroot}%{www_site_dir}/tvfiles/static
-%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/plugins
-%{__install} -p -m 0644 %{SOURCE1} %{buildroot}%{nginx_confdir}/plugins
-%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/conf.d
+%{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/static
+#%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/plugins
+#%{__install} -p -m 0644 %{SOURCE1} %{buildroot}%{nginx_confdir}/plugins
+#%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/conf.d
 #%{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{nginx_confdir}/conf.d/0001-cache.conf
 %{__install} -p -d -m 0755 %{buildroot}/%{prefix}/%{_localstatedir}/lib/cache
 %{__install} -p -d 0755 %{buildroot}%{_sysconfdir}
@@ -110,10 +110,12 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/multicat
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/dvblast
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/vlc
+%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/nbridge
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/multicat
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/multicat/sockets
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast/sockets
+%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/nbridge
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/diskctrl
 #%{__install} -p -d -m 0755 %{buildroot}/%{prefix}/%{_localstatedir}/lib/mysql
 %{__install} -p -d -m 0700 %{buildroot}/%{prefix}/%{_localstatedir}/lib/postgresql
@@ -131,8 +133,10 @@ rm -rf $RPM_BUILD_ROOT
 %post
 if [ $1 == 1 ]; then
     systemctl enable %{name}.service
-    systemctl reload --system
+    systemctl daemon-reload --system
 fi
+%systemd_post %{name}.service
+%systemd_post
 
 echo -e "\033[0;31m"
 echo "========================================================================="
@@ -157,17 +161,14 @@ echo -e "\033[0m"
 #%{__ln_s} %{_sysconfdir}/my.cnf.cianet %{_sysconfdir}/my.cnf
 
 %preun
-if [ $1 = 0 ]; then
-    systemctl stop %{name}.service
-    systemctl disable %{name}.service
-fi
+%systemd_preun
 
 %postun
-systemctl reload --system
+%systemd_postun
 
 %files
 %defattr(-,%{nginx_user},%{nginx_group},-)
-%config(noreplace) %{nginx_confdir}/plugins/*.conf
+#%config(noreplace) %{nginx_confdir}/plugins/*.conf
 #%config(noreplace) %{nginx_confdir}/conf.d/*.conf
 %{site_home}/*
 %dir %{www_site_dir}/tvfiles
@@ -177,11 +178,13 @@ systemctl reload --system
 %dir %{prefix}/%{_localstatedir}/log/multicat
 %dir %{prefix}/%{_localstatedir}/log/dvblast
 %dir %{prefix}/%{_localstatedir}/log/vlc
+%dir %{prefix}/%{_localstatedir}/log/nbridge
 %dir %{prefix}/%{_localstatedir}/run/multicat
 %dir %{prefix}/%{_localstatedir}/run/multicat/sockets
 %dir %{prefix}/%{_localstatedir}/run/dvblast
 %dir %{prefix}/%{_localstatedir}/run/dvblast/sockets
 %dir %{prefix}/%{_localstatedir}/run/diskctrl
+%dir %{prefix}/%{_localstatedir}/run/nbridge
 %dir %{prefix}/%{_localstatedir}/www
 %dir %{prefix}/%{_localstatedir}/run/%{name}
 %dir %{prefix}/%{_localstatedir}/lib/cache
@@ -202,6 +205,8 @@ systemctl reload --system
 
 
 %changelog
+* Fri Sep 27 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.13.1-1
+- Fix limit 20 on device. systemd config. recorder SSD.
 * Sun Aug 25 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.12.0-1
 - Release to Netcom and life telecom.
 - Integration with albis STB.

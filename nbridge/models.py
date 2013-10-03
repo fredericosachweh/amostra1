@@ -61,10 +61,10 @@ class Nbridge(DeviceServer):
 
     def start(self, *args, **kwargs):
 
-        cmd = '%s %s' % (settings.NODEJS_COMMAND, settings.NBRIDGE_COMMAND)
+        cmd = '%s %s ' % (settings.NODEJS_COMMAND, settings.NBRIDGE_COMMAND)
 
         if self.debug and self.debug_port:
-            cmd = '%s --debug=%s %s' % (
+            cmd = '%s --debug=%s %s ' % (
                 settings.NODEJS_COMMAND,
                 self.debug_port,
                 settings.NBRIDGE_COMMAND
@@ -73,14 +73,14 @@ class Nbridge(DeviceServer):
         if self.middleware_addr:
             cmd += '--middleware %s ' % self.middleware_addr
 
-        if self.bind:
-            cmd += '--bind %snbridge_%s.sock' % (
-                settings.NBRIDGE_SOCKETS_DIR, 
-                self.id
-            )
+        cmd += '--bind %snbridge_%s.sock ' % (
+            settings.NBRIDGE_SOCKETS_DIR, 
+            self.id
+        )
 
         try:
-            self.pid = self.server.execute_daemon(cmd, settings.NBRIDGE_LOGS_DIR)
+            log = "%snbridge_%s" % (settings.NBRIDGE_LOGS_DIR, self.id)
+            self.pid = self.server.execute_daemon(cmd, log)
             self.status = True
             self.save()
         except:
@@ -107,11 +107,11 @@ class Nbridge(DeviceServer):
         upstream = template.render(context)
 
         # Reset servers of nginx frontend upstream file. 
-        cmd = '/usr/bin/echo %s > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
+        cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
         self.server.execute(cmd)
 
         # Reload config of nginx frontend.
-        self.server.execute('systemctl reload nginx-fe') 
+        self.server.execute('sudo systemctl reload nginx-fe') 
 
 
 @receiver(post_save, sender=Nbridge)
