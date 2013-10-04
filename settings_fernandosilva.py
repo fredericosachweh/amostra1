@@ -168,6 +168,9 @@ EPG_IMPORT_CREDENTIALS = {
     'password': '91037581920',
 }
 
-# Node application settings
-NBRIDGE_COMMAND = '/home/fernandosilva/iptv/node/main.js'
-NBRIDGE_LOGS_DIR = '/home/fernandosilva/iptv/node/'
+# NBridge  application settings
+NODEJS_COMMAND = '/usr/bin/node'
+NBRIDGE_COMMAND = '/home/fernandosilva/iptv/nbridge/main.js'
+NBRIDGE_LOGS_DIR = '/home/fernandosilva/iptv/var/log/nbridge/'
+NBRIDGE_SOCKETS_DIR = '/home/fernandosilva/iptv/var/run/nbridge/'
+NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'

@@ -117,7 +117,7 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast/sockets
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/nbridge
 %{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/diskctrl
-#%{__install} -p -d -m 0755 %{buildroot}/%{prefix}/%{_localstatedir}/lib/mysql
+%{__install} -p -d -m 0770 %{buildroot}/%{prefix}/usr/lib/nbridge
 %{__install} -p -d -m 0700 %{buildroot}/%{prefix}/%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
 %{__install} -p -m 0644 %{SOURCE5} %{buildroot}%{_unitdir}/site_iptv.service
@@ -185,6 +185,7 @@ echo -e "\033[0m"
 %dir %{prefix}/%{_localstatedir}/run/dvblast/sockets
 %dir %{prefix}/%{_localstatedir}/run/diskctrl
 %dir %{prefix}/%{_localstatedir}/run/nbridge
+%dir %{prefix}/usr/lib/nbridge
 %dir %{prefix}/%{_localstatedir}/www
 %dir %{prefix}/%{_localstatedir}/run/%{name}
 %dir %{prefix}/%{_localstatedir}/lib/cache
@@ -205,6 +206,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Thu Oct 03 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.13.4-1
+- Fix nbridge, monitoring template tag.
 * Fri Sep 27 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.13.1-1
 - Fix limit 20 on device. systemd config. recorder SSD.
 * Sun Aug 25 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.12.0-1
