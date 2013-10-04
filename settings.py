@@ -211,6 +211,12 @@ LOGGING = {
             'filename': '%s/import_epg.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.nbridge': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/nbridge.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
