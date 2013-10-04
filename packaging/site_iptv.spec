@@ -206,6 +206,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Fri Oct 04 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.14.0-1
+- Enable nbridge to websocket client and nginx-fe restart.
 * Thu Oct 03 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.13.4-1
 - Fix nbridge, monitoring template tag.
 * Fri Sep 27 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.13.1-1
