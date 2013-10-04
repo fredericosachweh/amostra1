@@ -162,7 +162,7 @@ class ProgrammeResource(NamespacedModelResource):
 class GuideResource(NamespacedModelResource):
     start_timestamp = fields.IntegerField()
     stop_timestamp = fields.IntegerField()
-    channel = fields.ToOneField(ChannelResource, 'channel', full=False)
+    channel = fields.ToOneField(ChannelResource, 'channel', full=True)
     programme = fields.ToOneField(ProgrammeResource, 'programme', full=True)
     next = fields.ForeignKey('self', 'next', full=False, null=True)
     previous = fields.ForeignKey('self', 'previous', full=False, null=True)

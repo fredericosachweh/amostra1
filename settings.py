@@ -258,6 +258,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
+        'nbridge': {
+            'handlers': ['file.nbridge'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
     }
 }
 
@@ -284,6 +289,8 @@ INSTALLED_APPS = (
     'tv',
     # Video on demand
     #'vod',
+    # Node bridge
+    'nbridge',
     # Tools app
     'tools',
     # Client
@@ -333,10 +340,12 @@ VLC_LOGS_DIR = '/iptv/var/log/vlc/'
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'
 
-# Node application settings
-NBRIDGE_COMMAND = '/iptv/nbridge/main.js'
+NODEJS_COMMAND = '/usr/bin/node'
+NBRIDGE_COMMAND = '/iptv/usr/lib/nbridge/main.js'
 NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
-NODEJS_COMMAND = '/bin/node'
+NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
+NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
+
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp

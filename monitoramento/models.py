@@ -255,8 +255,11 @@ class NagiosConfig:
             for server in self.monitoring_servers:
                 for cfg_file in self.cfg_files:
                     file_name = os.path.basename(cfg_file)
+                    remote_tmp = '/tmp/%s' % file_name
                     remote_file = "/etc/nagios/iptv/%s" % file_name
-                    server.put(cfg_file, remote_file)
+                    server.put(cfg_file, remote_tmp)
+                    server.execute('/usr/bin/sudo /usr/bin/mkdir -p /etc/nagios/iptv')
+                    server.execute('/usr/bin/sudo /usr/bin/mv %s %s' % (remote_tmp, remote_file))
                     cmd = '/usr/bin/sudo /bin/chown nagios.nagios'
                     server.execute('%s %s' % (cmd, remote_file))
             return True
