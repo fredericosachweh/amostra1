@@ -344,7 +344,7 @@ NODEJS_COMMAND = '/usr/bin/node'
 NBRIDGE_COMMAND = '/iptv/usr/lib/nbridge/main.js'
 NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
 NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
-NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/node.conf'
+NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
 
 
 if 'test' in sys.argv:

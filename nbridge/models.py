@@ -106,12 +106,15 @@ class Nbridge(DeviceServer):
 
         upstream = template.render(context)
 
-        # Reset servers of nginx frontend upstream file. 
-        cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
+        # Reset servers of nginx frontend upstream file.
+        if servers.count() > 0:
+            cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
+        else:
+            cmd = '/bin/unlink %s' % (settings.NBRIDGE_UPSTREAM)
         self.server.execute(cmd)
 
         # Reload config of nginx frontend.
-        self.server.execute('sudo systemctl reload nginx-fe') 
+        self.server.execute('/usr/bin/sudo systemctl restart nginx-fe.service') 
 
 
 @receiver(post_save, sender=Nbridge)
