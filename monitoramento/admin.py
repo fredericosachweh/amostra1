@@ -55,7 +55,7 @@ class AdminMonServer(admin.ModelAdmin):
             ('http_port',),
             ('http_username', 'http_password', ),
             ('host', 'ssh_port', ),
-            ('username', 'password',),
+            ('username', ),
             ('rsakey'),
         )
       }),

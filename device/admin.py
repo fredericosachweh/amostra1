@@ -53,7 +53,7 @@ class AdminServer(admin.ModelAdmin):
             ('server_type'),
             ('name', ),
             ('host', 'ssh_port', ),
-            ('username', 'password',),
+            ('username', ),
             ('rsakey'),
             ('show_versions'),
         )
