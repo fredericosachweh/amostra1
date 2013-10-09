@@ -32,8 +32,10 @@ class APIKeyLoginMiddleware(object):
             log.debug('GET:%s', request.GET.get('api_key', None))
         else:
             return
-        api = ApiKey.objects.get(key=api_key)
-        user = api.user
+        api = ApiKey.objects.filter(key=api_key)
+        if api.count() == 0:
+            return
+        user = api[0].user
         log.debug('User from api=%s', user)
         #login(request, api.user)
         if user is not None:
