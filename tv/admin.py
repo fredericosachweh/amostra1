@@ -8,11 +8,6 @@ from django.db      import models
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.safestring      import mark_safe
 
-from django.conf.urls.defaults import url, patterns
-from django.utils.functional import update_wrapper
-from tv.admin_views import create_canal_wizard
-
-
 class AdminImageWidget(AdminFileWidget):
     """
     Formata renderização de imagem no HTML
@@ -52,8 +47,8 @@ class ChannelAdmin(admin.ModelAdmin):
     list_display = ('image_thum', 'number', 'name', 'channelid', 'source',
         'buffer_size', 'enabled', 'switch_link')
     list_display_links = ('image_thum',)
-    list_editable = ('number', 'source', 'name', 'channelid', 'enabled', 'buffer_size',)
-    #inline        = (Programa,)
+    list_editable = ('number', 'source', 'name', 'channelid', 'enabled',
+        'buffer_size',)
     save_as = True
     list_per_page = 10
     search_fields = ['name', 'channelid', 'source']
@@ -66,24 +61,6 @@ class ChannelAdmin(admin.ModelAdmin):
             kwargs['widget'] = AdminImageWidget
             return db_field.formfield(**kwargs)
         return super(ChannelAdmin, self).formfield_for_dbfield(db_field,
-**kwargs)
-#    class Meta:
-#        form = CanalForm
-
-    def get_urls(self):
-        def wrap(view):
-            def wrapper(*args, **kwds):
-                kwds['admin'] = self
-                return self.admin_site.admin_view(view)(*args, **kwds)
-            return update_wrapper(wrapper, view)
-
-        urlpatterns = patterns('',
-            url(r'^wizard/$',
-                wrap(create_canal_wizard),
-                name='channel_wizard_add')
-        )
-        urlpatterns += super(ChannelAdmin, self).get_urls()
-        return urlpatterns
-
+            **kwargs)
 
 admin.site.register(Channel, ChannelAdmin)

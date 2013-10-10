@@ -21,10 +21,16 @@ class AdminNbridge(admin.ModelAdmin):
                 'middleware_addr',
             )
         }),
+        (_('Tipo de ambiente'),{
+            'fields': (
+                'env_val',
+            )
+        }),
         (_('Debug'), {
             'fields': (
                 'debug',
-                'debug_port'
+                'debug_port',
+                'log_level'
             )
         })
     )

@@ -25,51 +25,8 @@ else:
             'PASSWORD': 'iptv',
             'HOST': '127.0.0.1',
             'PORT': 5432,
-        },
-        'test_iptv': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'test_iptv',
-            'USER': 'test_iptv',
-            'PASSWORD': 'test_iptv',
-            'HOST': '127.0.0.1',
-            'PORT': 5432,
-        },
-        'mylocal': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'iptv',
-            'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '/var/lib/mysql/mysql.sock',
-            'PORT': '',
-        },
-        'pg92': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'iptv',
-            'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            'PORT': '5433',
-        },
-        'my49': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'iptv',
-            'USER': 'helber',
-            'PASSWORD': 'helber',
-            'HOST': '10.1.1.49',
-            'PORT': '3306',
         }
     }
-    #DATABASES['default'] = DATABASES['pglocal']
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptv',
-        'USER': 'iptv',
-        'PASSWORD': 'iptv',
-        'HOST': '127.0.0.1',
-        'PORT': 5432,
-    }
-}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
@@ -91,7 +48,7 @@ CACHES = {
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
-TASTYPIE_FULL_DEBUG = False
+TASTYPIE_FULL_DEBUG = True
 ##Black       0;30     Dark Gray     1;30
 ##Blue        0;34     Light Blue    1;34
 ##Green       0;32     Light Green   1;32
