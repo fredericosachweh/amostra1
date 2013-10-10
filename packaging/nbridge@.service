@@ -1,0 +1,16 @@
+[Unit]
+Description=The Nbridge service
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+ExecStart=/usr/bin/node /iptv/usr/lib/nbridge/main.js -c /iptv/etc/nbridge/config_%i.json
+Restart=always
+User=nginx
+Group=nginx
+SyslogIdentifier=nbridge_%i
+PIDFile=/iptv/var/run/nbridge/nbridge_%i.pid
+#StandardOutput=/iptv/var/log/nbridge/nbridge_%i.out
+#StandardError=/iptv/var/log/nbridge/nbridge_%i.err
+
+[Install]
+WantedBy=multi-user.target
