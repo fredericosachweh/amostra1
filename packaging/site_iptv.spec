@@ -1,3 +1,10 @@
+%global www_site_dir   %{prefix}%{_localstatedir}/www/html
+%global sites_dir      %{prefix}%{_localstatedir}/www/sites
+%global site_home      %{sites_dir}/%{name}
+%global nginx_confdir  %{prefix}%{_sysconfdir}/nginx
+%global nginx_user     nginx
+%global nginx_group    %{nginx_user}
+
 Name:           site_iptv
 Version:        GIT_CURRENT_VERSION
 Release:        1%{?dist}
@@ -7,10 +14,7 @@ Group:          Development/Languages
 License:        Proprietary
 URL:            http://www.cianet.ind.br/
 Source:         %{name}-%{version}.tar.gz
-Source1:        tv.conf
-#Source2:        site_iptv.init
-Source3:        my.cnf
-Source4:        cache.conf
+Source4:        nbridge@.service
 Source5:        site_iptv.service
 Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
@@ -69,13 +73,6 @@ Requires:       dvblast >= 2.2.1
 
 Prefix:         /iptv
 
-%define www_site_dir   %{prefix}%{_localstatedir}/www/html
-%define sites_dir      %{prefix}%{_localstatedir}/www/sites
-%define site_home      %{sites_dir}/%{name}
-%define nginx_confdir  %{prefix}%{_sysconfdir}/nginx
-%define nginx_user     nginx
-%define nginx_group    %{nginx_user}
-
 %description
 Sistema middleware de IPTV
 
@@ -100,41 +97,39 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 #%{__install} -p -m 0644 %{SOURCE1} %{buildroot}%{nginx_confdir}/plugins
 #%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/conf.d
 #%{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{nginx_confdir}/conf.d/0001-cache.conf
-%{__install} -p -d -m 0755 %{buildroot}/%{prefix}/%{_localstatedir}/lib/cache
+%{__install} -p -d -m 0755 %{buildroot}%{prefix}%{_localstatedir}/lib/cache
 %{__install} -p -d 0755 %{buildroot}%{_sysconfdir}
 #%{__install} -p -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/my.cnf.cianet
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/www
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/%{name}
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/multicat
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/dvblast
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/vlc
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/log/nbridge
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/multicat
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/multicat/sockets
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/dvblast/sockets
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/nbridge
-%{__mkdir_p} %{buildroot}/%{prefix}/%{_localstatedir}/run/diskctrl
-%{__install} -p -d -m 0770 %{buildroot}/%{prefix}/usr/lib/nbridge
-%{__install} -p -d -m 0700 %{buildroot}/%{prefix}/%{_localstatedir}/lib/postgresql
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/www
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/%{name}
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/multicat
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/dvblast
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/vlc
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/nbridge
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/multicat
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/multicat/sockets
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/dvblast
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/dvblast/sockets
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/nbridge
+%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/diskctrl
+%{__mkdir_p} %{buildroot}%{prefix}%{_sysconfdir}/nbridge
+%{__install} -p -d -m 0770 %{buildroot}%{prefix}/usr/lib/nbridge
+%{__install} -p -d -m 0700 %{buildroot}%{prefix}%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
+%{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{_unitdir}/nbridge@.service
 %{__install} -p -m 0644 %{SOURCE5} %{buildroot}%{_unitdir}/site_iptv.service
 %{__install} -p -d -m 0755 %{buildroot}%{_sysconfdir}/sysconfig
 %{__install} -p -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/sysconfig/site_iptv
 %{__install} -p -m 0644 %{SOURCE7} %{buildroot}%{_unitdir}/postgresql_iptv.service
-%{__mkdir_p} %{buildroot}/%{_localstatedir}/lib/iptv/recorder
-%{__mkdir_p} %{buildroot}/%{_localstatedir}/lib/iptv/videos
+%{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/recorder
+%{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/videos
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %post
-if [ $1 == 1 ]; then
-    systemctl enable %{name}.service
-    systemctl daemon-reload --system
-fi
 %systemd_post %{name}.service
 %systemd_post
 
@@ -157,9 +152,6 @@ echo "Para resetar os gravadores: %{site_home}device/storage_recorder_player.sql
 echo "========================================================================="
 echo -e "\033[0m"
 
-#%{__mv} %{_sysconfdir}/my.cnf %{_sysconfdir}/my.cnf.orig
-#%{__ln_s} %{_sysconfdir}/my.cnf.cianet %{_sysconfdir}/my.cnf
-
 %preun
 %systemd_preun
 
@@ -175,37 +167,37 @@ echo -e "\033[0m"
 %dir %{www_site_dir}/tvfiles/media
 %dir %{www_site_dir}/tvfiles/static
 %dir %{sites_dir}
-%dir %{prefix}/%{_localstatedir}/log/multicat
-%dir %{prefix}/%{_localstatedir}/log/dvblast
-%dir %{prefix}/%{_localstatedir}/log/vlc
-%dir %{prefix}/%{_localstatedir}/log/nbridge
-%dir %{prefix}/%{_localstatedir}/run/multicat
-%dir %{prefix}/%{_localstatedir}/run/multicat/sockets
-%dir %{prefix}/%{_localstatedir}/run/dvblast
-%dir %{prefix}/%{_localstatedir}/run/dvblast/sockets
-%dir %{prefix}/%{_localstatedir}/run/diskctrl
-%dir %{prefix}/%{_localstatedir}/run/nbridge
+%dir %{prefix}%{_localstatedir}/log/multicat
+%dir %{prefix}%{_localstatedir}/log/dvblast
+%dir %{prefix}%{_localstatedir}/log/vlc
+%dir %{prefix}%{_localstatedir}/log/nbridge
+%dir %{prefix}%{_localstatedir}/run/multicat
+%dir %{prefix}%{_localstatedir}/run/multicat/sockets
+%dir %{prefix}%{_localstatedir}/run/dvblast
+%dir %{prefix}%{_localstatedir}/run/dvblast/sockets
+%dir %{prefix}%{_localstatedir}/run/diskctrl
+%dir %{prefix}%{_localstatedir}/run/nbridge
 %dir %{prefix}/usr/lib/nbridge
-%dir %{prefix}/%{_localstatedir}/www
-%dir %{prefix}/%{_localstatedir}/run/%{name}
-%dir %{prefix}/%{_localstatedir}/lib/cache
+%dir %{prefix}%{_localstatedir}/www
+%dir %{prefix}%{_localstatedir}/run/%{name}
+%dir %{prefix}%{_localstatedir}/lib/cache
 %dir %{site_home}
 %config(noreplace) %{site_home}/settings.py
 %dir %{_localstatedir}/lib/iptv/recorder
 %dir %{_localstatedir}/lib/iptv/videos
 # IPTV Database
-#%config %{_sysconfdir}/my.cnf.cianet
-#%defattr(-,mysql,mysql,-)
-#%dir %{prefix}/%{_localstatedir}/lib/mysql
 %defattr(-,postgres,postgres,-)
-%dir %{prefix}/%{_localstatedir}/lib/postgresql
+%dir %{prefix}%{_localstatedir}/lib/postgresql
 %defattr(-,root,root,-)
+%{_unitdir}/nbridge@.service
 %{_unitdir}/site_iptv.service
 %{_unitdir}/postgresql_iptv.service
 %config(noreplace) %{_sysconfdir}/sysconfig/site_iptv
 
 
 %changelog
+* Wed Oct 09 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.0-1
+- nbridge with systemd.
 * Fri Oct 04 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.14.0-1
 - Enable nbridge to websocket client and nginx-fe restart.
 * Thu Oct 03 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.13.4-1

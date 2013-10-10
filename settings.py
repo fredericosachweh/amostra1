@@ -351,6 +351,7 @@ NBRIDGE_COMMAND = '/iptv/usr/lib/nbridge/main.js'
 NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
 NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
 NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
+NBRIDGE_CONF_DIR = '/iptv/etc/nbridge/'
 
 
 if 'test' in sys.argv:

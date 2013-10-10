@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import logging
+import time
 
 from django.utils.translation import ugettext as _
 from device.models import DeviceServer
@@ -14,11 +15,21 @@ from django.db.models.signals import post_save
 from django.conf import settings
 
 
+CHOICES_ENV_VAR = (
+    ('production', 'Ambiente de Produção', ),
+    ('development', 'Ambiente de Desenvolvimento', )
+)
+
 class Nbridge(DeviceServer):
     middleware_addr = models.CharField('Middleware', max_length=100,
         blank=True, null=True, help_text=_('Ex. http://10.1.1.52/'))
     debug = models.BooleanField(_('Debug'), default=False)
     debug_port = models.PositiveSmallIntegerField(_('Porta'))
+    log_level = models.PositiveSmallIntegerField('Nível de log', default=0,
+        help_text=_('Nível de log para debug interno (0, 1, 2 ou 3)'))
+    env_val = models.CharField('Ambiente de execução', default='production',
+        max_length=20, help_text=_('Tipo de execução'), choices=CHOICES_ENV_VAR
+        )
 
     def switch_link(self):
         running = self.running()
@@ -59,35 +70,58 @@ class Nbridge(DeviceServer):
         verbose_name = _('Servidor NBridge')
         verbose_name_plural = _('Servidores NBridge')
 
+    def _create_config(self):
+        config_file = "%sconfig_%i.json" % (settings.NBRIDGE_CONF_DIR, self.id)
+        if self.log_level > 0:
+            verbose = 'true'
+        else:
+            verbose = 'false'
+        config = '''{
+    "bind": "%snbridge_%s.sock",
+    "middleware": "%s",
+    "pidfile": "%snbridge_%s.pid",
+    "api": "/tv/api",
+    "verbose": %s,
+    "log_level": %s,
+    "env": "%s"
+}''' % (settings.NBRIDGE_SOCKETS_DIR,
+            self.id, self.middleware_addr, settings.NBRIDGE_SOCKETS_DIR,
+            self.id, verbose,self.log_level, self.env_val)
+        cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
+        self.server.execute(cmd)
+
     def start(self, *args, **kwargs):
-
-        cmd = '%s %s ' % (settings.NODEJS_COMMAND, settings.NBRIDGE_COMMAND)
-
-        if self.debug and self.debug_port:
-            cmd = '%s --debug=%s %s ' % (
-                settings.NODEJS_COMMAND,
-                self.debug_port,
-                settings.NBRIDGE_COMMAND
-            )
-
-        if self.middleware_addr:
-            cmd += '--middleware %s ' % self.middleware_addr
-
-        cmd += '--bind %snbridge_%s.sock ' % (
-            settings.NBRIDGE_SOCKETS_DIR, 
-            self.id
-        )
+        log = logging.getLogger('nbridge')
 
         try:
-            log = "%snbridge_%s" % (settings.NBRIDGE_LOGS_DIR, self.id)
-            self.pid = self.server.execute_daemon(cmd, log)
-            self.status = True
-            self.save()
-        except:
-            log = logging.getLogger('nbridge')
+            self._create_config()
+            systemd_cmd = '/usr/bin/sudo systemctl start nbridge@%s.service'\
+                % (self.id)
+            self.server.execute(systemd_cmd)
+            pid_file = '/iptv/var/run/nbridge/nbridge_%s.pid' % self.id
+            pidcommand = "/bin/cat %s" % pid_file
+            time.sleep(1)
+            output = self.server.execute(pidcommand)
+            log.debug('Out:%s', output)
+            if len(output):
+                pid = int(output[0].strip())
+                
+                self.pid = pid
+                self.status = True
+                self.save()
+        except Exception as e:
+            log.error('ERRO:%s', e)
             log.error(self.server.msg)
 
         return self.server.msg
+
+    def stop(self, *args, **kwargs):
+        systemd_cmd = '/usr/bin/sudo systemctl stop nbridge@%s.service'\
+            % (self.id)
+        self.server.execute(systemd_cmd)
+        self.pid = None
+        self.status = False
+        self.save()
 
     def configure_nginx(self):
         servers = Nbridge.objects.filter(status=True)
