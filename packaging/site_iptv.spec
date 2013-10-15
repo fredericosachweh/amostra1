@@ -1,7 +1,8 @@
-%global www_site_dir   %{prefix}%{_localstatedir}/www/html
-%global sites_dir      %{prefix}%{_localstatedir}/www/sites
+%global iptv_root      /iptv
+%global www_site_dir   %{iptv_root}%{_localstatedir}/www/html
+%global sites_dir      %{iptv_root}%{_localstatedir}/www/sites
 %global site_home      %{sites_dir}/%{name}
-%global nginx_confdir  %{prefix}%{_sysconfdir}/nginx
+%global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
 
@@ -40,8 +41,6 @@ Requires:       Django >= 1.4
 BuildRequires:  Django >= 1.4
 %endif
 
-#Requires:       mysql-server
-#Requires:       MySQL-python
 Requires:       postgresql-server
 Requires:       python-psycopg2
 Requires:       python-imaging
@@ -71,8 +70,6 @@ Requires:       nginxcianet >= 1.4.1
 Requires:       multicat >= 2.0.1
 Requires:       dvblast >= 2.2.1
 
-Prefix:         /iptv
-
 %description
 Sistema middleware de IPTV
 
@@ -83,40 +80,30 @@ Sistema middleware de IPTV
 
 %install
 rm -rf $RPM_BUILD_ROOT
-#/var/www/sites/site_iptv
 %{__install} -p -d -m 0755 %{buildroot}%{site_home}
 cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
-#%{__ln_s} %{sites_dir}/frontend %{buildroot}%{site_home}/frontend
-#%{__mkdir} %{buildroot}%{site_home}/templates/box
-#%{__rm} -f %{buildroot}%{site_home}/templates/box/index.html
-#%{__ln_s} %{sites_dir}/frontend/dist/index.html %{buildroot}%{site_home}/templates/box/index.html
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/media
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/static
-#%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/plugins
-#%{__install} -p -m 0644 %{SOURCE1} %{buildroot}%{nginx_confdir}/plugins
-#%{__install} -p -d -m 0755 %{buildroot}%{nginx_confdir}/conf.d
-#%{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{nginx_confdir}/conf.d/0001-cache.conf
-%{__install} -p -d -m 0755 %{buildroot}%{prefix}%{_localstatedir}/lib/cache
+%{__install} -p -d -m 0755 %{buildroot}%{iptv_root}%{_localstatedir}/lib/cache
 %{__install} -p -d 0755 %{buildroot}%{_sysconfdir}
-#%{__install} -p -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/my.cnf.cianet
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/www
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/%{name}
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/multicat
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/dvblast
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/vlc
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/log/nbridge
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/multicat
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/multicat/sockets
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/dvblast
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/dvblast/sockets
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/nbridge
-%{__mkdir_p} %{buildroot}%{prefix}%{_localstatedir}/run/diskctrl
-%{__mkdir_p} %{buildroot}%{prefix}%{_sysconfdir}/nbridge
-%{__install} -p -d -m 0770 %{buildroot}%{prefix}/usr/lib/nbridge
-%{__install} -p -d -m 0700 %{buildroot}%{prefix}%{_localstatedir}/lib/postgresql
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/www
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/%{name}
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/multicat
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/dvblast
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/vlc
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/nbridge
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/multicat
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/multicat/sockets
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/dvblast
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/dvblast/sockets
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/nbridge
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/diskctrl
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_sysconfdir}/nbridge
+%{__install} -p -d -m 0770 %{buildroot}%{iptv_root}/usr/lib/nbridge
+%{__install} -p -d -m 0700 %{buildroot}%{iptv_root}%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
 %{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{_unitdir}/nbridge@.service
 %{__install} -p -m 0644 %{SOURCE5} %{buildroot}%{_unitdir}/site_iptv.service
@@ -160,35 +147,33 @@ echo -e "\033[0m"
 
 %files
 %defattr(-,%{nginx_user},%{nginx_group},-)
-#%config(noreplace) %{nginx_confdir}/plugins/*.conf
-#%config(noreplace) %{nginx_confdir}/conf.d/*.conf
 %{site_home}/*
 %dir %{www_site_dir}/tvfiles
 %dir %{www_site_dir}/tvfiles/media
 %dir %{www_site_dir}/tvfiles/static
 %dir %{sites_dir}
-%dir %{prefix}%{_localstatedir}/log/multicat
-%dir %{prefix}%{_localstatedir}/log/dvblast
-%dir %{prefix}%{_localstatedir}/log/vlc
-%dir %{prefix}%{_localstatedir}/log/nbridge
-%dir %{prefix}%{_localstatedir}/run/multicat
-%dir %{prefix}%{_localstatedir}/run/multicat/sockets
-%dir %{prefix}%{_localstatedir}/run/dvblast
-%dir %{prefix}%{_localstatedir}/run/dvblast/sockets
-%dir %{prefix}%{_localstatedir}/run/diskctrl
-%dir %{prefix}%{_localstatedir}/run/nbridge
-%dir %{prefix}/usr/lib/nbridge
-%dir %{prefix}%{_localstatedir}/www
-%dir %{prefix}%{_localstatedir}/run/%{name}
-%dir %{prefix}%{_localstatedir}/lib/cache
-%dir %{prefix}%{_sysconfdir}/nbridge
+%dir %{iptv_root}%{_localstatedir}/log/multicat
+%dir %{iptv_root}%{_localstatedir}/log/dvblast
+%dir %{iptv_root}%{_localstatedir}/log/vlc
+%dir %{iptv_root}%{_localstatedir}/log/nbridge
+%dir %{iptv_root}%{_localstatedir}/run/multicat
+%dir %{iptv_root}%{_localstatedir}/run/multicat/sockets
+%dir %{iptv_root}%{_localstatedir}/run/dvblast
+%dir %{iptv_root}%{_localstatedir}/run/dvblast/sockets
+%dir %{iptv_root}%{_localstatedir}/run/diskctrl
+%dir %{iptv_root}%{_localstatedir}/run/nbridge
+%dir %{iptv_root}/usr/lib/nbridge
+%dir %{iptv_root}%{_localstatedir}/www
+%dir %{iptv_root}%{_localstatedir}/run/%{name}
+%dir %{iptv_root}%{_localstatedir}/lib/cache
+%dir %{iptv_root}%{_sysconfdir}/nbridge
 %dir %{site_home}
 %config(noreplace) %{site_home}/settings.py
 %dir %{_localstatedir}/lib/iptv/recorder
 %dir %{_localstatedir}/lib/iptv/videos
 # IPTV Database
 %defattr(-,postgres,postgres,-)
-%dir %{prefix}%{_localstatedir}/lib/postgresql
+%dir %{iptv_root}%{_localstatedir}/lib/postgresql
 %defattr(-,root,root,-)
 %{_unitdir}/nbridge@.service
 %{_unitdir}/site_iptv.service
@@ -213,7 +198,7 @@ echo -e "\033[0m"
 - Fix rpm spec
 * Tue Jul 02 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.8.0-0
 - Storage, player and recorder fix
-* Wed May 16 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.2-0
+* Thu May 16 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.2-0
 - Fix erp access on tv.channel API.
 * Tue May 07 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.3.1-2
 - Fix nginx location
