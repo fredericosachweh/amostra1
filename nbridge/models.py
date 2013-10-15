@@ -97,7 +97,7 @@ class Nbridge(DeviceServer):
             return False, 0
         pidcommand = '/usr/bin/sudo systemctl status nbridge@%s.service'\
             % (self.id)
-        output = self.server.execute(pidcommand)
+        output = self.server.execute(pidcommand, check=False)
         for l in output:
             ar = l.split()
             if ar.count('Active:') and ar.count('(running)'):
