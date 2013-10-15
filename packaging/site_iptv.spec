@@ -181,6 +181,7 @@ echo -e "\033[0m"
 %dir %{prefix}%{_localstatedir}/www
 %dir %{prefix}%{_localstatedir}/run/%{name}
 %dir %{prefix}%{_localstatedir}/lib/cache
+%dir %{prefix}%{_sysconfdir}/nbridge
 %dir %{site_home}
 %config(noreplace) %{site_home}/settings.py
 %dir %{_localstatedir}/lib/iptv/recorder
