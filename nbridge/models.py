@@ -13,7 +13,7 @@ from django.core.urlresolvers import reverse
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.conf import settings
-
+log = logging.getLogger('nbridge')
 
 CHOICES_ENV_VAR = (
     ('production', 'Ambiente de Produção', ),
@@ -52,7 +52,7 @@ class Nbridge(DeviceServer):
             kwargs={'action':'start', 'pk': self.id})
 
         link = '<a href="%s" id="id_%s" style="color:red;">Parado</a>' \
-            % (url,self.id)
+            % (url, self.id)
 
         if self.server.msg != 'OK':
             return '%s %s' % (self.server.msg, link)
@@ -90,25 +90,37 @@ class Nbridge(DeviceServer):
         cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
         self.server.execute(cmd)
 
-    def start(self, *args, **kwargs):
-        log = logging.getLogger('nbridge')
+    def _status_and_pid(self):
+        is_running = False
+        pid = 0
+        if self.status == False:
+            return False, 0
+        pidcommand = '/usr/bin/sudo systemctl status nbridge@%s.service'\
+            % (self.id)
+        output = self.server.execute(pidcommand)
+        for l in output:
+            ar = l.split()
+            if ar.count('Active:') and ar.count('(running)'):
+                is_running = True
+            if ar.count('PID:') == 1:
+                pid = ar[2]
+        return is_running, pid
 
+    def running(self):
+        status, pid = self._status_and_pid()
+        log.debug('Nbridge[%i] Status=%s pid=%s', self.id, status, pid)
+        return status
+
+    def start(self, *args, **kwargs):
         try:
             self._create_config()
             systemd_cmd = '/usr/bin/sudo systemctl start nbridge@%s.service'\
                 % (self.id)
             self.server.execute(systemd_cmd)
-            pid_file = '/iptv/var/run/nbridge/nbridge_%s.pid' % self.id
-            pidcommand = "/bin/cat %s" % pid_file
-            time.sleep(1)
-            output = self.server.execute(pidcommand)
-            log.debug('Out:%s', output)
-            if len(output):
-                pid = int(output[0].strip())
-                
-                self.pid = pid
-                self.status = True
-                self.save()
+            status, pid = self._status_and_pid()
+            self.pid = pid
+            self.status = True
+            self.save()
         except Exception as e:
             log.error('ERRO:%s', e)
             log.error(self.server.msg)
@@ -127,11 +139,9 @@ class Nbridge(DeviceServer):
         servers = Nbridge.objects.filter(status=True)
 
         template = Template('''upstream nbridge {
-                ip_hash;
-                {% for s in servers %}
-                server unix:{{socket_dir}}nbridge_{{s.id}}.sock;
-                {% endfor %}
-        }''')
+    ip_hash;{% for s in servers %}
+    server unix:{{socket_dir}}nbridge_{{s.id}}.sock;
+{% endfor %}}''')
 
         context = Context({
             'servers': servers, 
@@ -144,7 +154,11 @@ class Nbridge(DeviceServer):
         if servers.count() > 0:
             cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
         else:
-            cmd = '/bin/unlink %s' % (settings.NBRIDGE_UPSTREAM)
+            upstream = '''upstream nbridge {
+    ip_hash;
+    server unix:%snbridge_fake.sock;
+}''' % (settings.NBRIDGE_SOCKETS_DIR)
+            cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
         self.server.execute(cmd)
 
         # Reload config of nginx frontend.
