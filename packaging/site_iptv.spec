@@ -119,6 +119,7 @@ rm -rf $RPM_BUILD_ROOT
 %post
 %systemd_post %{name}.service
 %systemd_post
+/usr/bin/systemctl daemon-reload --system
 
 echo -e "\033[0;31m"
 echo "========================================================================="
@@ -182,6 +183,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Fri Oct 18 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.3-1
+- Creation of systemd config and env files to nbridge.
 * Wed Oct 09 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.0-1
 - nbridge with systemd.
 * Fri Oct 04 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.14.0-1

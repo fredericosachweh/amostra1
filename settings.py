@@ -394,7 +394,7 @@ TASTYPIE_FULL_DEBUG = DEBUG
 TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
 
-RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv"
+RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv nodejs-nbridge nginx-fe nginx-mw"
 
 EPG_IMPORT_CREDENTIALS = {
     'site': '83.222.124.34',
@@ -403,7 +403,7 @@ EPG_IMPORT_CREDENTIALS = {
 }
 
 ALLOWED_HOSTS = [
-    '.middleware.iptvdomain'
+    '.middleware.iptvdomain', '*'
 ]
 INTERNAL_IPS = ('127.0.0.1',)
 
