@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import logging
 import time
+from tempfile import NamedTemporaryFile
 
 from django.utils.translation import ugettext as _
 from device.models import DeviceServer
@@ -11,7 +12,7 @@ from django.template import Context, Template
 from django.db import models
 from django.core.urlresolvers import reverse
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models import signals
 from django.conf import settings
 log = logging.getLogger('nbridge')
 
@@ -70,26 +71,6 @@ class Nbridge(DeviceServer):
         verbose_name = _('Servidor NBridge')
         verbose_name_plural = _('Servidores NBridge')
 
-    def _create_config(self):
-        config_file = "%sconfig_%i.json" % (settings.NBRIDGE_CONF_DIR, self.id)
-        if self.log_level > 0:
-            verbose = 'true'
-        else:
-            verbose = 'false'
-        config = '''{
-    "bind": "%snbridge_%s.sock",
-    "middleware": "%s",
-    "pidfile": "%snbridge_%s.pid",
-    "api": "/tv/api",
-    "verbose": %s,
-    "log_level": %s,
-    "env": "%s"
-}''' % (settings.NBRIDGE_SOCKETS_DIR,
-            self.id, self.middleware_addr, settings.NBRIDGE_SOCKETS_DIR,
-            self.id, verbose,self.log_level, self.env_val)
-        cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
-        self.server.execute(cmd)
-
     def _status_and_pid(self):
         is_running = False
         pid = 0
@@ -108,12 +89,11 @@ class Nbridge(DeviceServer):
 
     def running(self):
         status, pid = self._status_and_pid()
-        log.debug('Nbridge[%i] Status=%s pid=%s', self.id, status, pid)
+        log.info('Nbridge[%i] Status=%s pid=%s', self.id, status, pid)
         return status
 
     def start(self, *args, **kwargs):
         try:
-            self._create_config()
             systemd_cmd = '/usr/bin/sudo systemctl start nbridge@%s.service'\
                 % (self.id)
             self.server.execute(systemd_cmd)
@@ -136,7 +116,7 @@ class Nbridge(DeviceServer):
         self.save()
 
     def configure_nginx(self):
-        servers = Nbridge.objects.filter(status=True)
+        servers = Nbridge.objects.filter(status=True, server=self.server)
 
         template = Template('''upstream nbridge {
     ip_hash;{% for s in servers %}
@@ -162,11 +142,52 @@ class Nbridge(DeviceServer):
         self.server.execute(cmd)
 
         # Reload config of nginx frontend.
-        self.server.execute('/usr/bin/sudo systemctl restart nginx-fe.service') 
+        self.server.execute('/usr/bin/sudo systemctl restart nginx-fe.service')
+
+    def configure_systemd(self):
+        servers = Nbridge.objects.filter(server=self.server)
+        sysconfig = ''
+        for s in servers:
+            if s.debug and s.debug_port > 0:
+                sysconfig += 'NODEARGS_%s="--debug=%d"\n' % (s.id, s.debug_port)
+            else:
+                sysconfig += 'NODEARGS_%s=""\n' % (s.id)
+        log.debug('sysconfig=%s', sysconfig)
+        ## Create and copy
+        remote_tmpfile = self.server.create_tempfile()
+        tmpfile = NamedTemporaryFile()
+        tmpfile.file.write(sysconfig)
+        tmpfile.file.flush()
+        self.server.put(tmpfile.name, remote_tmpfile)
+        cmd_sysconfig = '/usr/bin/sudo /usr/bin/cp %s /etc/sysconfig/nbridge' % (remote_tmpfile)
+        log.debug('Config sysconfig=%s', cmd_sysconfig)
+        self.server.execute(cmd_sysconfig)
+        self.server.rm_file(remote_tmpfile)
+        
+    def create_config(self):
+        config_file = "%sconfig_%i.json" % (settings.NBRIDGE_CONF_DIR, self.id)
+        if self.log_level > 0:
+            verbose = 'true'
+        else:
+            verbose = 'false'
+        config = '''{
+    "bind": "%snbridge_%s.sock",
+    "middleware": "%s",
+    "api": "/tv/api",
+    "verbose": %s,
+    "log_level": %s,
+    "env": "%s"
+}''' % (settings.NBRIDGE_SOCKETS_DIR, self.id, self.middleware_addr,
+            verbose, self.log_level, self.env_val)
+        cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
+        self.server.execute(cmd)
 
 
-@receiver(post_save, sender=Nbridge)
+
+@receiver(signals.post_save, sender=Nbridge)
 def nbridge_post_save(sender, instance, created, **kwargs):
     instance.configure_nginx()
+    instance.configure_systemd()
+    instance.create_config()
 
 
