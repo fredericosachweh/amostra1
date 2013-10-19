@@ -102,7 +102,6 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/nbridge
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/diskctrl
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_sysconfdir}/nbridge
-%{__install} -p -d -m 0770 %{buildroot}%{iptv_root}/usr/lib/nbridge
 %{__install} -p -d -m 0700 %{buildroot}%{iptv_root}%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
 %{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{_unitdir}/nbridge@.service
@@ -163,7 +162,6 @@ echo -e "\033[0m"
 %dir %{iptv_root}%{_localstatedir}/run/dvblast/sockets
 %dir %{iptv_root}%{_localstatedir}/run/diskctrl
 %dir %{iptv_root}%{_localstatedir}/run/nbridge
-%dir %{iptv_root}/usr/lib/nbridge
 %dir %{iptv_root}%{_localstatedir}/www
 %dir %{iptv_root}%{_localstatedir}/run/%{name}
 %dir %{iptv_root}%{_localstatedir}/lib/cache
