@@ -181,6 +181,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Sat Oct 19 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.4-1
+- Conflito com pacote nbridge.
 * Fri Oct 18 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.3-1
 - Creation of systemd config and env files to nbridge.
 * Wed Oct 09 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.0-1
