@@ -786,11 +786,6 @@ class InputModel(models.Model):
         if self.server.file_exists(path):
             self.server.rm_file(path)
 
-    def _create_folders(self):
-        "Creates all the folders dvblast needs"
-        log = logging.getLogger('debug')
-        log.debug('skip create folders on InputModel')
-
     def _clean_sock_file(self):
         self.server.execute('/bin/rm -f %s%d.sock' % (
             settings.DVBLAST_SOCKETS_DIR, self.pk)
@@ -1027,8 +1022,6 @@ class DigitalTuner(InputModel, DeviceServer):
         super(DigitalTuner, self).start(*args, **kwargs)
         cmd = self._get_cmd(adapter_num)
         conf = self._get_config()
-        # Create the necessary folders
-        #self._create_folders()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
             settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
@@ -1148,7 +1141,6 @@ class IsdbTuner(DigitalTuner):
         return str(self.frequency)
 
     def start(self, adapter_num=None, *args, **kwargs):
-        ## TODO: verificar se já está rodando
         if adapter_num is None:
             self.adapter = self.adapter_num
         else:
@@ -1208,8 +1200,6 @@ class IPInput(InputModel, DeviceServer):
     def start(self, *args, **kwargs):
         cmd = self._get_cmd()
         conf = self._get_config()
-        # Create the necessary folders
-        #self._create_folders()
         # Write the config file to disk
         self.server.execute('echo "%s" > %s%d.conf' % (conf,
             settings.DVBLAST_CONFS_DIR, self.pk), persist=True)
@@ -1290,26 +1280,18 @@ class MulticastInput(IPInput):
         cmd += ' -r %s%d.sock' % (settings.DVBLAST_SOCKETS_DIR, self.pk)
         return cmd
 
+    def start(self, *args, **kwargs):
+        # Create a new rote
+        ip = self.ip
+        dev = self.server.get_netdev(self.interface.ipv4)
+        self.server.create_route(ip, dev)
+        super(MulticastInput, self).start(*args, **kwargs)
 
-@receiver(pre_save, sender=MulticastInput)
-def MulticastInput_pre_save(sender, instance, **kwargs):
-    "Signal to create the route"
-    server = instance.server
-    if server.offline_mode:
-        return
-    # If it already exists, delete
-    try:
-        obj = MulticastInput.objects.get(pk=instance.pk)
-        ip = obj.ip
-        dev = server.get_netdev(obj.interface.ipv4)
-        server.delete_route(ip, dev)
-    except MulticastInput.DoesNotExist:
-        pass
-
-    # Create a new rote
-    ip = instance.ip
-    dev = server.get_netdev(instance.interface.ipv4)
-    server.create_route(ip, dev)
+    def stop(self, *args, **kwargs):
+        ip = self.ip
+        dev = self.server.get_netdev(self.interface.ipv4)
+        self.server.delete_route(ip, dev)
+        super(MulticastInput, self).stop(*args, **kwargs)
 
 
 @receiver(pre_delete, sender=MulticastInput)
@@ -1391,23 +1373,6 @@ class OutputModel(models.Model):
         verbose_name=_(u'Conexão com device'))
     object_id = models.PositiveIntegerField(null=True)
     sink = generic.GenericForeignKey()
-
-    def _create_folders(self):
-        "Creates all the folders multicat needs"
-        log = logging.getLogger('debug')
-        log.debug('skip create folders on OutputModel')
-        return
-
-        def create_folder(path):
-            try:
-                self.server.execute('/usr/bin/sudo /bin/mkdir -p %s' % path)
-                self.server.execute('/usr/bin/sudo /bin/chown %s:%s %s' % (
-                    self.server.username, self.server.username, path))
-            except Exception as ex:
-                log.error(unicode(ex))
-        create_folder(settings.MULTICAT_SOCKETS_DIR)
-        create_folder(settings.CHANNEL_RECORD_DIR)
-        create_folder(settings.MULTICAT_LOGS_DIR)
 
     def stop(self, *args, **kwargs):
         if self.running():

@@ -101,17 +101,21 @@ def server_list_dvbadapters(request):
     # Insert the currently selected
     tuner_pk = request.GET.get('tuner')
     if tuner_pk:
-        tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
-        response += '<option value="%s">%s</option>' % (tuner.adapter,
-            tuner.adapter)
-    # Populate the not used adapters left
-    tuners = models.DvbTuner.objects.filter(server=server)
+        #tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
+        #response += '<option value="%s">%s</option>' % (tuner.adapter,
+        #    tuner.adapter)
+        tuners = models.DvbTuner.objects.filter(server=server).exclude(
+            pk=tuner_pk)
+    else:
+        # Populate the not used adapters left
+        tuners = models.DvbTuner.objects.filter(server=server)
     adapters = models.DigitalTunerHardware.objects.filter(
         server=server, id_vendor__in=['04b4', '1131'])  # DVBWorld S/S2
     for adapter in adapters:
         if not tuners.filter(adapter=adapter.uniqueid).exists():
             response += '<option value="%s">%s (%s - %s:%s)</option>' % (
-                adapter.uniqueid, adapter.uniqueid, adapter.bus, adapter.id_vendor, adapter.id_product)
+                adapter.uniqueid, adapter.uniqueid, adapter.bus,
+                adapter.id_vendor, adapter.id_product)
     return HttpResponse(response)
 
 
