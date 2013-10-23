@@ -804,21 +804,6 @@ class ConnectionTest(TestCase):
             'Deveria dar erro de conexão')
         self.assertFalse(srv.status, 'O status da conexão deveria ser False')
 
-    def test_low_respose_command(self):
-        "Test de comando demorado para executar"
-        import os
-        import getpass
-        from lib.ssh import Connection
-        conn = Connection('127.0.0.1',
-            username='nginx', private_key='~/.ssh/id_rsa')
-        test_command = '%s/device/helper/test' % (os.path.abspath('.'))
-        t = conn.execute_with_timeout(test_command, timeout=2)
-        self.assertEqual(
-            'Inicio\nP1**********Fim',
-            t,
-            'Valor esperado diferente [%s]' % t
-        )
-
 
 class ServerTest(TestCase):
 
@@ -1294,3 +1279,51 @@ class TestRecord(TestCase):
         rec.save()
         rec1 = StreamRecorder.objects.all()[0]
         self.assertEqual(new_nic, rec1.nic_sink)
+
+
+class ServerRouteTest(TestCase):
+    
+    def setUp(self):
+        ## create server
+        self.server = Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='nginx',
+            rsakey='~/.ssh/id_rsa',
+        )
+        nic = NIC.objects.get(ipv4='127.0.0.1')
+        ## create multicast input
+        MulticastInput.objects.create(
+            server=self.server,
+            interface=nic,
+            port=10000,
+            protocol='udp',
+            ip='239.0.1.11',
+        )
+
+    def test_multicast_input(self):
+        multicastin = MulticastInput.objects.get(port=10000)
+        expected_cmd = unicode(
+            "%s "
+            "-D @239.0.1.11:10000/udp "
+            "-c %s%d.conf "
+            "-r %s%d.sock"
+        ) % (settings.DVBLAST_COMMAND,
+             settings.DVBLAST_CONFS_DIR, multicastin.pk,
+             settings.DVBLAST_SOCKETS_DIR, multicastin.pk,
+             )
+        self.assertEqual(expected_cmd, multicastin._get_cmd())
+
+        multicastin.start()
+        self.assertTrue(multicastin.running())
+        self.assertTrue(multicastin.status)
+        routes = self.server.list_routes()
+        self.assertTrue( ('239.0.1.11', 'lo') in routes )
+
+        multicastin.stop()
+        self.assertFalse(multicastin.running())
+        self.assertFalse(multicastin.status)
+        routes = self.server.list_routes()
+        self.assertFalse( ('239.0.1.11', 'lo') in routes )
+
