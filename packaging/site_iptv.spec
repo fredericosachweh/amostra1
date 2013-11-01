@@ -15,7 +15,6 @@ Group:          Development/Languages
 License:        Proprietary
 URL:            http://www.cianet.ind.br/
 Source:         %{name}-%{version}.tar.gz
-Source4:        nbridge@.service
 Source5:        site_iptv.service
 Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
@@ -43,7 +42,6 @@ BuildRequires:  Django >= 1.4
 
 Requires:       postgresql-server
 Requires:       python-psycopg2
-Requires:       python-imaging
 Requires:       python-flup
 
 ## Por hora sem migração Usando embutino no pacote com submodulo
@@ -64,7 +62,7 @@ Requires:       python-suds
 # Monitoramento
 Requires:       pynag-cianet >= 0.1.1
 
-Requires:       nginxcianet >= 1.4.1
+Requires:       nginxcianet >= 1.4.2
 
 ## Por hora para a versão de demo vai instalar
 Requires:       multicat >= 2.0.1
@@ -94,17 +92,13 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/multicat
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/dvblast
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/vlc
-%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/nbridge
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/multicat
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/multicat/sockets
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/dvblast
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/dvblast/sockets
-%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/nbridge
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/diskctrl
-%{__mkdir_p} %{buildroot}%{iptv_root}%{_sysconfdir}/nbridge
 %{__install} -p -d -m 0700 %{buildroot}%{iptv_root}%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
-%{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{_unitdir}/nbridge@.service
 %{__install} -p -m 0644 %{SOURCE5} %{buildroot}%{_unitdir}/site_iptv.service
 %{__install} -p -d -m 0755 %{buildroot}%{_sysconfdir}/sysconfig
 %{__install} -p -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/sysconfig/site_iptv
@@ -155,17 +149,14 @@ echo -e "\033[0m"
 %dir %{iptv_root}%{_localstatedir}/log/multicat
 %dir %{iptv_root}%{_localstatedir}/log/dvblast
 %dir %{iptv_root}%{_localstatedir}/log/vlc
-%dir %{iptv_root}%{_localstatedir}/log/nbridge
 %dir %{iptv_root}%{_localstatedir}/run/multicat
 %dir %{iptv_root}%{_localstatedir}/run/multicat/sockets
 %dir %{iptv_root}%{_localstatedir}/run/dvblast
 %dir %{iptv_root}%{_localstatedir}/run/dvblast/sockets
 %dir %{iptv_root}%{_localstatedir}/run/diskctrl
-%dir %{iptv_root}%{_localstatedir}/run/nbridge
 %dir %{iptv_root}%{_localstatedir}/www
 %dir %{iptv_root}%{_localstatedir}/run/%{name}
 %dir %{iptv_root}%{_localstatedir}/lib/cache
-%dir %{iptv_root}%{_sysconfdir}/nbridge
 %dir %{site_home}
 %config(noreplace) %{site_home}/settings.py
 %dir %{_localstatedir}/lib/iptv/recorder
@@ -174,13 +165,14 @@ echo -e "\033[0m"
 %defattr(-,postgres,postgres,-)
 %dir %{iptv_root}%{_localstatedir}/lib/postgresql
 %defattr(-,root,root,-)
-%{_unitdir}/nbridge@.service
 %{_unitdir}/site_iptv.service
 %{_unitdir}/postgresql_iptv.service
 %config(noreplace) %{_sysconfdir}/sysconfig/site_iptv
 
 
 %changelog
+* Fri Nov 01 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.16.0-1
+- Move nbridge systemd to nbridge rpm.
 * Sat Oct 19 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.4-1
 - Conflito com pacote nbridge.
 * Fri Oct 18 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.3-1

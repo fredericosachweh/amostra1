@@ -7,6 +7,22 @@ from django.db      import models
 
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.safestring      import mark_safe
+from django.utils.translation import ugettext_lazy
+
+def start_channels_action(modeladmin, request, queryset):
+    for channel in queryset:
+        channel.start()
+
+start_channels_action.short_description = ugettext_lazy(
+    'Iniciar %(verbose_name_plural)s selecionados')
+
+def stop_channels_action(modeladmin, request, queryset):
+    for channel in queryset:
+        channel.stop()
+
+stop_channels_action.short_description = ugettext_lazy(
+    'Parar %(verbose_name_plural)s selecionados')
+
 
 class AdminImageWidget(AdminFileWidget):
     """
@@ -53,6 +69,7 @@ class ChannelAdmin(admin.ModelAdmin):
     list_per_page = 10
     search_fields = ['name', 'channelid', 'source']
     formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
+    actions = [start_channels_action, stop_channels_action]
 
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):
