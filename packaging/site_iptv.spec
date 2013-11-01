@@ -171,7 +171,7 @@ echo -e "\033[0m"
 
 
 %changelog
-* Fri Nov 01 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.6-1
+* Fri Nov 01 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.16.0-1
 - Move nbridge systemd to nbridge rpm.
 * Sat Oct 19 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.4-1
 - Conflito com pacote nbridge.
