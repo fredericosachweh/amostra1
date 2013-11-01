@@ -120,8 +120,7 @@ class Nbridge(DeviceServer):
 
         template = Template('''upstream nbridge {
     ip_hash;{% for s in servers %}
-    server unix:{{socket_dir}}nbridge_{{s.id}}.sock;
-{% endfor %}}''')
+    server unix:{{socket_dir}}nbridge_{{s.id}}.sock;{% endfor %}}''')
 
         context = Context({
             'servers': servers, 
