@@ -2,12 +2,12 @@
 
 SETTINGS=iptv.settings
 
-echo "Use: 'source setenv user'"
 
 if [[ -e iptv/settings_$1.py ]] ; then
     SETTINGS="iptv.settings_$1"
 else
     echo "Config não encontrada."
+    echo "Use: 'source setenv user'"
 fi
 
 export DJANGO_SETTINGS_MODULE=${SETTINGS}
