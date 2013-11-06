@@ -3,7 +3,7 @@
 import sys
 import os
 
-PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
 
 if PROJECT_ROOT_PATH not in sys.path:
@@ -15,7 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Emanoel Monster', 'emanoel@cianet.ind.br'),
-    ('Gabriel Reitz Giannattasio', 'gartz@cianet.ind.br'),
+    ('Guilherme Borges', 'borges@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -128,7 +128,10 @@ MIDDLEWARE_CLASSES = (
     #'lib.middleware.login.RequireLoginMiddleware',
 )
 
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = 'iptv.urls'
+
+# Python dotted path to the WSGI application used by Django's runserver.
+WSGI_APPLICATION = 'iptv.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates"
@@ -280,7 +283,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'django.contrib.markup',
     # South http://south.aeracode.org/docs/
     'south',
     # Interface dos setup-box
