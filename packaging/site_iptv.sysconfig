@@ -1,6 +1,6 @@
 
 PROJECT_PATH=/iptv/var/www/sites/site_iptv/
-SETTINGS=settings
+SETTINGS=iptv.settings
 METHOD=prefork
 PYTHONPATH=".:.."
 PID_FILE=/iptv/var/run/site_iptv.pid
