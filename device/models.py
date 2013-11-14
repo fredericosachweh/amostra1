@@ -991,7 +991,8 @@ class DigitalTunerHardware(models.Model):
                 # Kernel modules: saa716x_tbs-dvb
                 ret = self.server.execute(
                     '/sbin/lspci -k -b -d %s:%s' % (self.id_vendor, self.id_product))
-                match = re.search(r'Kernel modules: (.*)', " ".join(ret))
+                #match = re.search(r'Kernel modules: (.*)', " ".join(ret))
+                match = re.search(r'Kernel driver in use: (.*) TBS', " ".join(ret))
                 self.driver = match.groups()[0]
             except Server.ExecutionFailure as e:
                 "Se foi, foi. Se não foi, tudo bem."
@@ -1102,9 +1103,9 @@ class DvbTuner(DigitalTuner):
         else:
             cmd += ' -f %d000' % self.frequency
             if self.polarization == 'V':
-                cmd += ' -v 13'
-            elif self.polarization == 'H':
                 cmd += ' -v 18'
+            elif self.polarization == 'H':
+                cmd += ' -v 13'
             elif self.polarization == 'U':
                 pass
             else:

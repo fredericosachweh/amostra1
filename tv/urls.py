@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 
 urlpatterns = patterns('',
     # Channel

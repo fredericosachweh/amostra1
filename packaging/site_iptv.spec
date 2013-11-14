@@ -62,7 +62,7 @@ Requires:       python-suds
 # Monitoramento
 Requires:       pynag-cianet >= 0.1.1
 
-Requires:       nginxcianet >= 1.4.2
+Requires:       nginxcianet >= 1.4.3
 
 ## Por hora para a versão de demo vai instalar
 Requires:       multicat >= 2.0.1
@@ -158,7 +158,7 @@ echo -e "\033[0m"
 %dir %{iptv_root}%{_localstatedir}/run/%{name}
 %dir %{iptv_root}%{_localstatedir}/lib/cache
 %dir %{site_home}
-%config(noreplace) %{site_home}/settings.py
+%config(noreplace) %{site_home}/iptv/settings.py
 %dir %{_localstatedir}/lib/iptv/recorder
 %dir %{_localstatedir}/lib/iptv/videos
 # IPTV Database
@@ -171,6 +171,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Thu Nov 14 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.0-1
+- New release Django 1.5 all settings moved to iptv.
 * Fri Nov 01 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.16.0-1
 - Move nbridge systemd to nbridge rpm.
 * Sat Oct 19 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.15.4-1
