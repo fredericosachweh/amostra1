@@ -78,7 +78,7 @@ STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
 
 # Porta que o servidor web está configurado
-MIDDLEWARE_WEBSERVICE_PORT = 80
+MIDDLEWARE_WEBSERVICE_PORT = 8800
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
 LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
