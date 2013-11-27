@@ -355,7 +355,7 @@ class SetTopBoxChannelTest(TestCase):
         SetTopBox.objects.create(serial_number=u'lululu', mac=u'lululu')
         self.assertEqual(SetTopBox.objects.all().count(), 5)
         # Get channel list
-        urlchannels = reverse('tv:api_dispatch_list', kwargs={
+        urlchannels = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         response = self.c.get(urlchannels)
         self.assertEqual(200, response.status_code)
@@ -525,7 +525,7 @@ class SetTopBoxChannelTest(TestCase):
         stb_ch[1].delete()
         channels = stb.get_channels()
         self.assertEqual(2, channels.count())
-        url_channel = reverse('tv:api_dispatch_list', kwargs={
+        url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
         #print(url_channel)
@@ -548,7 +548,7 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(stb.serial_number, u'01:02:03:04:05:06')
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(3, stb_ch.count())
-        url_channel = reverse('tv:api_dispatch_list', kwargs={
+        url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
         ## Get list of channels
@@ -680,7 +680,7 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(200, response.status_code)
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        url_channel = reverse('tv:api_dispatch_list', kwargs={
+        url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
         ## Get list of channels
@@ -719,7 +719,7 @@ class SetTopBoxChannelTest(TestCase):
         # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        url_channel = reverse('tv:api_dispatch_list', kwargs={
+        url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
         ## Get empty list (Anonymous)
