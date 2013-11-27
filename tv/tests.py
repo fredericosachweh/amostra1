@@ -172,7 +172,7 @@ class APITest(TestCase):
         #print('epg=%s' % e)
         #t = resolve('/tv/api/tv/v1/channel/')
         #print('tv=%s' % t)
-        urlschema = reverse('tv:api_get_schema',
+        urlschema = reverse('tv_v1:api_get_schema',
             kwargs={'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual(urlschema, '/tv/api/tv/v1/channel/schema/')
         response = c.get(urlschema)
@@ -191,7 +191,7 @@ class APITest(TestCase):
         self.assertEqual(200, response.status_code)
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        url = reverse('tv:api_dispatch_list',
+        url = reverse('tv_v1:api_dispatch_list',
             kwargs={'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual(url, '/tv/api/tv/v1/channel/')
         response = self.c.get(url)
@@ -211,7 +211,7 @@ class APITest(TestCase):
 
     def test_channel2(self):
         c = Client()
-        url = reverse('tv:api_dispatch_detail',
+        url = reverse('tv_v1:api_dispatch_detail',
             kwargs={'pk': '2', 'api_name': 'v1', 'resource_name': 'channel'})
         self.assertEqual(url, '/tv/api/tv/v1/channel/2/')
         response = c.get(url)
