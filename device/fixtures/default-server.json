@@ -33,14 +33,5 @@
       "name": "eth0",
       "server": 1
     }
-  },
-  {
-    "pk": 3,
-    "model": "device.nic",
-    "fields": {
-      "ipv4": "192.168.122.1",
-      "name": "virbr0",
-      "server": 1
-    }
   }
 ]
