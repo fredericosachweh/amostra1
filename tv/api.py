@@ -111,12 +111,9 @@ class AllChannelResource(NamespacedModelResource):
         queryset = models.Channel.objects.filter(enabled=False,
             source__isnull=False)
         authorization = ReadOnlyAuthorization()
-        #authorization = SetTopBoxAuthorization()
         excludes = ['enabled']
         allowed_methods = ['get']
-        #urlconf_namespace = 'tv'
         resource_name = 'channel'
-        #api_name = 'v2'
         fields = ['channelid', 'description', 'name', 'number', 'thumb']
         authentication = MultiAuthentication(
             Authentication(),
