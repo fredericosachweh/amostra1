@@ -354,7 +354,7 @@ NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
 NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
 NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
 NBRIDGE_CONF_DIR = '/iptv/etc/nbridge/'
-
+NBRIDGE_SERVER_KEY = '36410c96-c157-4b2a-ac19-1a2b7365ca11'
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
