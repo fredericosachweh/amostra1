@@ -15,10 +15,27 @@ from tastypie.authentication import SessionAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource, ModelResource
 
+
+from tastypie.authorization import Authorization
+from tastypie.exceptions import Unauthorized
+
+from tastypie.exceptions import Unauthorized, ImmediateHttpResponse
+
 from client.models import SetTopBox
 
 import models
 import logging
+
+
+class ChannelResourceAuthorization(Authorization):
+
+    def read_list(self, object_list, bundle):
+        log = logging.getLogger('api')
+        user = bundle.request.user
+        log.debug('Readlist request to:%s', user)
+        if user.is_anonymous():
+            raise Unauthorized("Unauthorized")
+        return object_list # .filter(user=bundle.request.user)
 
 
 class ChannelResource(NamespacedModelResource):
@@ -29,8 +46,9 @@ class ChannelResource(NamespacedModelResource):
     class Meta:
         queryset = models.Channel.objects.filter(enabled=True,
             source__isnull=False)
-        authorization = ReadOnlyAuthorization()
+        authorization = ChannelResourceAuthorization()
         #authorization = SetTopBoxAuthorization()
+        #authorization = Authorization()
         excludes = ['enabled']
         allowed_methods = ['get']
         urlconf_namespace = 'tv'
