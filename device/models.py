@@ -317,7 +317,7 @@ class AbstractServer(models.Model):
             return ''
         pkgs = settings.RPM_CHECK_VERSION
         rpm_cmd = u"export LANG=c && rpmquery --queryformat '%%{name} \
-%%{version} \\n' %s | grep -v 'not installed'" % (pkgs)
+%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v 'not installed'" % (pkgs)
         # %%{release} %%{installtime:date}
         response = self.execute(rpm_cmd)
         html = [i.strip() for i in response]
