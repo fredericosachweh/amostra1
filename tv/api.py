@@ -25,17 +25,20 @@ from client.models import SetTopBox
 
 import models
 import logging
-
+log = logging.getLogger('api')
 
 class ChannelResourceAuthorization(Authorization):
+    # http://django-tastypie.readthedocs.org/en/latest/authorization.html
 
     def read_list(self, object_list, bundle):
-        log = logging.getLogger('api')
         user = bundle.request.user
         log.debug('Readlist request to:%s', user)
         if user.is_anonymous():
             raise Unauthorized("Unauthorized")
-        return object_list # .filter(user=bundle.request.user)
+        return object_list
+
+    def read_detail(self, object_list, bundle):
+        return not bundle.request.user.is_anonymous()
 
 
 class ChannelResource(NamespacedModelResource):
@@ -62,7 +65,6 @@ class ChannelResource(NamespacedModelResource):
         return '%s:%d' % (bundle.obj.source.ip, bundle.obj.source.port)
 
     def apply_authorization_limits(self, request, object_list):
-        log = logging.getLogger('api')
         user = request.user
         log.debug('ChannelResource User=%s', user)
         if user.is_anonymous():
@@ -81,7 +83,6 @@ class ChannelResource(NamespacedModelResource):
         return object_list
 
     def obj_get_list(self, bundle, **kwargs):
-        log = logging.getLogger('api')
         user = bundle.request.user
         log.debug('ChannelResource User=%s', user)
         obj_list = super(ChannelResource, self).obj_get_list(bundle, **kwargs)
@@ -126,7 +127,7 @@ class AllChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=False,
+        queryset = models.Channel.objects.filter(enabled=True,
             source__isnull=False)
         authorization = ReadOnlyAuthorization()
         excludes = ['enabled']
@@ -139,19 +140,18 @@ class AllChannelResource(NamespacedModelResource):
 
     def dehydrate(self, bundle):
         u"This method populate previour and next (linked list)"
-        if not hasattr(bundle.obj, 'previous'):
-            bundle.data['previous'] = None
-        else:
+        log.debug('A=%s', bundle.data)
+        if bundle.data['previous'] is not None:
             bundle.data['previous'] = self.get_resource_uri(
                 bundle.obj.previous)
-        if not hasattr(bundle.obj, 'next'):
-            bundle.data['next'] = None
-        else:
+        if bundle.data['next'] is not None:
             bundle.data['next'] = self.get_resource_uri(bundle.obj.next)
+        log.debug('D=%s', bundle.data)
         return bundle
 
     def obj_get_list(self, bundle, **kwargs):
         obj_list = super(AllChannelResource, self).obj_get_list(bundle, **kwargs)
+        log.debug('On obj_get_list bundle=%s', obj_list)
         previous = None
         for o in obj_list:
             o.next = None
