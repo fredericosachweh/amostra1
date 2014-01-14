@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+import logging
+
 from tv.models import Channel
 from django.test import TestCase
 from django.test import LiveServerTestCase
@@ -14,6 +16,7 @@ from django.test.client import Client
 from django.conf import settings
 from client import models as clientmodels
 
+log = logging.getLogger('api')
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
 @override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
@@ -176,7 +179,9 @@ class APITest(TestCase):
             kwargs={'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual(urlschema, '/tv/api/tv/v1/channel/schema/')
         response = c.get(urlschema)
-        self.assertContains(response, 'channelid', 1, 200)
+        # Unautenticated
+        self.assertEqual(response.status_code, 401)
+        #self.assertContains(response, 'channelid', 1, 200)
 
     def test_list_channels(self):
         ## Define auto_create and execute again
@@ -207,15 +212,33 @@ class APITest(TestCase):
         self.assertEqual(obj[1]['next'], obj[2]['resource_uri'])
         self.assertEqual(obj[2]['next'], None)
 
-    def test_channel2(self):
-        c = Client()
-        url = reverse('tv_v1:api_dispatch_detail',
-            kwargs={'pk': '2', 'api_name': 'v1', 'resource_name': 'channel'})
-        self.assertEqual(url, '/tv/api/tv/v1/channel/2/')
-        response = c.get(url)
+    def test_channel_v2(self):
         import simplejson as json
-        # Objeto JSON
+        from pprint import pprint
         decoder = json.JSONDecoder()
+        c = Client()
+        url_all = reverse('tv_v2:api_dispatch_list',
+            kwargs={'api_name': 'v2', 'resource_name': 'channel'})
+        self.assertEqual('/tv/api/tv/v2/channel/', url_all)
+        response = c.get(url_all)
+        jcanal = decoder.decode(response.content)
+        pprint(jcanal)
+        obj = jcanal['objects']
+        self.assertEqual(obj[0]['previous'], None)
+        self.assertEqual(obj[0]['resource_uri'], obj[1]['previous'])
+        self.assertEqual(obj[1]['resource_uri'], obj[2]['previous'])
+        self.assertEqual(obj[0]['next'], obj[1]['resource_uri'])
+        self.assertEqual(obj[1]['next'], obj[2]['resource_uri'])
+        self.assertEqual(obj[2]['next'], None)
+        self.assertEqual(response.status_code, 200)
+        url = reverse('tv_v2:api_dispatch_detail',
+            kwargs={'pk': '2', 'api_name': 'v2', 'resource_name': 'channel'})
+        log.debug('URL=%s', url)
+        self.assertEqual(url, '/tv/api/tv/v2/channel/2/')
+        response = c.get(url)
+        log.debug('Resposta=%s', response.content)
+        self.assertEqual(response.status_code, 200)
+        # Objeto JSON
         jcanal = decoder.decode(response.content)
         self.failUnlessEqual(jcanal['description'], u'Rede globo de televisão')
         self.failUnlessEqual(jcanal['name'], u'Globo')
