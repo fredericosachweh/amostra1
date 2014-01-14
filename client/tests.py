@@ -399,10 +399,8 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
         self.assertContains(response,
-            'client_settopboxchannel_settopbox_id_channel_id_key',
+            'client_settopboxchannel',
             status_code=400)
-        #url_logoff = reverse('sys_logoff')
-        self.c.logout()
 
     def test_settopbox_options(self):
         SetTopBox.options.auto_add_channel = False
@@ -570,10 +568,7 @@ class SetTopBoxChannelTest(TestCase):
         log.debug('Logoff:%s', auth_logoff)
         self.assertEqual(200, response.status_code)
         response = self.c.get(url_channel)
-        self.assertEqual(200, response.status_code)
-        log.debug('Canais:%s', response.content)
-        jobj = json.loads(response.content)
-        self.assertEqual(0, jobj['meta']['total_count'])
+        self.assertEqual(401, response.status_code)
 
     def test_list_records(self):
         models.SetTopBox.options.auto_create = True
@@ -724,8 +719,7 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
         ## Get empty list (Anonymous)
         response = self.c.get(url_channel)
-        jobj = json.loads(response.content)
-        self.assertEqual(0, jobj['meta']['total_count'])
+        self.assertEqual(401, response.status_code)
         ## Get list of channels
         response = self.c.get(url_channel + '?api_key=%s' % api_key)
         jobj = json.loads(response.content)
