@@ -78,7 +78,8 @@ def Channel_post_save(sender, instance, created, **kwargs):
     if created is True:
         log.debug('New Channel auto-create SetTopBox-Channel')
         for stb in models.SetTopBox.objects.all():
+            rec = models.SetTopBox.options.auto_enable_recorder_access or False
             reference, created = models.SetTopBoxChannel.objects.get_or_create(
-                channel=instance, settopbox=stb)
+                channel=instance, settopbox=stb, recorder=rec)
             if created is True:
                 log.debug('New SetTopBox-Channel:%s', reference)
