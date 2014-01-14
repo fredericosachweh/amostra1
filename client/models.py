@@ -80,7 +80,8 @@ class SetTopBox(models.Model):
         verbose_name_plural = _(u'SetTopBoxes')
 
     def __unicode__(self):
-        return u'serial=%s,mac=%s' % (self.serial_number, self.mac)
+        #return u'serial=%s,mac=%s' % (self.serial_number, self.mac)
+        return u'%s' % (self.serial_number)
 
     def get_user(self):
         u'Returns: User related with this SetTopBox'
