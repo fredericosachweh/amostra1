@@ -121,6 +121,7 @@ class ChannelResource(NamespacedModelResource):
             bundle.data['next'] = self.get_resource_uri(bundle.obj.next)
         return bundle
 
+
 class AllChannelResource(NamespacedModelResource):
     #source = fields.CharField(blank=True)
     next = fields.CharField()
@@ -140,26 +141,16 @@ class AllChannelResource(NamespacedModelResource):
 
     def dehydrate(self, bundle):
         u"This method populate previour and next (linked list)"
-        log.debug('A=%s', bundle.data)
-        if bundle.data['previous'] is not None:
+        if not hasattr(bundle.obj, 'previous'):
+            bundle.data['previous'] = None
+        else:
             bundle.data['previous'] = self.get_resource_uri(
                 bundle.obj.previous)
-        if bundle.data['next'] is not None:
+        if not hasattr(bundle.obj, 'next'):
+            bundle.data['next'] = None
+        else:
             bundle.data['next'] = self.get_resource_uri(bundle.obj.next)
-        log.debug('D=%s', bundle.data)
         return bundle
-
-    def obj_get_list(self, bundle, **kwargs):
-        obj_list = super(AllChannelResource, self).obj_get_list(bundle, **kwargs)
-        log.debug('On obj_get_list bundle=%s', obj_list)
-        previous = None
-        for o in obj_list:
-            o.next = None
-            if previous is not None:
-                previous.next = o
-            o.previous = previous
-            previous = o
-        return obj_list
 
 api_v1 = NamespacedApi(api_name='v1', urlconf_namespace='tv_v1')
 api_v1.register(ChannelResource())

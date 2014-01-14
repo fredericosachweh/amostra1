@@ -52,6 +52,16 @@ class Channel(models.Model):
     def sink(self):
         return self.source
 
+    @property
+    def previous(self):
+        ch = Channel.objects.filter(number__lt=self.number).order_by('-number')[0]
+        return ch
+
+    @property
+    def next(self):
+        ch = Channel.objects.filter(number__gt=self.number).order_by('number')[0]
+        return ch
+
     def _is_streaming(self):
         return self.source.running()
 
