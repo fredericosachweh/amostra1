@@ -123,6 +123,7 @@ class SetTopBoxChannel(models.Model):
 
     class Meta:
         unique_together = (('settopbox', 'channel',),)
+        ordering = ('settopbox', 'channel__number',)
 
     def __unicode__(self):
         return u'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (self.channel.number,
