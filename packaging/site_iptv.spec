@@ -32,13 +32,13 @@ Requires:       python-pillow
 Requires:       python-imaging
 %endif
 
-%if 0%{?fedora} >= 18
-Requires:       python-django >= 1.4.5
-BuildRequires:  python-django >= 1.4.5
-%else
-Requires:       Django >= 1.4
-BuildRequires:  Django >= 1.4
-%endif
+#%if 0%{?fedora} >= 18
+#Requires:       python-django >= 1.4.5
+#BuildRequires:  python-django >= 1.4.5
+#%else
+#Requires:       Django >= 1.4
+#BuildRequires:  Django >= 1.4
+#%endif
 
 Requires:       postgresql-server
 Requires:       python-psycopg2
