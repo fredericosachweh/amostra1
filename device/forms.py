@@ -20,7 +20,7 @@ class GenericRelationForm(forms.ModelForm):
             model = self.Meta.model
             model_key = 'id'
         self.fields['object_id'].widget = ForeignKeyRawIdWidget(
-            rel=ManyToOneRel(model, model_key), admin_site=admin.site)
+            rel=ManyToOneRel('object_id', model, model_key), admin_site=admin.site)
         self.fields['content_type'].widget.widget = ContentTypeSelect(
                         'lookup_id_object_id',
                         self.fields['content_type'].widget.widget.attrs,
