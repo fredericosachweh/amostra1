@@ -104,7 +104,8 @@ class APITest(TestCase):
     def test_SetTopBox(self):
         from django.contrib.auth.models import Permission
         patch_request_factory()
-        c = Client2()
+        #c = Client2(enforce_csrf_checks=False)
+        c = Client()
         # Buscando o schema
         urlschema = reverse('client:api_get_schema',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1'})
@@ -152,7 +153,7 @@ class APITest(TestCase):
         self.assertEqual(response.status_code, 400)
         # Error message on duplicated serial_number
         self.assertContains(response,
-            'client_settopbox_serial_number_key',
+            'client_settopbox',
             status_code=400)
         # Delete one stb
         urldelete = reverse('client:api_dispatch_detail',
@@ -172,7 +173,7 @@ class APITest(TestCase):
 
     def test_PATCH(self):
         from django.contrib.auth.models import Permission
-        c = Client2()
+        c = Client()
         c.login(username='erp', password='123')
         #urllogin = reverse('sys_login')
         #response = c.post(urllogin, {'username': 'erp', 'password': '123'},
@@ -213,7 +214,7 @@ class SetTopBoxChannelTest(TestCase):
         #import getpass
         from django.contrib.auth.models import User, Permission
         super(SetTopBoxChannelTest, self).setUp()
-        self.c = Client2()
+        self.c = Client()
         self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
         self.user.is_staff = True
         self.user.save()
@@ -526,7 +527,6 @@ class SetTopBoxChannelTest(TestCase):
         url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
-        #print(url_channel)
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(2, jobj['meta']['total_count'])
@@ -565,7 +565,6 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(2, jobj['meta']['total_count'])
         ## Test Anonimous
         response = self.c.get(auth_logoff)
-        log.debug('Logoff:%s', auth_logoff)
         self.assertEqual(200, response.status_code)
         response = self.c.get(url_channel)
         self.assertEqual(401, response.status_code)
@@ -604,7 +603,6 @@ class SetTopBoxChannelTest(TestCase):
         rec.recorder = True
         rec.save()
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
-        #print(stb_ch)
         ## Call tvod_list
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
@@ -729,7 +727,7 @@ class SetTopBoxChannelTest(TestCase):
 class TestRequests(TestCase):
 
     def setUp(self):
-        self.c = Client2()
+        self.c = Client()
 
     def test_call_login(self):
         models.SetTopBox.options.auto_create = True
@@ -786,7 +784,7 @@ class TestRequests(TestCase):
         response = self.c.get(auth_logoff)
         self.assertEqual(response.status_code, 200)
         response = self.c.get(url_vol + '?api_key=%s' % key)
-        log.debug('status_code=%s, content=%s', response.status_code,
-            response.content)
+        #log.debug('status_code=%s, content=%s', response.status_code,
+        #    response.content)
         self.assertEqual(response.status_code, 400)
 
