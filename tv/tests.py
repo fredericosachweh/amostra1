@@ -214,7 +214,6 @@ class APITest(TestCase):
 
     def test_channel_v2(self):
         import simplejson as json
-        from pprint import pprint
         decoder = json.JSONDecoder()
         c = Client()
         url_all = reverse('tv_v2:api_dispatch_list',
@@ -222,7 +221,6 @@ class APITest(TestCase):
         self.assertEqual('/tv/api/tv/v2/channel/', url_all)
         response = c.get(url_all)
         jcanal = decoder.decode(response.content)
-        pprint(jcanal)
         obj = jcanal['objects']
         self.assertEqual(obj[0]['previous'], None)
         self.assertEqual(obj[0]['resource_uri'], obj[1]['previous'])
@@ -242,4 +240,86 @@ class APITest(TestCase):
         jcanal = decoder.decode(response.content)
         self.failUnlessEqual(jcanal['description'], u'Rede globo de televisão')
         self.failUnlessEqual(jcanal['name'], u'Globo')
+
+    def test_auth_v2(self):
+        import simplejson as json
+        import pprint
+        from client.models import SetTopBox, SetTopBoxChannel
+        decoder = json.JSONDecoder()
+        url_all = reverse('tv_v2:api_dispatch_list',
+            kwargs={'api_name': 'v2', 'resource_name': 'channel'})
+        self.assertEqual('/tv/api/tv/v2/channel/', url_all)
+        response = self.c.get(url_all)
+        jcanal = decoder.decode(response.content)
+        self.assertEqual(3, jcanal['meta']['total_count'])
+        url_auth = reverse('tv_v2:api_dispatch_list',
+            kwargs={'api_name': 'v2', 'resource_name': 'mychannel'})
+        self.assertEqual('/tv/api/tv/v2/mychannel/', url_auth)
+        response = self.c.get(url_auth)
+        self.assertEqual(401, response.status_code)
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        # Cria o STB
+        stb = SetTopBox.objects.create(
+            serial_number='01:02:03:04:05:06',
+            mac='01:02:03:04:05:06')
+        #self.assertTrue(stb)
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        # get api_key
+        jobj = decoder.decode(response.content)
+        api_key = jobj['api_key']
+        # Primeira consulta (Lista vazia)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        #log.debug('Conteudo:%s', response.content)
+        canais = Channel.objects.all()
+        # 
+        s1 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[1], recorder=False)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        #log.debug('Conteudo:%s', response.content)
+        self.assertContains(response, canais[1].channelid)
+        # 
+        s2 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[0], recorder=True)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        #log.debug('Conteudo:%s', response.content)
+        self.assertContains(response, canais[0].channelid)
+        # 
+        s3 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[2], recorder=True)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        log.debug('Conteudo:%s', response.content)
+        self.assertContains(response, canais[2].channelid)
+        # Cria um novo STB 
+        stb1 = SetTopBox.objects.create(
+            serial_number='01:02:03:04:05:07',
+            mac='01:02:03:04:05:07')
+        # Sair do sistema
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        ## login com novo STB
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
+        self.assertEqual(200, response.status_code)
+        # get api_key
+        jobj = decoder.decode(response.content)
+        api_key = jobj['api_key']
+        # Primeira consulta (Lista vazia)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, '"total_count": 0')
+        s4 = SetTopBoxChannel.objects.create(settopbox=stb1, channel=canais[2], recorder=True)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, '"total_count": 1')
+
+
+
+
+
+
+
 
