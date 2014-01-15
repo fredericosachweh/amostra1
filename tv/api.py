@@ -181,7 +181,7 @@ class MyChannelResource(NamespacedModelResource):
         #excludes = ['enabled', 'description', 'enabled', 'name']
         fields = ['id', 'channelid', 'number', 'buffer_size',]
         allowed_methods = ['get']
-        resource_name = 'mychannel'
+        resource_name = 'userchannel'
         authorization = MyChannelResourceAuthorization()
         authentication = MultiAuthentication(
             BasicAuthentication(realm='cianet-middleware'),

@@ -253,8 +253,8 @@ class APITest(TestCase):
         jcanal = decoder.decode(response.content)
         self.assertEqual(3, jcanal['meta']['total_count'])
         url_auth = reverse('tv_v2:api_dispatch_list',
-            kwargs={'api_name': 'v2', 'resource_name': 'mychannel'})
-        self.assertEqual('/tv/api/tv/v2/mychannel/', url_auth)
+            kwargs={'api_name': 'v2', 'resource_name': 'userchannel'})
+        self.assertEqual('/tv/api/tv/v2/userchannel/', url_auth)
         response = self.c.get(url_auth)
         self.assertEqual(401, response.status_code)
         auth_login = reverse('client_auth')
