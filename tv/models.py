@@ -38,6 +38,9 @@ class Channel(models.Model):
     buffer_size = models.PositiveIntegerField(_(u'STB Buffer (milisegundos)'),
         default=1000, help_text=u'For easy STB 300 > and < 5000')
 
+    _p = None
+    _n = None
+
     def __unicode__(self):
         return u"[%d] num=%s %s" % (self.id, self.number, self.name)
 
@@ -51,6 +54,28 @@ class Channel(models.Model):
     @property
     def sink(self):
         return self.source
+
+    @property
+    def previous(self):
+        if self._p is not None:
+            return self._p
+        ch = Channel.objects.filter(number__lt=self.number).order_by('-number')[0]
+        return ch
+
+    @previous.setter
+    def previous(self, val):
+        self._p = val
+
+    @property
+    def next(self):
+        if self._n is not None:
+            return self._n
+        ch = Channel.objects.filter(number__gt=self.number).order_by('number')[0]
+        return ch
+
+    @next.setter
+    def next(self, val):
+        self._n = val
 
     def _is_streaming(self):
         return self.source.running()

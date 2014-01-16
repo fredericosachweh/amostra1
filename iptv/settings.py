@@ -15,7 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Emanoel Monster', 'emanoel@cianet.ind.br'),
-    ('Guilherme Borges', 'borges@cianet.ind.br'),
+    ('Emilio Cleiton', 'emilio@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -39,8 +39,8 @@ else:
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            'PORT': '5432'
+            'HOST': '/tmp',
+            #'PORT': '5432'
         }
     }
 
@@ -78,7 +78,7 @@ STATIC_URL = '/tv/static/'
 ROOT_URL = 'tv/'
 
 # Porta que o servidor web está configurado
-MIDDLEWARE_WEBSERVICE_PORT = 80
+MIDDLEWARE_WEBSERVICE_PORT = 8800
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
 LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
@@ -220,6 +220,12 @@ LOGGING = {
             'filename': '%s/nbridge.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.unittest': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/unittest.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -269,6 +275,11 @@ LOGGING = {
         },
         'nbridge': {
             'handlers': ['file.nbridge'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'unittest': {
+            'handlers': ['file.unittest'],
             'level': 'DEBUG',
             'propagate': True
         },
@@ -354,7 +365,7 @@ NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
 NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
 NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
 NBRIDGE_CONF_DIR = '/iptv/etc/nbridge/'
-
+NBRIDGE_SERVER_KEY = '36410c96-c157-4b2a-ac19-1a2b7365ca11'
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
@@ -399,7 +410,7 @@ FORCE_SCRIPT_NAME = ""
 RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv nodejs-nbridge nginx-fe nginx-mw"
 
 EPG_IMPORT_CREDENTIALS = {
-    'site': '83.222.124.34',
+    'site': 'guide.aron.tv.br',
     'username': '91037581920@revistaeletronica.com.br',
     'password': '91037581920',
 }

@@ -202,7 +202,7 @@ class GuideResource(NamespacedModelResource):
         orm_filters = super(GuideResource, self).build_filters(newfilter)
         return orm_filters
 
-api = NamespacedApi(api_name='v1', urlconf_namespace='epg')
+api = NamespacedApi(api_name='v1', urlconf_namespace='epg_v1')
 api.register(ChannelResource())
 api.register(LangResource())
 api.register(IconResource())
@@ -220,3 +220,5 @@ api.register(ProgrammeResource())
 api.register(GuideResource())
 api.register(ActorResource())
 api.register(StaffResource())
+
+apis = [api]

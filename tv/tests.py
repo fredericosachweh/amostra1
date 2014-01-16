@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+import logging
+
 from tv.models import Channel
 from django.test import TestCase
 from django.test import LiveServerTestCase
@@ -14,6 +16,7 @@ from django.test.client import Client
 from django.conf import settings
 from client import models as clientmodels
 
+log = logging.getLogger('unittest')
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
 @override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
@@ -172,14 +175,15 @@ class APITest(TestCase):
         #print('epg=%s' % e)
         #t = resolve('/tv/api/tv/v1/channel/')
         #print('tv=%s' % t)
-        urlschema = reverse('tv:api_get_schema',
+        urlschema = reverse('tv_v1:api_get_schema',
             kwargs={'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual(urlschema, '/tv/api/tv/v1/channel/schema/')
         response = c.get(urlschema)
-        self.assertContains(response, 'channelid', 1, 200)
+        # Unautenticated
+        self.assertEqual(response.status_code, 401)
+        #self.assertContains(response, 'channelid', 1, 200)
 
     def test_list_channels(self):
-        from pprint import pprint
         ## Define auto_create and execute again
         clientmodels.SetTopBox.options.auto_create = True
         clientmodels.SetTopBox.options.auto_add_channel = True
@@ -191,14 +195,13 @@ class APITest(TestCase):
         self.assertEqual(200, response.status_code)
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        url = reverse('tv:api_dispatch_list',
+        url = reverse('tv_v1:api_dispatch_list',
             kwargs={'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual(url, '/tv/api/tv/v1/channel/')
         response = self.c.get(url)
         import simplejson as json
         # Objeto JSON
         jcanal = json.loads(response.content)
-        pprint(jcanal)
         self.failUnlessEqual(jcanal['meta']['total_count'], 3,
             'Deveria haver 3 canais')
         obj = jcanal['objects']
@@ -209,125 +212,119 @@ class APITest(TestCase):
         self.assertEqual(obj[1]['next'], obj[2]['resource_uri'])
         self.assertEqual(obj[2]['next'], None)
 
-    def test_channel2(self):
-        c = Client()
-        url = reverse('tv:api_dispatch_detail',
-            kwargs={'pk': '2', 'api_name': 'v1', 'resource_name': 'channel'})
-        self.assertEqual(url, '/tv/api/tv/v1/channel/2/')
-        response = c.get(url)
+    def test_channel_v2(self):
         import simplejson as json
-        # Objeto JSON
         decoder = json.JSONDecoder()
+        c = Client()
+        url_all = reverse('tv_v2:api_dispatch_list',
+            kwargs={'api_name': 'v2', 'resource_name': 'channel'})
+        self.assertEqual('/tv/api/tv/v2/channel/', url_all)
+        response = c.get(url_all)
+        jcanal = decoder.decode(response.content)
+        obj = jcanal['objects']
+        self.assertEqual(obj[0]['previous'], None)
+        self.assertEqual(obj[0]['resource_uri'], obj[1]['previous'])
+        self.assertEqual(obj[1]['resource_uri'], obj[2]['previous'])
+        self.assertEqual(obj[0]['next'], obj[1]['resource_uri'])
+        self.assertEqual(obj[1]['next'], obj[2]['resource_uri'])
+        self.assertEqual(obj[2]['next'], None)
+        self.assertEqual(response.status_code, 200)
+        url = reverse('tv_v2:api_dispatch_detail',
+            kwargs={'pk': '2', 'api_name': 'v2', 'resource_name': 'channel'})
+        log.debug('URL=%s', url)
+        self.assertEqual(url, '/tv/api/tv/v2/channel/2/')
+        response = c.get(url)
+        log.debug('Resposta=%s', response.content)
+        self.assertEqual(response.status_code, 200)
+        # Objeto JSON
         jcanal = decoder.decode(response.content)
         self.failUnlessEqual(jcanal['description'], u'Rede globo de televisão')
         self.failUnlessEqual(jcanal['name'], u'Globo')
 
+    def test_auth_v2(self):
+        import simplejson as json
+        import pprint
+        from client.models import SetTopBox, SetTopBoxChannel
+        clientmodels.SetTopBox.options.auto_create = False
+        clientmodels.SetTopBox.options.auto_add_channel = False
+        clientmodels.SetTopBox.options.use_mac_as_serial = True
+        clientmodels.SetTopBox.options.auto_enable_recorder_access = True
+        decoder = json.JSONDecoder()
+        url_all = reverse('tv_v2:api_dispatch_list',
+            kwargs={'api_name': 'v2', 'resource_name': 'channel'})
+        self.assertEqual('/tv/api/tv/v2/channel/', url_all)
+        response = self.c.get(url_all)
+        jcanal = decoder.decode(response.content)
+        self.assertEqual(3, jcanal['meta']['total_count'])
+        url_auth = reverse('tv_v2:api_dispatch_list',
+            kwargs={'api_name': 'v2', 'resource_name': 'userchannel'})
+        self.assertEqual('/tv/api/tv/v2/userchannel/', url_auth)
+        response = self.c.get(url_auth)
+        self.assertEqual(401, response.status_code)
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        # Cria o STB
+        stb = SetTopBox.objects.create(
+            serial_number='01:02:03:04:05:06',
+            mac='01:02:03:04:05:06')
+        #self.assertTrue(stb)
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        # get api_key
+        jobj = decoder.decode(response.content)
+        api_key = jobj['api_key']
+        # Primeira consulta (Lista vazia)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        #log.debug('Conteudo:%s', response.content)
+        canais = Channel.objects.all()
+        log.debug('STB-CH=%s', SetTopBoxChannel.objects.all())
+        # 
+        s1 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[1], recorder=False)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        #log.debug('Conteudo:%s', response.content)
+        self.assertContains(response, canais[1].channelid)
+        # 
+        s2 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[0], recorder=True)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        log.debug('Conteudo:%s', response.content)
+        self.assertContains(response, canais[0].channelid)
+        # 
+        s3 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[2], recorder=True)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        log.debug('Conteudo:%s', response.content)
+        self.assertContains(response, canais[2].channelid)
+        # Cria um novo STB 
+        stb1 = SetTopBox.objects.create(
+            serial_number='01:02:03:04:05:07',
+            mac='01:02:03:04:05:07')
+        # Sair do sistema
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        ## login com novo STB
+        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
+        self.assertEqual(200, response.status_code)
+        # get api_key
+        jobj = decoder.decode(response.content)
+        api_key = jobj['api_key']
+        # Primeira consulta (Lista vazia)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, '"total_count": 0')
+        s4 = SetTopBoxChannel.objects.create(settopbox=stb1, channel=canais[2], recorder=True)
+        response = self.c.get(url_auth + '?api_key=' + api_key)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, '"total_count": 1')
 
-class WizardTest(LiveServerTestCase):
-    fixtures = ['user-data.json', 'default-server.json',
-                'antenna.json', 'dvbworld.json', 'pixelview.json']
 
-    @classmethod
-    def setUpClass(cls):
-        cls.selenium = WebDriver()
-        super(WizardTest, cls).setUpClass()
 
-    @classmethod
-    def tearDownClass(cls):
-        super(WizardTest, cls).tearDownClass()
-        cls.selenium.quit()
 
-    def _login(self, username, password):
-        login_url = '%s%s' % (self.live_server_url,
-                                reverse('django.contrib.auth.views.login'))
-        self.selenium.get(login_url)
-        username_input = self.selenium.find_element_by_name("username")
-        username_input.send_keys(username)
-        password_input = self.selenium.find_element_by_name("password")
-        password_input.send_keys(password)
-        self.selenium.find_element_by_xpath('//input[@type="submit"]').click()
-        WebDriverWait(self.selenium, 10).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
 
-    def _is_logged(self):
-        from django.contrib.auth.models import User
-        from django.contrib.sessions.models import Session
-        from datetime import datetime
-        admin = User.objects.get(username='admin')
-        # Query all non-expired sessions
-        sessions = Session.objects.filter(expire_date__gte=datetime.now())
-        for session in sessions:
-            data = session.get_decoded()
-            if data.get('_auth_user_id', None) == admin.id:
-                return True
-        return False
 
-    def _select(self, id, choice):
-        field = self.selenium.find_element_by_id(id)
-        for option in field.find_elements_by_tag_name('option'):
-            if option.text == choice:
-                option.click() # select() in earlier versions of webdriver
 
-    def _select_by_value(self, id, value):
-        field = self.selenium.find_element_by_id(id)
-        field.find_element_by_xpath("//option[@value='%s']" % value).click()
 
-    def test_wizard(self):
-        self._login('admin', 'cianet')
-        add_new_url = '%s%s' % (self.live_server_url,
-                                reverse('admin:channel_wizard_add'))
-        self.selenium.get(add_new_url)
-        # wizard's first step
-        self._select('id_0-input_types_field', 'Arquivo de entrada')
-        WebDriverWait(self.selenium, 10).until(
-            lambda driver: driver.find_element_by_xpath(
-                "//option[@value='1']"))
-        self._select('id_0-input_stream', 'asdf [dvb] asdf -->')
-        WebDriverWait(self.selenium, 10).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
-        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
-#        name = self.selenium.find_element_by_name('0-name')
-#        ip = self.selenium.find_element_by_name('0-ip')
-#        port = self.selenium.find_element_by_name('0-port')
-#        name.send_keys('programa1')
-#        ip.send_keys('192.168.0.135')
-#        port.send_keys('1000')
-        # 2nd step
-        sid = self.selenium.find_element_by_name('1-sid')
-        sid.send_keys('123')
-        object_id = self.selenium.find_element_by_name('1-object_id')
-        object_id.send_keys('123')
-        self._select('id_1-content_type', 'Entrada IP multicast')
-        print self.selenium.find_element_by_class_name(
-                                        'form-row field-content_type')
-        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
-        # 3rd step
-        self._select('id_2-content_type', 'Endereço IPv4 multicast')
-        self._select('id_2-nic_sink', 'localhost')
-        object_id = self.selenium.find_element_by_name('1-object_id')
-        rotate = self.selenium.find_element_by_name('id_2-rotate')
-        keep_time = self.selenium.find_element_by_name('id_2-keep_time')
-        start_time = self.selenium.find_element_by_name('id_2-start_time')
-        object_id.send_keys('123')
-        rotate.send_keys('321')
-        keep_time.send_keys('213')
-        start_time.send_keys('21/05/2012')
-        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()
-        # 4th step
-        self._select('id_3-content_typ', 'Endereço IPv4 multicast')
-        self._select('id_3-protocol', 'UDP')
-        self._select_by_value('id_3-interface', 1)
-        self._select_by_value('id_3-nic_sink', 1)
-        object_id = self.selenium.find_element_by_name('id_3-object_id')
-        port = self.selenium.find_element_by_name('id_3-port')
-        ip = self.selenium.find_element_by_name('id_3-ip')
-        object_id.send_keys('123')
-        port.send_keys('1000')
-        ip.send_keys('192.168.0.1')
-        # 5th step
-        self._select('id_4-source', 1)
-        number = self.selenium.find_element_by_name('id_4-numero')
-        name = self.selenium.find_element_by_name('id_4-nome')
-        #logo?
-        acronym = self.selenium.find_element_by_name('4-sigla')
-        self.selenium.find_element_by_xpath('//input[@name="_save"]').click()

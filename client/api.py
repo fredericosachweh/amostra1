@@ -61,29 +61,31 @@ class SetTopBoxResource(NamespacedModelResource):
             ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
+        from django.db import transaction
         log = logging.getLogger('api')
         log.debug('New STB=%s', bundle.data.get('serial_number'))
-        try:
-            bundle = super(SetTopBoxResource, self).obj_create(bundle,
-                **kwargs)
-        except IntegrityError, e:
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        with transaction.atomic():
+            try:
+                bundle = super(SetTopBoxResource, self).obj_create(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                transaction.rollback()
+                raise BadRequest(e)
         return bundle
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
+        from django.db import transaction
         log = logging.getLogger('api')
         log.debug('Update STB=%s', bundle.data.get('serial_number'))
-        try:
-            bundle = super(SetTopBoxResource, self).obj_update(bundle,
-                request=request, **kwargs)
-        except IntegrityError, e:
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        with transaction.atomic():
+            try:
+                bundle = super(SetTopBoxResource, self).obj_update(bundle,
+                    request=request, **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                transaction.rollback()
+                raise BadRequest(e)
         return bundle
 
 
@@ -215,7 +217,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                     object_list)
             object_list = object_list.filter(settopbox=stb)
         else:
-            object_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+            object_list = models.SetTopBoxConfig.objects.none()
         return object_list
 
     def obj_create(self, bundle, **kwargs):
@@ -278,14 +280,14 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 obj_list = super(SetTopBoxConfigResource, self).obj_get_list(
                     bundle, **kwargs).filter(settopbox=stb)
             else:
-                obj_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+                obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
     def obj_get(self, bundle, **kwargs):
         log = logging.getLogger('api')
         user = bundle.request.user
         log.debug('User=%s', user)
-        obj_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+        obj_list = models.SetTopBoxConfig.objects.none()
         if user.is_anonymous() is False:
             if not user.is_staff:
                 serial = user.username.replace(settings.STB_USER_PREFIX, '')
@@ -298,9 +300,9 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                     return obj_list
                 else:
                     #raise Unauthorized('')
-                    obj_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+                    obj_list = models.SetTopBoxConfig.objects.none()
             else:
-                obj_list = models.SetTopBoxConfig.objects.get_empty_query_set()
+                obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
 
@@ -308,8 +310,11 @@ class StreamRecorderResource(NamespacedModelResource):
     class Meta:
         queryset = devicemodels.StreamRecorder.objects.filter(status=True)
 
-api = NamespacedApi(api_name='v1', urlconf_namespace='client')
+api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
 api.register(SetTopBoxChannelResource())
 api.register(SetTopBoxConfigResource())
+
+
+apis = [api]

@@ -32,13 +32,13 @@ Requires:       python-pillow
 Requires:       python-imaging
 %endif
 
-%if 0%{?fedora} >= 18
-Requires:       python-django >= 1.4.5
-BuildRequires:  python-django >= 1.4.5
-%else
-Requires:       Django >= 1.4
-BuildRequires:  Django >= 1.4
-%endif
+#%if 0%{?fedora} >= 18
+#Requires:       python-django >= 1.4.5
+#BuildRequires:  python-django >= 1.4.5
+#%else
+#Requires:       Django >= 1.4
+#BuildRequires:  Django >= 1.4
+#%endif
 
 Requires:       postgresql-server
 Requires:       python-psycopg2
@@ -113,6 +113,7 @@ rm -rf $RPM_BUILD_ROOT
 %systemd_post %{name}.service
 %systemd_post
 /usr/bin/systemctl daemon-reload --system
+/sbin/usermod -a -G video -s /bin/bash nginx
 
 echo -e "\033[0;31m"
 echo "========================================================================="
