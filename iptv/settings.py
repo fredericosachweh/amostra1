@@ -220,6 +220,12 @@ LOGGING = {
             'filename': '%s/nbridge.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.unittest': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/unittest.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -269,6 +275,11 @@ LOGGING = {
         },
         'nbridge': {
             'handlers': ['file.nbridge'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'unittest': {
+            'handlers': ['file.unittest'],
             'level': 'DEBUG',
             'propagate': True
         },
