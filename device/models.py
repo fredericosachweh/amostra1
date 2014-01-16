@@ -35,6 +35,7 @@ class AbstractServer(models.Model):
     status = models.BooleanField(_(u'Status'), default=False)
     msg = models.TextField(_(u'Mensagem de retorno'), blank=True)
     offline_mode = models.BooleanField(default=False)
+    _is_offiline = False
 
     class Meta:
         abstract = True
@@ -78,12 +79,15 @@ class AbstractServer(models.Model):
                 password=self.password,
                 private_key=self.rsakey)
             self.status = True
+            self._is_offiline = False
             self.msg = 'OK'
         except Exception as ex:
             log = logging.getLogger('device.remotecall')
             log.error('%s(%s:%s %s):%s' % (self, self.host, self.ssh_port,
                 self.username, ex))
             self.status = False
+            self.disconect()
+            self._is_offiline = True
             self.msg = ex
         self.save()
         return conn.get(self.host)
@@ -100,11 +104,17 @@ class AbstractServer(models.Model):
         try:
             s = self.connect()
             self.msg = 'OK'
+            self._is_offiline = s is None
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
             log.error('[%s]:%s' % (self, ex))
+            self._is_offiline = True
             self.save()
             return 'Can not connect'
+        log.debug('Offiline=%s', self._is_offiline)
+        log.debug('Conn=%s', s)
+        if self._is_offiline:
+            return u'Server is offline'
         ret = s.execute(command)
         if not persist and self.status:
             log.debug('Close BY  not persist and self.status')
@@ -123,9 +133,11 @@ class AbstractServer(models.Model):
         try:
             s = self.connect()
             self.msg = 'OK'
+            self._is_offiline = False
         except Exception as ex:
             self.msg = ex
             self.status = False
+            self._is_offiline = True
             log.error('[%s]:%s' % (self, ex))
             raise ex
         ret = s.execute_daemon(command, log_path)
@@ -154,6 +166,8 @@ class AbstractServer(models.Model):
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
+        if self._is_offiline:
+            return False
         for p in self.list_process(pid):
             if p['pid'] == pid:
                 log.info('Process [%d] live on [%s] = True', pid, self)
@@ -172,6 +186,8 @@ class AbstractServer(models.Model):
         else:
             stdout = self.execute(ps, persist=True)
         ret = []
+        if self._is_offiline:
+            return ret
         for line in stdout[1:]:
             cmd = line.split()
             ret.append({

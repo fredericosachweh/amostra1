@@ -113,6 +113,7 @@ rm -rf $RPM_BUILD_ROOT
 %systemd_post %{name}.service
 %systemd_post
 /usr/bin/systemctl daemon-reload --system
+/sbin/usermod -a -G video -s /bin/bash nginx
 
 echo -e "\033[0;31m"
 echo "========================================================================="
