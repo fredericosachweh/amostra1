@@ -61,29 +61,31 @@ class SetTopBoxResource(NamespacedModelResource):
             ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
+        from django.db import transaction
         log = logging.getLogger('api')
         log.debug('New STB=%s', bundle.data.get('serial_number'))
-        try:
-            bundle = super(SetTopBoxResource, self).obj_create(bundle,
-                **kwargs)
-        except IntegrityError, e:
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        with transaction.atomic():
+            try:
+                bundle = super(SetTopBoxResource, self).obj_create(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                transaction.rollback()
+                raise BadRequest(e)
         return bundle
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
+        from django.db import transaction
         log = logging.getLogger('api')
         log.debug('Update STB=%s', bundle.data.get('serial_number'))
-        try:
-            bundle = super(SetTopBoxResource, self).obj_update(bundle,
-                request=request, **kwargs)
-        except IntegrityError, e:
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        with transaction.atomic():
+            try:
+                bundle = super(SetTopBoxResource, self).obj_update(bundle,
+                    request=request, **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                transaction.rollback()
+                raise BadRequest(e)
         return bundle
 
 

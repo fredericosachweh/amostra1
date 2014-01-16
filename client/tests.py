@@ -17,7 +17,7 @@ from tv import models as tvmodels
 import models
 import logging
 import simplejson
-log = logging.getLogger('debug')
+log = logging.getLogger('unittest')
 
 
 def patch_request_factory():
@@ -103,6 +103,10 @@ class APITest(TestCase):
 
     def test_SetTopBox(self):
         from django.contrib.auth.models import Permission
+        SetTopBox.options.auto_create = False
+        SetTopBox.options.auto_add_channel = False
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
         patch_request_factory()
         #c = Client2(enforce_csrf_checks=False)
         c = Client()
