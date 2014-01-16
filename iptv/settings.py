@@ -15,7 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Emanoel Monster', 'emanoel@cianet.ind.br'),
-    ('Guilherme Borges', 'borges@cianet.ind.br'),
+    ('Emilio Cleiton', 'emilio@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -410,7 +410,7 @@ FORCE_SCRIPT_NAME = ""
 RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv nodejs-nbridge nginx-fe nginx-mw"
 
 EPG_IMPORT_CREDENTIALS = {
-    'site': '83.222.124.34',
+    'site': 'guide.aron.tv.br',
     'username': '91037581920@revistaeletronica.com.br',
     'password': '91037581920',
 }
