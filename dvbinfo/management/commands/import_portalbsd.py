@@ -25,8 +25,11 @@ class Command(BaseCommand):
 
     def _create_satellite(self, sat_soup, sat_name, sat_location):
         detailed = sat_soup.find('div', attrs={'class': 'contentDetalhes'})
-        sat_logo = self.base_url + detailed.find('img')['src']
-        info = detailed.findAll('div')[2].text
+        if detailed is not None:
+            sat_logo = self.base_url + detailed.find('img')['src']
+            info = detailed.findAll('div')[2].text
+        else:
+            return
         res = re.findall(
             u'(Bandas:.*)(Polarização:.*)(Capacidade:.*)(Lançamento:.*)\
 (Vida Útil:.*)', info)

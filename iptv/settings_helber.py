@@ -23,8 +23,8 @@ else:
             'NAME': 'iptv',
             'USER': 'iptv',
             'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            'PORT': 5432,
+            'HOST': '/tmp',
+            #'PORT': ,
         }
     }
 

@@ -173,11 +173,12 @@ class Nbridge(DeviceServer):
     "bind": "%snbridge_%s.sock",
     "middleware": "%s",
     "api": "/tv/api",
+    "server_key": "%s",
     "verbose": %s,
     "log_level": %s,
     "env": "%s"
 }''' % (settings.NBRIDGE_SOCKETS_DIR, self.id, self.middleware_addr,
-            verbose, self.log_level, self.env_val)
+            settings.NBRIDGE_SERVER_KEY or '36410c96-c157-4b2a-ac19-1a2b7365ca11', verbose, self.log_level, self.env_val)
         cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
         self.server.execute(cmd)
 

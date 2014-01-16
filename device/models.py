@@ -317,7 +317,7 @@ class AbstractServer(models.Model):
             return ''
         pkgs = settings.RPM_CHECK_VERSION
         rpm_cmd = u"export LANG=c && rpmquery --queryformat '%%{name} \
-%%{version} \\n' %s | grep -v 'not installed'" % (pkgs)
+%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v 'not installed'" % (pkgs)
         # %%{release} %%{installtime:date}
         response = self.execute(rpm_cmd)
         html = [i.strip() for i in response]
@@ -634,7 +634,7 @@ class DeviceServer(models.Model):
 @receiver(pre_delete, sender=DeviceServer)
 def DeviceServer_pre_delete(sender, instance, **kwargs):
     log = logging.getLogger('debug')
-    log.debug('DELETE: DeviceServer=%s "%s"', instance, sender)
+    #log.debug('DELETE: DeviceServer=%s "%s"', instance, sender)
     if instance.status and instance.pid:
         log.debug('Force stop recursive on delete')
         instance.stop(recursive=True)
@@ -1928,7 +1928,7 @@ default=False)  # --sout-transcode-audio-sync
 
     def _get_cmd(self):
         import re
-        cmd = u'%s -I dummy ' % settings.VLC_COMMAND
+        cmd = u'%s -I dummy -v ' % settings.VLC_COMMAND
         cmd += u'--miface %s ' % self.nic_src.name
         if re.match(r'^2[23]\d\.', self.sink.ip):  # is multicast
             input_addr = u'udp://@%s:%d/ifaddr=%s' % (
@@ -1955,7 +1955,7 @@ default=False)  # --sout-transcode-audio-sync
             if self.apply_normvol:
                 afilters.append('volnorm')
                 cmd += self._get_normvol_filter_options()
-            cmd += u'--sout="#transcode{acodec=%s,ab=%d,afilter={%s}}:%s" %s' \
+            cmd += u'--sout="#transcode{sacodec=%s,ab=%d,afilter={%s}}:%s" %s' \
             % (
                 self.audio_codec, self.audio_bitrate,
                 u':'.join(afilters), output, input_addr
