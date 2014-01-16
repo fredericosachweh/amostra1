@@ -16,7 +16,7 @@ from django.test.client import Client
 from django.conf import settings
 from client import models as clientmodels
 
-log = logging.getLogger('api')
+log = logging.getLogger('unittest')
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
 @override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
@@ -245,6 +245,10 @@ class APITest(TestCase):
         import simplejson as json
         import pprint
         from client.models import SetTopBox, SetTopBoxChannel
+        clientmodels.SetTopBox.options.auto_create = False
+        clientmodels.SetTopBox.options.auto_add_channel = False
+        clientmodels.SetTopBox.options.use_mac_as_serial = True
+        clientmodels.SetTopBox.options.auto_enable_recorder_access = True
         decoder = json.JSONDecoder()
         url_all = reverse('tv_v2:api_dispatch_list',
             kwargs={'api_name': 'v2', 'resource_name': 'channel'})
@@ -276,6 +280,7 @@ class APITest(TestCase):
         self.assertEqual(200, response.status_code)
         #log.debug('Conteudo:%s', response.content)
         canais = Channel.objects.all()
+        log.debug('STB-CH=%s', SetTopBoxChannel.objects.all())
         # 
         s1 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[1], recorder=False)
         response = self.c.get(url_auth + '?api_key=' + api_key)
@@ -286,7 +291,7 @@ class APITest(TestCase):
         s2 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[0], recorder=True)
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
-        #log.debug('Conteudo:%s', response.content)
+        log.debug('Conteudo:%s', response.content)
         self.assertContains(response, canais[0].channelid)
         # 
         s3 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[2], recorder=True)
