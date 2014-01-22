@@ -63,6 +63,8 @@ Requires:       python-suds
 Requires:       pynag-cianet >= 0.1.1
 
 Requires:       nginxcianet >= 1.4.3
+# Para requests http no nbridge
+Requires:       python-requests
 
 ## Por hora para a versão de demo vai instalar
 Requires:       multicat >= 2.0.1
@@ -172,6 +174,9 @@ echo -e "\033[0m"
 
 
 %changelog
+* Wed Jan 22 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.2-1
+- API V2 channel and userchennel.
+- Request reload channel and user channel to nbridge on SetTopBoxChannel (create, delete)
 * Thu Nov 14 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.0-1
 - New release Django 1.5 all settings moved to iptv.
 * Fri Nov 01 2013 Helber Maciel Guerra <helber@cianet.ind.br> - 0.9.16.0-1
