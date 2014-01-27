@@ -17,6 +17,7 @@ import models
 from device import models as devicemodels
 from tv.api import ChannelResource
 import logging
+log = logging.getLogger('api')
 
 ## Validation:
 #http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-
@@ -31,9 +32,9 @@ import logging
 class MyAuthorization(DjangoAuthorization):
 
     def is_authorized(self, request, bundle_object=None):
+        log.debug('On is_authorized')
         ok = super(MyAuthorization, self).is_authorized(request, object)
         if ok is False:
-            log = logging.getLogger('api')
             log.debug('Method:%s', request.method)
             log.debug('User:%s', request.user)
             log.debug('OK:%s', ok)
@@ -62,7 +63,6 @@ class SetTopBoxResource(NamespacedModelResource):
 
     def obj_create(self, bundle, request=None, **kwargs):
         from django.db import transaction
-        log = logging.getLogger('api')
         log.debug('New STB=%s', bundle.data.get('serial_number'))
         with transaction.atomic():
             try:
@@ -76,7 +76,6 @@ class SetTopBoxResource(NamespacedModelResource):
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
         from django.db import transaction
-        log = logging.getLogger('api')
         log.debug('Update STB=%s', bundle.data.get('serial_number'))
         with transaction.atomic():
             try:
@@ -134,34 +133,32 @@ class SetTopBoxChannelResource(NamespacedModelResource):
             ApiKeyAuthentication())
 
     def obj_create(self, bundle, request=None, **kwargs):
-        try:
-            bundle = super(SetTopBoxChannelResource, self).obj_create(bundle,
-                **kwargs)
-        except IntegrityError, e:
-            log = logging.getLogger('api')
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        from django.db import transaction
+        #log.debug('On obj_create(%s,%s,%s)', bundle, request, kwargs)
+        with transaction.atomic():
+            try:
+                bundle = super(SetTopBoxChannelResource, self).obj_create(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                raise BadRequest(e)
         return bundle
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
-        try:
-            bundle = super(SetTopBoxChannelResource, self).obj_update(bundle,
-                **kwargs)
-        except IntegrityError, e:
-            log = logging.getLogger('api')
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        from django.db import transaction
+        with transaction.atomic():
+            try:
+                bundle = super(SetTopBoxChannelResource, self).obj_update(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                raise BadRequest(e)
         return bundle
 
 
 class SetTopBoxAuthorization(Authorization):
 
     def is_authorized(self, request, bundle_object=None):
-        log = logging.getLogger('api')
         log.debug('bundle_object=%s', bundle_object)
         if request.user.is_anonymous() is True:
             return False
@@ -204,7 +201,6 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         """
         Filtra para o usuário logado.
         """
-        log = logging.getLogger('api')
         log.debug('User=%s', request.user)
         if request.user.is_anonymous() is False:
             log.debug('user:%s', request.user)
@@ -221,7 +217,6 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         return object_list
 
     def obj_create(self, bundle, **kwargs):
-        log = logging.getLogger('api')
         log.debug('New Parameter:%s=%s (%s)', bundle.data.get('key'),
             bundle.data.get('value'), bundle.data.get('value_type'))
         if bundle.request.user.is_anonymous() is False:
@@ -243,7 +238,6 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         return bundle
 
     def obj_update(self, bundle, skip_errors=False, **kwargs):
-        log = logging.getLogger('api')
         log.debug('Update key=%s', bundle.data.get('key', None))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
@@ -267,7 +261,6 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         return bundle
 
     def obj_get_list(self, bundle, **kwargs):
-        log = logging.getLogger('api')
         user = bundle.request.user
         log.debug('User=%s', user)
         if user.is_anonymous() is False:
@@ -284,7 +277,6 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         return obj_list
 
     def obj_get(self, bundle, **kwargs):
-        log = logging.getLogger('api')
         user = bundle.request.user
         log.debug('User=%s', user)
         obj_list = models.SetTopBoxConfig.objects.none()

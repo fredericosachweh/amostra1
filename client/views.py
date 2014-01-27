@@ -38,10 +38,10 @@ class Auth(View):
             if created is True:
                 log.debug('new stb autocreated:%s', stb)
         else:
-            if models.SetTopBox.objects.filter(serial_number=mac).exists():
+            if models.SetTopBox.objects.filter(serial_number=sn).exists():
                 stb = models.SetTopBox.objects.get(serial_number=sn)
             else:
-                log.debug('SetTopBox don\'t existis:%s', mac)
+                log.debug('SetTopBox don\'t existis:%s', sn)
                 return HttpResponse(u'{"login": "ERROR"}', status=403)
         user = stb.get_user()
         a_user = authenticate(username=user.username, password=sn)
