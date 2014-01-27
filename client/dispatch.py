@@ -16,6 +16,7 @@ from django.conf import settings
 from tv.models import Channel
 import models
 from tastypie.models import create_api_key
+import thread
 import requests
 server_key = settings.NBRIDGE_SERVER_KEY
 
@@ -95,11 +96,14 @@ def reload_channels(nbridge, settopbox, message=None, userchannel=True, channel=
     if message:
         command += 'alert(\"%s.\");' % (message)
     log.debug('Comando=%s', command)
-    response = requests.post(url, data={
-        'server_key': server_key,
-        'command': command,
-        'mac': [settopbox.mac]})
-    log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    try:
+        response = requests.post(url, timeout=5, data={
+            'server_key': server_key,
+            'command': command,
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
 
 ## curl cmd
 # MAC='mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21&mac[]=FF:32:32:26:11:20'
@@ -112,16 +116,22 @@ def reload_channels(nbridge, settopbox, message=None, userchannel=True, channel=
 def SetTopBoxChannel_post_save(sender, instance, created, **kwargs):
     if created:
         log.debug('New stb channel created=%s', instance)
+        message = 'Canal adicionado=%s' % (instance.channel.name)
         nbs = Nbridge.objects.filter(status=True)
         for s in nbs:
-            reload_channels(s, instance.settopbox, channel=True,
-                message='Canal adicionado=%s' % (instance.channel.name))
+            thread.start_new_thread(reload_channels, (s, instance.settopbox),
+                {'channel': True, 'message': message} ) 
+            #reload_channels(s, instance.settopbox, channel=True,
+            #    message='Canal adicionado=%s' % (instance.channel.name))
 
 @receiver(post_delete, sender=models.SetTopBoxChannel)
 def SetTopBoxChannel_post_delete(sender, instance, **kwargs):
     nbs = Nbridge.objects.filter(status=True)
+    message = 'Canal removido=%s' % (instance.channel.name)
     for s in nbs:
-        reload_channels(s, instance.settopbox, channel=True,
-                message='Canal removido=%s' % (instance.channel.name))
+        thread.start_new_thread(reload_channels, (s, instance.settopbox),
+            {'channel': True, 'message': message} ) 
+        #reload_channels(s, instance.settopbox, channel=True,
+        #        message='Canal removido=%s' % (instance.channel.name))
 
 
