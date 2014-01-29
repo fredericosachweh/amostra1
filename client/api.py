@@ -293,8 +293,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 else:
                     #raise Unauthorized('')
                     obj_list = models.SetTopBoxConfig.objects.none()
-            else:
-                obj_list = models.SetTopBoxConfig.objects.none()
+        else:
+	    obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
 
