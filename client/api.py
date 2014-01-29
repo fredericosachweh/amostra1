@@ -217,6 +217,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         return object_list
 
     def obj_create(self, bundle, **kwargs):
+        from django.db import transaction
         log.debug('New Parameter:%s=%s (%s)', bundle.data.get('key'),
             bundle.data.get('value'), bundle.data.get('value_type'))
         if bundle.request.user.is_anonymous() is False:
@@ -224,20 +225,20 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             serial = user.username.replace(settings.STB_USER_PREFIX, '')
             stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
-            try:
-                bundle = super(SetTopBoxConfigResource, self).obj_create(
-                    bundle, settopbox=stb, **kwargs)
-            except IntegrityError, e:
-                log.error('%s', e)
-                from django.db import transaction
-                transaction.rollback()
-                raise BadRequest(e)
-            return bundle
+            with transaction.atomic():
+                try:
+                    bundle = super(SetTopBoxConfigResource, self).obj_create(
+                        bundle, settopbox=stb, **kwargs)
+                except IntegrityError, e:
+                    log.error('%s', e)
+                    raise BadRequest(e)
+                return bundle
         else:
             raise BadRequest('')
         return bundle
 
     def obj_update(self, bundle, skip_errors=False, **kwargs):
+        from django.db import transaction
         log.debug('Update key=%s', bundle.data.get('key', None))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
@@ -249,15 +250,14 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             #print(bundle)
             #if bundle.obj.settopbox_id != stb.id:
             #    raise BadRequest('')
-        try:
-            #print(dir(bundle.obj))
-            bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
-                **kwargs)
-        except IntegrityError, e:
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        with transaction.atomic():
+            try:
+                #print(dir(bundle.obj))
+                bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                raise BadRequest(e)
         return bundle
 
     def obj_get_list(self, bundle, **kwargs):
@@ -272,8 +272,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 # self._meta.queryset.filter(settopbox=stb)
                 obj_list = super(SetTopBoxConfigResource, self).obj_get_list(
                     bundle, **kwargs).filter(settopbox=stb)
-            else:
-                obj_list = models.SetTopBoxConfig.objects.none()
+        else:
+	    obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
     def obj_get(self, bundle, **kwargs):
