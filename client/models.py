@@ -19,6 +19,8 @@ class LogoToReplace(dbsettings.ImageValue):
         log.debug('Modificando logo=%s', value)
         val = super(LogoToReplace, self).get_db_prep_save(value)
         log.debug('Depois do super logo=%s', val)
+        if val is None:
+            return ''
         # img/menu.png (450, 164)px
         # themes/modern/images/logo_menor2.png (100, 26)px
         if self.attribute_name == 'logo_main':
@@ -36,15 +38,25 @@ class LogoToReplace(dbsettings.ImageValue):
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
+        if self.attribute_name == 'banner_epg':
+            fname = os.path.join(settings.MEDIA_ROOT, val)
+            thumb = Image.open(fname)
+            thumb.thumbnail((450, 80), Image.ANTIALIAS)
+            dst = '/iptv/var/www/sites/frontend/dist/img/banner_aron.jpg'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
         log.debug('name=%s', self.attribute_name)
         return val
 
 
 class CompanyLogo(dbsettings.Group):
-    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',
+    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',required=False,
         help_text=u'Formato PNG transparente 450 x 164 px')
-    logo_small = LogoToReplace(_(u'Logo pequeno'), upload_to='',
+    logo_small = LogoToReplace(_(u'Logo pequeno'), upload_to='',required=False,
         help_text=u'Formato PNG transparente 100 x 26 px')
+    banner_epg = LogoToReplace(_(u'Banner na guia de programação'),
+        upload_to='',required=False,
+        help_text=u'Formato PNG transparente 450 x 80 px')
 
 logo = CompanyLogo(u'Logo da interface')
 
