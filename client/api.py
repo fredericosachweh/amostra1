@@ -5,12 +5,14 @@ from tastypie.authentication import BasicAuthentication
 from tastypie.authentication import Authentication
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authentication import MultiAuthentication
+from tastypie.authentication import SessionAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL
 from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest, NotFound, Unauthorized
+from tastypie.models import ApiKey
 from django.db import IntegrityError
 from django.conf import settings
 import models
@@ -217,6 +219,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         return object_list
 
     def obj_create(self, bundle, **kwargs):
+        from django.db import transaction
         log.debug('New Parameter:%s=%s (%s)', bundle.data.get('key'),
             bundle.data.get('value'), bundle.data.get('value_type'))
         if bundle.request.user.is_anonymous() is False:
@@ -224,20 +227,20 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             serial = user.username.replace(settings.STB_USER_PREFIX, '')
             stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
-            try:
-                bundle = super(SetTopBoxConfigResource, self).obj_create(
-                    bundle, settopbox=stb, **kwargs)
-            except IntegrityError, e:
-                log.error('%s', e)
-                from django.db import transaction
-                transaction.rollback()
-                raise BadRequest(e)
-            return bundle
+            with transaction.atomic():
+                try:
+                    bundle = super(SetTopBoxConfigResource, self).obj_create(
+                        bundle, settopbox=stb, **kwargs)
+                except IntegrityError, e:
+                    log.error('%s', e)
+                    raise BadRequest(e)
+                return bundle
         else:
             raise BadRequest('')
         return bundle
 
     def obj_update(self, bundle, skip_errors=False, **kwargs):
+        from django.db import transaction
         log.debug('Update key=%s', bundle.data.get('key', None))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
@@ -249,15 +252,14 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             #print(bundle)
             #if bundle.obj.settopbox_id != stb.id:
             #    raise BadRequest('')
-        try:
-            #print(dir(bundle.obj))
-            bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
-                **kwargs)
-        except IntegrityError, e:
-            log.error('%s', e)
-            from django.db import transaction
-            transaction.rollback()
-            raise BadRequest(e)
+        with transaction.atomic():
+            try:
+                #print(dir(bundle.obj))
+                bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                raise BadRequest(e)
         return bundle
 
     def obj_get_list(self, bundle, **kwargs):
@@ -272,8 +274,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 # self._meta.queryset.filter(settopbox=stb)
                 obj_list = super(SetTopBoxConfigResource, self).obj_get_list(
                     bundle, **kwargs).filter(settopbox=stb)
-            else:
-                obj_list = models.SetTopBoxConfig.objects.none()
+        else:
+            obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
     def obj_get(self, bundle, **kwargs):
@@ -293,8 +295,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 else:
                     #raise Unauthorized('')
                     obj_list = models.SetTopBoxConfig.objects.none()
-            else:
-                obj_list = models.SetTopBoxConfig.objects.none()
+        else:
+            obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
 
@@ -302,11 +304,34 @@ class StreamRecorderResource(NamespacedModelResource):
     class Meta:
         queryset = devicemodels.StreamRecorder.objects.filter(status=True)
 
+
+class APIKeyAuthorization(Authorization):
+    # http://django-tastypie.readthedocs.org/en/latest/authorization.html
+
+    def read_list(self, object_list, bundle):
+        user = bundle.request.user
+        log.debug('Readlist request to:%s', user)
+        if user.is_anonymous():
+            raise Unauthorized("Unauthorized")
+        return object_list.filter(user=user)
+
+    def read_detail(self, object_list, bundle):
+        return not bundle.request.user.is_anonymous()
+
+class APIKeyResource(NamespacedModelResource):
+    class Meta:
+        queryset = ApiKey.objects.all()
+        authorization = APIKeyAuthorization()
+        authentication = ApiKeyAuthentication()
+        filtering = {
+            "key": ALL
+        }
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
 api.register(SetTopBoxChannelResource())
 api.register(SetTopBoxConfigResource())
-
+api.register(APIKeyResource())
 
 apis = [api]
