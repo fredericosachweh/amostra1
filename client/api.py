@@ -5,12 +5,14 @@ from tastypie.authentication import BasicAuthentication
 from tastypie.authentication import Authentication
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authentication import MultiAuthentication
+from tastypie.authentication import SessionAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL
 from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest, NotFound, Unauthorized
+from tastypie.models import ApiKey
 from django.db import IntegrityError
 from django.conf import settings
 import models
@@ -302,11 +304,36 @@ class StreamRecorderResource(NamespacedModelResource):
     class Meta:
         queryset = devicemodels.StreamRecorder.objects.filter(status=True)
 
+
+
+
+class APIKeyAuthorization(Authorization):
+    # http://django-tastypie.readthedocs.org/en/latest/authorization.html
+
+    def read_list(self, object_list, bundle):
+        user = bundle.request.user
+        log.debug('Readlist request to:%s', user)
+        if user.is_anonymous():
+            raise Unauthorized("Unauthorized")
+        return object_list.filter(user=user)
+
+    def read_detail(self, object_list, bundle):
+        return not bundle.request.user.is_anonymous()
+
+class APIKeyResource(NamespacedModelResource):
+    class Meta:
+        queryset = ApiKey.objects.all()
+        authorization = APIKeyAuthorization()
+        authentication = ApiKeyAuthentication()
+        filtering = {
+            "key": ALL
+        }
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
 api.register(SetTopBoxChannelResource())
 api.register(SetTopBoxConfigResource())
-
+api.register(APIKeyResource())
 
 apis = [api]
