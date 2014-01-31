@@ -275,7 +275,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 obj_list = super(SetTopBoxConfigResource, self).obj_get_list(
                     bundle, **kwargs).filter(settopbox=stb)
         else:
-	    obj_list = models.SetTopBoxConfig.objects.none()
+            obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
     def obj_get(self, bundle, **kwargs):
@@ -296,15 +296,13 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                     #raise Unauthorized('')
                     obj_list = models.SetTopBoxConfig.objects.none()
         else:
-	    obj_list = models.SetTopBoxConfig.objects.none()
+            obj_list = models.SetTopBoxConfig.objects.none()
         return obj_list
 
 
 class StreamRecorderResource(NamespacedModelResource):
     class Meta:
         queryset = devicemodels.StreamRecorder.objects.filter(status=True)
-
-
 
 
 class APIKeyAuthorization(Authorization):
