@@ -3,19 +3,22 @@
 import logging
 from PIL import Image
 import os
+import thread
+import requests
 
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
 import dbsettings
+server_key = settings.NBRIDGE_SERVER_KEY
 from tv import models as tvmodels
-
+from nbridge.models import Nbridge
+log = logging.getLogger('client')
 
 class LogoToReplace(dbsettings.ImageValue):
 
     def get_db_prep_save(self, value):
-        log = logging.getLogger('client')
         log.debug('Modificando logo=%s', value)
         val = super(LogoToReplace, self).get_db_prep_save(value)
         log.debug('Depois do super logo=%s', val)
@@ -78,6 +81,43 @@ class SetTopBoxOptions(dbsettings.Group):
         )
 
 
+def reload_channels(nbridge, settopbox, message=None, userchannel=True, channel=True):
+    log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
+    url = 'http://%s/ws/eval' % (nbridge.server.host)
+    command = ''
+    if userchannel:
+        command += 'require(\"api/tv/userchannel\").fetch();'
+    if all:
+        command += 'require(\"api/tv/channel\").fetch();'
+    if message:
+        command += 'alert(\"%s.\");' % (message)
+    log.debug('Comando=%s', command)
+    try:
+        response = requests.post(url, timeout=10, data={
+            'server_key': server_key,
+            'command': command,
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
+    finally:
+        log.info('Finalizado o request')
+
+def reboot_stb(nbridge, settopbox):
+    log.debug('Send reboot to STB=%s using nbridge=%s', settopbox, nbridge)
+    url = 'http://%s/ws/reboot/' % (nbridge.server.host)
+    try:
+        response = requests.post(url, timeout=10, data={
+            'server_key': server_key,
+            'command': '',
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
+    finally:
+        log.info('Finalizado o request')
+
+
 class SetTopBox(models.Model):
     u'Class to authenticate and manipulate IPTV client - SetTopBox'
 
@@ -107,7 +147,18 @@ class SetTopBox(models.Model):
             enabled=True,
             source__isnull=False)
 
+    def reboot(self):
+        nbs = Nbridge.objects.filter(status=True)
+        for s in nbs:
+            thread.start_new_thread(reboot_stb, (s, self)) 
 
+    def reload_channels(self, channel=False, message=None):
+        nbs = Nbridge.objects.filter(status=True)
+        for s in nbs:
+            thread.start_new_thread(reload_channels, (s, self),
+                {'channel': True, 'message': message} ) 
+ 
+ 
 class SetTopBoxParameter(models.Model):
     u'Class to store key -> values of SetTopBox'
 
