@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 import logging
 import thread
 import requests
@@ -179,8 +179,8 @@ class SetTopBoxParameter(models.Model):
     settopbox = models.ForeignKey(SetTopBox, db_index=True)
 
     class Meta:
-        verbose_name = _(u'Parametro')
-        verbose_name_plural = _(u'Parametros')
+        verbose_name = _(u'Parametro do SetTopBox')
+        verbose_name_plural = _(u'Parametros dos SetTopBox')
         unique_together = (('key', 'value', 'settopbox'),)
 
     def __unicode__(self):
@@ -197,6 +197,8 @@ class SetTopBoxChannel(models.Model):
     class Meta:
         unique_together = (('settopbox', 'channel',),)
         ordering = ('settopbox', 'channel__number',)
+        verbose_name = 'STB <=> Canal (canal habilitado)'
+        verbose_name_plural = 'STBs <=> Canais (canais habilitados)'
 
     def __unicode__(self):
         return u'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (self.channel.number,
