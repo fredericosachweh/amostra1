@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 import logging
 import thread
 import requests
-from django.contrib.admin import site, ModelAdmin
+from django.contrib.admin import site, ModelAdmin, StackedInline
+from django.contrib import admin
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
@@ -40,10 +41,21 @@ reboot_stb.short_description = ugettext_lazy(
     'Reiniciar %(verbose_name_plural)s selecionados')
 
 
+class SetTopBoxChannelInline(admin.TabularInline):
+    model = models.SetTopBoxChannel
+
+
 class SetTopBoxAdmin(ModelAdmin):
     search_fields = ('mac', 'serial_number', )
     list_display = ('serial_number', 'mac', )
     actions = [reboot_stb]
+    inlines = [SetTopBoxChannelInline, ]
+
+    def get_readonly_fields(self, request, obj = None):
+        if obj:
+            return ('mac', 'serial_number', ) + self.readonly_fields
+        return self.readonly_fields
+
 
 class SetTopBoxConfigAdmin(ModelAdmin):
     search_fields = ('settopbox__mac', 'settopbox__serial_number', )
