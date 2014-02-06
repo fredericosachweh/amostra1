@@ -241,7 +241,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
 
     def obj_update(self, bundle, skip_errors=False, **kwargs):
         from django.db import transaction
-        log.debug('Update key=%s', bundle.data.get('key', None))
+        log.debug('Update key:%s=%s (%s)', bundle.data.get('key'),
+            bundle.data.get('value'), bundle.data.get('value_type'))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
             serial = user.username.replace(settings.STB_USER_PREFIX, '')

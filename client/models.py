@@ -1,8 +1,6 @@
 # -*- encoding:utf-8 -*-
-
+from __future__ import absolute_import
 import logging
-from PIL import Image
-import os
 import thread
 import requests
 
@@ -16,9 +14,12 @@ from tv import models as tvmodels
 from nbridge.models import Nbridge
 log = logging.getLogger('client')
 
+
 class LogoToReplace(dbsettings.ImageValue):
 
     def get_db_prep_save(self, value):
+        from PIL import Image
+        import os
         log.debug('Modificando logo=%s', value)
         val = super(LogoToReplace, self).get_db_prep_save(value)
         log.debug('Depois do super logo=%s', val)
@@ -41,6 +42,13 @@ class LogoToReplace(dbsettings.ImageValue):
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
+        if self.attribute_name == 'logo_small_menu':
+            fname = os.path.join(settings.MEDIA_ROOT, val)
+            thumb = Image.open(fname)
+            thumb.thumbnail((263, 67), Image.ANTIALIAS)
+            dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor1.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
         if self.attribute_name == 'banner_epg':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
@@ -53,12 +61,14 @@ class LogoToReplace(dbsettings.ImageValue):
 
 
 class CompanyLogo(dbsettings.Group):
-    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',required=False,
-        help_text=u'Formato PNG transparente 450 x 164 px')
-    logo_small = LogoToReplace(_(u'Logo pequeno'), upload_to='',required=False,
-        help_text=u'Formato PNG transparente 100 x 26 px')
+    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',
+        help_text=u'Formato PNG transparente 450 x 164 px', required=False)
+    logo_small_menu = LogoToReplace(_(u'Logo pequeno Menu'), upload_to='',
+        help_text=u'Formato PNG transparente 100 x 26 px', required=False)
+    logo_small = LogoToReplace(_(u'Logo pequeno TV'), upload_to='',
+        help_text=u'Formato PNG transparente 100 x 26 px', required=False)
     banner_epg = LogoToReplace(_(u'Banner na guia de programação'),
-        upload_to='',required=False,
+        upload_to='', required=False,
         help_text=u'Formato PNG transparente 450 x 80 px')
 
 logo = CompanyLogo(u'Logo da interface')
@@ -80,8 +90,8 @@ class SetTopBoxOptions(dbsettings.Group):
         default=True
         )
 
-
-def reload_channels(nbridge, settopbox, message=None, userchannel=True, channel=True):
+def reload_channels(nbridge, settopbox, message=None, userchannel=True,
+        channel=True):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
     url = 'http://%s/ws/eval' % (nbridge.server.host)
     command = ''
