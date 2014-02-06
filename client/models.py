@@ -1,21 +1,25 @@
 # -*- encoding:utf-8 -*-
-
+from __future__ import absolute_import, unicode_literals
 import logging
-from PIL import Image
-import os
+import thread
+import requests
 
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
 import dbsettings
+server_key = settings.NBRIDGE_SERVER_KEY
 from tv import models as tvmodels
+from nbridge.models import Nbridge
+log = logging.getLogger('client')
 
 
 class LogoToReplace(dbsettings.ImageValue):
 
     def get_db_prep_save(self, value):
-        log = logging.getLogger('client')
+        from PIL import Image
+        import os
         log.debug('Modificando logo=%s', value)
         val = super(LogoToReplace, self).get_db_prep_save(value)
         log.debug('Depois do super logo=%s', val)
@@ -38,6 +42,13 @@ class LogoToReplace(dbsettings.ImageValue):
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
+        if self.attribute_name == 'logo_small_menu':
+            fname = os.path.join(settings.MEDIA_ROOT, val)
+            thumb = Image.open(fname)
+            thumb.thumbnail((263, 67), Image.ANTIALIAS)
+            dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor1.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
         if self.attribute_name == 'banner_epg':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
@@ -50,12 +61,14 @@ class LogoToReplace(dbsettings.ImageValue):
 
 
 class CompanyLogo(dbsettings.Group):
-    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',required=False,
-        help_text=u'Formato PNG transparente 450 x 164 px')
-    logo_small = LogoToReplace(_(u'Logo pequeno'), upload_to='',required=False,
-        help_text=u'Formato PNG transparente 100 x 26 px')
+    logo_main = LogoToReplace(_(u'Logo principal'), upload_to='',
+        help_text=u'Formato PNG transparente 450 x 164 px', required=False)
+    logo_small_menu = LogoToReplace(_(u'Logo pequeno Menu'), upload_to='',
+        help_text=u'Formato PNG transparente 100 x 26 px', required=False)
+    logo_small = LogoToReplace(_(u'Logo pequeno TV'), upload_to='',
+        help_text=u'Formato PNG transparente 100 x 26 px', required=False)
     banner_epg = LogoToReplace(_(u'Banner na guia de programação'),
-        upload_to='',required=False,
+        upload_to='', required=False,
         help_text=u'Formato PNG transparente 450 x 80 px')
 
 logo = CompanyLogo(u'Logo da interface')
@@ -76,6 +89,43 @@ class SetTopBoxOptions(dbsettings.Group):
         _(u'Caso não seja fornecido via post, utiliza o MAC como serial'),
         default=True
         )
+
+def reload_channels(nbridge, settopbox, message=None, userchannel=True,
+        channel=True):
+    log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
+    url = 'http://%s/ws/eval' % (nbridge.server.host)
+    command = ''
+    if userchannel:
+        command += 'require(\"api/tv/userchannel\").fetch();'
+    if all:
+        command += 'require(\"api/tv/channel\").fetch();'
+    if message:
+        command += 'alert(\"%s.\");' % (message)
+    log.debug('Comando=%s', command)
+    try:
+        response = requests.post(url, timeout=10, data={
+            'server_key': server_key,
+            'command': command,
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
+    finally:
+        log.info('Finalizado o request')
+
+def reboot_stb(nbridge, settopbox):
+    log.debug('Send reboot to STB=%s using nbridge=%s', settopbox, nbridge)
+    url = 'http://%s/ws/reboot/' % (nbridge.server.host)
+    try:
+        response = requests.post(url, timeout=10, data={
+            'server_key': server_key,
+            'command': '',
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
+    finally:
+        log.info('Finalizado o request')
 
 
 class SetTopBox(models.Model):
@@ -107,7 +157,18 @@ class SetTopBox(models.Model):
             enabled=True,
             source__isnull=False)
 
+    def reboot(self):
+        nbs = Nbridge.objects.filter(status=True)
+        for s in nbs:
+            thread.start_new_thread(reboot_stb, (s, self)) 
 
+    def reload_channels(self, channel=False, message=None):
+        nbs = Nbridge.objects.filter(status=True)
+        for s in nbs:
+            thread.start_new_thread(reload_channels, (s, self),
+                {'channel': True, 'message': message} ) 
+ 
+ 
 class SetTopBoxParameter(models.Model):
     u'Class to store key -> values of SetTopBox'
 
@@ -118,8 +179,8 @@ class SetTopBoxParameter(models.Model):
     settopbox = models.ForeignKey(SetTopBox, db_index=True)
 
     class Meta:
-        verbose_name = _(u'Parametro')
-        verbose_name_plural = _(u'Parametros')
+        verbose_name = _(u'Parametro do SetTopBox')
+        verbose_name_plural = _(u'Parametros dos SetTopBox')
         unique_together = (('key', 'value', 'settopbox'),)
 
     def __unicode__(self):
@@ -136,6 +197,8 @@ class SetTopBoxChannel(models.Model):
     class Meta:
         unique_together = (('settopbox', 'channel',),)
         ordering = ('settopbox', 'channel__number',)
+        verbose_name = 'STB <=> Canal (canal habilitado)'
+        verbose_name_plural = 'STBs <=> Canais (canais habilitados)'
 
     def __unicode__(self):
         return u'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (self.channel.number,
