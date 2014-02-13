@@ -328,11 +328,18 @@ class APIKeyResource(NamespacedModelResource):
             "key": ALL
         }
 
+
+class SetTopBoxMessage(NamespacedModelResource):
+    class Meta:
+        queryset = models.SetTopBoxMessage.objects.all()
+
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
 api.register(SetTopBoxChannelResource())
 api.register(SetTopBoxConfigResource())
 api.register(APIKeyResource())
+api.register(SetTopBoxMessage())
 
 apis = [api]

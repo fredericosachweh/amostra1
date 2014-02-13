@@ -59,7 +59,8 @@ class Channel(models.Model):
     def previous(self):
         if self._p is not None:
             return self._p
-        ch = Channel.objects.filter(number__lt=self.number).order_by('-number')[0]
+        ch = Channel.objects.filter(number__lt=self.number, enabled=True,
+            source__isnull=False).order_by('-number')[0]
         return ch
 
     @previous.setter
@@ -70,7 +71,8 @@ class Channel(models.Model):
     def next(self):
         if self._n is not None:
             return self._n
-        ch = Channel.objects.filter(number__gt=self.number).order_by('number')[0]
+        ch = Channel.objects.filter(number__gt=self.number, enabled=True,
+            source__isnull=False).order_by('number')[0]
         return ch
 
     @next.setter

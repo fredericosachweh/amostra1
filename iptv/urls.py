@@ -64,3 +64,12 @@ for app in settings.INSTALLED_APPS:
             pass
         except AttributeError as e:
             pass
+
+try:
+    import debug_toolbar
+    if settings.DEBUG_TOOLBAR_PATCH_SETTINGS is False:
+        urlpatterns += patterns('',
+            url(r'^__debug__/', include(debug_toolbar.urls)),
+        )
+except ImportError:
+    pass
