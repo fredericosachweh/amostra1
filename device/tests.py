@@ -514,25 +514,13 @@ class CommandsGenerationTest(TestCase):
         # Enable audio filters
         soft_transcoder.sync_on_audio_track = True
         soft_transcoder.apply_gain = True
-        soft_transcoder.apply_compressor = True
-        soft_transcoder.apply_normvol = True
+        soft_transcoder.apply_offset = True
         expected_cmd = unicode(
             "%s "
             "-I dummy "
             "--miface lo "
             "--sout-transcode-audio-sync "
             "--gain-value 1.00 "
-            "--compressor-rms-peak 0.00 "
-            "--compressor-attack 25.00 "
-            "--compressor-release 100.00 "
-            "--compressor-threshold -11.00 "
-            "--compressor-ratio 8.00 "
-            "--compressor-knee 2.50 "
-            "--compressor-makeup-gain 7.00 "
-            "--norm-buff-size 20 "
-            "--norm-max-level 2.00 "
-            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:"
-            "volnorm}}"
             ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
             "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
         ) % settings.VLC_COMMAND
