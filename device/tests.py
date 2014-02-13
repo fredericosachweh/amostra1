@@ -476,66 +476,46 @@ class CommandsGenerationTest(TestCase):
         self.assertEqual(internal, recorder.sink)
 
     def test_soft_transcoder(self):
+        self.maxDiff = None
         soft_transcoder = SoftTranscoder.objects.all()[0]
         # Multicast input
         expected_cmd = unicode(
-            "%s "
-            "-I dummy "
-            "--miface lo "
-            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,"
-            "dst=239.10.0.10:20000}\" "
-            "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
-        ) % settings.VLC_COMMAND
+            "%s -i "
+            '"udp://239.10.0.9:20000?localaddr=127.0.0.1" '
+            "-vcodec copy -acodec copy -f mpegts "
+            '"udp://239.10.0.10:20000?localaddr=127.0.0.1&pkt_size=1316"'
+        ) % settings.FFMPEG_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Unicast input
         soft_transcoder.sink.ip = '192.169.1.100'
         expected_cmd = unicode(
-            "%s "
-            "-I dummy "
-            "--miface lo "
-            "--sout=\"#std{access=udp,mux=ts,bind=127.0.0.1,"
-            "dst=239.10.0.10:20000}\" "
-            "udp://@127.0.0.1:20000"
-        ) % settings.VLC_COMMAND
+            "%s -i "
+            '"udp://192.169.1.100:20000" '
+            "-vcodec copy -acodec copy -f mpegts "
+            '"udp://239.10.0.10:20000?localaddr=127.0.0.1&pkt_size=1316"'
+        ) % settings.FFMPEG_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Enable audio transcoding
         soft_transcoder.sink.ip = '239.10.0.9'
         soft_transcoder.transcode_audio = True
-        soft_transcoder.audio_codec = 'mp4a'
+        soft_transcoder.audio_codec = 'mp2'
         expected_cmd = unicode(
-            "%s "
-            "-I dummy "
-            "--miface lo "
-            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={}}"
-            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
-            "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
-        ) % settings.VLC_COMMAND
+            "%s -i "
+            '"udp://239.10.0.9:20000?localaddr=127.0.0.1" '
+            "-vcodec copy -acodec mp2  -f mpegts "
+            '"udp://239.10.0.10:20000?localaddr=127.0.0.1&pkt_size=1316"'
+        ) % settings.FFMPEG_COMMAND
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         # Enable audio filters
-        soft_transcoder.sync_on_audio_track = True
         soft_transcoder.apply_gain = True
-        soft_transcoder.apply_compressor = True
-        soft_transcoder.apply_normvol = True
+        soft_transcoder.apply_offset = True
         expected_cmd = unicode(
-            "%s "
-            "-I dummy "
-            "--miface lo "
-            "--sout-transcode-audio-sync "
-            "--gain-value 1.00 "
-            "--compressor-rms-peak 0.00 "
-            "--compressor-attack 25.00 "
-            "--compressor-release 100.00 "
-            "--compressor-threshold -11.00 "
-            "--compressor-ratio 8.00 "
-            "--compressor-knee 2.50 "
-            "--compressor-makeup-gain 7.00 "
-            "--norm-buff-size 20 "
-            "--norm-max-level 2.00 "
-            "--sout=\"#transcode{acodec=mp4a,ab=96,afilter={gain:compressor:"
-            "volnorm}}"
-            ":std{access=udp,mux=ts,bind=127.0.0.1,dst=239.10.0.10:20000}\" "
-            "udp://@239.10.0.9:20000/ifaddr=127.0.0.1"
-        ) % settings.VLC_COMMAND
+            "%s -i "
+            '"udp://239.10.0.9:20000?localaddr=127.0.0.1" '
+            "-vcodec copy -acodec mp2 "
+            "-af volume=volume=1.00 -af volume=volume=0.00dB -f mpegts "
+            '"udp://239.10.0.10:20000?localaddr=127.0.0.1&pkt_size=1316"'
+        ) % settings.FFMPEG_COMMAND
 
         self.assertEqual(expected_cmd, soft_transcoder._get_cmd())
         soft_transcoder.start()

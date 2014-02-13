@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import logging
 import thread
 import requests
-from django.contrib.admin import site, ModelAdmin, StackedInline
+from django.contrib.admin import site, ModelAdmin
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
@@ -11,6 +11,8 @@ server_key = settings.NBRIDGE_SERVER_KEY
 import models
 log = logging.getLogger('client')
 from nbridge.models import Nbridge
+#from device.forms import GenericRelationForm
+from django import forms
 
 def reboot_stbs(queryset, nbridge):
     url = 'http://%s/ws/reboot/' % (nbridge.server.host)
@@ -69,7 +71,13 @@ class SetTopBoxChannelAdmin(ModelAdmin):
     list_filter = ('settopbox', )
 
 
+class SetTopBoxMessageAdmin(ModelAdmin):
+    #form = GenericRelationForm()
+    #model =
+    pass
+
 site.register(models.SetTopBox, SetTopBoxAdmin)
 site.register(models.SetTopBoxParameter)
 site.register(models.SetTopBoxChannel, SetTopBoxChannelAdmin)
 site.register(models.SetTopBoxConfig, SetTopBoxConfigAdmin)
+site.register(models.SetTopBoxMessage, SetTopBoxMessageAdmin)

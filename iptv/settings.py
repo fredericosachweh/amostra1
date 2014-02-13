@@ -15,7 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Emanoel Monster', 'emanoel@cianet.ind.br'),
-    ('Emilio Cleiton', 'emilio@cianet.ind.br'),
+    ('Emilio Cleiton', 'emilio.silva@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -355,6 +355,9 @@ DVBLASTCTL_COMMAND = '/iptv/bin/dvblastctl'
 VLC_COMMAND = '/usr/bin/cvlc'
 VLC_VIDEOFILES_DIR = '/var/lib/iptv/videos/'
 VLC_LOGS_DIR = '/iptv/var/log/vlc/'
+
+FFMPEG_COMMAND = '/usr/bin/ffmpeg'
+FFMPEG_LOGS_DIR = '/iptv/var/log/ffmpeg/'
 
 INTERNAL_IP_MASK = '239.10.%d.%d'
 EXTERNAL_IP_MASK = '239.1.%d.%d'

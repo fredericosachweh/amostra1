@@ -94,6 +94,7 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/multicat
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/dvblast
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/vlc
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/log/ffmpeg
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/multicat
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/multicat/sockets
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/run/dvblast
@@ -152,6 +153,7 @@ echo -e "\033[0m"
 %dir %{iptv_root}%{_localstatedir}/log/multicat
 %dir %{iptv_root}%{_localstatedir}/log/dvblast
 %dir %{iptv_root}%{_localstatedir}/log/vlc
+%dir %{iptv_root}%{_localstatedir}/log/ffmpeg
 %dir %{iptv_root}%{_localstatedir}/run/multicat
 %dir %{iptv_root}%{_localstatedir}/run/multicat/sockets
 %dir %{iptv_root}%{_localstatedir}/run/dvblast
@@ -174,6 +176,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Thu Feb 13 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.6-1
+- Fix all channel. STB reboot. SoftTranscode with ffmpeg.
 * Wed Jan 22 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.2-1
 - API V2 channel and userchennel.
 - Request reload channel and user channel to nbridge on SetTopBoxChannel (create, delete)
