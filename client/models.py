@@ -5,10 +5,14 @@ import thread
 import requests
 
 from django.db import models
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
+
 import dbsettings
+from django.contrib.contenttypes.generic import GenericForeignKey
 server_key = settings.NBRIDGE_SERVER_KEY
 from tv import models as tvmodels
 from nbridge.models import Nbridge
@@ -222,3 +226,19 @@ class SetTopBoxConfig(models.Model):
 
     def __unicode__(self):
         return '%s {%s=%s}' % (self.settopbox, self.key, self.value)
+
+
+class SetTopBoxMessage(models.Model):
+    'Class to store UI messages'
+    key = models.CharField(_('Chave'), max_length=250, db_index=True,
+        help_text=_('Chave de indentificação da mensagem'))
+    value = models.TextField(_('Conteúdo'))
+    api_reference = models.CharField(_('Referencia de API'), max_length=250,
+        help_text=_('API base para consumo de variáveis'))
+
+    class Meta:
+        verbose_name = _('Mensagem do cliente')
+        verbose_name_plural = _('Mensagens do cliente')
+
+    def __unicode__(self):
+        return self.key
