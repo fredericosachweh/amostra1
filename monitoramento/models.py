@@ -754,11 +754,10 @@ class SoftTranscoder_representative(BaseRepresentative):
             return None
 
     def to_string(self, show_info=True):
-        return_string = 'SoftTranscoder: [%s] Gain:%s - Normalize:%s - Compress:%s' % (
+        return_string = 'SoftTranscoder: [%s] Gain:%s Offset:%s' % (
             self.original_obj.audio_codec,
             str(self.original_obj.apply_gain),
-            str(self.original_obj.apply_normvol),
-            str(self.original_obj.apply_compressor),
+            str(self.original_obj.appli_offset),
             )
         return return_string
 

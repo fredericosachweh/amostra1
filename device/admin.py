@@ -202,25 +202,17 @@ class AdminSoftTranscoder(admin.ModelAdmin):
                 'object_id')
         }),
         (_(u'Transcodificador de Áudio'), {
-            'fields': ('transcode_audio', 'audio_codec', 'audio_bitrate',
-                'sync_on_audio_track')
+            'fields': ('transcode_audio', 'audio_codec')
         }),
         (_(u'Ganho no Áudio'), {
             'classes': ('collapse', ),
             'fields': ('apply_gain', 'gain_value')
         }),
-        (_(u'Compressor Dinâmico de Áudio'), {
-            'classes': ('collapse',),
-            'fields': ('apply_compressor', 'compressor_rms_peak',
-            'compressor_attack', 'compressor_release',
-            'compressor_threshold', 'compressor_ratio',
-            'compressor_knee', 'compressor_makeup_gain')
+        (_(u'Offset no Áudio'), {
+            'classes': ('collapse', ),
+            'fields': ('apply_offset', 'offset_value')
         }),
-        (_(u'Normalizador de Volume'), {
-            'classes': ('collapse',),
-            'fields': ('apply_normvol',
-                        'normvol_buf_size', 'normvol_max_level')
-        }),
+
     )
     form = forms.SoftTranscoderForm
     list_per_page = 20
