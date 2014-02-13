@@ -757,7 +757,7 @@ class SoftTranscoder_representative(BaseRepresentative):
         return_string = 'SoftTranscoder: [%s] Gain:%s Offset:%s' % (
             self.original_obj.audio_codec,
             str(self.original_obj.apply_gain),
-            str(self.original_obj.appli_offset),
+            str(self.original_obj.apply_offset),
             )
         return return_string
 

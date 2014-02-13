@@ -1876,7 +1876,7 @@ class SoftTranscoder(DeviceServer):
         verbose_name_plural = _(u'Transcodificadores em Software')
 
     def __unicode__(self):
-        return u'Transcoder %s' % self.audio_codec
+        return u'Transcoder %s - %s' % (self.audio_codec, self.description)
 
     def _get_gain_filter_options(self):
         return u'-af volume=volume=%.2f' % self.gain_value

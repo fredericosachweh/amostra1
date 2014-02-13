@@ -195,8 +195,11 @@ class AdminUniqueIP(admin.ModelAdmin):
 
 
 class AdminSoftTranscoder(admin.ModelAdmin):
-    list_display = ('audio_codec', 'switch_link')
+    list_display = ('description', 'audio_codec', 'switch_link')
     fieldsets = (
+        (_(u'Sobre'), {
+            'fields': ('description',)
+        }),
         (_(u'Conexão com outros devices'), {
             'fields': ('server', 'nic_sink', 'nic_src', 'content_type',
                 'object_id')
