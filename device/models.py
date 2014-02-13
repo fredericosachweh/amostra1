@@ -1856,16 +1856,16 @@ class SoftTranscoder(DeviceServer):
     sink = generic.GenericForeignKey()
     src = generic.GenericRelation(UniqueIP)
     # Audio transcoder
-    transcode_audio = models.BooleanField(u'Transcodificar áudio')
+    transcode_audio = models.BooleanField(u'Transcodificar áudio', default=False)
     audio_codec = models.CharField(u'Áudio codec', max_length=100,
         choices=AUDIO_CODECS_LIST, null=True, blank=True)
     # Gain control filter
-    apply_gain = models.BooleanField(u'Aplicar ganho')
+    apply_gain = models.BooleanField(u'Aplicar ganho', default=False)
     gain_value = models.FloatField(u'Ganho multiplicador',
         help_text=u'Increase or decrease the gain (default 1.0)',
         default=1.0, null=True, blank=True)  # --gain-value
     # Offset control filter
-    apply_offset = models.BooleanField(u'Aplicar offset')
+    apply_offset = models.BooleanField(u'Aplicar offset', default=False)
     offset_value = models.IntegerField(u'Valor offset',
         help_text=u'Increase or decrease offset (default 0)',
         default=0, null=True, blank=True)  # --offset-value
@@ -1879,10 +1879,10 @@ class SoftTranscoder(DeviceServer):
         return u'Transcoder %s' % self.audio_codec
 
     def _get_gain_filter_options(self):
-        return u'-af volume=volume=%.2f ' % self.gain_value
+        return u'-af volume=volume=%.2f' % self.gain_value
 
     def _get_offset_filter_options(self):
-        return u'-af volume=volume=%.2fdB ' % self.offset_value
+        return u'-af volume=volume=%.2fdB' % self.offset_value
  
     def _get_cmd(self):
         import re
@@ -1891,12 +1891,12 @@ class SoftTranscoder(DeviceServer):
             input_addr = u'"udp://%s:%d?localaddr=%s"' % (
                 self.sink.ip, self.sink.port, self.nic_sink.ipv4)
         else:
-            input_addr = u'"udp://%s:%d"' % (self.nic_sink.ipv4, self.sink.port)
+            input_addr = u'"udp://%s:%d"' % (self.sink.ip, self.sink.port)
         if self.src.count() is not 1:
             raise Exception(
                 'A SoftTranscoder must be connected to ONE destination!')
         src = self.src.get()
-        output = u'"udp://@%s:%d?localaddr=%s&pkt_size=1316"' % (
+        output = u'"udp://%s:%d?localaddr=%s&pkt_size=1316"' % (
             src.ip, src.port, self.nic_src.ipv4
         )
         if self.transcode_audio is True:
@@ -1905,7 +1905,7 @@ class SoftTranscoder(DeviceServer):
                 afilters.append(self._get_gain_filter_options())
             if self.apply_offset:
                 afilters.append(self._get_offset_filter_options())
-            cmd += u'%s -vcodec copy -acodec %s %s %s' \
+            cmd += u'%s -vcodec copy -acodec %s %s -f mpegts %s' \
             % (
                 input_addr, self.audio_codec,
                 u' '.join(afilters), output
