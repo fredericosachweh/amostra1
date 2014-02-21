@@ -311,7 +311,14 @@ def tvod(request, channel_number=None, command=None, seek=0):
         return HttpResponse(u'', mimetype='application/javascript',
             status=404)
     ## Verifica se existe gravação solicitada
-    record_time = timezone.now() - timedelta(0, int(seek))
+
+    ## Correção do horário de verão
+    localtimezone = timezone.get_current_timezone()
+    seconds_fix = (timezone.now() - timedelta(seconds=int(seek))).astimezone(localtimezone).dst().seconds
+    seek += seconds_fix
+
+    record_time = timezone.now() - timedelta(seconds=int(seek))
+
     ## Find a recorder with request
     log.info('rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
         record_time, channel, (int(seek) / 3600))
@@ -321,7 +328,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         channel__settopboxchannel__recorder=True,
         start_time__lte=record_time,
         channel=channel,
-        keep_time__gte=(int(seek) / 3600)
+        keep_time__gte=(int(seek / 3600))
         )
     log.info('avaliable recorders: %s' % recorders)
     if recorders.count() == 0:

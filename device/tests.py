@@ -16,6 +16,8 @@ from device.models import *
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from tv.models import Channel
+import logging
+log = logging.getLogger('unittest')
 ## import getpass
 ## getpass.getuser() -> 'nginx'
 
@@ -1307,3 +1309,34 @@ class ServerRouteTest(TestCase):
         routes = self.server.list_routes()
         self.assertFalse( ('239.0.1.11', 'lo') in routes )
 
+
+class RecorderTimezoneTest(TestCase):
+
+    def test_seek_time(self):
+        from datetime import timedelta, datetime
+        from django.utils import timezone
+        seek = 3600 * 24 * 10
+        #seek = 3600
+        ltz = timezone.get_current_timezone()
+        utc = timezone.utc
+        log.debug('Local TZ=%s', ltz)
+        ltime = datetime(2014, 2, 20, 15, 0, 0, 0, tzinfo=ltz)
+        #ltime = timezone.now().astimezone(ltz)
+        log.debug('Local time=%s', ltime)
+        dias10 = ltime - timedelta(days=10)
+        dias10_f = (timezone.now() - timedelta(seconds=int(seek))).astimezone(ltz)
+        dias5 = ltime - timedelta(days=5)
+        dias2 = ltime - timedelta(days=2)
+        dias10_antes = (timezone.now().astimezone(ltz) - timedelta(days=10))
+        dias10_depois = (timezone.now() - timedelta(days=10)).astimezone(ltz)
+        log.debug('Antes=%s', dias10_antes)
+        log.debug('dst antes de delta=%s', dias10_antes.dst())
+        log.debug('Depois=%s', dias10_depois)
+        log.debug('dst depois de delta=%s', dias10_depois.dst())
+        delta10 = dias10.dst()
+        delta10_f = dias10_f.dst()
+        log.debug('Delta 10=%s', delta10)
+        log.debug('Delta antes 10=%s', delta10_f)
+        self.assertEqual(3600, delta10_f.seconds)
+        self.assertEqual(0, dias5.dst().seconds)
+        self.assertEqual(0, dias2.dst().seconds)
