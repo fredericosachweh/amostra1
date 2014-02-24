@@ -297,7 +297,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     if request.user.groups.filter(name='settopbox').exists():
         serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
         stb = SetTopBox.objects.get(serial_number=serial)
-        log.debug('Filter for STB=%s', stb)
+        log.info('Filter for STB=%s', stb)
     else:
         cache.delete(key)
         return HttpResponse('', mimetype='application/javascript',
@@ -311,17 +311,20 @@ def tvod(request, channel_number=None, command=None, seek=0):
         return HttpResponse(u'', mimetype='application/javascript',
             status=404)
     ## Verifica se existe gravação solicitada
-
     ## Correção do horário de verão
+    seek = int(seek)
     localtimezone = timezone.get_current_timezone()
-    seconds_fix = (timezone.now() - timedelta(seconds=int(seek))).astimezone(localtimezone).dst().seconds
+    log.info('Timezone=%s', localtimezone)
+    seconds_fix = (timezone.now() - timedelta(seconds=seek)).astimezone(localtimezone).dst().seconds
+    log.info('Seconds fix=%s', seconds_fix)
     seek += seconds_fix
 
-    record_time = timezone.now() - timedelta(seconds=int(seek))
+    record_time = timezone.now() - timedelta(seconds=seek)
+    log.debug('Agora(%s) - delta(%s) = %s', timezone.now(), timedelta(seconds=seek), record_time)
 
     ## Find a recorder with request
-    log.info('rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
-        record_time, channel, (int(seek) / 3600))
+    log.debug('rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
+        record_time, channel, (seek / 3600))
     recorders = StreamRecorder.objects.filter(
         status=True,
         channel__settopboxchannel__settopbox=stb,
@@ -338,7 +341,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             status=404)
     # Priorize server (random)
     recorder = get_random_on_storage(recorders)
-    log.info('Current recorder:%s', recorder)
+    log.debug('Current recorder:%s', recorder)
     ## Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
         StreamPlayer.objects.create(
@@ -346,7 +349,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             server=recorder.server,
             recorder=recorder
             )
-        log.info('new player created to ip: %s' % ip)
+        log.debug('new player created to ip: %s' % ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
     if player.status and player.pid:
         pass
