@@ -176,6 +176,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Mon Feb 24 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.8-1
+- Fix TVoD
 * Thu Feb 13 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.6-1
 - Fix all channel. STB reboot. SoftTranscode with ffmpeg.
 * Wed Jan 22 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.2-1
