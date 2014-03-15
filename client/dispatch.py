@@ -57,6 +57,33 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
                     settopbox=instance, channel=channel, recorder=rec)
                 if created is True:
                     log.debug('Created:%s', nrel)
+        ## Auto create default options to STB
+        # password
+        if models.SetTopBox.default.password is not None:
+            passwd_config = models.SetTopBoxConfig.objects.create(
+                settopbox=instance, key='global.PASSWORD',
+                value=models.SetTopBox.default.password, value_type='string')
+            log.debug('Nova config password=%s', passwd_config)
+        # recorder
+        if models.SetTopBox.default.recorder is not None:
+            rec = 'disabled'
+            if models.SetTopBox.default.recorder is True:
+                rec = 'enable'
+            rec_config = models.SetTopBoxConfig.objects.create(
+                settopbox=instance, key='app/tv.TVOD_PLUGIN',
+                value=rec, value_type='string')
+            log.debug('Nova config recorder=%s', rec_config)
+        # parental
+        if models.SetTopBox.default.parental is not None:
+            parental_config = models.SetTopBoxConfig.objects.create(
+                settopbox=instance, key='app/tv.PARENTAL_CONTROL',
+                value=models.SetTopBox.default.parental, value_type='string')
+            log.debug('Nova config parental=%s', parental_config)
+
+# app/tv.PARENTAL_CONTROL = 0,10,12,14,16,18,-1
+# global.PASSWORD = 1234
+# app/tv.TVOD_PLUGIN = enable/disable
+# app/tv.ASPECT_RATIO = auto,stretch,16_9,4_3
 
 
 @receiver(post_delete, sender=models.SetTopBox)

@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
+from django import forms
 
 import dbsettings
 from django.contrib.contenttypes.generic import GenericForeignKey
@@ -94,6 +95,50 @@ class SetTopBoxOptions(dbsettings.Group):
         default=True
         )
 
+CHOICES_PARENTAL = (
+    ('0', 'Livre',),
+    ('10', '10 anos',),
+    ('12', '12 anos',),
+    ('14', '14 anos',),
+    ('16', '16 anos',),
+    ('18', '18 anos',),
+    ('-1', 'Desativado',),
+)
+
+class STBPassValue(dbsettings.Value):
+
+    class field(forms.CharField):
+
+        def __init__(self, max_length=4, min_length=4, *args, **kwargs):
+            kwargs['max_length'] = 4
+            kwargs['min_length'] = 4
+            forms.CharField.__init__(self, *args, **kwargs)
+
+        def clean(self, value):
+            try:
+                value = int(str(value))
+            except (ValueError, TypeError):
+                raise forms.ValidationError('Os campos devem conter somente numeros.')
+            return forms.CharField.clean(self, value)
+
+    def to_python(self, value):
+        try:
+            value = int(str(value))
+        except (ValueError, TypeError):
+            print('Valor invalido')
+        return value
+
+
+class SetTopBoxDefaultConfig(dbsettings.Group):
+    password = STBPassValue(_('Senha do cliente'),
+        help_text='Senha equipamento do cliente', default=None)
+    recorder = dbsettings.BooleanValue(_('Acesso à Gravações habilitado'),
+        default=False)
+    parental = dbsettings.StringValue(_('Controle parental'),
+        choices=CHOICES_PARENTAL,
+        default=-1)
+
+
 def reload_channels(nbridge, settopbox, message=None, userchannel=True,
         channel=True):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
@@ -140,6 +185,7 @@ class SetTopBox(models.Model):
     mac = models.CharField(_('Endereço MAC'), max_length=255,
         help_text=_('Endereço MAC do SetTopBox'), unique=True)
     options = SetTopBoxOptions('Opções do SetTopBox')
+    default = SetTopBoxDefaultConfig('Valores do cliente')
 
     class Meta:
         verbose_name = _('SetTopBox')
