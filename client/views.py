@@ -58,6 +58,7 @@ class Auth(View):
         for p in players:
             log.debug('Stop player %s', p)
             p.stop()
+            p.delete()
         stb.online = True
         stb.save()
         response = HttpResponse(
