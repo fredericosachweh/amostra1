@@ -352,7 +352,9 @@ def tvod(request, channel_number=None, command=None, seek=0):
             )
         log.debug('new player created to ip: %s' % ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
-    if player.status and player.pid:
+    log.debug('Current channel=%s, New channel=%s', channel,
+        player.recorder.channel)
+    if player.status and player.pid and channel == player.recorder.channel:
         pass
     else:
         player.recorder = recorder
