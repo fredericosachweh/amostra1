@@ -347,7 +347,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         StreamPlayer.objects.create(
             stb_ip=ip,
             server=recorder.server,
-            recorder=recorder
+            recorder=recorder,
+            stb=stb
             )
         log.debug('new player created to ip: %s' % ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
