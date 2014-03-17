@@ -1,5 +1,5 @@
 # -*- encoding:utf8 -*
-import dispatch
+from . import dispatch
 from dbsettings.utils import set_defaults
 from client import models as clientmodels
 

@@ -10,7 +10,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import signals
 from django.conf import settings
 
-from device.models import MulticastOutput
+#from device.models import MulticastOutput
 
 
 class Channel(models.Model):
@@ -34,7 +34,7 @@ class Channel(models.Model):
     )
     updated = models.DateTimeField(auto_now=True)
     enabled = models.BooleanField(_(u'Disponível'), default=False)
-    source = models.ForeignKey(MulticastOutput, unique=False)
+    source = models.ForeignKey('device.MulticastOutput', unique=False)
     buffer_size = models.PositiveIntegerField(_(u'STB Buffer (milisegundos)'),
         default=1000, help_text=u'For easy STB 300 > and < 5000')
 

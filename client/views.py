@@ -7,6 +7,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
+from device.models import StreamPlayer
 
 import models
 
@@ -53,6 +54,12 @@ class Auth(View):
         log.debug('login: OK, user:%s', a_user)
         api_key = ApiKey.objects.get(user=a_user)
         log.debug('api_key:%s', api_key.key)
+        players = StreamPlayer.objects.filter(stb=stb)
+        for p in players:
+            log.debug('Stop player %s', p)
+            p.stop()
+        stb.online = True
+        stb.save()
         response = HttpResponse(
             '{"login": "OK", "User": "%s", "api_key": "%s"}' % (
                 a_user, api_key.key),

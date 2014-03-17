@@ -1,14 +1,14 @@
 #!/bin/bash
 
-SETTINGS=settings
+SETTINGS=iptv.settings
 METHOD=prefork
 DEAMONIZE=false
 DATABASE="default"
 PYTHONPATH=".:.."
 
 if [ $# -gt 1 ];then
-    SETTINGS="settings_$2"
-    echo "USING CUSTOM SETTINGS: settings_$2.py"
+    SETTINGS="iptv.settings_$2"
+    echo "USING CUSTOM SETTINGS: iptv.settings_$2.py"
 fi
 
 

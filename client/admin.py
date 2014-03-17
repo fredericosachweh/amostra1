@@ -48,8 +48,8 @@ class SetTopBoxChannelInline(admin.TabularInline):
 
 
 class SetTopBoxAdmin(ModelAdmin):
-    search_fields = ('mac', 'serial_number', )
-    list_display = ('serial_number', 'mac', )
+    search_fields = ('mac', 'serial_number', 'description', )
+    list_display = ('serial_number', 'mac', 'description', 'online', )
     actions = [reboot_stb]
     inlines = [SetTopBoxChannelInline, ]
 
