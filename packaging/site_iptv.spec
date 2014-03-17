@@ -176,6 +176,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Mon Mar 17 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.11.0-1
+- Stop TVoD on login. Status on-line on login. New STB fields.
 * Mon Feb 24 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.8-1
 - Fix TVoD
 * Thu Feb 13 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.6-1
