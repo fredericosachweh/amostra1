@@ -1,21 +1,18 @@
 # -*- encoding:utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import unicode_literals
 import logging
 import thread
 import requests
 
 from django.db import models
-from django.contrib.contenttypes import generic
-from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
 from django import forms
+from tv.models import Channel
 
 import dbsettings
-from django.contrib.contenttypes.generic import GenericForeignKey
 server_key = settings.NBRIDGE_SERVER_KEY
-from tv import models as tvmodels
 from nbridge.models import Nbridge
 log = logging.getLogger('client')
 
@@ -184,6 +181,12 @@ class SetTopBox(models.Model):
         help_text=_('Número serial do SetTopBox'), unique=True)
     mac = models.CharField(_('Endereço MAC'), max_length=255,
         help_text=_('Endereço MAC do SetTopBox'), unique=True)
+    description = models.CharField(_('Descrição opcional'), max_length=255,
+        blank=True, null=True)
+    online = models.BooleanField(_('On-line'), default=False)
+    nbridge = models.ForeignKey('nbridge.Nbridge', blank=True,
+        null=True, default=None, db_constraint=False)
+    # Options
     options = SetTopBoxOptions('Opções do SetTopBox')
     default = SetTopBoxDefaultConfig('Valores do cliente')
 
@@ -202,7 +205,7 @@ class SetTopBox(models.Model):
 
     def get_channels(self):
         'Returns: a list of tv.channel for relation SetTopBoxChannel'
-        return tvmodels.Channel.objects.filter(
+        return Channel.objects.filter(
             settopboxchannel__settopbox=self,
             enabled=True,
             source__isnull=False)
@@ -226,7 +229,7 @@ class SetTopBoxParameter(models.Model):
         help_text=_('Chave do parametro. Ex. MACADDR'), db_index=True)
     value = models.CharField(_('Valor'), max_length=250,
         help_text=_('Valor do parametro. Ex. 00:00:00:00:00'), db_index=True)
-    settopbox = models.ForeignKey(SetTopBox, db_index=True)
+    settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
 
     class Meta:
         verbose_name = _('Parametro do SetTopBox')
@@ -240,8 +243,8 @@ class SetTopBoxParameter(models.Model):
 class SetTopBoxChannel(models.Model):
     'Class to link access permission to stb on tv.channel'
 
-    settopbox = models.ForeignKey(SetTopBox, db_index=True)
-    channel = models.ForeignKey(tvmodels.Channel, db_index=True)
+    settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
+    channel = models.ForeignKey('tv.Channel', db_index=True)
     recorder = models.BooleanField(_('Pode acessar conteúdo gravado'))
 
     class Meta:
@@ -263,7 +266,7 @@ class SetTopBoxConfig(models.Model):
     value = models.CharField(_('Valor'), max_length=250,
         help_text=_('Valor do parametro. Ex. 0.5'), db_index=True)
     value_type = models.CharField(_('Tipo do parametro'), max_length=50)
-    settopbox = models.ForeignKey(SetTopBox, db_index=True)
+    settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
 
     class Meta:
         verbose_name = _('Configuração do Cliente')
