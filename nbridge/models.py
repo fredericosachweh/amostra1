@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 import logging
-import time
 from tempfile import NamedTemporaryFile
 
 from django.utils.translation import ugettext as _
@@ -176,9 +175,15 @@ class Nbridge(DeviceServer):
     "server_key": "%s",
     "verbose": %s,
     "log_level": %s,
-    "env": "%s"
-}''' % (settings.NBRIDGE_SOCKETS_DIR, self.id, self.middleware_addr,
-            settings.NBRIDGE_SERVER_KEY or '36410c96-c157-4b2a-ac19-1a2b7365ca11', verbose, self.log_level, self.env_val)
+    "env": "%s",
+    "nbridge_id": "%s"
+}''' % (settings.NBRIDGE_SOCKETS_DIR, self.id,
+            self.middleware_addr,
+            settings.NBRIDGE_SERVER_KEY or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
+            verbose,
+            self.log_level,
+            self.env_val,
+            self.id)
         cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
         self.server.execute(cmd)
 
