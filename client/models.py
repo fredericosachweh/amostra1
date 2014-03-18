@@ -37,18 +37,18 @@ class LogoToReplace(dbsettings.ImageValue):
             dst = '/iptv/var/www/sites/frontend/dist/img/menu.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
+        if self.attribute_name == 'logo_small_menu':
+            fname = os.path.join(settings.MEDIA_ROOT, val)
+            thumb = Image.open(fname)
+            thumb.thumbnail((163, 67), Image.ANTIALIAS)
+            dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor1.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
         if self.attribute_name == 'logo_small':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((100, 26), Image.ANTIALIAS)
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
-            log.debug('Save to:%s', dst)
-            thumb.save(dst)
-        if self.attribute_name == 'logo_small_men':
-            fname = os.path.join(settings.MEDIA_ROOT, val)
-            thumb = Image.open(fname)
-            thumb.thumbnail((263, 67), Image.ANTIALIAS)
-            dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor1.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'banner_epg':
@@ -65,13 +65,13 @@ class LogoToReplace(dbsettings.ImageValue):
 class CompanyLogo(dbsettings.Group):
     logo_main = LogoToReplace(_('Logo principal'), upload_to='',
         help_text='Formato PNG transparente 450 x 164 px', required=False)
-    logo_small_menu = LogoToReplace(_('Logo pequeno Men'), upload_to='',
-        help_text='Formato PNG transparente 100 x 26 px', required=False)
+    logo_small_menu = LogoToReplace(_('Logo pequeno Menu'), upload_to='',
+        help_text='Formato PNG transparente 163 x 67 px', required=False)
     logo_small = LogoToReplace(_('Logo pequeno TV'), upload_to='',
         help_text='Formato PNG transparente 100 x 26 px', required=False)
     banner_epg = LogoToReplace(_('Banner na guia de programação'),
         upload_to='', required=False,
-        help_text='Formato PNG transparente 450 x 80 px')
+        help_text='Formato JPG 450 x 80 px')
 
 logo = CompanyLogo('Logo da interface')
 
