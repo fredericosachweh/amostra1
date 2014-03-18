@@ -32,14 +32,6 @@ Requires:       python-pillow
 Requires:       python-imaging
 %endif
 
-#%if 0%{?fedora} >= 18
-#Requires:       python-django >= 1.4.5
-#BuildRequires:  python-django >= 1.4.5
-#%else
-#Requires:       Django >= 1.4
-#BuildRequires:  Django >= 1.4
-#%endif
-
 Requires:       postgresql-server
 Requires:       python-psycopg2
 Requires:       python-flup
@@ -176,6 +168,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Tue Mar 18 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.11.2-1
+- Fix Image replace on config to frontend.
 * Mon Mar 17 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.11.0-1
 - Stop TVoD on login. Status on-line on login. New STB fields.
 * Mon Feb 24 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.10.8-1
