@@ -389,7 +389,8 @@ class SetTopBoxChannelTest(TestCase):
             'channel': '/tv/api/tv/v1/channel/2/',
             'recorder': True}),
             content_type='application/json')
-        self.assertEqual(response.status_code, 201, 'Content:%s' % response.content)
+        self.assertEqual(response.status_code, 201,
+            'Content:%s' % response.content)
         response = self.c.post(urlrelation, data=json.dumps({
             'settopbox': '/tv/api/client/v1/settopbox/2/',
             'channel': '/tv/api/tv/v1/channel/2/',
