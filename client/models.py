@@ -47,7 +47,7 @@ class LogoToReplace(dbsettings.ImageValue):
         if self.attribute_name == 'logo_small':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
-            thumb.thumbnail((100, 26), Image.ANTIALIAS)
+            thumb.thumbnail((163, 67), Image.ANTIALIAS)
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
@@ -68,7 +68,7 @@ class CompanyLogo(dbsettings.Group):
     logo_small_menu = LogoToReplace(_('Logo pequeno Menu'), upload_to='',
         help_text='Formato PNG transparente 163 x 67 px', required=False)
     logo_small = LogoToReplace(_('Logo pequeno TV'), upload_to='',
-        help_text='Formato PNG transparente 100 x 26 px', required=False)
+        help_text='Formato PNG transparente 163 x 67 px', required=False)
     banner_epg = LogoToReplace(_('Banner na guia de programação'),
         upload_to='', required=False,
         help_text='Formato JPG 450 x 80 px')
@@ -102,6 +102,7 @@ CHOICES_PARENTAL = (
     ('-1', 'Desativado',),
 )
 
+
 class STBPassValue(dbsettings.Value):
 
     class field(forms.CharField):
@@ -115,7 +116,8 @@ class STBPassValue(dbsettings.Value):
             try:
                 value = int(str(value))
             except (ValueError, TypeError):
-                raise forms.ValidationError('Os campos devem conter somente numeros.')
+                raise forms.ValidationError(
+                    'Os campos devem conter somente numeros.')
             return forms.CharField.clean(self, value)
 
     def to_python(self, value):
@@ -158,6 +160,7 @@ def reload_channels(nbridge, settopbox, message=None, userchannel=True,
         log.error('ERROR:%s', e)
     finally:
         log.info('Finalizado o request')
+
 
 def reboot_stb(nbridge, settopbox):
     log.debug('Send reboot to STB=%s using nbridge=%s', settopbox, nbridge)
@@ -213,15 +216,15 @@ class SetTopBox(models.Model):
     def reboot(self):
         nbs = Nbridge.objects.filter(status=True)
         for s in nbs:
-            thread.start_new_thread(reboot_stb, (s, self)) 
+            thread.start_new_thread(reboot_stb, (s, self))
 
     def reload_channels(self, channel=False, message=None):
         nbs = Nbridge.objects.filter(status=True)
         for s in nbs:
             thread.start_new_thread(reload_channels, (s, self),
-                {'channel': True, 'message': message} ) 
- 
- 
+                {'channel': True, 'message': message})
+
+
 class SetTopBoxParameter(models.Model):
     'Class to store key -> values of SetTopBox'
 
