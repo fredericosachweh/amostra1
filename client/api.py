@@ -333,6 +333,133 @@ class SetTopBoxMessage(NamespacedModelResource):
     class Meta:
         queryset = models.SetTopBoxMessage.objects.all()
 
+class SetTopBoxProgramScheduleResource(NamespacedModelResource):
+    class Meta:
+        queryset = models.SetTopBoxProgramSchedule.objects.all()
+        resource_name = 'settopboxprogramschedule'
+        allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
+        urlconf_namespace = 'client'
+        fields = ['schedule_date', 'message', 'url']
+        always_return_data = False
+        filtering = {
+            "schedule_date": ALL,
+            "message": ALL,
+            "url": ALL
+        }
+        authorization = SetTopBoxAuthorization()
+        validation = Validation()
+        authentication = MultiAuthentication(
+            ApiKeyAuthentication(),
+            BasicAuthentication(realm='cianet-middleware'),
+            Authentication(),
+            )
+
+    def apply_authorization_limits(self, request, object_list):
+        """
+        Filtra para o usuário logado.
+        """
+        log.debug('User=%s', request.user)
+        if request.user.is_anonymous() is False:
+            log.debug('user:%s', request.user)
+            user = request.user
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            if hasattr(self._meta.authorization, 'apply_limits'):
+                object_list = self._meta.authorization.apply_limits(request,
+                    object_list)
+            object_list = object_list.filter(settopbox=stb)
+        else:
+            object_list = models.SetTopBoxProgramSchedule.objects.none()
+        return object_list
+
+    def obj_create(self, bundle, **kwargs):
+        """
+        Foram realizadas alterações para a inclusão da inserção do channel no banco
+        O agendamento é realizado de acordo com o settopbox e o channel
+        """
+        from django.db import transaction
+        log.debug('New Register:%s %s %s', bundle.data.get('schedule_date'),
+            bundle.data.get('message'), bundle.data.get('url'))
+        if bundle.request.user.is_anonymous() is False:
+            user = bundle.request.user
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+            channel = bundle.data.get('channel')
+            ch = models.Channel.objects.get(id=channel)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            with transaction.atomic():
+                try:
+                    bundle = super(SetTopBoxProgramScheduleResource, self).obj_create(
+                        bundle, settopbox=stb, channel=ch, **kwargs)
+                except IntegrityError, e:
+                    log.error('%s', e)
+                    raise BadRequest(e)
+                return bundle
+        else:
+            raise BadRequest('')
+        return bundle
+    
+    def obj_update(self, bundle, skip_errors=False, **kwargs):
+        from django.db import transaction
+        log.debug('Update Register:%s=%s (%s)', bundle.data.get('schedule_date'),
+            bundle.data.get('message'), bundle.data.get('url'))
+        if bundle.request.user.is_anonymous() is False:
+            user = bundle.request.user
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+            self._meta.queryset.filter(settopbox=stb)
+            log.debug('User:%s, SetTopBox:%s', user, stb)
+            # TODO: Não deixar um STB moduficar as configs de outro STB
+            #print(bundle)
+            #if bundle.obj.settopbox_id != stb.id:
+            #    raise BadRequest('')
+        with transaction.atomic():
+            try:
+                #print(dir(bundle.obj))
+                bundle = super(SetTopBoxProgramScheduleResource, self).obj_update(bundle,
+                    **kwargs)
+            except IntegrityError, e:
+                log.error('%s', e)
+                raise BadRequest(e)
+        return bundle
+    
+    def obj_get_list(self, bundle, **kwargs):
+        user = bundle.request.user
+        log.debug('User=%s', user)
+        if user.is_anonymous() is False:
+            if not user.is_staff:
+                serial = user.username.replace(settings.STB_USER_PREFIX, '')
+                log.debug('Serial=%s', serial)
+                stb = models.SetTopBox.objects.get(serial_number=serial)
+                log.debug('User:%s, SetTopBox:%s', user, stb)
+                # self._meta.queryset.filter(settopbox=stb)
+                obj_list = super(SetTopBoxProgramScheduleResource, self).obj_get_list(
+                    bundle, **kwargs).filter(settopbox=stb)
+        else:
+            obj_list = models.SetTopBoxProgramSchedule.objects.none()
+        return obj_list
+
+    def obj_get(self, bundle, **kwargs):
+        user = bundle.request.user
+        log.debug('User=%s', user)
+        obj_list = models.SetTopBoxProgramSchedule.objects.none()
+        if user.is_anonymous() is False:
+            if not user.is_staff:
+                serial = user.username.replace(settings.STB_USER_PREFIX, '')
+                log.debug('Serial=%s', serial)
+                stb = models.SetTopBox.objects.get(serial_number=serial)
+                log.debug('User:%s, SetTopBox:%s', user, stb)
+                obj_list = super(SetTopBoxProgramScheduleResource, self).obj_get(
+                    bundle, **kwargs)
+                if obj_list.settopbox == stb:
+                    return obj_list
+                else:
+                    #raise Unauthorized('')
+                    obj_list = models.SetTopBoxProgramSchedule.objects.none()
+        else:
+            obj_list = models.SetTopBoxProgramSchedule.objects.none()
+        return obj_list
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
@@ -341,5 +468,6 @@ api.register(SetTopBoxChannelResource())
 api.register(SetTopBoxConfigResource())
 api.register(APIKeyResource())
 api.register(SetTopBoxMessage())
+api.register(SetTopBoxProgramScheduleResource())
 
 apis = [api]

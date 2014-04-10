@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import logging
 import thread
 import requests
+import datetime
 
 from django.db import models
 from django.utils.translation import ugettext as _
@@ -294,3 +295,22 @@ class SetTopBoxMessage(models.Model):
 
     def __unicode__(self):
         return self.key
+
+
+class SetTopBoxProgramSchedule(models.Model):
+    'Class to store the data and time of Program on Schedule'
+
+    settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
+    channel = models.ForeignKey('tv.Channel', db_index=True)
+    url = models.TextField(_('/tv/api/tv/v1/channel/42/'))
+    message = models.TextField(_('Agendamento realizado com sucesso!'))
+    schedule_date = models.DateTimeField(auto_now_add=False, blank=True)
+
+    class Meta:
+        verbose_name = _('Configuração de agendamento')
+        verbose_name_plural = _('Configurações de agendamento')
+        ordering = ('settopbox', 'channel__number',)
+
+    def __unicode__(self):
+        return '[ch=%s stb=%s]' % (self.channel.number, self.settopbox.serial_number)
+
