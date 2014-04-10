@@ -17,6 +17,9 @@ from tv import models as tvmodels
 import models
 import logging
 import simplejson
+from datetime import tzinfo, timedelta, datetime
+from pytz import timezone
+
 log = logging.getLogger('unittest')
 
 
@@ -837,8 +840,149 @@ class TestDefaultConfig(TestCase):
         self.assertContains(response, '"value": "-1"')
         self.assertContains(response, '"value": "disabled"')
 
+class SetTopBoxProgramScheduleTest(TestCase):
 
+    def setUp(self):
+        self.c1 = Client()
+        self.c2 = Client()
+        self.auth_login = reverse('client_auth')
+        self.auth_logoff = reverse('client_logoff')
+        
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
+        
+        server = devicemodels.Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='nginx',  # getpass.getuser(),
+            rsakey='~/.ssh/id_rsa'
+        )
+        
+        nic = devicemodels.NIC.objects.create(server=server, ipv4='127.0.0.1')
+        
+        unicastin = devicemodels.UnicastInput.objects.create(
+            server=server,
+            interface=nic,
+            port=30000,
+            protocol='udp',
+        )
+        
+        service = devicemodels.DemuxedService.objects.create(
+            server=server,
+            sid=1,
+            sink=unicastin,
+            nic_src=nic,
+        )
+        
+        internal = devicemodels.UniqueIP.create(sink=service)
+        
+        ipout1 = devicemodels.MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.2',
+            interface=nic,
+            sink=internal,
+            nic_sink=nic,
+        )
 
+        ipout2 = devicemodels.MulticastOutput.objects.create(
+            server=server,
+            ip='239.0.1.3',
+            interface=nic,
+            sink=internal,
+            nic_sink=nic,
+        )
+        
+        channel1 = tvmodels.Channel.objects.create(
+            number=51,
+            name='Discovery Channel',
+            description='Cool tv channel',
+            channelid='DIS',
+            image='',
+            enabled=True,
+            source=ipout1,
+        )
+        
+        self.channel2 = tvmodels.Channel.objects.create(
+            number=13,
+            name='Globo',
+            description=u'Rede globo de televisão',
+            channelid='GLB',
+            image='',
+            enabled=True,
+            source=ipout2,
+            )
 
+    def test_program_schedule(self):
+        
+        response = self.c1.post(self.auth_login, data={'MAC': '01:02:03:04:05:06'})
+        self.assertEqual(200, response.status_code)
+        
+        response = self.c2.post(self.auth_login, data={'MAC': '01:02:03:04:05:07'})
+        self.assertEqual(200, response.status_code)
+
+        stb1 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:06')
+        stb2 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:07')
+
+        ch1 = tvmodels.Channel.objects.get(name='Discovery Channel')
+        ch2 = tvmodels.Channel.objects.get(name='Globo')
+
+        tzinfo=timezone('America/Sao_Paulo')
+        
+        post_date = datetime(2014, 4, 9, 18,53,13,0,tzinfo)
+
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c1.post(urlrelation, data=json.dumps({
+            'setbox': '1', 
+            'channel': '1',
+            'url': u'/tv/api/1',
+            'message': u'O programa Y foi agendado com sucesso!',
+            'schedule_date':str(post_date)}),
+            content_type='application/json')
+        self.assertEqual(201, response.status_code)
+
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.post(urlrelation, data=json.dumps({
+            'setbox': '1', 
+            'channel': '2',
+            'url': u'/tv/api/1',
+            'message': u'O programa X foi agendado com sucesso!',
+            'schedule_date':str(post_date)}),
+            content_type='application/json')
+        self.assertEqual(201, response.status_code)
+
+        ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)[0]
+        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)[0]
+
+        self.assertEqual(ps1.message, u'O programa Y foi agendado com sucesso!')
+        self.assertEqual(ps1.url, u'/tv/api/1')
+        dt = datetime(2014, 4, 9, 18,53,13,0,tzinfo)
+        self.assertEqual(ps1.schedule_date, dt)
+        
+        self.assertEqual(ps2.message, u'O programa X foi agendado com sucesso!')
+        self.assertEqual(ps2.url, u'/tv/api/1')
+        dt = datetime(2014, 4, 9, 18,53,13,0,tzinfo)
+        self.assertEqual(ps2.schedule_date, dt)
+
+        ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
+        self.assertEqual(ps1.count(), 1);
+        
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c1.get(urlrelation)
+        self.assertEqual(200, response.status_code)
+        
+        jsdata = json.loads(response.content)
+       
+        response = self.c1.delete(jsdata['objects'][0]['resource_uri'])
+        self.assertEqual(204, response.status_code)
+
+        ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
+        self.assertEqual(ps1.count(), 0);
+        
 
 
