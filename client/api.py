@@ -20,7 +20,7 @@ from device import models as devicemodels
 from tv.api import ChannelResource
 import logging
 log = logging.getLogger('api')
-
+import pdb
 ## Validation:
 #http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-
 #treat-a-field-as-unique
@@ -176,6 +176,114 @@ class SetTopBoxAuthorization(Authorization):
         log.debug('User:%s', user)
         return True
 
+class SetTopBoxApiAuth(Authorization):
+    
+    def is_authorized(self, object_list, bundle):
+        if bundle.request.user.is_anonymous() is True:
+            return False
+        user = str(bundle.request.user)
+        serial = user.replace(settings.STB_USER_PREFIX, '')
+        
+        try:
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+        except:
+            log.error('There`s no stb for this serial number: %s', serial)
+            raise Unauthorized("There`s no stb for this serial number")
+        
+        bundle_uri = bundle.request.path_info
+            
+        try:
+            uri_id = bundle_uri.split('/')
+            ps = models.SetTopBoxProgramSchedule.objects.filter(id = uri_id[-2], settopbox_id = stb.id)
+            if ps:
+                return True
+        except:
+            if uri_id[-2] == 'schema':
+                return True
+            log.error('There`s no schedule for this uri_id: %s', uri_id)
+            return False
+   
+    def is_create_authorized(self, object_list, bundle):
+        if bundle.request.user.is_anonymous() is True:
+            return False
+        user = str(bundle.request.user)
+        serial = user.replace(settings.STB_USER_PREFIX, '')
+        
+        channel = bundle.data.get('channel')
+         
+        try:
+            self.stb = models.SetTopBox.objects.get(serial_number=serial)
+        except:
+            log.error('There`s no stb for this serial number: %s', serial)
+            raise Unauthorized("There`s no stb for this serial number")
+
+        try:
+            self.ch = models.Channel.objects.get(number=channel)
+        except:
+            log.error('There`s no channel for this number: %s', channel)
+            raise Unauthorized("There`s no channel for this number")
+
+        try:
+            self.stb_ch = models.SetTopBoxChannel.objects.filter(channel_id = self.ch.id, settopbox_id = self.stb.id) 
+        except:
+            log.error('There`s no association between channel: %s and settopbox: %s',channel, serial)
+            raise Unauthorized("There`s no association between channel and serial")
+        
+        #self.create_object(bundle, self.stb, self.ch)
+        return True
+    
+#    def create_object(self, bundle, stb, ch, **kwargs):
+#        pdb.set_trace()
+        
+#        res = SetTopBoxProgramScheduleResource()
+#        request_bundle = res.build_bundle(request=bundle.request)
+#        request_bundle.obj.channel = ch 
+#        request_bundle.obj.settopbox = stb
+#        request_bundle.data = bundle.data
+
+        # Override the tech and operator fields
+#        setattr(request_bundle.obj, 'settopbox', stb)
+#        setattr(request_bundle.obj, 'channel', ch)
+
+#        request_bundle = res.full_hydrate(request_bundle)
+#        res.save(request_bundle)
+ 
+    def filter_read_list(self, object_list, bundle):
+        if bundle.request.user.is_anonymous() is True:
+            return False
+        user = str(bundle.request.user)
+        serial = user.replace(settings.STB_USER_PREFIX, '')
+        try:
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+        except:
+            log.error('No STB for user:%s', user)
+            return False
+        return object_list.filter(settopbox=stb)
+    
+    def read_list(self, object_list, bundle):
+        return self.filter_read_list(object_list, bundle)
+
+    def read_detail(self, object_list, bundle):
+        return self.is_authorized(object_list, bundle)
+
+    #def create_list(self, object_list, bundle):
+        #pdb.set_trace()
+        #return self.create_object(object_list, bundle)
+    
+    def create_detail(self, object_list, bundle):
+        return self.is_create_authorized(object_list, bundle)
+
+    def update_list(self, object_list, bundle):
+        return self.is_authorized(object_list, bundle)
+
+    def update_detail(self, object_list, bundle):
+        return self.is_authorized(object_list,bundle)
+
+    def delete_list(self, object_list, bundle):
+        return self.is_authorized(object_list,bundle)
+
+    def delete_detail(self, object_list, bundle):
+        return self.is_authorized(object_list,bundle)
 
 class SetTopBoxConfigResource(NamespacedModelResource):
 
@@ -334,6 +442,7 @@ class SetTopBoxMessage(NamespacedModelResource):
         queryset = models.SetTopBoxMessage.objects.all()
 
 class SetTopBoxProgramScheduleResource(NamespacedModelResource):
+    
     class Meta:
         queryset = models.SetTopBoxProgramSchedule.objects.all()
         resource_name = 'settopboxprogramschedule'
@@ -344,9 +453,9 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
         filtering = {
             "schedule_date": ALL,
             "message": ALL,
-            "url": ALL
+            "url": ALL,
         }
-        authorization = SetTopBoxAuthorization()
+        authorization = SetTopBoxApiAuth()
         validation = Validation()
         authentication = MultiAuthentication(
             ApiKeyAuthentication(),
@@ -354,39 +463,14 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             Authentication(),
             )
 
-    def apply_authorization_limits(self, request, object_list):
-        """
-        Filtra para o usuário logado.
-        """
-        log.debug('User=%s', request.user)
-        if request.user.is_anonymous() is False:
-            log.debug('user:%s', request.user)
-            user = request.user
-            serial = user.username.replace(settings.STB_USER_PREFIX, '')
-            stb = models.SetTopBox.objects.get(serial_number=serial)
-            log.debug('User:%s, SetTopBox:%s', user, stb)
-            if hasattr(self._meta.authorization, 'apply_limits'):
-                object_list = self._meta.authorization.apply_limits(request,
-                    object_list)
-            object_list = object_list.filter(settopbox=stb)
-        else:
-            object_list = models.SetTopBoxProgramSchedule.objects.none()
-        return object_list
-
     def obj_create(self, bundle, **kwargs):
-        """
-        Foram realizadas alterações para a inclusão da inserção do channel no banco
-        O agendamento é realizado de acordo com o settopbox e o channel
-        """
         from django.db import transaction
-        log.debug('New Register:%s %s %s', bundle.data.get('schedule_date'),
-            bundle.data.get('message'), bundle.data.get('url'))
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
             serial = user.username.replace(settings.STB_USER_PREFIX, '')
             stb = models.SetTopBox.objects.get(serial_number=serial)
             channel = bundle.data.get('channel')
-            ch = models.Channel.objects.get(id=channel)
+            ch = models.Channel.objects.get(number=channel)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             with transaction.atomic():
                 try:
@@ -400,67 +484,6 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             raise BadRequest('')
         return bundle
     
-    def obj_update(self, bundle, skip_errors=False, **kwargs):
-        from django.db import transaction
-        log.debug('Update Register:%s=%s (%s)', bundle.data.get('schedule_date'),
-            bundle.data.get('message'), bundle.data.get('url'))
-        if bundle.request.user.is_anonymous() is False:
-            user = bundle.request.user
-            serial = user.username.replace(settings.STB_USER_PREFIX, '')
-            stb = models.SetTopBox.objects.get(serial_number=serial)
-            self._meta.queryset.filter(settopbox=stb)
-            log.debug('User:%s, SetTopBox:%s', user, stb)
-            # TODO: Não deixar um STB moduficar as configs de outro STB
-            #print(bundle)
-            #if bundle.obj.settopbox_id != stb.id:
-            #    raise BadRequest('')
-        with transaction.atomic():
-            try:
-                #print(dir(bundle.obj))
-                bundle = super(SetTopBoxProgramScheduleResource, self).obj_update(bundle,
-                    **kwargs)
-            except IntegrityError, e:
-                log.error('%s', e)
-                raise BadRequest(e)
-        return bundle
-    
-    def obj_get_list(self, bundle, **kwargs):
-        user = bundle.request.user
-        log.debug('User=%s', user)
-        if user.is_anonymous() is False:
-            if not user.is_staff:
-                serial = user.username.replace(settings.STB_USER_PREFIX, '')
-                log.debug('Serial=%s', serial)
-                stb = models.SetTopBox.objects.get(serial_number=serial)
-                log.debug('User:%s, SetTopBox:%s', user, stb)
-                # self._meta.queryset.filter(settopbox=stb)
-                obj_list = super(SetTopBoxProgramScheduleResource, self).obj_get_list(
-                    bundle, **kwargs).filter(settopbox=stb)
-        else:
-            obj_list = models.SetTopBoxProgramSchedule.objects.none()
-        return obj_list
-
-    def obj_get(self, bundle, **kwargs):
-        user = bundle.request.user
-        log.debug('User=%s', user)
-        obj_list = models.SetTopBoxProgramSchedule.objects.none()
-        if user.is_anonymous() is False:
-            if not user.is_staff:
-                serial = user.username.replace(settings.STB_USER_PREFIX, '')
-                log.debug('Serial=%s', serial)
-                stb = models.SetTopBox.objects.get(serial_number=serial)
-                log.debug('User:%s, SetTopBox:%s', user, stb)
-                obj_list = super(SetTopBoxProgramScheduleResource, self).obj_get(
-                    bundle, **kwargs)
-                if obj_list.settopbox == stb:
-                    return obj_list
-                else:
-                    #raise Unauthorized('')
-                    obj_list = models.SetTopBoxProgramSchedule.objects.none()
-        else:
-            obj_list = models.SetTopBoxProgramSchedule.objects.none()
-        return obj_list
-
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())

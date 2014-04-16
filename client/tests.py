@@ -18,9 +18,9 @@ import models
 import logging
 import simplejson
 from datetime import tzinfo, timedelta, datetime
+import pdb
 
 log = logging.getLogger('unittest')
-
 
 def patch_request_factory():
     def _method(self, path, data='', content_type='application/octet-stream',
@@ -931,31 +931,42 @@ class SetTopBoxProgramScheduleTest(TestCase):
         ch1 = tvmodels.Channel.objects.get(name='Discovery Channel')
         ch2 = tvmodels.Channel.objects.get(name='Globo')
 
-        tz = timezone.utc
-        post_date = datetime(2014, 4, 9, 18,53,13,0,tz)
+        #tz = timezone.utc
+        #post_date = datetime(2014, 4, 9, 18,53,13,0,tz)
 
         """
-        Realiza agendamento em settopbox 1 e settopbox 2
+        Realiza um agendamento no settopbox 1 e dois agendamentos no settopbox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
         response = self.c1.post(urlrelation, data=json.dumps({
-            'setbox': '1', 
-            'channel': '1',
+            'settopbox': '1', 
+            'channel': '51',
             'url': u'/tv/api/1',
             'message': u'O programa Y foi agendado com sucesso!',
-            'schedule_date':str(post_date)}),
+            'schedule_date':'1388657410'}),
             content_type='application/json')
         self.assertEqual(201, response.status_code)
-
+        
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
         response = self.c2.post(urlrelation, data=json.dumps({
-            'setbox': '1', 
-            'channel': '2',
+            'settopbox': '1', 
+            'channel': '13',
             'url': u'/tv/api/1',
             'message': u'O programa X foi agendado com sucesso!',
-            'schedule_date':str(post_date)}),
+            'schedule_date':'1388657410'}),
+            content_type='application/json')
+        self.assertEqual(201, response.status_code)
+        
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.post(urlrelation, data=json.dumps({
+            'settopbox': '1', 
+            'channel': '13',
+            'url': u'/tv/api/1',
+            'message': u'O programa Z foi agendado com sucesso!',
+            'schedule_date':'1388657410'}),
             content_type='application/json')
         self.assertEqual(201, response.status_code)
 
@@ -967,13 +978,13 @@ class SetTopBoxProgramScheduleTest(TestCase):
 
         self.assertEqual(ps1.message, u'O programa Y foi agendado com sucesso!')
         self.assertEqual(ps1.url, u'/tv/api/1')
-        dt = datetime(2014, 4, 9, 18,53,13,0,tz)
-        self.assertEqual(ps1.schedule_date, dt)
+        #dt = datetime(2014, 4, 9, 18,53,13,0,tz)
+        self.assertEqual(ps1.schedule_date, 1388657410)
         
         self.assertEqual(ps2.message, u'O programa X foi agendado com sucesso!')
         self.assertEqual(ps2.url, u'/tv/api/1')
-        dt = datetime(2014, 4, 9, 18,53,13,0,tz)
-        self.assertEqual(ps2.schedule_date, dt)
+        #dt = datetime(2014, 4, 9, 18,53,13,0,tz)
+        self.assertEqual(ps2.schedule_date, 1388657410)
 
         ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
         self.assertEqual(ps1.count(), 1);
@@ -1009,7 +1020,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         Valida se o settopbox 3 não possui agendamentos
         """
         ps3 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb3)
-        self.assertEqual(ps3.count(), 0);
+        self.assertEqual(ps3.count(), 0)
         
         """
         Valida se a remoção do agendamento no settopbox 1 não influenciou no agendamento do settopbox 2
@@ -1017,17 +1028,97 @@ class SetTopBoxProgramScheduleTest(TestCase):
         stb2 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:07')
         
         ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
-        self.assertEqual(ps2.count(), 1);
+        self.assertEqual(ps2.count(), 2);
         
         ps2 = ps2[0]
         self.assertEqual(ps2.message, u'O programa X foi agendado com sucesso!')
         self.assertEqual(ps2.url, u'/tv/api/1')
-        dt = datetime(2014, 4, 9, 18,53,13,0,tz)
-        self.assertEqual(ps2.schedule_date, dt)
+        #dt = datetime(2014, 4, 9, 18,53,13,0,tz)
+        self.assertEqual(ps2.schedule_date, 1388657410)
+
+        """
+        Valida Update no registro do settopbox 2
+        """
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
         
+        jsdata = json.loads(response.content)
+        
+        urlrelation = jsdata['objects'][0]['resource_uri']
+        response = self.c2.patch(urlrelation, data=json.dumps({
+            'message': u'O programa YY foi agendado com sucesso!'}),
+            content_type='application/json')
+        self.assertEqual(202, response.status_code)
 
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
 
+        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        self.assertEqual(ps2.count(), 2);
+        ps2 = ps2[0] 
+        self.assertEqual(ps2.message, u'O programa YY foi agendado com sucesso!')
 
+        """
+        Valida aquisição de um agendamento especifico
+        """
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
+        
+        jsdata = json.loads(response.content)
+        
+        urlrelation = jsdata['objects'][0]['resource_uri']
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
 
+        jsdata = json.loads(response.content)
+        self.assertEqual(jsdata['message'], u'O programa YY foi agendado com sucesso!')
+        
+        """
+        Validar se settopbox 1 pode remover agendamento em settopbox 2
+        """
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
+        
+        jsdata = json.loads(response.content)
+        
+        response = self.c1.delete(jsdata['objects'][0]['resource_uri'])
+        self.assertEqual(401, response.status_code)
 
+        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        self.assertEqual(ps2.count(), 2);
+        
+        """
+        Validar se settopbox 1 pode atualizar agendamento em settopbox 2
+        """
+        
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
+        
+        jsdata = json.loads(response.content)
+        
+        urlrelation = jsdata['objects'][0]['resource_uri']
+        response = self.c1.patch(urlrelation, data=json.dumps({
+            'message': u'O programa ZZ foi agendado com sucesso!'}),
+            content_type='application/json')
+        self.assertEqual(401, response.status_code)
+
+        urlrelation = reverse('client:api_dispatch_list', kwargs={
+            'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
+        response = self.c2.get(urlrelation)
+        self.assertEqual(200, response.status_code)
+
+        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        self.assertEqual(ps2.count(), 2);
+        ps2 = ps2[0] 
+        self.assertEqual(ps2.message, u'O programa YY foi agendado com sucesso!')
 
