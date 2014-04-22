@@ -176,7 +176,7 @@ class SetTopBoxAuthorization(Authorization):
         log.debug('User:%s', user)
         return True
 
-class SetTopBoxApiAuth(Authorization):
+class SetTopBoxAuth(Authorization):
     
     def is_authorized(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
@@ -210,44 +210,23 @@ class SetTopBoxApiAuth(Authorization):
         serial = user.replace(settings.STB_USER_PREFIX, '')
         
         channel = bundle.data.get('channel')
+        log.debug('There`s no channel for this number: %s', channel)
          
         try:
-            self.stb = models.SetTopBox.objects.get(serial_number=serial)
+            stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('There`s no stb for this serial number: %s', serial)
             raise Unauthorized("There`s no stb for this serial number")
 
+        log.debug('All channels: %s', models.Channel.objects.filter(number = channel))
         try:
-            self.ch = models.Channel.objects.get(number=channel)
+            ch = models.Channel.objects.get(number=channel)
         except:
             log.error('There`s no channel for this number: %s', channel)
-            raise Unauthorized("There`s no channel for this number")
+            raise Unauthorized("There`s no channel for this number: %s", channel)
 
-        try:
-            self.stb_ch = models.SetTopBoxChannel.objects.filter(channel_id = self.ch.id, settopbox_id = self.stb.id) 
-        except:
-            log.error('There`s no association between channel: %s and settopbox: %s',channel, serial)
-            raise Unauthorized("There`s no association between channel and serial")
-        
-        #self.create_object(bundle, self.stb, self.ch)
         return True
     
-#    def create_object(self, bundle, stb, ch, **kwargs):
-#        pdb.set_trace()
-        
-#        res = SetTopBoxProgramScheduleResource()
-#        request_bundle = res.build_bundle(request=bundle.request)
-#        request_bundle.obj.channel = ch 
-#        request_bundle.obj.settopbox = stb
-#        request_bundle.data = bundle.data
-
-        # Override the tech and operator fields
-#        setattr(request_bundle.obj, 'settopbox', stb)
-#        setattr(request_bundle.obj, 'channel', ch)
-
-#        request_bundle = res.full_hydrate(request_bundle)
-#        res.save(request_bundle)
- 
     def filter_read_list(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
             return False
@@ -266,10 +245,6 @@ class SetTopBoxApiAuth(Authorization):
     def read_detail(self, object_list, bundle):
         return self.is_authorized(object_list, bundle)
 
-    #def create_list(self, object_list, bundle):
-        #pdb.set_trace()
-        #return self.create_object(object_list, bundle)
-    
     def create_detail(self, object_list, bundle):
         return self.is_create_authorized(object_list, bundle)
 
@@ -284,6 +259,39 @@ class SetTopBoxApiAuth(Authorization):
 
     def delete_detail(self, object_list, bundle):
         return self.is_authorized(object_list,bundle)
+
+class ProgramScheduleAuth(SetTopBoxAuth):
+    
+    def is_create_authorized(self, object_list, bundle):
+        if bundle.request.user.is_anonymous() is True:
+            return False
+        user = str(bundle.request.user)
+        serial = user.replace(settings.STB_USER_PREFIX, '')
+        
+        channel = bundle.data.get('channel')
+         
+        try:
+            stb = models.SetTopBox.objects.get(serial_number=serial)
+        except:
+            log.error('There`s no stb for this serial number: %s', serial)
+            raise Unauthorized("There`s no stb for this serial number")
+
+        try:
+            ch = models.Channel.objects.get(number=channel)
+        except:
+            log.error('There`s no channel for this number: %s', channel)
+            raise Unauthorized("There`s no channel for this number: %s", channel)
+
+        try:
+            stb_ch = models.SetTopBoxChannel.objects.filter(channel_id = ch.id, settopbox_id = stb.id) 
+        except:
+            log.error('There`s no association between channel: %s and settopbox: %s',channel, serial)
+            raise Unauthorized("There`s no association between channel and serial")
+        
+        setattr(bundle.obj, 'settopbox', stb)
+        setattr(bundle.obj, 'channel', ch)
+        
+        return True
 
 class SetTopBoxConfigResource(NamespacedModelResource):
 
@@ -455,7 +463,7 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             "message": ALL,
             "url": ALL,
         }
-        authorization = SetTopBoxApiAuth()
+        authorization = ProgramScheduleAuth()
         validation = Validation()
         authentication = MultiAuthentication(
             ApiKeyAuthentication(),
@@ -464,26 +472,10 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             )
 
     def obj_create(self, bundle, **kwargs):
-        from django.db import transaction
-        if bundle.request.user.is_anonymous() is False:
-            user = bundle.request.user
-            serial = user.username.replace(settings.STB_USER_PREFIX, '')
-            stb = models.SetTopBox.objects.get(serial_number=serial)
-            channel = bundle.data.get('channel')
-            ch = models.Channel.objects.get(number=channel)
-            log.debug('User:%s, SetTopBox:%s', user, stb)
-            with transaction.atomic():
-                try:
-                    bundle = super(SetTopBoxProgramScheduleResource, self).obj_create(
-                        bundle, settopbox=stb, channel=ch, **kwargs)
-                except IntegrityError, e:
-                    log.error('%s', e)
-                    raise BadRequest(e)
-                return bundle
-        else:
-            raise BadRequest('')
+        bundle = super(SetTopBoxProgramScheduleResource, self).obj_create(
+                        bundle, **kwargs)
         return bundle
-    
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())

@@ -159,7 +159,7 @@ class APITest(TestCase):
         self.assertEqual(response.status_code, 400)
         # Error message on duplicated serial_number
         self.assertContains(response,
-            'client_settopbox',
+            'serial_number',
             status_code=400)
         # Delete one stb
         urldelete = reverse('client:api_dispatch_detail',
@@ -407,7 +407,7 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
         self.assertContains(response,
-            'client_settopboxchannel',
+            'not unique',
             status_code=400)
 
     def test_settopbox_options(self):
@@ -762,7 +762,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 1)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         ## login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
@@ -777,17 +777,19 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 1)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         ## Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
-            'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 2})
-        self.assertEqual('/tv/api/client/v1/settopboxconfig/2/', url_vol)
-        data = simplejson.dumps({"value": "0.3"})
+            'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})
+        self.assertEqual('/tv/api/client/v1/settopboxconfig/5/', url_vol)
+        response = self.c.get('/tv/api/client/v1/settopboxconfig/')
+        self.assertEqual(response.status_code, 200)
+        data = simplejson.dumps({"value": "0.2"})
         response = self.c.put(url_vol, data=data,
             content_type='application/json')
         self.assertEqual(response.status_code, 204)
-        conf = models.SetTopBoxConfig.objects.get(id=2)
-        self.assertEqual(u'0.3', conf.value)
+        conf = models.SetTopBoxConfig.objects.get(id=5)
+        self.assertEqual(u'0.2', conf.value)
         response = self.c.get(auth_logoff)
         self.assertEqual(response.status_code, 200)
         response = self.c.get(url_vol + '?api_key=%s' % key)

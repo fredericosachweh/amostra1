@@ -304,7 +304,7 @@ class SetTopBoxProgramSchedule(models.Model):
     channel = models.ForeignKey('tv.Channel', db_index=True)
     url = models.TextField('/tv/api/tv/v1/channel/42/')
     message = models.TextField(_('Agendamento realizado com sucesso!'))
-    schedule_date = models.IntegerField(null=False)
+    schedule_date = models.BigIntegerField(null=False)
 
     class Meta:
         verbose_name = _('Configuração de agendamento')
