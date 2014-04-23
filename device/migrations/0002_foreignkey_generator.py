@@ -6,8 +6,17 @@ from django.db import models
 
 
 class Migration(SchemaMigration):
+    depends_on = (
+        ('tv', '0001_initial'),
+        ('client', '0001_initial'),
+    )
 
     def forwards(self, orm):
+        # Adding field 'StreamRecorder.channel'
+        db.add_column(u'device_streamrecorder', 'channel',
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['tv.Channel'], null=True, blank=True),
+                      keep_default=False)
+
         # Adding field 'StreamPlayer.stb'
         db.add_column(u'device_streamplayer', 'stb',
                       self.gf('django.db.models.fields.related.ForeignKey')(to=orm['client.SetTopBox'], null=True, blank=True),
@@ -15,6 +24,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Deleting field 'StreamRecorder.channel'
+        db.delete_column(u'device_streamrecorder', 'channel_id')
+
         # Deleting field 'StreamPlayer.stb'
         db.delete_column(u'device_streamplayer', 'stb_id')
 
