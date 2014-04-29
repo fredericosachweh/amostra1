@@ -7,7 +7,7 @@ from django.db import models
 
 class Migration(SchemaMigration):
     depends_on = (
-        ('device', '0001_initial'), 
+        ('device', '0001_initial'),
     )
 
     def forwards(self, orm):

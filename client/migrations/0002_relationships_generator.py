@@ -6,33 +6,34 @@ from django.db import models
 
 
 class Migration(SchemaMigration):
+    depends_on = (
+        ('tv', '0001_initial'),
+    )
 
     def forwards(self, orm):
-        # Adding field 'SetTopBox.description'
-        db.add_column(u'client_settopbox', 'description',
-                      self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True),
+        # Adding field 'SetTopBoxChannel.channel'
+        db.add_column(u'client_settopboxchannel', 'channel',
+                      self.gf('django.db.models.fields.related.ForeignKey')(default=0, to=orm['tv.Channel']),
                       keep_default=False)
 
-        # Adding field 'SetTopBox.online'
-        db.add_column(u'client_settopbox', 'online',
-                      self.gf('django.db.models.fields.BooleanField')(default=False),
-                      keep_default=False)
+        # Adding unique constraint on 'SetTopBoxChannel', fields ['settopbox', 'channel']
+        db.create_unique(u'client_settopboxchannel', ['settopbox_id', 'channel_id'])
 
-        # Adding field 'SetTopBox.nbridge'
-        db.add_column(u'client_settopbox', 'nbridge',
-                      self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['nbridge.Nbridge'], null=True, blank=True),
+        # Adding field 'SetTopBoxProgramSchedule.channel'
+        db.add_column(u'client_settopboxprogramschedule', 'channel',
+                      self.gf('django.db.models.fields.related.ForeignKey')(default=0, to=orm['tv.Channel']),
                       keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting field 'SetTopBox.description'
-        db.delete_column(u'client_settopbox', 'description')
+        # Removing unique constraint on 'SetTopBoxChannel', fields ['settopbox', 'channel']
+        db.delete_unique(u'client_settopboxchannel', ['settopbox_id', 'channel_id'])
 
-        # Deleting field 'SetTopBox.online'
-        db.delete_column(u'client_settopbox', 'online')
+        # Deleting field 'SetTopBoxChannel.channel'
+        db.delete_column(u'client_settopboxchannel', 'channel_id')
 
-        # Deleting field 'SetTopBox.nbridge'
-        db.delete_column(u'client_settopbox', 'nbridge_id')
+        # Deleting field 'SetTopBoxProgramSchedule.channel'
+        db.delete_column(u'client_settopboxprogramschedule', 'channel_id')
 
 
     models = {
@@ -73,6 +74,15 @@ class Migration(SchemaMigration):
             'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
             'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
             'value': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'})
+        },
+        u'client.settopboxprogramschedule': {
+            'Meta': {'ordering': "(u'settopbox', u'channel__number')", 'object_name': 'SetTopBoxProgramSchedule'},
+            'channel': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['tv.Channel']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'message': ('django.db.models.fields.TextField', [], {}),
+            'schedule_date': ('django.db.models.fields.IntegerField', [], {}),
+            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
+            'url': ('django.db.models.fields.TextField', [], {})
         },
         u'contenttypes.contenttype': {
             'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
