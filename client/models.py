@@ -310,7 +310,7 @@ class SetTopBoxProgramSchedule(models.Model):
         verbose_name = _('Configuração de agendamento')
         verbose_name_plural = _('Configurações de agendamento')
         ordering = ('settopbox', 'channel__number',)
-
+        
     def __unicode__(self):
         return '[ch=%s stb=%s]' % (self.channel.number, self.settopbox.serial_number)
     
