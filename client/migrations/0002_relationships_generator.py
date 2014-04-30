@@ -7,10 +7,16 @@ from django.db import models
 
 class Migration(SchemaMigration):
     depends_on = (
+        ('nbridge', '0001_initial'),
         ('tv', '0001_initial'),
     )
 
     def forwards(self, orm):
+        # Adding field 'SetTopBox.nbridge'
+        db.add_column(u'client_settopbox', 'nbridge',
+                      self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['nbridge.Nbridge'], null=True, blank=True),
+                      keep_default=False)
+
         # Adding field 'SetTopBoxChannel.channel'
         db.add_column(u'client_settopboxchannel', 'channel',
                       self.gf('django.db.models.fields.related.ForeignKey')(default=0, to=orm['tv.Channel']),
@@ -28,6 +34,9 @@ class Migration(SchemaMigration):
     def backwards(self, orm):
         # Removing unique constraint on 'SetTopBoxChannel', fields ['settopbox', 'channel']
         db.delete_unique(u'client_settopboxchannel', ['settopbox_id', 'channel_id'])
+
+        # Deleting field 'SetTopBox.nbridge'
+        db.delete_column(u'client_settopbox', 'nbridge_id')
 
         # Deleting field 'SetTopBoxChannel.channel'
         db.delete_column(u'client_settopboxchannel', 'channel_id')
