@@ -1,41 +1,40 @@
 # -*- coding: utf-8 -*-
 import datetime
 from south.db import db
-from south.v2 import SchemaMigration
+from south.v2 import DataMigration
 from django.db import models
 
-
-class Migration(SchemaMigration):
-    depends_on = (
-        ('nbridge', '0001_initial'),
-        ('tv', '0001_initial'),
-    )
+class Migration(DataMigration):
 
     def forwards(self, orm):
-        # Adding field 'SetTopBox.nbridge'
-        db.add_column(u'client_settopbox', 'nbridge',
-                      self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['nbridge.Nbridge'], null=True, blank=True),
-                      keep_default=False)
-
-        # Adding field 'SetTopBoxChannel.channel'
-        db.add_column(u'client_settopboxchannel', 'channel',
-                      self.gf('django.db.models.fields.related.ForeignKey')(default=0, to=orm['tv.Channel']),
-                      keep_default=False)
-
-        # Adding unique constraint on 'SetTopBoxChannel', fields ['settopbox', 'channel']
-        db.create_unique(u'client_settopboxchannel', ['settopbox_id', 'channel_id'])
-
+        "Write your forwards methods here."
+        # Note: Don't use "from appname.models import ModelName". 
+        # Use orm.ModelName to refer to models in this application,
+        # and orm['appname.ModelName'] for models in other applications.
+        un = orm.SetTopBoxMessage.objects.filter(key='UNAVAILABLE')
+        if un.count() == 0:
+            u = orm.SetTopBoxMessage.objects.create(
+                key=u'UNAVAILABLE',
+                value=u'Não foi possível acessar a lista de canais, o sistema pode estar passando por uma dificuldade técnica, para mais detalhes entre em contato com a sua operadora de TV.',
+                api_reference = u'/tv/api/tv/v2/channel/'
+                )
+        un = orm.SetTopBoxMessage.objects.filter(key='CHANNEL_DENIED')
+        if un.count() == 0:
+            u = orm.SetTopBoxMessage.objects.create(
+                key=u'CHANNEL_DENIED',
+                value=u'O canal {channel.number} ({channel.name}) não está disponível no seu plano.',
+                api_reference = u'/tv/api/tv/v2/channel/'
+                )
+        un = orm.SetTopBoxMessage.objects.filter(key='ACCESS_DENIED')
+        if un.count() == 0:
+            u = orm.SetTopBoxMessage.objects.create(
+                key=u'ACCESS_DENIED',
+                value=u'Este equipamento está desabilitado.\r\n\r\nConsulte o provedor para mais informações.',
+                api_reference = u'/tv/api/tv/v2/channel/'
+                )
 
     def backwards(self, orm):
-        # Removing unique constraint on 'SetTopBoxChannel', fields ['settopbox', 'channel']
-        db.delete_unique(u'client_settopboxchannel', ['settopbox_id', 'channel_id'])
-
-        # Deleting field 'SetTopBox.nbridge'
-        db.delete_column(u'client_settopbox', 'nbridge_id')
-
-        # Deleting field 'SetTopBoxChannel.channel'
-        db.delete_column(u'client_settopboxchannel', 'channel_id')
-
+        orm.SetTopBoxMessage.objects.all().delete()
 
     models = {
         u'client.settopbox': {
@@ -75,6 +74,15 @@ class Migration(SchemaMigration):
             'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
             'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
             'value': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'})
+        },
+        u'client.settopboxprogramschedule': {
+            'Meta': {'ordering': "(u'settopbox', u'channel__number')", 'object_name': 'SetTopBoxProgramSchedule'},
+            'channel': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['tv.Channel']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'message': ('django.db.models.fields.TextField', [], {}),
+            'schedule_date': ('django.db.models.fields.BigIntegerField', [], {}),
+            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
+            'url': ('django.db.models.fields.TextField', [], {})
         },
         u'contenttypes.contenttype': {
             'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
@@ -150,3 +158,4 @@ class Migration(SchemaMigration):
     }
 
     complete_apps = ['client']
+    symmetrical = True

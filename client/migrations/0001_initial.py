@@ -60,16 +60,6 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal(u'client', ['SetTopBoxMessage'])
 
-        # Adding model 'SetTopBoxProgramSchedule'
-        db.create_table(u'client_settopboxprogramschedule', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('settopbox', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['client.SetTopBox'])),
-            ('url', self.gf('django.db.models.fields.TextField')()),
-            ('message', self.gf('django.db.models.fields.TextField')()),
-            ('schedule_date', self.gf('django.db.models.fields.IntegerField')()),
-        ))
-        db.send_create_signal(u'client', ['SetTopBoxProgramSchedule'])
-
 
     def backwards(self, orm):
         # Removing unique constraint on 'SetTopBoxConfig', fields ['key', 'settopbox']
@@ -92,9 +82,6 @@ class Migration(SchemaMigration):
 
         # Deleting model 'SetTopBoxMessage'
         db.delete_table(u'client_settopboxmessage')
-
-        # Deleting model 'SetTopBoxProgramSchedule'
-        db.delete_table(u'client_settopboxprogramschedule')
 
 
     models = {
@@ -133,14 +120,6 @@ class Migration(SchemaMigration):
             'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
             'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
             'value': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'})
-        },
-        u'client.settopboxprogramschedule': {
-            'Meta': {'ordering': "(u'settopbox', u'channel__number')", 'object_name': 'SetTopBoxProgramSchedule'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'message': ('django.db.models.fields.TextField', [], {}),
-            'schedule_date': ('django.db.models.fields.IntegerField', [], {}),
-            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
-            'url': ('django.db.models.fields.TextField', [], {})
         }
     }
 
