@@ -8,31 +8,21 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'SetTopBox.description'
-        db.add_column(u'client_settopbox', 'description',
-                      self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True),
-                      keep_default=False)
-
-        # Adding field 'SetTopBox.online'
-        db.add_column(u'client_settopbox', 'online',
-                      self.gf('django.db.models.fields.BooleanField')(default=False),
-                      keep_default=False)
-
-        # Adding field 'SetTopBox.nbridge'
-        db.add_column(u'client_settopbox', 'nbridge',
-                      self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['nbridge.Nbridge'], null=True, blank=True),
-                      keep_default=False)
+        # Adding model 'SetTopBoxProgramSchedule'
+        db.create_table(u'client_settopboxprogramschedule', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('settopbox', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['client.SetTopBox'])),
+            ('channel', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['tv.Channel'])),
+            ('url', self.gf('django.db.models.fields.TextField')()),
+            ('message', self.gf('django.db.models.fields.TextField')()),
+            ('schedule_date', self.gf('django.db.models.fields.BigIntegerField')()),
+        ))
+        db.send_create_signal(u'client', ['SetTopBoxProgramSchedule'])
 
 
     def backwards(self, orm):
-        # Deleting field 'SetTopBox.description'
-        db.delete_column(u'client_settopbox', 'description')
-
-        # Deleting field 'SetTopBox.online'
-        db.delete_column(u'client_settopbox', 'online')
-
-        # Deleting field 'SetTopBox.nbridge'
-        db.delete_column(u'client_settopbox', 'nbridge_id')
+        # Deleting model 'SetTopBoxProgramSchedule'
+        db.delete_table(u'client_settopboxprogramschedule')
 
 
     models = {
@@ -73,6 +63,15 @@ class Migration(SchemaMigration):
             'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
             'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
             'value': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'})
+        },
+        u'client.settopboxprogramschedule': {
+            'Meta': {'ordering': "(u'settopbox', u'channel__number')", 'object_name': 'SetTopBoxProgramSchedule'},
+            'channel': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['tv.Channel']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'message': ('django.db.models.fields.TextField', [], {}),
+            'schedule_date': ('django.db.models.fields.BigIntegerField', [], {}),
+            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
+            'url': ('django.db.models.fields.TextField', [], {})
         },
         u'contenttypes.contenttype': {
             'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},

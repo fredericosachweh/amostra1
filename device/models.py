@@ -333,8 +333,9 @@ class AbstractServer(models.Model):
         if self.id is None:
             return ''
         pkgs = settings.RPM_CHECK_VERSION
-        rpm_cmd = u"export LANG=c && rpmquery --queryformat '%%{name} \
-%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v 'not installed'" % (pkgs)
+        rpm_cmd = """export LANG=c && rpmquery --queryformat '%%{name}
+%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v
+'not installed'""" % (pkgs)
         # %%{release} %%{installtime:date}
         response = self.execute(rpm_cmd)
         html = [i.strip() for i in response]
@@ -371,7 +372,7 @@ def Server_post_save(sender, instance, created, **kwargs):
     if created is True and instance.offline_mode is False:
         if instance.connect() is None:
             log = logging.getLogger('debug')
-            log.info("The server %s was unreachable, " \
+            log.info("The server %s was unreachable, "
                      "so we couldn't configure it", instance)
             return  # There is nothing we can do
         instance.auto_create_nic()
@@ -391,7 +392,7 @@ def Server_post_save(sender, instance, created, **kwargs):
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
+        instance.execute('/usr/bin/sudo /bin/cp -f %s '
                          '/etc/udev/rules.d/87-iptv.rules' % remote_tmpfile)
         # Create the init script to report a server boot event
         init_script = INIT_SCRIPT % \
@@ -404,9 +405,9 @@ def Server_post_save(sender, instance, created, **kwargs):
         tmpfile.file.write(init_script)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
+        instance.execute('/usr/bin/sudo /bin/cp -f %s '
                          '/etc/init.d/iptv_coldstart' % remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/chmod +x ' \
+        instance.execute('/usr/bin/sudo /bin/chmod +x '
                          '/etc/init.d/iptv_coldstart')
         instance.execute('/usr/bin/sudo /sbin/chkconfig iptv_coldstart on')
         # Create the modprobe config file
@@ -414,7 +415,7 @@ def Server_post_save(sender, instance, created, **kwargs):
         tmpfile.file.write(MODPROBE_CONF)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/cp -f %s ' \
+        instance.execute('/usr/bin/sudo /bin/cp -f %s '
                          '/etc/modprobe.d/iptv-cianet.conf' % remote_tmpfile)
 
 
@@ -552,12 +553,12 @@ class UniqueIP(models.Model):
             if self.sink.running() is True:
                 running = 0
                 for sink in src:
-                    if sink.status == True:
+                    if sink.status is True:
                         running += 1
                 log.debug('Total running:%d', running)
                 if running == 0:
                     for sink in src:
-                        if sink.status == True:
+                        if sink.status is True:
                             sink.stop(*args, **kwargs)
                     self.sink.stop(*args, **kwargs)
 
@@ -890,7 +891,7 @@ class InputModel(models.Model):
             if number is 0:
                 continue  # Program 0 never works
             pmt = self._read_ctl('get_pmt %d' % number)
-            #print(pmt)
+            print("PMT=%s", pmt)
             ct = ContentType.objects.get_for_model(self)
             service, created = \
                 DemuxedService.objects.get_or_create(server=self.server,
@@ -1007,7 +1008,8 @@ class DigitalTunerHardware(models.Model):
                 # lspci -k -b -d 1131:7160
                 # Kernel modules: saa716x_tbs-dvb
                 ret = self.server.execute(
-                    '/sbin/lspci -k -b -d %s:%s' % (self.id_vendor, self.id_product))
+                    '/sbin/lspci -k -b -d %s:%s' % (self.id_vendor,
+                        self.id_product))
                 #match = re.search(r'Kernel modules: (.*)', " ".join(ret))
                 match = re.search(r'Kernel driver in use: (.*) TBS', " ".join(ret))
                 self.driver = match.groups()[0]
@@ -1565,7 +1567,6 @@ class StreamRecorder(OutputModel, DeviceServer):
     storage = models.ForeignKey(Storage)
     stream_hd = models.BooleanField(_('Fluxo é HD'),
         help_text=_('Marcar se o fluxo do canal for HD'), default=False)
-    ### TODO: hd mecanico e fluxo hd/sd
 
     class Meta:
         verbose_name = _('Gravador de fluxo')
@@ -1885,7 +1886,7 @@ class SoftTranscoder(DeviceServer):
 
     def _get_offset_filter_options(self):
         return '-af volume=volume=%.2fdB' % self.offset_value
- 
+
     def _get_cmd(self):
         import re
         cmd = '%s -i ' % settings.FFMPEG_COMMAND
