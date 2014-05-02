@@ -183,7 +183,6 @@ class Migration(SchemaMigration):
             ('rotate', self.gf('django.db.models.fields.PositiveIntegerField')(default=60)),
             ('keep_time', self.gf('django.db.models.fields.PositiveIntegerField')(default=48)),
             ('start_time', self.gf('django.db.models.fields.DateTimeField')(default=None, null=True, blank=True)),
-            ('channel', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['tv.Channel'], null=True, blank=True)),
             ('nic_sink', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.NIC'])),
             ('storage', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.Storage'])),
             ('stream_hd', self.gf('django.db.models.fields.BooleanField')(default=False)),
@@ -444,7 +443,6 @@ class Migration(SchemaMigration):
         },
         u'device.streamrecorder': {
             'Meta': {'object_name': 'StreamRecorder', '_ormbases': [u'device.DeviceServer']},
-            'channel': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['tv.Channel']", 'null': 'True', 'blank': 'True'}),
             'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['contenttypes.ContentType']", 'null': 'True'}),
             u'deviceserver_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['device.DeviceServer']", 'unique': 'True', 'primary_key': 'True'}),
             'keep_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '48'}),
@@ -470,20 +468,6 @@ class Migration(SchemaMigration):
             'object_id': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'port': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '10000'}),
             'sequential': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '2'})
-        },
-        u'tv.channel': {
-            'Meta': {'ordering': "('number',)", 'object_name': 'Channel'},
-            'buffer_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1000'}),
-            'channelid': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {}),
-            'enabled': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'image': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'number': ('django.db.models.fields.PositiveSmallIntegerField', [], {'unique': 'True'}),
-            'source': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.MulticastOutput']"}),
-            'thumb': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
         }
     }
 
