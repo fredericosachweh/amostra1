@@ -1090,7 +1090,6 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(200, response.status_code)
         
         jsdata = json.loads(response.content)
-        
         response = self.c1.delete(jsdata['objects'][0]['resource_uri'])
         self.assertEqual(401, response.status_code)
 

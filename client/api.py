@@ -11,6 +11,7 @@ from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL
 from tastypie.validation import Validation
+from tastypie.serializers import Serializer
 from tastypie.exceptions import BadRequest, NotFound, Unauthorized
 from tastypie.models import ApiKey
 from django.db import IntegrityError
@@ -19,11 +20,12 @@ import models
 from device import models as devicemodels
 from tv.api import ChannelResource
 import logging
-#from tastypie.exceptions import Unauthorized, NotFound, BadRequest, ImmediateHttpResponse, ApiFieldError, ValidationError
-#from tastypie.http import HttpNotFound
-#import pdb
-#import json
-#from tastypie.resources import csrf_exempt
+from tastypie.exceptions import Unauthorized, NotFound, BadRequest, ImmediateHttpResponse, ApiFieldError
+from tastypie.http import HttpNotFound, HttpBadRequest
+import pdb
+import json
+from tastypie.resources import csrf_exempt
+from django.forms import ValidationError
 
 log = logging.getLogger('api')
 
@@ -162,6 +164,67 @@ class SetTopBoxChannelResource(NamespacedModelResource):
                 raise BadRequest(e)
         return bundle
 
+class SetTopBoxSerializer(Serializer):
+    """
+    Gives message when loading JSON fails.
+    """
+    def from_json(self, content):
+        """
+        Override method of `Serializer.from_json`. Adds exception message when loading JSON fails.
+        """
+        try:
+            return json.loads(content)
+        except ValueError as e:
+            raise BadRequest(u"Incorrect JSON format: Reason: \"{}\"".format(e))
+
+
+class SetTopBoxValidation(Validation):
+    
+    def is_valid(self, bundle, request=None):
+        if not bundle.data:
+            return {'__all__': 'Missing data'}
+
+class ProgramScheduleValidation(SetTopBoxValidation):
+   
+    def is_valid(self, bundle, request=None):
+        if not bundle.data:
+            return {'__all__': 'Missing data, please include channel, url, schedule_date and message.'}
+
+        errors = {}                                    
+        schedule_date = bundle.data.get('schedule_date', None)
+        url = bundle.data.get('url', None)
+        message = bundle.data.get('message', None)
+        channel = bundle.data.get('channel', None)
+        
+        request_method = bundle.request.META['REQUEST_METHOD'] 
+        
+        if request_method in ('PATCH','PUT'):
+            bundle_uri = bundle.request.path_info
+            try:
+                uri_id = bundle_uri.split('/')
+                ps = models.SetTopBoxProgramSchedule.objects.filter(id = uri_id[-2])
+                if not ps:
+                    errors['error_code']='404'
+                    errors['error_description']='There is no register on server.'
+            except:
+                errors['error_code']='404'
+                errors['error_description']='There is no register on server.'
+        
+        if request_method is 'POST':
+            if channel is None:
+                errors['error_code']='400'
+                errors['error_description']='There is no channel data.'
+            if schedule_date is None:
+                errors['error_code']='400'
+                errors['error_description']='There is no schedule_date data.'
+            if url is None:
+                errors['error_code']='400'
+                errors['error_description']='There is no url data.'
+            if message is None:
+                errors['error_code']='400'
+                errors['error_description']='There is no message data.'
+        
+        return errors
 
 class SetTopBoxAuthorization(Authorization):
     
@@ -183,12 +246,6 @@ class SetTopBoxAuthorization(Authorization):
 
 class SetTopBoxAuth(Authorization):
     
-    def messageError(self, code, description):
-        data = HttpNotFound(content=json.dumps({"error_code":"%s" % code,
-                                                "error_description":"Parametro %s não encontrado" % description}), 
-                                                content_type="application/json; charset=utf-8")
-        return data
-
     def is_authorized(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
             return False
@@ -199,8 +256,7 @@ class SetTopBoxAuth(Authorization):
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('There`s no stb for this serial number: %s', serial)
-            raise Unauthorized('Serial')
-            raise ImmediateHttpResponse(self.messageError("404","serial"))
+            return False
         
         bundle_uri = bundle.request.path_info
             
@@ -213,8 +269,6 @@ class SetTopBoxAuth(Authorization):
                 return True
         except:
             log.error('There`s no schedule for this uri_id: %s', uri_id)
-            raise Unauthorized('uri')
-            raise ImmediateHttpResponse(self.messageError("404","schedule"))
             return False
 
     def is_create_authorized(self, object_list, bundle):
@@ -225,20 +279,18 @@ class SetTopBoxAuth(Authorization):
         
         channel = bundle.data.get('channel')
         log.debug('There`s no channel for this number: %s', channel)
-         
+        
         try:
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('There`s no stb for this serial number: %s', serial)
-            raise Unauthorized('Serial')
-            raise ImmediateHttpResponse(self.messageError("404","serial"))
+            return False
 
         try:
             ch = models.Channel.objects.get(number=channel)
         except:
             log.error('There`s no channel for this number: %s', channel)
-            raise Unauthorized('Channel')
-            raise ImmediateHttpResponse(messageError("404","channel"))
+            return False
 
         return True
     
@@ -251,9 +303,6 @@ class SetTopBoxAuth(Authorization):
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('No STB for user:%s', user)
-            raise Unauthorized('Serial')
-            raise ImmediateHttpResponse(self.messageError("404","serial"))
-            
             return False
         return object_list.filter(settopbox=stb)
     
@@ -278,7 +327,7 @@ class SetTopBoxAuth(Authorization):
     def delete_detail(self, object_list, bundle):
         return self.is_authorized(object_list,bundle)
 
-class ProgramScheduleAuth(SetTopBoxAuth):
+class ProgramScheduleAuthorization(SetTopBoxAuth):
     
     def is_create_authorized(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
@@ -286,44 +335,28 @@ class ProgramScheduleAuth(SetTopBoxAuth):
         user = str(bundle.request.user)
         serial = user.replace(settings.STB_USER_PREFIX, '')
         channel = bundle.data.get('channel')
-         
+        
         try:
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('There`s no stb for this serial number: %s', serial)
-            raise Unauthorized('Serial')
-            raise ImmediateHttpResponse(self.messageError("404","serial"))
+            return False
 
         try:
             ch = models.Channel.objects.get(number=channel)
         except:
             log.error('There`s no channel for this number: %s', channel)
-            raise Unauthorized('Channel')
-            raise ImmediateHttpResponse(self.messageError("404","channel"))
+            return False
 
         try:
             stb_ch = models.SetTopBoxChannel.objects.filter(channel_id = ch.id, settopbox_id = stb.id) 
         except:
             log.error('There`s no association between channel: %s and settopbox: %s',channel, serial)
-            raise Unauthorized('Association')
-            raise ImmediateHttpResponse(self.messageError("404","serial channel assossiation"))
+            return False
         
         setattr(bundle.obj, 'settopbox', stb)
         setattr(bundle.obj, 'channel', ch)
       
-        schedule_date = bundle.data.get('schedule_date')
-        url = bundle.data.get('url')
-        message = bundle.data.get('message')
-        if not schedule_date:
-            raise Unauthorized('schedule_date')
-            raise ImmediateHttpResponse(self.messageError("404","schedule_date"))
-        if not url:
-            raise Unauthorized('url')
-            raise ImmediateHttpResponse(self.messageError("404","url"))
-        if not message:
-            raise Unauthorized('message')
-            raise ImmediateHttpResponse(self.messageError("404","message"))
-        
         return True
 
 class SetTopBoxConfigResource(NamespacedModelResource):
@@ -462,8 +495,7 @@ class APIKeyAuthorization(Authorization):
         user = bundle.request.user
         log.debug('Readlist request to:%s', user)
         if user.is_anonymous():
-            raise ImmediateHttpResponse(HttpNotFound(content=json.dumps({"error":"there`s no association between channel and serial"}),
-                                                     content_type="application/json; charset=utf-8"))
+            raise Unauthorized("Unauthorized")
         return object_list.filter(user=user)
 
     def read_detail(self, object_list, bundle):
@@ -497,50 +529,15 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             "message": ALL,
             "url": ALL,
         }
-        authorization = ProgramScheduleAuth()
-        validation = Validation()
+        authorization = ProgramScheduleAuthorization()
+        validation = ProgramScheduleValidation()
+        serializer = SetTopBoxSerializer(formats=['json'])
         authentication = MultiAuthentication(
             ApiKeyAuthentication(),
             BasicAuthentication(realm='cianet-middleware'),
             Authentication(),
             )
 
-    def obj_create(self, bundle, **kwargs):
-        bundle = super(SetTopBoxProgramScheduleResource, self).obj_create(
-                        bundle, **kwargs)
-        return bundle
-    
-#    def wrap_view(self, view):
-#        """
-#        Wraps views to return custom error codes instead of generic 500's
-#        """
-#        @csrf_exempt
-#        def wrapper(request, *args, **kwargs):
-#            pdb.set_trace()
-#            try:
-#                callback = getattr(self, view)
-#                response = callback(request, *args, **kwargs)
-#
-#                if request.is_ajax():
-#                    patch_cache_control(response, no_cache=True)
-#
-#                # response is a HttpResponse object, so follow Django's instructions
-#                # to change it to your needs before you return it.
-#                # https://docs.djangoproject.com/en/dev/ref/request-response/
-#                return response
-#            except (BadRequest, ApiFieldError), e:
-#                return HttpBadRequest({'code': 666, 'message':e.args[0]})
-#            except ValidationError, e:
-#                # Or do some JSON wrapping around the standard 500
-#                return HttpBadRequest({'code': 777, 'message':', '.join(e.messages)})
-#            except Exception, e:
-#                # Rather than re-raising, we're going to things similar to
-#                # what Django does. The difference is returning a serialized
-#                # error message.
-#                return self._handle_500(request, e)
-#
-#        return wrapper
-#
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
