@@ -49,6 +49,7 @@ Requires:       python-memcached
 Requires:       memcached
 Requires:       pydot
 Requires:       net-snmp-python
+Requires:       python-mimeparse
 # SOAP client to CAS (Verimatrix)
 Requires:       python-suds
 # Monitoramento
@@ -120,10 +121,11 @@ echo "Inicializar o banco de dados:"
 echo "su - postgres"
 echo "initdb -D /iptv/var/lib/postgresql"
 echo "su - nginx"
-echo "%{__python} %{site_home}/manage.py syncdb"
 echo "%{__python} %{site_home}/manage.py collectstatic --noinput"
 echo ""
 echo "Para fazer a migração de banco:"
+echo "%{__python} %{site_home}/manage.py migrate"
+echo "Para um app especifico"
 echo "%{__python} %{site_home}/manage.py migrate <app>"
 echo "========================================================================="
 echo -e "\033[0m"
@@ -167,6 +169,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Fri May 02 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.12.0-1
+- Schedule API + Migrations.
 * Tue Mar 18 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.11.2-1
 - Fix Image replace on config to frontend.
 * Mon Mar 17 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.11.0-1
