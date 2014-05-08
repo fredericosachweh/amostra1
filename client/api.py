@@ -175,8 +175,8 @@ class SetTopBoxSerializer(Serializer):
         try:
             return json.loads(content)
         except ValueError as e:
-            raise BadRequest(u"Incorrect JSON format: Reason: \"{}\"".format(e))
-
+            errors = {"errorCode":"500","errorDescription":u"Incorrect JSON format: Reason: \"{}\"".format(e)}                
+            raise BadRequest(errors)
 
 class SetTopBoxValidation(Validation):
     
@@ -204,25 +204,25 @@ class ProgramScheduleValidation(SetTopBoxValidation):
                 uri_id = bundle_uri.split('/')
                 ps = models.SetTopBoxProgramSchedule.objects.filter(id = uri_id[-2])
                 if not ps:
-                    errors['error_code']='404'
-                    errors['error_description']='There is no register on server.'
+                    errors['errorCode']='404'
+                    errors['errorDescription']='There is no register on server.'
             except:
-                errors['error_code']='404'
-                errors['error_description']='There is no register on server.'
+                errors['errorCode']='404'
+                errors['errorDescription']='There is no register on server.'
         
-        if request_method is 'POST':
+        if request_method == 'POST':
             if channel is None:
-                errors['error_code']='400'
-                errors['error_description']='There is no channel data.'
+                errors['errorCode']='400'
+                errors['errorDescription']='There is no channel data.'
             if schedule_date is None:
-                errors['error_code']='400'
-                errors['error_description']='There is no schedule_date data.'
+                errors['errorCode']='400'
+                errors['errorDescription']='There is no schedule_date data.'
             if url is None:
-                errors['error_code']='400'
-                errors['error_description']='There is no url data.'
+                errors['errorCode']='400'
+                errors['errorDescription']='There is no url data.'
             if message is None:
-                errors['error_code']='400'
-                errors['error_description']='There is no message data.'
+                errors['errorCode']='400'
+                errors['errorDescription']='There is no message data.'
         
         return errors
 
