@@ -333,8 +333,8 @@ class AbstractServer(models.Model):
         if self.id is None:
             return ''
         pkgs = settings.RPM_CHECK_VERSION
-        rpm_cmd = """export LANG=c && rpmquery --queryformat '%%{name}
-%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v
+        rpm_cmd = """export LANG=c && rpmquery --queryformat '%%{name}-\
+%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v \
 'not installed'""" % (pkgs)
         # %%{release} %%{installtime:date}
         response = self.execute(rpm_cmd)
@@ -1965,6 +1965,3 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
 
 class RealTimeEncript(models.Model):
     u"""RealTime to manage stream flow"""
-
-
-
