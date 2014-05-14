@@ -77,7 +77,7 @@ class SetTopBoxMessageAdmin(ModelAdmin):
     pass
 
 site.register(models.SetTopBox, SetTopBoxAdmin)
-site.register(models.SetTopBoxParameter)
+#site.register(models.SetTopBoxParameter)
 site.register(models.SetTopBoxProgramSchedule)
 site.register(models.SetTopBoxChannel, SetTopBoxChannelAdmin)
 site.register(models.SetTopBoxConfig, SetTopBoxConfigAdmin)
