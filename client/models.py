@@ -64,15 +64,22 @@ class LogoToReplace(dbsettings.ImageValue):
 
 
 class CompanyLogo(dbsettings.Group):
-    logo_main = LogoToReplace(_('Logo principal'), upload_to='',
-        help_text='Formato PNG transparente 450 x 164 px', required=False)
-    logo_small_menu = LogoToReplace(_('Logo pequeno Menu'), upload_to='',
-        help_text='Formato PNG transparente 163 x 67 px', required=False)
-    logo_small = LogoToReplace(_('Logo pequeno TV'), upload_to='',
-        help_text='Formato PNG transparente 163 x 67 px', required=False)
-    banner_epg = LogoToReplace(_('Banner na guia de programação'),
-        upload_to='', required=False,
-        help_text='Formato JPG 450 x 80 px')
+    logo_main = LogoToReplace(
+        _('Logo principal'), upload_to='',
+        help_text='Formato PNG transparente 450 x 164 px', required=False
+    )
+    logo_small_menu = LogoToReplace(
+        _('Logo pequeno Menu'), upload_to='',
+        help_text='Formato PNG transparente 163 x 67 px', required=False
+    )
+    logo_small = LogoToReplace(
+        _('Logo pequeno TV'), upload_to='',
+        help_text='Formato PNG transparente 163 x 67 px', required=False
+    )
+    banner_epg = LogoToReplace(
+        _('Banner na guia de programação'), upload_to='', required=False,
+        help_text='Formato JPG 450 x 80 px'
+    )
 
 logo = CompanyLogo('Logo da interface')
 
@@ -130,17 +137,21 @@ class STBPassValue(dbsettings.Value):
 
 
 class SetTopBoxDefaultConfig(dbsettings.Group):
-    password = STBPassValue(_('Senha do cliente'),
+    password = STBPassValue(
+        _('Senha do cliente'),
         help_text='Senha equipamento do cliente', default=None)
-    recorder = dbsettings.BooleanValue(_('Acesso à Gravações habilitado'),
+    recorder = dbsettings.BooleanValue(
+        _('Acesso à Gravações habilitado'),
         default=False)
-    parental = dbsettings.StringValue(_('Controle parental'),
+    parental = dbsettings.StringValue(
+        _('Controle parental'),
         choices=CHOICES_PARENTAL,
         default=-1)
 
 
-def reload_channels(nbridge, settopbox, message=None, userchannel=True,
-        channel=True):
+def reload_channels(
+        nbridge, settopbox, message=None, userchannel=True, channel=True
+        ):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
     url = 'http://%s/ws/eval' % (nbridge.server.host)
     command = ''
@@ -181,15 +192,19 @@ def reboot_stb(nbridge, settopbox):
 class SetTopBox(models.Model):
     'Class to authenticate and manipulate IPTV client - SetTopBox'
 
-    serial_number = models.CharField(_('Número serial'), max_length=255,
+    serial_number = models.CharField(
+        _('Número serial'), max_length=255,
         help_text=_('Número serial do SetTopBox'), unique=True)
-    mac = models.CharField(_('Endereço MAC'), max_length=255,
+    mac = models.CharField(
+        _('Endereço MAC'), max_length=255,
         help_text=_('Endereço MAC do SetTopBox'), unique=True)
-    description = models.CharField(_('Descrição opcional'), max_length=255,
+    description = models.CharField(
+        _('Descrição opcional'), max_length=255,
         blank=True, null=True)
     online = models.BooleanField(_('On-line'), default=False)
-    nbridge = models.ForeignKey('nbridge.Nbridge', blank=True,
-        null=True, default=None, db_constraint=False)
+    nbridge = models.ForeignKey(
+        'nbridge.Nbridge', blank=True, null=True, default=None,
+        db_constraint=False)
     # Options
     options = SetTopBoxOptions('Opções do SetTopBox')
     default = SetTopBoxDefaultConfig('Valores do cliente')
@@ -199,13 +214,14 @@ class SetTopBox(models.Model):
         verbose_name_plural = _('SetTopBoxes')
 
     def __unicode__(self):
-        #return 'serial=%s,mac=%s' % (self.serial_number, self.mac)
+        # return 'serial=%s,mac=%s' % (self.serial_number, self.mac)
         return '%s' % (self.serial_number)
 
     def get_user(self):
         'Returns: User related with this SetTopBox'
-        return User.objects.get(username='%s%s' % (settings.STB_USER_PREFIX,
-            self.serial_number))
+        return User.objects.get(
+            username='%s%s' % (settings.STB_USER_PREFIX, self.serial_number)
+        )
 
     def get_channels(self):
         'Returns: a list of tv.channel for relation SetTopBoxChannel'
@@ -222,17 +238,23 @@ class SetTopBox(models.Model):
     def reload_channels(self, channel=False, message=None):
         nbs = Nbridge.objects.filter(status=True)
         for s in nbs:
-            thread.start_new_thread(reload_channels, (s, self),
-                {'channel': True, 'message': message})
+            thread.start_new_thread(
+                reload_channels, (s, self),
+                {'channel': True, 'message': message}
+            )
 
 
 class SetTopBoxParameter(models.Model):
     'Class to store key -> values of SetTopBox'
 
-    key = models.CharField(_('Chave'), max_length=250,
-        help_text=_('Chave do parametro. Ex. MACADDR'), db_index=True)
-    value = models.CharField(_('Valor'), max_length=250,
-        help_text=_('Valor do parametro. Ex. 00:00:00:00:00'), db_index=True)
+    key = models.CharField(
+        _('Chave'), max_length=250,
+        help_text=_('Chave do parametro. Ex. MACADDR'), db_index=True
+    )
+    value = models.CharField(
+        _('Valor'), max_length=250,
+        help_text=_('Valor do parametro. Ex. 00:00:00:00:00'), db_index=True
+    )
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
 
     class Meta:
@@ -258,17 +280,23 @@ class SetTopBoxChannel(models.Model):
         verbose_name_plural = 'STBs <=> Canais (canais habilitados)'
 
     def __unicode__(self):
-        return 'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (self.channel.number,
-            self.settopbox.serial_number, self.recorder)
+        return 'SetTopBoxChannel[ch=%s stb=%s] rec=%s' % (
+            self.channel.number,
+            self.settopbox.serial_number, self.recorder
+        )
 
 
 class SetTopBoxConfig(models.Model):
     'Class to store key -> value, value_type of SetTopBox'
 
-    key = models.CharField(_('Chave'), max_length=250,
-        help_text=_('Chave do parametro. Ex. VOLUME_LEVEL'), db_index=True)
-    value = models.CharField(_('Valor'), max_length=250,
-        help_text=_('Valor do parametro. Ex. 0.5'), db_index=True)
+    key = models.CharField(
+        _('Chave'), max_length=250,
+        help_text=_('Chave do parametro. Ex. VOLUME_LEVEL'), db_index=True
+    )
+    value = models.CharField(
+        _('Valor'), max_length=250,
+        help_text=_('Valor do parametro. Ex. 0.5'), db_index=True
+    )
     value_type = models.CharField(_('Tipo do parametro'), max_length=50)
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
 
@@ -283,11 +311,15 @@ class SetTopBoxConfig(models.Model):
 
 class SetTopBoxMessage(models.Model):
     'Class to store UI messages'
-    key = models.CharField(_('Chave'), max_length=250, db_index=True,
-        help_text=_('Chave de indentificação da mensagem'))
+    key = models.CharField(
+        _('Chave'), max_length=250, db_index=True,
+        help_text=_('Chave de indentificação da mensagem')
+    )
     value = models.TextField(_('Conteúdo'))
-    api_reference = models.CharField(_('Referencia de API'), max_length=250,
-        help_text=_('API base para consumo de variáveis'))
+    api_reference = models.CharField(
+        _('Referencia de API'), max_length=250,
+        help_text=_('API base para consumo de variáveis')
+    )
 
     class Meta:
         verbose_name = _('Mensagem do cliente')
@@ -307,11 +339,12 @@ class SetTopBoxProgramSchedule(models.Model):
     schedule_date = models.BigIntegerField(null=False)
 
     class Meta:
-        verbose_name = _('Configuração de agendamento')
-        verbose_name_plural = _('Configurações de agendamento')
+        verbose_name = _('Agendamento')
+        verbose_name_plural = _('Agendamentos')
         ordering = ('settopbox', 'channel__number',)
-        
-    def __unicode__(self):
-        return '[ch=%s stb=%s]' % (self.channel.number, self.settopbox.serial_number)
-    
 
+    def __unicode__(self):
+        return 'canal=[%s] stb=[%s] hora=[%s]' % (
+            self.channel, self.settopbox.serial_number,
+            datetime.datetime.fromtimestamp(self.schedule_date)
+        )
