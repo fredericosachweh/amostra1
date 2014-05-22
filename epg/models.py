@@ -9,6 +9,7 @@ from django.utils.translation import ugettext as _
 
 import os
 import logging
+log = logging.getLogger('debug')
 
 
 class Epg_Source(models.Model):
@@ -93,8 +94,12 @@ class Channel(models.Model):
     urls = models.ManyToManyField(Url, blank=True, null=True)
 
     def __unicode__(self):
-        return u"%s [%s]" % (self.display_names.values_list()[0][1],
-            self.channelid)
+        names = self.display_names.values_list()
+        if len(names) == 1:
+            name = self.display_names.values_list()[0][1]
+        else:
+            name = ''
+        return "%s [%s]" % (name, self.channelid)
 
 
 class Title(models.Model):
