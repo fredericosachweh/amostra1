@@ -7,6 +7,7 @@ from models import Guide
 class ChannelAdmin(admin.ModelAdmin):
 
     search_fields = ('display_names__value', )
+    list_display = ('channelid', '__unicode__', )
 
 
 class GuideAdmin(admin.ModelAdmin):

@@ -11,8 +11,8 @@ server_key = settings.NBRIDGE_SERVER_KEY
 import models
 log = logging.getLogger('client')
 from nbridge.models import Nbridge
-#from device.forms import GenericRelationForm
-from django import forms
+# from device.forms import GenericRelationForm
+
 
 def reboot_stbs(queryset, nbridge):
     url = 'http://%s/ws/reboot/' % (nbridge.server.host)
@@ -20,7 +20,7 @@ def reboot_stbs(queryset, nbridge):
     # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
     for s in queryset:
         macs.append(s.mac)
-    data={
+    data = {
         'server_key': server_key,
         'mac[]': [macs]
         }
@@ -77,7 +77,8 @@ class SetTopBoxMessageAdmin(ModelAdmin):
     pass
 
 site.register(models.SetTopBox, SetTopBoxAdmin)
-site.register(models.SetTopBoxParameter)
+#site.register(models.SetTopBoxParameter)
+site.register(models.SetTopBoxProgramSchedule)
 site.register(models.SetTopBoxChannel, SetTopBoxChannelAdmin)
 site.register(models.SetTopBoxConfig, SetTopBoxConfigAdmin)
 site.register(models.SetTopBoxMessage, SetTopBoxMessageAdmin)

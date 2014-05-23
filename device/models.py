@@ -202,6 +202,8 @@ class AbstractServer(models.Model):
         u"Mata um processo em execução"
         if type(pid) is not int:
             raise Exception('kill_process expect a number as argument')
+        if self.offline_mode:
+            return ''
         s = self.connect()
         resp = s.execute('/bin/kill %d' % pid)
         #s.close()
@@ -268,6 +270,8 @@ class AbstractServer(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
+        if self.offline_mode is True:
+            return
         log = logging.getLogger('debug')
         log.info('Creating route on %s dev= %s to %s', self, dev, ip)
         routes = self.list_routes()
@@ -280,6 +284,8 @@ class AbstractServer(models.Model):
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
+        if self.offline_mode is True:
+            return
         log = logging.getLogger('debug')
         log.info('Deleting route on %s dev= %s to %s', self, dev, ip)
         routes = self.list_routes()
@@ -296,6 +302,8 @@ class AbstractServer(models.Model):
         log = logging.getLogger('debug')
         log.info('Listing routes on %s', self)
         resp = []
+        if self.offline_mode is True:
+            return []
         routes = self.execute('/sbin/route -n')
         for route in routes[2:]:
             r = route.split()
@@ -333,8 +341,8 @@ class AbstractServer(models.Model):
         if self.id is None:
             return ''
         pkgs = settings.RPM_CHECK_VERSION
-        rpm_cmd = """export LANG=c && rpmquery --queryformat '%%{name}
-%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v
+        rpm_cmd = """export LANG=c && rpmquery --queryformat '%%{name}-\
+%%{version}-%%{release} (%%{ARCH}) %%{BUILDTIME:date}\\n' %s | grep -v \
 'not installed'""" % (pkgs)
         # %%{release} %%{installtime:date}
         response = self.execute(rpm_cmd)
@@ -1965,6 +1973,3 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
 
 class RealTimeEncript(models.Model):
     u"""RealTime to manage stream flow"""
-
-
-

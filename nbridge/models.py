@@ -20,36 +20,48 @@ CHOICES_ENV_VAR = (
     ('development', 'Ambiente de Desenvolvimento', )
 )
 
+
 class Nbridge(DeviceServer):
-    middleware_addr = models.CharField('Middleware', max_length=100,
-        blank=True, null=True, help_text=_('Ex. http://10.1.1.52/'))
+    middleware_addr = models.CharField(
+        'Middleware', max_length=100, blank=True, null=True,
+        help_text=_('Ex. 10.1.1.100:8800')
+    )
     debug = models.BooleanField(_('Debug'), default=False)
     debug_port = models.PositiveSmallIntegerField(_('Porta'))
-    log_level = models.PositiveSmallIntegerField('Nível de log', default=0,
-        help_text=_('Nível de log para debug interno (0, 1, 2 ou 3)'))
-    env_val = models.CharField('Ambiente de execução', default='production',
-        max_length=20, help_text=_('Tipo de execução'), choices=CHOICES_ENV_VAR
-        )
+    log_level = models.PositiveSmallIntegerField(
+        'Nível de log', default=0,
+        help_text=_('Nível de log para debug interno (0, 1, 2 ou 3)')
+    )
+    env_val = models.CharField(
+        'Ambiente de execução', default='production', max_length=20,
+        help_text=_('Tipo de execução'), choices=CHOICES_ENV_VAR
+    )
 
     def switch_link(self):
         running = self.running()
 
-        if running == False and self.status == True:
-            url = reverse('nbridge.views.status_switchlink',
-                kwargs={'action': 'recover', 'pk': self.id})
+        if running is False and self.status is True:
+            url = reverse(
+                'nbridge.views.status_switchlink',
+                kwargs={'action': 'recover', 'pk': self.id}
+            )
 
             return 'Crashed<a href="%s" id="id_%s" style="color:red;">' \
                    ' ( Recuperar )</a> ' % (url, self.id)
 
-        if running == True and self.status == True:
-            url = reverse('nbridge.views.status_switchlink',
-                kwargs={'action': 'stop', 'pk': self.id})
+        if running is True and self.status is True:
+            url = reverse(
+                'nbridge.views.status_switchlink',
+                kwargs={'action': 'stop', 'pk': self.id}
+            )
 
             return '<a href="%s" id="id_%s" style="color:green;">' \
                    'Rodando</a>' % (url, self.id)
 
-        url = reverse('nbridge.views.status_switchlink',
-            kwargs={'action':'start', 'pk': self.id})
+        url = reverse(
+            'nbridge.views.status_switchlink',
+            kwargs={'action': 'start', 'pk': self.id}
+        )
 
         link = '<a href="%s" id="id_%s" style="color:red;">Parado</a>' \
             % (url, self.id)
@@ -73,7 +85,7 @@ class Nbridge(DeviceServer):
     def _status_and_pid(self):
         is_running = False
         pid = 0
-        if self.status == False:
+        if self.status is False:
             return False, 0
         pidcommand = '/usr/bin/sudo systemctl status nbridge@%s.service'\
             % (self.id)
@@ -119,10 +131,11 @@ class Nbridge(DeviceServer):
 
         template = Template('''upstream nbridge {
     ip_hash;{% for s in servers %}
-    server unix:{{socket_dir}}nbridge_{{s.id}}.sock;{% endfor %}}''')
+    server unix:{{socket_dir}}nbridge_{{s.id}}.sock;{% endfor %}
+}''')
 
         context = Context({
-            'servers': servers, 
+            'servers': servers,
             'socket_dir': settings.NBRIDGE_SOCKETS_DIR
         })
 
@@ -130,13 +143,17 @@ class Nbridge(DeviceServer):
 
         # Reset servers of nginx frontend upstream file.
         if servers.count() > 0:
-            cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
+            cmd = '/usr/bin/echo "%s" > %s' % (
+                upstream, settings.NBRIDGE_UPSTREAM
+            )
         else:
             upstream = '''upstream nbridge {
     ip_hash;
     server unix:%snbridge_fake.sock;
 }''' % (settings.NBRIDGE_SOCKETS_DIR)
-            cmd = '/usr/bin/echo "%s" > %s' % (upstream, settings.NBRIDGE_UPSTREAM)
+            cmd = '/usr/bin/echo "%s" > %s' % (
+                upstream, settings.NBRIDGE_UPSTREAM
+            )
         self.server.execute(cmd)
 
         # Reload config of nginx frontend.
@@ -147,21 +164,24 @@ class Nbridge(DeviceServer):
         sysconfig = ''
         for s in servers:
             if s.debug and s.debug_port > 0:
-                sysconfig += 'NODEARGS_%s="--debug=%d"\n' % (s.id, s.debug_port)
+                sysconfig += 'NODEARGS_%s="--debug=%d"\n' % (
+                    s.id, s.debug_port
+                )
             else:
                 sysconfig += 'NODEARGS_%s=""\n' % (s.id)
         log.debug('sysconfig=%s', sysconfig)
-        ## Create and copy
+        # Create and copy
         remote_tmpfile = self.server.create_tempfile()
         tmpfile = NamedTemporaryFile()
         tmpfile.file.write(sysconfig)
         tmpfile.file.flush()
         self.server.put(tmpfile.name, remote_tmpfile)
-        cmd_sysconfig = '/usr/bin/sudo /usr/bin/cp %s /etc/sysconfig/nbridge' % (remote_tmpfile)
+        cmd_sysconfig = '/usr/bin/sudo /usr/bin/cp %s /etc/sysconfig/nbridge' \
+            % (remote_tmpfile)
         log.debug('Config sysconfig=%s', cmd_sysconfig)
         self.server.execute(cmd_sysconfig)
         self.server.rm_file(remote_tmpfile)
-        
+
     def create_config(self):
         config_file = "%sconfig_%i.json" % (settings.NBRIDGE_CONF_DIR, self.id)
         if self.log_level > 0:
@@ -179,7 +199,8 @@ class Nbridge(DeviceServer):
     "nbridge_id": "%s"
 }''' % (settings.NBRIDGE_SOCKETS_DIR, self.id,
             self.middleware_addr,
-            settings.NBRIDGE_SERVER_KEY or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
+            settings.NBRIDGE_SERVER_KEY
+                or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
             verbose,
             self.log_level,
             self.env_val,
@@ -188,11 +209,8 @@ class Nbridge(DeviceServer):
         self.server.execute(cmd)
 
 
-
 @receiver(signals.post_save, sender=Nbridge)
 def nbridge_post_save(sender, instance, created, **kwargs):
     instance.configure_nginx()
     instance.configure_systemd()
     instance.create_config()
-
-

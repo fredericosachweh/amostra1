@@ -39,34 +39,37 @@ recovery_server.short_description = ugettext_lazy(
     'Recuperar %(verbose_name_plural)s selecionados')
 
 
-class NICInline(admin.TabularInline):
+class NICInline(admin.StackedInline):
     model = models.NIC
 
 
 class AdminServer(admin.ModelAdmin):
     readonly_fields = ('status', 'modified', 'msg', 'show_versions')
-    list_display = ('__unicode__', 'server_type', 'status', 'msg',
-        'switch_link',)
-    fieldsets = (
-      (None, {
-        'fields': (('status', 'modified', 'msg', ),
-            ('server_type'),
-            ('name', ),
-            ('host', 'ssh_port', ),
-            ('username', ),
-            ('rsakey'),
-            ('show_versions'),
-        )
-      }),
+    list_display = (
+        '__unicode__', 'server_type', 'status', 'msg', 'switch_link',
     )
-    #inlines = [NICInline]
+    fieldsets = (
+        (
+            None, {'fields': (
+                ('status', 'modified', 'msg', ),
+                ('server_type'),
+                ('name', ),
+                ('host', 'ssh_port', ),
+                ('username', ),
+                ('rsakey'),
+                ('show_versions'),
+            )}
+        ),
+    )
+    # inlines = [NICInline]
     actions = [test_all_servers, recovery_server]
     list_per_page = 20
 
 
 class AdminDevice(admin.ModelAdmin):
-    list_display = ('__unicode__', 'status', 'link_status', 'server_status',
-        'switch_link')
+    list_display = (
+        '__unicode__', 'status', 'link_status', 'server_status', 'switch_link'
+    )
     list_per_page = 20
 
 

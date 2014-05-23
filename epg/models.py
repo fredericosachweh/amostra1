@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
+from __future__ import unicode_literals
 
 from django.db import models
 from django.db.models import signals
@@ -9,6 +10,7 @@ from django.utils.translation import ugettext as _
 
 import os
 import logging
+log = logging.getLogger('debug')
 
 
 class Epg_Source(models.Model):
@@ -16,50 +18,50 @@ class Epg_Source(models.Model):
 
     class Meta:
         permissions = (
-            ("download_epg", _(u'Permissão para fazer download do EPG')),
+            ("download_epg", _('Permissão para fazer download do EPG')),
         )
 
-    filefield = models.FileField(_(u'Arquivo a ser importado'),
+    filefield = models.FileField(_('Arquivo a ser importado'),
         upload_to='epg/')
     lastModification = models.DateTimeField(
-        _(u'Data da última modificação no servidor da revista eletrônica'),
+        _('Data da última modificação no servidor da revista eletrônica'),
         unique=True, auto_now=True)
     # Creation time
-    created = models.DateTimeField(_(u'Data de criação'), auto_now=True)
+    created = models.DateTimeField(_('Data de criação'), auto_now=True)
     # Total number of elements in the file
     numberofElements = models.PositiveIntegerField(
-        _(u'Número de elementos neste arquivo'),
+        _('Número de elementos neste arquivo'),
         blank=True, null=True, default=0)
     # Number of imported elements
     #importedElements = models.PositiveIntegerField(
-    #    _(u'Número de elementos ja importados'),
+    #    _('Número de elementos ja importados'),
     #    blank=True, null=True, default=0)
     # Time diference between the smallest and the farthest time
     minor_start = models.DateTimeField(
-        _(u'Menor tempo de inicio encontrado nos programas'),
+        _('Menor tempo de inicio encontrado nos programas'),
         blank=True, null=True)
     major_stop = models.DateTimeField(
-        _(u'Maior tempo de final encontrado nos programas'),
+        _('Maior tempo de final encontrado nos programas'),
         blank=True, null=True)
 
 
 class XMLTV_Source(Epg_Source):
     "Information exclusive to XMLTV format"
     # Grabbed from <tv> element
-    source_info_url = models.CharField(_(u'Source info url'),
+    source_info_url = models.CharField(_('Source info url'),
         max_length=100, blank=True, null=True)
-    source_info_name = models.CharField(_(u'Source info name'),
+    source_info_name = models.CharField(_('Source info name'),
         max_length=100, blank=True, null=True)
-    source_data_url = models.CharField(_(u'Source data url'),
+    source_data_url = models.CharField(_('Source data url'),
         max_length=100, blank=True, null=True)
-    generator_info_name = models.CharField(_(u'Generator info name'),
+    generator_info_name = models.CharField(_('Generator info name'),
         max_length=100, blank=True, null=True)
-    generator_info_url = models.CharField(_(u'Generator info url'),
+    generator_info_url = models.CharField(_('Generator info url'),
         max_length=100, blank=True, null=True)
 
     class Meta:
-        verbose_name = _(u'Arquivo XML/ZIP EPG')
-        verbose_name_plural = _(u'Arquivos XML/ZIP EPG')
+        verbose_name = _('Arquivo XML/ZIP EPG')
+        verbose_name_plural = _('Arquivos XML/ZIP EPG')
 
     def __unicode__(self):
         return 'ID: %d - Start: %s - Stop: %s' % (self.id, self.minor_start,
@@ -93,8 +95,12 @@ class Channel(models.Model):
     urls = models.ManyToManyField(Url, blank=True, null=True)
 
     def __unicode__(self):
-        return u"%s [%s]" % (self.display_names.values_list()[0][1],
-            self.channelid)
+        names = self.display_names.values_list()
+        if len(names) == 1:
+            name = self.display_names.values_list()[0][1]
+        else:
+            name = ''
+        return "%s [%s]" % (name, self.channelid)
 
 
 class Title(models.Model):
@@ -140,20 +146,20 @@ class Rating(models.Model):
         unique_together = (('system', 'value'),)
 
     def __unicode__(self):
-        return u'%s:%s' % (self.system, self.value)
+        return '%s:%s' % (self.system, self.value)
 
     def save(self, *args, **kwargs):
-        if self.value == u'Programa livre para todas as idades':
+        if self.value == 'Programa livre para todas as idades':
             self.int_value = 0
-        elif self.value == u'Programa impróprio para menores de 10 anos':
+        elif self.value == 'Programa impróprio para menores de 10 anos':
             self.int_value = 10
-        elif self.value == u'Programa impróprio para menores de 12 anos':
+        elif self.value == 'Programa impróprio para menores de 12 anos':
             self.int_value = 12
-        elif self.value == u'Programa impróprio para menores de 14 anos':
+        elif self.value == 'Programa impróprio para menores de 14 anos':
             self.int_value = 14
-        elif self.value == u'Programa impróprio para menores de 16 anos':
+        elif self.value == 'Programa impróprio para menores de 16 anos':
             self.int_value = 16
-        elif self.value == u'Programa impróprio para menores de 18 anos':
+        elif self.value == 'Programa impróprio para menores de 18 anos':
             self.int_value = 18
         super(Rating, self).save(*args, **kwargs)
 
@@ -251,7 +257,7 @@ class Guide(models.Model):
             pid = self.previous.id
         if self.next is not None:
             nid = self.next.id
-        return u'"(%s-%s-%s) %s (%s)" %s - %s' % (
+        return '"(%s-%s-%s) %s (%s)" %s - %s' % (
             pid,
             self.id,
             nid,
@@ -327,9 +333,9 @@ def Guide_post_save(sender, instance, created, **kwargs):
 def dvb_source_post_delete(signal, instance, sender, **kwargs):
     # Delete the archive
     path_source_file = instance.filefield.path
-    path_epg_full_dump = u'%s/%dfull.zip' % (
+    path_epg_full_dump = '%s/%dfull.zip' % (
         os.path.dirname(path_source_file), instance.id)
-    path_epg_diff_dump = u'%s/%ddiff.zip' % (
+    path_epg_diff_dump = '%s/%ddiff.zip' % (
         os.path.dirname(path_source_file), instance.id)
 
     if (os.path.exists(path_epg_diff_dump)):
