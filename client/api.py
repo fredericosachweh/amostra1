@@ -296,14 +296,14 @@ class SetTopBoxAuth(Authorization):
     
     def filter_read_list(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
-            return False
+            raise Unauthorized("Unauthorized")
         user = str(bundle.request.user)
         serial = user.replace(settings.STB_USER_PREFIX, '')
         try:
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('No STB for user:%s', user)
-            return False
+            raise Unauthorized("Unauthorized")
         return object_list.filter(settopbox=stb)
     
     def read_list(self, object_list, bundle):
@@ -537,7 +537,7 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             BasicAuthentication(realm='cianet-middleware'),
             Authentication(),
             )
-
+        
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
