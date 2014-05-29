@@ -537,7 +537,12 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             BasicAuthentication(realm='cianet-middleware'),
             Authentication(),
             )
-        
+
+class SetTopBoxBehaviorFlagResource(NamespacedModelResource):
+    
+    class Meta:
+        queryset = models.SetTopBoxBehaviorFlag.objects.all()
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
@@ -546,5 +551,6 @@ api.register(SetTopBoxConfigResource())
 api.register(APIKeyResource())
 api.register(SetTopBoxMessage())
 api.register(SetTopBoxProgramScheduleResource())
+api.register(SetTopBoxBehaviorFlagResource())
 
 apis = [api]
