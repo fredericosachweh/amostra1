@@ -1,5 +1,5 @@
 # -*- encoding:utf8 -*
-
+from __future__ import unicode_literals
 import logging
 import re
 from django.http import HttpResponse
@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from device.models import StreamPlayer
 
-import models
+from . import models
 
 
 class Auth(View):
@@ -29,7 +29,7 @@ class Auth(View):
             return HttpResponse('Invalid request', status=401)
         valid = self.mac_re.match(mac)
         if valid is None:
-            return HttpResponse(u'Invalid MAC', status=401)
+            return HttpResponse('Invalid MAC', status=401)
         if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
             sn = mac
         if models.SetTopBox.options.auto_create is True:
@@ -43,14 +43,14 @@ class Auth(View):
                 stb = models.SetTopBox.objects.get(serial_number=sn)
             else:
                 log.debug('SetTopBox don\'t existis:%s', sn)
-                return HttpResponse(u'{"login": "ERROR"}', status=403)
+                return HttpResponse('{"login": "ERROR"}', status=403)
         user = stb.get_user()
         a_user = authenticate(username=user.username, password=sn)
         if a_user is not None:
             login(request, a_user)
         else:
             log.debug('No user for SetTopBox:%s', stb)
-            HttpResponse(u'{"login": "ERROR"}', status=403)
+            HttpResponse('{"login": "ERROR"}', status=403)
         log.debug('login: OK, user:%s', a_user)
         api_key = ApiKey.objects.get(user=a_user)
         log.debug('api_key:%s', api_key.key)
@@ -75,3 +75,7 @@ def logoff(request):
     log.debug('logoff user:%s', request.user)
     logout(request)
     return HttpResponse('Bye', content_type='application/json')
+
+
+def change_route(request, stb_list=None, control_key=None, command=None):
+    return HttpResponse('OK', content_type='application/json')
