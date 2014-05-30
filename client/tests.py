@@ -1121,3 +1121,36 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(ps2.count(), 2);
         ps2 = ps2[0]
         self.assertEqual(ps2.message, u'O programa YY foi agendado com sucesso!')
+
+class RemoteControlTest(TestCase):
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(
+            'adm', 'adm@cianet.ind.br', '123'
+        )
+        self.c = Client()
+        models.SetTopBox.objects.create(
+            serial_number='lulul', mac='FF:00:00:00:01:61'
+        )
+        models.SetTopBox.objects.create(
+            serial_number='lalala', mac='FF:21:30:70:64:33'
+        )
+        models.SetTopBox.objects.create(
+            serial_number='lelele', mac='00:1A:D0:1A:D3:CA'
+        )
+
+    def tearDown(self):
+        models.SetTopBox.objects.all().delete()
+
+    def test_api_get_settopbox(self):
+        url_get = reverse(
+            'client_v1:api_dispatch_list',
+            kwargs={'resource_name': 'settopbox', 'api_name': 'v1'}
+        )
+        self.c.login(username='adm', password='123')
+        response = self.c.get(url_get)
+        self.assertEqual(response.status_code, 200)
+        jobj = json.loads(response.content)
+        log.debug('obj=%s', jobj)
+
