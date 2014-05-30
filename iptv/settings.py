@@ -296,6 +296,8 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # South http://south.aeracode.org/docs/
     'south',
+    # Nose tests
+    'django_nose',
     # Interface dos setup-box
     #'box',
     # Aplicação de controle de stream
@@ -409,8 +411,17 @@ if 'test' in sys.argv:
 TASTYPIE_FULL_DEBUG = DEBUG
 TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-RPM_CHECK_VERSION = "site_iptv multicat dvblast frontend_iptv nodejs-nbridge nginx-fe nginx-mw"
+RPM_CHECK_VERSION = """
+site_iptv
+multicat
+dvblast
+frontend_iptv
+nodejs-nbridge
+nginx-fe
+nginx-mw
+"""
 
 EPG_IMPORT_CREDENTIALS = {
     'site': 'guide.aron.tv.br',

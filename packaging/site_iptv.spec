@@ -35,6 +35,9 @@ Requires:       python-imaging
 Requires:       postgresql-server
 Requires:       python-psycopg2
 Requires:       python-flup
+# Testes unitarios
+Requires:       python-nose
+Requires:       python-django-nose
 
 ## Por hora sem migração Usando embutino no pacote com submodulo
 # Requires:       Django-south
