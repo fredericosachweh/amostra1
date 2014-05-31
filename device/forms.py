@@ -1,7 +1,7 @@
 # -*- encoding:utf-8 -*-
 
 from django import forms
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 from django.contrib import admin
 from django.contrib.admin.widgets import ForeignKeyRawIdWidget
 from django.db.models.fields.related import ManyToOneRel
@@ -20,11 +20,13 @@ class GenericRelationForm(forms.ModelForm):
             model = self.Meta.model
             model_key = 'id'
         self.fields['object_id'].widget = ForeignKeyRawIdWidget(
-            rel=ManyToOneRel('object_id', model, model_key), admin_site=admin.site)
+            rel=ManyToOneRel('object_id', model, model_key),
+            admin_site=admin.site
+        )
         self.fields['content_type'].widget.widget = ContentTypeSelect(
-                        'lookup_id_object_id',
-                        self.fields['content_type'].widget.widget.attrs,
-                        self.fields['content_type'].widget.widget.choices)
+            'lookup_id_object_id',
+            self.fields['content_type'].widget.widget.attrs,
+            self.fields['content_type'].widget.widget.choices)
 
 
 class DvbTunerForm(forms.ModelForm):
@@ -36,8 +38,10 @@ class DvbTunerForm(forms.ModelForm):
 
 
 class DvbTunerAutoFillForm(forms.Form):
-    sat = forms.ModelChoiceField(dvbinfo_models.Satellite.objects,
-        label=_(u'Satélite'))
+    sat = forms.ModelChoiceField(
+        dvbinfo_models.Satellite.objects,
+        label=_(u'Satélite')
+    )
     chan = forms.ChoiceField(label=_(u'Canal'))
     fta = forms.BooleanField(label=_(u'Somente canais FTA'), initial=True)
     freq = forms.CharField(label=_(u'Frequência'))
@@ -56,8 +60,10 @@ class IsdbTunerForm(forms.ModelForm):
 
 
 class IsdbTunerAutoFillForm(forms.Form):
-    state = forms.ModelChoiceField(dvbinfo_models.State.objects,
-        label=_(u'Estado'))
+    state = forms.ModelChoiceField(
+        dvbinfo_models.State.objects,
+        label=_(u'Estado')
+    )
     city = forms.ChoiceField(label=_(u'Cidade'))
     chan = forms.ChoiceField(label=_(u'Canal'))
     freq = forms.CharField(label=_(u'Frequência'))

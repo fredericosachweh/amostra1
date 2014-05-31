@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.utils.encoding import force_unicode
 from django.template import RequestContext, loader
 from django.template.response import TemplateResponse
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 import models

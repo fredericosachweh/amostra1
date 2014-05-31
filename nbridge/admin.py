@@ -3,13 +3,13 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 
 import models
 
 
 class AdminNbridge(admin.ModelAdmin):
-    list_display = ('server_desc', 'status', 'switch_link') 
+    list_display = ('server_desc', 'status', 'switch_link')
     fieldsets = (
         (_('Dados Gerais'), {
             'fields': (
