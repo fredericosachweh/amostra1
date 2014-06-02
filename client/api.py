@@ -1,31 +1,26 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
+from __future__ import unicode_literals
 from tastypie.authorization import DjangoAuthorization, Authorization
 from tastypie.authentication import BasicAuthentication
 from tastypie.authentication import Authentication
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authentication import MultiAuthentication
-from tastypie.authentication import SessionAuthentication
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL
 from tastypie.validation import Validation
 from tastypie.serializers import Serializer
-from tastypie.exceptions import BadRequest, NotFound, Unauthorized
+from tastypie.exceptions import BadRequest, Unauthorized
 from tastypie.models import ApiKey
 from django.db import IntegrityError
 from django.conf import settings
-import models
+from . import models
 from device import models as devicemodels
 from tv.api import ChannelResource
 import logging
-from tastypie.exceptions import Unauthorized, NotFound, BadRequest, ImmediateHttpResponse, ApiFieldError
-from tastypie.http import HttpNotFound, HttpBadRequest
-import pdb
 import json
-from tastypie.resources import csrf_exempt
-from django.forms import ValidationError
 
 log = logging.getLogger('api')
 
@@ -37,6 +32,7 @@ log = logging.getLogger('api')
 #{"key": "app/tv.PARENTAL_CONTROL",
 #    "resource_uri": "/tv/api/client/v1/settopboxconfig/8/", "value": "-1",
 #    "value_type": "number"}
+
 
 class MyAuthorization(DjangoAuthorization):
 
@@ -77,7 +73,7 @@ class SetTopBoxResource(NamespacedModelResource):
             try:
                 bundle = super(SetTopBoxResource, self).obj_create(bundle,
                     **kwargs)
-            except IntegrityError, e:
+            except IntegrityError as e:
                 log.error('%s', e)
                 transaction.rollback()
                 raise BadRequest(e)
@@ -90,7 +86,7 @@ class SetTopBoxResource(NamespacedModelResource):
             try:
                 bundle = super(SetTopBoxResource, self).obj_update(bundle,
                     request=request, **kwargs)
-            except IntegrityError, e:
+            except IntegrityError as e:
                 log.error('%s', e)
                 transaction.rollback()
                 raise BadRequest(e)
@@ -146,9 +142,9 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         #log.debug('On obj_create(%s,%s,%s)', bundle, request, kwargs)
         with transaction.atomic():
             try:
-                bundle = super(SetTopBoxChannelResource, self).obj_create(bundle,
-                    **kwargs)
-            except IntegrityError, e:
+                bundle = super(SetTopBoxChannelResource, self).obj_create(
+                    bundle, **kwargs)
+            except IntegrityError as e:
                 log.error('%s', e)
                 raise BadRequest(e)
         return bundle
@@ -157,12 +153,14 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         from django.db import transaction
         with transaction.atomic():
             try:
-                bundle = super(SetTopBoxChannelResource, self).obj_update(bundle,
-                    **kwargs)
-            except IntegrityError, e:
+                bundle = super(SetTopBoxChannelResource, self).obj_update(
+                    bundle, **kwargs
+                )
+            except IntegrityError as e:
                 log.error('%s', e)
                 raise BadRequest(e)
         return bundle
+
 
 class SetTopBoxSerializer(Serializer):
     """
@@ -170,64 +168,77 @@ class SetTopBoxSerializer(Serializer):
     """
     def from_json(self, content):
         """
-        Override method of `Serializer.from_json`. Adds exception message when loading JSON fails.
+        Override method of `Serializer.from_json`.
+        Adds exception message when loading JSON fails.
         """
         try:
             return json.loads(content)
         except ValueError as e:
-            errors = {"errorCode":"500","errorDescription":u"Incorrect JSON format: Reason: \"{}\"".format(e)}                
+            errors = {
+                "errorCode": "500",
+                "errorDescription":
+                    "Incorrect JSON format: Reason: \"{}\"".format(e)
+            }
             raise BadRequest(errors)
 
+
 class SetTopBoxValidation(Validation):
-    
+
     def is_valid(self, bundle, request=None):
         if not bundle.data:
             return {'__all__': 'Missing data'}
 
+
 class ProgramScheduleValidation(SetTopBoxValidation):
-   
+
     def is_valid(self, bundle, request=None):
         if not bundle.data:
-            return {'__all__': 'Missing data, please include channel, url, schedule_date and message.'}
+            return {
+                '__all__':
+                    'Missing data, please include channel, url, schedule_date and message.'}
 
-        errors = {}                                    
+        errors = {}
         schedule_date = bundle.data.get('schedule_date', None)
         url = bundle.data.get('url', None)
         message = bundle.data.get('message', None)
         channel = bundle.data.get('channel', None)
-        
-        request_method = bundle.request.META['REQUEST_METHOD'] 
-        
-        if request_method in ('PATCH','PUT'):
+
+        request_method = bundle.request.META['REQUEST_METHOD']
+
+        if request_method in ('PATCH', 'PUT'):
             bundle_uri = bundle.request.path_info
             try:
                 uri_id = bundle_uri.split('/')
-                ps = models.SetTopBoxProgramSchedule.objects.filter(id = uri_id[-2])
+                ps = models.SetTopBoxProgramSchedule.objects.filter(
+                    id=uri_id[-2]
+                )
                 if not ps:
-                    errors['errorCode']='404'
-                    errors['errorDescription']='There is no register on server.'
+                    errors['errorCode'] = '404'
+                    errors['errorDescription'] =\
+                        'There is no register on server.'
             except:
-                errors['errorCode']='404'
-                errors['errorDescription']='There is no register on server.'
-        
+                errors['errorCode'] = '404'
+                errors['errorDescription'] = 'There is no register on server.'
+
         if request_method == 'POST':
             if channel is None:
-                errors['errorCode']='400'
-                errors['errorDescription']='There is no channel data.'
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no channel data.'
             if schedule_date is None:
-                errors['errorCode']='400'
-                errors['errorDescription']='There is no schedule_date data.'
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no schedule_date data.'
             if url is None:
-                errors['errorCode']='400'
-                errors['errorDescription']='There is no url data.'
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no url data.'
             if message is None:
-                errors['errorCode']='400'
-                errors['errorDescription']='There is no message data.'
-        
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no message data.'
+
         return errors
 
+
 class SetTopBoxAuthorization(Authorization):
-    
+
     def is_authorized(self, request, bundle_object=None):
         log.debug('bundle_object=%s', bundle_object)
         if request.user.is_anonymous() is True:
@@ -244,25 +255,28 @@ class SetTopBoxAuthorization(Authorization):
         log.debug('User:%s', user)
         return True
 
+
 class SetTopBoxAuth(Authorization):
-    
+
     def is_authorized(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
             return False
         user = str(bundle.request.user)
         serial = user.replace(settings.STB_USER_PREFIX, '')
-        
+
         try:
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('There`s no stb for this serial number: %s', serial)
             return False
-        
+
         bundle_uri = bundle.request.path_info
-            
+
         try:
             uri_id = bundle_uri.split('/')
-            ps = models.SetTopBoxProgramSchedule.objects.filter(id = uri_id[-2], settopbox_id = stb.id)
+            ps = models.SetTopBoxProgramSchedule.objects.filter(
+                id=uri_id[-2], settopbox_id=stb.id
+            )
             if ps:
                 return True
             if uri_id[-2] == 'schema':
@@ -276,36 +290,36 @@ class SetTopBoxAuth(Authorization):
             return False
         user = str(bundle.request.user)
         serial = user.replace(settings.STB_USER_PREFIX, '')
-        
+
         channel = bundle.data.get('channel')
         log.debug('There`s no channel for this number: %s', channel)
-        
+
         try:
-            stb = models.SetTopBox.objects.get(serial_number=serial)
+            models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('There`s no stb for this serial number: %s', serial)
             return False
 
         try:
-            ch = models.Channel.objects.get(number=channel)
+            models.Channel.objects.get(number=channel)
         except:
             log.error('There`s no channel for this number: %s', channel)
             return False
 
         return True
-    
+
     def filter_read_list(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
-            return False
+            raise Unauthorized("Unauthorized")
         user = str(bundle.request.user)
         serial = user.replace(settings.STB_USER_PREFIX, '')
         try:
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
             log.error('No STB for user:%s', user)
-            return False
+            raise Unauthorized("Unauthorized")
         return object_list.filter(settopbox=stb)
-    
+
     def read_list(self, object_list, bundle):
         return self.filter_read_list(object_list, bundle)
 
@@ -319,23 +333,24 @@ class SetTopBoxAuth(Authorization):
         return self.is_authorized(object_list, bundle)
 
     def update_detail(self, object_list, bundle):
-        return self.is_authorized(object_list,bundle)
+        return self.is_authorized(object_list, bundle)
 
     def delete_list(self, object_list, bundle):
-        return self.is_authorized(object_list,bundle)
+        return self.is_authorized(object_list, bundle)
 
     def delete_detail(self, object_list, bundle):
-        return self.is_authorized(object_list,bundle)
+        return self.is_authorized(object_list, bundle)
+
 
 class ProgramScheduleAuthorization(SetTopBoxAuth):
-    
+
     def is_create_authorized(self, object_list, bundle):
         if bundle.request.user.is_anonymous() is True:
             return False
         user = str(bundle.request.user)
         serial = user.replace(settings.STB_USER_PREFIX, '')
         channel = bundle.data.get('channel')
-        
+
         try:
             stb = models.SetTopBox.objects.get(serial_number=serial)
         except:
@@ -349,15 +364,21 @@ class ProgramScheduleAuthorization(SetTopBoxAuth):
             return False
 
         try:
-            stb_ch = models.SetTopBoxChannel.objects.filter(channel_id = ch.id, settopbox_id = stb.id) 
+            models.SetTopBoxChannel.objects.filter(
+                channel_id=ch.id, settopbox_id=stb.id
+            )
         except:
-            log.error('There`s no association between channel: %s and settopbox: %s',channel, serial)
+            log.error(
+                'There`s no association between channel: %s and settopbox: %s',
+                channel, serial
+            )
             return False
-        
+
         setattr(bundle.obj, 'settopbox', stb)
         setattr(bundle.obj, 'channel', ch)
-      
+
         return True
+
 
 class SetTopBoxConfigResource(NamespacedModelResource):
 
@@ -413,7 +434,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 try:
                     bundle = super(SetTopBoxConfigResource, self).obj_create(
                         bundle, settopbox=stb, **kwargs)
-                except IntegrityError, e:
+                except IntegrityError as e:
                     log.error('%s', e)
                     raise BadRequest(e)
                 return bundle
@@ -440,7 +461,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 #print(dir(bundle.obj))
                 bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
                     **kwargs)
-            except IntegrityError, e:
+            except IntegrityError as e:
                 log.error('%s', e)
                 raise BadRequest(e)
         return bundle
@@ -501,6 +522,7 @@ class APIKeyAuthorization(Authorization):
     def read_detail(self, object_list, bundle):
         return not bundle.request.user.is_anonymous()
 
+
 class APIKeyResource(NamespacedModelResource):
     class Meta:
         queryset = ApiKey.objects.all()
@@ -515,8 +537,9 @@ class SetTopBoxMessage(NamespacedModelResource):
     class Meta:
         queryset = models.SetTopBoxMessage.objects.all()
 
+
 class SetTopBoxProgramScheduleResource(NamespacedModelResource):
-    
+
     class Meta:
         queryset = models.SetTopBoxProgramSchedule.objects.all()
         resource_name = 'settopboxprogramschedule'
@@ -538,6 +561,11 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             Authentication(),
             )
 
+class SetTopBoxBehaviorFlagResource(NamespacedModelResource):
+    
+    class Meta:
+        queryset = models.SetTopBoxBehaviorFlag.objects.all()
+
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
@@ -546,5 +574,6 @@ api.register(SetTopBoxConfigResource())
 api.register(APIKeyResource())
 api.register(SetTopBoxMessage())
 api.register(SetTopBoxProgramScheduleResource())
+api.register(SetTopBoxBehaviorFlagResource())
 
 apis = [api]
