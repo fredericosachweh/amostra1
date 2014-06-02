@@ -412,6 +412,11 @@ TASTYPIE_FULL_DEBUG = DEBUG
 TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+#NOSE_ARGS = [
+#    '--with-coverage',
+#    '--cover-package=client',
+#    '--cover-html',
+#]
 
 RPM_CHECK_VERSION = """
 site_iptv
