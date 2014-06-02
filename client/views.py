@@ -8,9 +8,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from device.models import StreamPlayer
+from django.conf import settings
 
 from . import models
-
+from nbridge.models import Nbridge
 
 class Auth(View):
     mac_re = re.compile(r'^([0-9a-fA-F]{2}(:?|$)){6}$')
@@ -77,5 +78,33 @@ def logoff(request):
     return HttpResponse('Bye', content_type='application/json')
 
 
-def change_route(request, stb_list=None, control_key=None, command=None):
+def change_route(request, stbs=None, key=None, cmd=None):
+    import requests
+    server_key = settings.NBRIDGE_SERVER_KEY
+    log = logging.getLogger('client')
+    log.debug('stbs=%s', stbs)
+    log.debug('key=%s', key)
+    log.debug('cmd=%s', cmd)
+    stb_list = stbs.split(';')
+    nbs = Nbridge.objects.filter(status=True)
+    for s in nbs:
+        url = 'http://%s/ws/route/' % (s.server.host)
+        macs = []
+        # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
+        for m in stb_list:
+            macs.append(m)
+        data = {
+            'server_key': server_key,
+            'mac[]': [macs]
+            }
+        log.debug('url=%s', url)
+        log.debug('DATA=%s', data)
+        try:
+            response = requests.post(url, timeout=10, data=data)
+            log.debug('Resposta=[%s]%s', response.status_code, response.text)
+        except Exception as e:
+            log.error('ERROR:%s', e)
+            return HttpResponse('ERROR=%s' % (e), content_type='application/json')
+        finally:
+            log.info('Finalizado o request')    
     return HttpResponse('OK', content_type='application/json')

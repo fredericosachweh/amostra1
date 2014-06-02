@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import simplejson as json
 
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.conf import settings
@@ -1185,6 +1185,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
 class RemoteControlTest(TestCase):
 
     def setUp(self):
+        log.debug('RemoteControlTest::setUp')
         from django.contrib.auth.models import User
         self.user = User.objects.create_user(
             'adm', 'adm@cianet.ind.br', '123'
@@ -1212,4 +1213,35 @@ class RemoteControlTest(TestCase):
         response = self.c.get(url_get)
         self.assertEqual(response.status_code, 200)
         jobj = json.loads(response.content)
-        log.debug('obj=%s', jobj)
+        log.debug('Conteudo=%s', jobj)
+        #self.assertEqual(jobj[''], second, msg)
+
+    def test_call_channel(self):
+        # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
+        # ['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']
+        from nbridge.models import Nbridge
+        server = devicemodels.Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='nginx',  # getpass.getuser(),
+            rsakey='~/.ssh/id_rsa'
+        )
+        nb = Nbridge.objects.create(
+            middleware_addr='127.0.0.1:8000',
+            debug=True,
+            debug_port=5858,
+            log_level=3,
+            env_val='production',
+            server=server
+        )
+        nb.status = True
+        nb.save()
+        log.debug('Nbridge=%s', nb)
+        obj = resolve('/tv/client/route/FF:21:30:70:64:33;FF:01:67:77:21:80;FF:32:32:26:11:21/key/tv/1')
+        log.debug('req=%s', obj)
+        url = reverse('client_route', kwargs={'stbs': ';'.join(['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']), 'key': 'key', 'cmd': 'tv/1'})
+        log.debug('rev=%s', url)
+        response = self.c.get(url)
+        self.assertEqual('OK', response.content)
+        self.assertEqual('/tv/client/route/FF%3A21%3A30%3A70%3A64%3A33%3BFF%3A01%3A67%3A77%3A21%3A80%3BFF%3A32%3A32%3A26%3A11%3A21/key/tv/1', url)
