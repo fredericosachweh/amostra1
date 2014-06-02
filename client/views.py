@@ -88,7 +88,7 @@ def change_route(request, stbs=None, key=None, cmd=None):
     stb_list = stbs.split(';')
     nbs = Nbridge.objects.filter(status=True)
     for s in nbs:
-        url = 'http://%s/ws/route/' % (s.server.host)
+        url = 'http://%s/ws/route/%s' % (s.server.host,cmd)
         macs = []
         # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
         for m in stb_list:
