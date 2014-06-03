@@ -172,6 +172,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Mon Jun 02 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.13.0-1
+- Schedule API and remote control first test.
 * Fri May 02 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.12.0-1
 - Schedule API + Migrations.
 * Tue Mar 18 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.11.2-1
