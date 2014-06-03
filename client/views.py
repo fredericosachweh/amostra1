@@ -1,5 +1,5 @@
 # -*- encoding:utf8 -*
-
+from __future__ import unicode_literals
 import logging
 import re
 from django.http import HttpResponse
@@ -8,9 +8,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from device.models import StreamPlayer
+from django.conf import settings
 
-import models
-
+from . import models
+from nbridge.models import Nbridge
 
 class Auth(View):
     mac_re = re.compile(r'^([0-9a-fA-F]{2}(:?|$)){6}$')
@@ -29,7 +30,7 @@ class Auth(View):
             return HttpResponse('Invalid request', status=401)
         valid = self.mac_re.match(mac)
         if valid is None:
-            return HttpResponse(u'Invalid MAC', status=401)
+            return HttpResponse('Invalid MAC', status=401)
         if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
             sn = mac
         if models.SetTopBox.options.auto_create is True:
@@ -43,14 +44,14 @@ class Auth(View):
                 stb = models.SetTopBox.objects.get(serial_number=sn)
             else:
                 log.debug('SetTopBox don\'t existis:%s', sn)
-                return HttpResponse(u'{"login": "ERROR"}', status=403)
+                return HttpResponse('{"login": "ERROR"}', status=403)
         user = stb.get_user()
         a_user = authenticate(username=user.username, password=sn)
         if a_user is not None:
             login(request, a_user)
         else:
             log.debug('No user for SetTopBox:%s', stb)
-            HttpResponse(u'{"login": "ERROR"}', status=403)
+            HttpResponse('{"login": "ERROR"}', status=403)
         log.debug('login: OK, user:%s', a_user)
         api_key = ApiKey.objects.get(user=a_user)
         log.debug('api_key:%s', api_key.key)
@@ -75,3 +76,35 @@ def logoff(request):
     log.debug('logoff user:%s', request.user)
     logout(request)
     return HttpResponse('Bye', content_type='application/json')
+
+
+def change_route(request, stbs=None, key=None, cmd=None):
+    import requests
+    server_key = settings.NBRIDGE_SERVER_KEY
+    log = logging.getLogger('client')
+    log.debug('stbs=%s', stbs)
+    log.debug('key=%s', key)
+    log.debug('cmd=%s', cmd)
+    stb_list = stbs.split(';')
+    nbs = Nbridge.objects.filter(status=True)
+    for s in nbs:
+        url = 'http://%s/ws/route/%s' % (s.server.host,cmd)
+        macs = []
+        # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
+        for m in stb_list:
+            macs.append(m)
+        data = {
+            'server_key': server_key,
+            'mac[]': [macs]
+            }
+        log.debug('url=%s', url)
+        log.debug('DATA=%s', data)
+        try:
+            response = requests.post(url, timeout=10, data=data)
+            log.debug('Resposta=[%s]%s', response.status_code, response.text)
+        except Exception as e:
+            log.error('ERROR:%s', e)
+            return HttpResponse('ERROR=%s' % (e), content_type='application/json')
+        finally:
+            log.info('Finalizado o request')    
+    return HttpResponse('OK', content_type='application/json')

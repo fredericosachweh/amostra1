@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import logging
 from tempfile import NamedTemporaryFile
 
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 from device.models import DeviceServer
 from django.template import Context, Template
 from django.db import models

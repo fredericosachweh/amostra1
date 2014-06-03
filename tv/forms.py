@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 from django import forms
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 from device.models import StreamRecorder
 from device.models import SoftTranscoder
 from epg.models import Channel

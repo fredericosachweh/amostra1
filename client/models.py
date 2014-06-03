@@ -132,7 +132,7 @@ class STBPassValue(dbsettings.Value):
         try:
             value = int(str(value))
         except (ValueError, TypeError):
-            print('Valor invalido')
+            log.error('Valor invalido')
         return value
 
 
