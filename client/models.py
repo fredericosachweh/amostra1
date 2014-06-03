@@ -132,7 +132,7 @@ class STBPassValue(dbsettings.Value):
         try:
             value = int(str(value))
         except (ValueError, TypeError):
-            print('Valor invalido')
+            log.error('Valor invalido')
         return value
 
 
@@ -348,3 +348,23 @@ class SetTopBoxProgramSchedule(models.Model):
             self.channel, self.settopbox.serial_number,
             datetime.datetime.fromtimestamp(self.schedule_date)
         )
+
+class SetTopBoxBehaviorFlag(models.Model):
+    'Class to store Behavior flags'
+    key = models.CharField(
+        _('Chave'), max_length=250, db_index=True,
+        help_text=_('Chave de indentificação da flag de comportamento')
+    )
+    value = models.CharField(
+        _('Valor'), max_length=250,
+        help_text=_('Valor do comportamento. Ex. 0.5'), db_index=True
+    )
+    value_type = models.CharField(_('Tipo do parametro'), max_length=50)
+
+    class Meta:
+        verbose_name = _('Flag de comportamento')
+        verbose_name_plural = _('Flags de comportamento')
+
+    def __unicode__(self):
+        return '{%s=%s}' % (self.key, self.value)
+

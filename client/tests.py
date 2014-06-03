@@ -1,8 +1,8 @@
 # -*- encoding:utf-8 -*-
-
+from __future__ import unicode_literals
 import simplejson as json
 
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.conf import settings
@@ -10,20 +10,21 @@ from django.test.client import Client, FakePayload, MULTIPART_CONTENT
 from django.test import client
 from django.utils import timezone
 from urlparse import urlparse
-from models import SetTopBox
 from device import models as devicemodels
 from tv import models as tvmodels
 
-import models
+from . import models
 import logging
 import simplejson
-from datetime import tzinfo, timedelta
 
 log = logging.getLogger('unittest')
 
+
 def patch_request_factory():
-    def _method(self, path, data='', content_type='application/octet-stream',
-            follow=False, **extra):
+    def _method(
+            self, path, data='', content_type='application/octet-stream',
+            follow=False, **extra
+        ):
         response = self.generic("PATCH", path, data, content_type, **extra)
         if follow:
             response = self._handle_redirects(response, **extra)
@@ -35,7 +36,7 @@ def patch_request_factory():
 
 
 class Client2(Client):
-    u"""
+    """
     Construct a second test client which can do PATCH requests.
     http://digidayoff.com/2012/03/01/unit-testing-patch-requests-with-djangos-\
 test-client/
@@ -56,23 +57,23 @@ test-client/
         return self.request(**r)
 
 
-#curl --dump-header - -H "Content-Type: application/json" -X POST --data \
-#'{"serial_number": "lala"}' http://127.0.0.1:8000/tv/api/client/v1/settopbox/
-#HTTP/1.0 201 CREATED
-#Date: Fri, 10 Aug 2012 21:23:43 GMT
-#Server: WSGIServer/0.1 Python/2.7.3
-#Content-Type: text/html; charset=utf-8
-#Location: http://127.0.0.1:8000/tv/api/client/v1/settopbox/1/
+# curl --dump-header - -H "Content-Type: application/json" -X POST --data \
+# '{"serial_number": "lala"}' http://127.0.0.1:8000/tv/api/client/v1/settopbox/
+# HTTP/1.0 201 CREATED
+# Date: Fri, 10 Aug 2012 21:23:43 GMT
+# Server: WSGIServer/0.1 Python/2.7.3
+# Content-Type: text/html; charset=utf-8
+# Location: http://127.0.0.1:8000/tv/api/client/v1/settopbox/1/
 
 
-#curl --dump-header - -H "Content-Type: application/json" -X POST --data \
-#'{"objects": [{"serial_number": "abc"}, {"serial_number": "efg"}, \
-#{"serial_number": "hij"}, {"serial_number": "aeh"}]}' \
-#http://127.0.0.1:8000/tv/api/client/v1/settopbox/
+# curl --dump-header - -H "Content-Type: application/json" -X POST --data \
+# '{"objects": [{"serial_number": "abc"}, {"serial_number": "efg"}, \
+# {"serial_number": "hij"}, {"serial_number": "aeh"}]}' \
+# http://127.0.0.1:8000/tv/api/client/v1/settopbox/
 
 
 class APITest(TestCase):
-    u'''
+    '''
     Testes de manipulação de settopbox e associação de canais através da api.
     http://10.1.1.200/projects/iptv/wiki/Wiki
     Seja client.SetTopBox = stb e tv.Channel = ch
@@ -99,39 +100,43 @@ class APITest(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('erp', 'erp@cianet.ind.br',
-            '123')
+        self.user = User.objects.create_user(
+            'erp', 'erp@cianet.ind.br', '123'
+        )
 
     def test_SetTopBox(self):
         from django.contrib.auth.models import Permission
-        SetTopBox.options.auto_create = False
-        SetTopBox.options.auto_add_channel = False
-        SetTopBox.options.use_mac_as_serial = True
-        SetTopBox.options.auto_enable_recorder_access = True
+        models.SetTopBox.options.auto_create = False
+        models.SetTopBox.options.auto_add_channel = False
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
         patch_request_factory()
-        #c = Client2(enforce_csrf_checks=False)
         c = Client()
         # Buscando o schema
-        urlschema = reverse('client:api_get_schema',
-            kwargs={'resource_name': 'settopbox', 'api_name': 'v1'})
-        #self.encoded_creds = "Basic " + "demo:demo".encode("base64")
+        urlschema = reverse(
+            'client:api_get_schema', kwargs={'resource_name': 'settopbox',
+            'api_name': 'v1'}
+        )
+        # self.encoded_creds = "Basic " + "demo:demo".encode("base64")
         c.login(username='erp', password='123')
         response = c.get(urlschema)
         jschema = json.loads(response.content)
         self.assertEqual('string', jschema['fields']['serial_number']['type'])
         # Buscando lista
-        url = reverse('client:api_dispatch_list',
+        url = reverse(
+            'client:api_dispatch_list',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1'},
-            )
+        )
         response = c.get(url)
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
-        # Try to create new settopbox using post on api, but need to logged in
+        # Try to create new models.SetTopBox using post on api,
+        # but need to logged in
         response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
             content_type='application/json')
         self.assertEqual(401, response.status_code)
         # Create new user and do login to into middlewer
-        #user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
+        # user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
         user = self.user
         urllogin = reverse('sys_login')
         response = c.post(urllogin, {'username': 'erp', 'password': '123'},
@@ -145,11 +150,11 @@ class APITest(TestCase):
         perm_add_stb = Permission.objects.get(codename='add_settopbox')
         user.user_permissions.add(perm_add_stb)
         user.save()
-        # Create new settopbox using post
+        # Create new models.SetTopBox using post
         response = c.post(url, data=json.dumps({'serial_number': 'lalala'}),
             content_type='application/json')
         self.assertEqual(201, response.status_code)
-        stbs = SetTopBox.objects.all()
+        stbs = models.SetTopBox.objects.all()
         self.assertEqual(1, stbs.count())
         self.assertEqual('lalala', stbs[0].serial_number)
         # Try to add new stb with existing serial_number
@@ -172,7 +177,7 @@ class APITest(TestCase):
         self.user.user_permissions.add(perm_delete_stb)
         response = c.delete(urldelete)
         self.assertEqual(204, response.status_code)
-        stbs = SetTopBox.objects.all()
+        stbs = models.SetTopBox.objects.all()
         self.assertEqual(0, len(stbs))
         # Try to edit one settop box
 
@@ -180,10 +185,10 @@ class APITest(TestCase):
         from django.contrib.auth.models import Permission
         c = Client()
         c.login(username='erp', password='123')
-        #urllogin = reverse('sys_login')
-        #response = c.post(urllogin, {'username': 'erp', 'password': '123'},
+        # urllogin = reverse('sys_login')
+        # response = c.post(urllogin, {'username': 'erp', 'password': '123'},
         #    follow=True)
-        #self.assertEqual(response.status_code, 200)
+        # self.assertEqual(response.status_code, 200)
         # Buscando lista
         url = reverse('client:api_dispatch_list',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1'},
@@ -200,11 +205,11 @@ class APITest(TestCase):
         p.add(Permission.objects.get(codename='add_settopbox'))
         p.add(Permission.objects.get(codename='change_settopbox'))
         p.add(Permission.objects.get(codename='delete_settopbox'))
-        #self.user.save()
+        # self.user.save()
         response = c.patch(url, data=serialized,
             content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        stbs = SetTopBox.objects.all()
+        stbs = models.SetTopBox.objects.all()
         self.assertEqual(4, stbs.count())
 
 
@@ -216,7 +221,7 @@ class APITest(TestCase):
 class SetTopBoxChannelTest(TestCase):
 
     def setUp(self):
-        #import getpass
+        # import getpass
         from django.contrib.auth.models import User, Permission
         super(SetTopBoxChannelTest, self).setUp()
         self.c = Client()
@@ -295,7 +300,7 @@ class SetTopBoxChannelTest(TestCase):
         self.channel2 = tvmodels.Channel.objects.create(
             number=13,
             name='Globo',
-            description=u'Rede globo de televisão',
+            description='Rede globo de televisão',
             channelid='GLB',
             image='',
             enabled=True,
@@ -304,7 +309,7 @@ class SetTopBoxChannelTest(TestCase):
         self.channel3 = tvmodels.Channel.objects.create(
             number=14,
             name='Test 3',
-            description=u'Rede Test 3',
+            description='Rede Test 3',
             channelid='RIC',
             image='',
             enabled=True,
@@ -351,18 +356,20 @@ class SetTopBoxChannelTest(TestCase):
 
     def test_channel_stb(self):
         self.assertEqual(tvmodels.Channel.objects.all().count(), 3)
-        SetTopBox.options.auto_add_channel = False
-        SetTopBox.options.use_mac_as_serial = True
-        self.assertEqual(SetTopBox.options.auto_add_channel, False)
-        SetTopBox.objects.create(serial_number=u'lalala', mac=u'lalala')
-        SetTopBox.objects.create(serial_number=u'lelele', mac=u'lelele')
-        SetTopBox.objects.create(serial_number=u'lilili', mac=u'lilili')
-        SetTopBox.objects.create(serial_number=u'lololo', mac=u'lololo')
-        SetTopBox.objects.create(serial_number=u'lululu', mac=u'lululu')
-        self.assertEqual(SetTopBox.objects.all().count(), 5)
+        models.SetTopBox.options.auto_add_channel = False
+        models.SetTopBox.options.use_mac_as_serial = True
+        self.assertEqual(models.SetTopBox.options.auto_add_channel, False)
+        models.SetTopBox.objects.create(serial_number='lalala', mac='lalala')
+        models.SetTopBox.objects.create(serial_number='lelele', mac='lelele')
+        models.SetTopBox.objects.create(serial_number='lilili', mac='lilili')
+        models.SetTopBox.objects.create(serial_number='lololo', mac='lololo')
+        models.SetTopBox.objects.create(serial_number='lulul', mac='lulul')
+        self.assertEqual(models.SetTopBox.objects.all().count(), 5)
         # Get channel list
-        urlchannels = reverse('tv_v1:api_dispatch_list', kwargs={
-            'resource_name': 'channel', 'api_name': 'v1'})
+        urlchannels = reverse(
+            'tv_v1:api_dispatch_list',
+            kwargs={'resource_name': 'channel', 'api_name': 'v1'}
+        )
         response = self.c.get(urlchannels)
         self.assertEqual(200, response.status_code)
         jobj = json.loads(response.content)
@@ -370,52 +377,67 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(3, jobj['meta']['total_count'])
 
         urllogin = reverse('sys_login')
-        response = self.c.post(urllogin,
+        response = self.c.post(
+            urllogin,
             {'username': 'erp', 'password': '123'},
-            follow=True)
+            follow=True
+        )
         self.assertEqual(response.status_code, 200)
 
         # Get stb list
-        urlstb = reverse('client:api_dispatch_list', kwargs={
-            'resource_name': 'settopbox', 'api_name': 'v1'})
+        urlstb = reverse(
+            'client:api_dispatch_list',
+            kwargs={'resource_name': 'settopbox', 'api_name': 'v1'}
+        )
         response = self.c.get(urlstb)
         jobj = json.loads(response.content)
-        # Ensure there is 5 settopbox in list
+        # Ensure there is 5 models.SetTopBox in list
         self.assertEqual(5, jobj['meta']['total_count'])
         # Add relation bethen stb and 2 channels
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxchannel', 'api_name': 'v1'})
-        response = self.c.post(urlrelation, data=json.dumps({
-            'settopbox': '/tv/api/client/v1/settopbox/1/',
-            'channel': '/tv/api/tv/v1/channel/2/',
-            'recorder': True}),
-            content_type='application/json')
-        self.assertEqual(response.status_code, 201,
-            'Content:%s' % response.content)
+        response = self.c.post(
+            urlrelation, data=json.dumps({
+                'settopbox': '/tv/api/client/v1/settopbox/1/',
+                'channel': '/tv/api/tv/v1/channel/2/',
+                'recorder': True}),
+            content_type='application/json'
+        )
+        self.assertEqual(
+            response.status_code, 201,
+            'Content:%s' % response.content
+        )
         response = self.c.post(urlrelation, data=json.dumps({
             'settopbox': '/tv/api/client/v1/settopbox/2/',
             'channel': '/tv/api/tv/v1/channel/2/',
             'recorder': True}),
             content_type='application/json')
         # Retorna erro ao criar uma associação duplicada
-        response = self.c.post(urlrelation, data=json.dumps({
-            'settopbox': '/tv/api/client/v1/settopbox/1/',
-            'channel': '/tv/api/tv/v1/channel/2/',
-            'recorder': True}),
-            content_type='application/json')
+        response = self.c.post(
+            urlrelation, data=json.dumps({
+                'settopbox': '/tv/api/client/v1/settopbox/1/',
+                'channel': '/tv/api/tv/v1/channel/2/',
+                'recorder': True}
+            ),
+            content_type='application/json'
+        )
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
-        self.assertContains(response,
-            'not unique',
-            status_code=400)
+        self.assertContains(
+            response, 'not unique', status_code=400
+        )
 
     def test_settopbox_options(self):
-        SetTopBox.options.auto_add_channel = False
-        SetTopBox.options.use_mac_as_serial = True
-        self.assertEqual(SetTopBox.options.auto_add_channel, False,
-            'Default value not working')
-        self.assertEqual(SetTopBox.options.use_mac_as_serial, True,
-            'Default value not working')
+        models.SetTopBox.options.auto_add_channel = False
+        models.SetTopBox.options.use_mac_as_serial = True
+        self.assertEqual(
+            models.SetTopBox.options.auto_add_channel, False,
+            'Default value not working'
+        )
+        self.assertEqual(
+            models.SetTopBox.options.use_mac_as_serial, True,
+            'Default value not working'
+        )
 
     def test_auth_get(self):
         auth_login = reverse('client_auth')
@@ -427,7 +449,7 @@ class SetTopBoxChannelTest(TestCase):
 
     def test_settopbox_autologin(self):
         from django.contrib.auth.models import User
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         models.SetTopBox.options.auto_create = False
         models.SetTopBox.options.auto_add_channel = False
         auth_login = reverse('client_auth')
@@ -436,78 +458,87 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(200, response.status_code)
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(403, response.status_code)
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        ## Busca o ususário criado para o stb
-        user = User.objects.get(username=settings.STB_USER_PREFIX + \
-            '01:02:03:04:05:06')
-        ## Verifica se existe a relação criado nos 3 canais
+        # Busca o ususário criado para o stb
+        user = User.objects.get(
+            username=settings.STB_USER_PREFIX + '01:02:03:04:05:06')
+        # Verifica se existe a relação criado nos 3 canais
         # Busca o stb
-        stb = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:06')
+        stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
         self.assertEqual(user, stb.get_user())
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         # Número de stb-channel
         self.assertEqual(3, stb_ch.count())
-        ## Remove o canal Globo
+        # Remove o canal Globo
         self.channel2.delete()
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(2, stb_ch.count())
-        ## Create new channel
+        # Create new channel
         ch = tvmodels.Channel.objects.create(
             number=18,
             name='Globo 2',
-            description=u'Rede globo 2 de televisão',
+            description='Rede globo 2 de televisão',
             channelid='GLB',
             image='',
             enabled=True,
             source=self.ipout4
             )
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb,
-            channel=ch)
+        stb_ch = models.SetTopBoxChannel.objects.filter(
+            settopbox=stb, channel=ch
+        )
         self.assertEqual(1, stb_ch.count())
-        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:00',
-            'sn': 123456})
+        response = self.c.post(
+            auth_login, data={'mac': '01:02:03:04:05:00', 'sn': 123456}
+        )
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number=123456)
-        ## Busca o ususário criado para o stb
-        user = User.objects.get(username=settings.STB_USER_PREFIX + \
-            '123456')
+        # Busca o ususário criado para o stb
+        user = User.objects.get(
+            username=settings.STB_USER_PREFIX + '123456'
+        )
         self.assertEqual(user, stb.get_user())
 
     def test_case_insensitive_mac_sn(self):
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         models.SetTopBox.options.auto_create = False
         models.SetTopBox.options.auto_add_channel = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        ## Now disable auto_create
+        # Now disable auto_create
         models.SetTopBox.options.auto_create = False
         models.SetTopBox.options.auto_add_channel = False
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:00'})
         self.assertEqual(403, response.status_code)
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06',
-            'sn': '01:02:03:04:05:06'})
+        response = self.c.post(
+            auth_login, data={
+                'mac': '01:02:03:04:05:06', 'sn': '01:02:03:04:05:06'
+            }
+        )
         self.assertEqual(200, response.status_code)
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06',
-            'SN': '01:02:03:04:05:06'})
+        response = self.c.post(
+            auth_login, data={
+                'MAC': '01:02:03:04:05:06', 'SN': '01:02:03:04:05:06'
+            }
+        )
         self.assertEqual(200, response.status_code)
 
     def test_get_channels_from_stb(self):
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
@@ -521,11 +552,12 @@ class SetTopBoxChannelTest(TestCase):
         tvchannels = tvmodels.Channel.objects.all()
         try:
             channels = stb.get_channels()
-        except Exception as e:
-            self.assertFalse(True,
-                'O metodo SetTopBox.get_channels() deveria existir:%s' % e)
+        except Exception:
+            self.assertFalse(
+                True,
+                'O metodo models.SetTopBox.get_channels() deveria existir')
         self.assertItemsEqual(channels, tvchannels)
-        ## Remove uma relação
+        # Remove uma relação
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         stb_ch[1].delete()
         channels = stb.get_channels()
@@ -538,7 +570,7 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(2, jobj['meta']['total_count'])
 
     def test_stb_api_tv(self):
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         models.SetTopBox.options.auto_create = True
         models.SetTopBox.options.auto_add_channel = True
         models.SetTopBox.options.use_mac_as_serial = True
@@ -549,27 +581,27 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
-        self.assertEqual(stb.serial_number, u'01:02:03:04:05:06')
+        self.assertEqual(stb.serial_number, '01:02:03:04:05:06')
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(3, stb_ch.count())
         url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
-        ## Get list of channels
+        # Get list of channels
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(3, jobj['meta']['total_count'])
-        ## Remove one relation
+        # Remove one relation
         stb_ch[2].delete()
-        ## Check removed element
+        # Check removed element
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(2, stb_ch.count())
-        ## Get list of channels again
+        # Get list of channels again
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
-        ## Ensure has 2 channels on response
+        # Ensure has 2 channels on response
         self.assertEqual(2, jobj['meta']['total_count'])
-        ## Test Anonimous
+        # Test Anonimous
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
         response = self.c.get(url_channel)
@@ -582,41 +614,41 @@ class SetTopBoxChannelTest(TestCase):
         models.SetTopBox.options.auto_enable_recorder_access = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
-        ## Do logoff
+        # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        ## Call tvod_list
+        # Call tvod_list
         url_tvod = reverse('device.views.tvod_list')
         self.assertEqual(url_tvod, '/tv/device/tvod_list/')
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
-        ## Do login
+        # Do login
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        ## Get list of records
+        # Get list of records
         recs = devicemodels.StreamRecorder.objects.all()
         self.assertEqual(3, recs.count())
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
-        ## Get STB
+        # Get STB
         stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
-        ## Get STB-ch relation
+        # Get STB-ch relation
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
-        ## Enable record access to 1 channel
+        # Enable record access to 1 channel
         rec = stb_ch[1]
         rec.recorder = True
         rec.save()
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
-        ## Call tvod_list
+        # Call tvod_list
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
         self.assertEqual(1, jobj['meta']['total_count'])
-        ## Enable record access to second channel
+        # Enable record access to second channel
         stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
         stb_ch.update(recorder=True)
-        ## Call tvod_list
+        # Call tvod_list
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
         self.assertEqual(3, jobj['meta']['total_count'])
@@ -628,11 +660,11 @@ class SetTopBoxChannelTest(TestCase):
         models.SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
-        ## Do logoff
+        # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        ## Try play recorder ch=13, 14, 51
-        ## channel_number=None, command=None, seek=0
+        # Try play recorder ch=13, 14, 51
+        # channel_number=None, command=None, seek=0
         url_play = reverse('device.views.tvod', kwargs={
             'channel_number': 13,
             'command': 'play',
@@ -640,22 +672,22 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual('/tv/device/tvod/13/play/20', url_play)
         response = self.c.get(url_play)
         self.assertEqual(401, response.status_code)
-        ## Do login
+        # Do login
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        ## No channel
+        # No channel
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 15,
             'command': 'play',
             'seek': 20}))
         self.assertEqual(404, response.status_code)
-        ## No seek avaliable
+        # No seek avaliable
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 13,
             'command': 'play',
             'seek': 200000}))
         self.assertEqual(404, response.status_code)
-        ## All OK
+        # All OK
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 13,
             'command': 'play',
@@ -674,7 +706,7 @@ class SetTopBoxChannelTest(TestCase):
         models.SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
-        ## Do logoff
+        # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
@@ -682,7 +714,7 @@ class SetTopBoxChannelTest(TestCase):
         url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
-        ## Get list of channels
+        # Get list of channels
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(3, jobj['meta']['total_count'])
@@ -701,13 +733,14 @@ class SetTopBoxChannelTest(TestCase):
         models.SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
-        ## Do logoff
+        # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
-        user = User.objects.get(username=settings.STB_USER_PREFIX + \
-            '01:02:03:04:05:06')
+        user = User.objects.get(
+            username=settings.STB_USER_PREFIX + '01:02:03:04:05:06'
+        )
         self.assertIsNotNone(user)
         api_key = ApiKey.objects.get(user=user)
         self.assertIsNotNone(api_key)
@@ -718,13 +751,15 @@ class SetTopBoxChannelTest(TestCase):
         # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
-            'resource_name': 'channel', 'api_name': 'v1'})
+        url_channel = reverse(
+            'tv_v1:api_dispatch_list',
+            kwargs={'resource_name': 'channel', 'api_name': 'v1'}
+        )
         self.assertEqual('/tv/api/tv/v1/channel/', url_channel)
-        ## Get empty list (Anonymous)
+        # Get empty list (Anonymous)
         response = self.c.get(url_channel)
         self.assertEqual(401, response.status_code)
-        ## Get list of channels
+        # Get list of channels
         response = self.c.get(url_channel + '?api_key=%s' % api_key)
         jobj = json.loads(response.content)
         self.assertEqual(3, jobj['meta']['total_count'])
@@ -746,53 +781,60 @@ class TestRequests(TestCase):
         self.assertContains(response, 'api_key')
         key = json.loads(response.content).get('api_key', None)
         self.assertIsNotNone(key)
-        ## Create new STBconfig
-        url_config = reverse('client:api_dispatch_list', kwargs={
-            'resource_name': 'settopboxconfig', 'api_name': 'v1'})
+        # Create new STBconfig
+        url_config = reverse(
+            'client:api_dispatch_list',
+            kwargs={'resource_name': 'settopboxconfig', 'api_name': 'v1'}
+        )
         self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
-        ## Create a config
-        data = simplejson.dumps({"key": "VOLUME_LEVEL", "value": "0.5",
-            "value_type": "Number"})
-        response = self.c.post(url_config, data=data,
-            content_type='application/json')
+        # Create a config
+        data = simplejson.dumps(
+            {"key": "VOLUME_LEVEL", "value": "0.5", "value_type": "Number"}
+        )
+        response = self.c.post(
+            url_config, data=data, content_type='application/json'
+        )
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.has_header('location'))
-        ## load stb config
+        # load stb config
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
         self.assertEqual(jobj['meta']['total_count'], 3)
-        ## login on new STB
+        # login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
         key1 = json.loads(response.content).get('api_key', None)
         self.assertIsNotNone(key1)
-        data = simplejson.dumps({"key": "VOLUME_LEVEL", "value": "0.3",
-            "value_type": "Number"})
-        response = self.c.post(url_config, data=data,
-            content_type='application/json')
+        data = simplejson.dumps(
+            {"key": "VOLUME_LEVEL", "value": "0.3", "value_type": "Number"}
+        )
+        response = self.c.post(
+            url_config, data=data, content_type='application/json'
+        )
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.has_header('location'))
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
         self.assertEqual(jobj['meta']['total_count'], 3)
-        ## Change volume value
+        # Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})
         self.assertEqual('/tv/api/client/v1/settopboxconfig/5/', url_vol)
         response = self.c.get('/tv/api/client/v1/settopboxconfig/')
         self.assertEqual(response.status_code, 200)
         data = simplejson.dumps({"value": "0.2"})
-        response = self.c.put(url_vol, data=data,
-            content_type='application/json')
+        response = self.c.put(
+            url_vol, data=data, content_type='application/json'
+        )
         self.assertEqual(response.status_code, 204)
         conf = models.SetTopBoxConfig.objects.get(id=5)
-        self.assertEqual(u'0.2', conf.value)
+        self.assertEqual('0.2', conf.value)
         response = self.c.get(auth_logoff)
         self.assertEqual(response.status_code, 200)
         response = self.c.get(url_vol + '?api_key=%s' % key)
-        #log.debug('status_code=%s, content=%s', response.status_code,
+        # log.debug('status_code=%s, content=%s', response.status_code,
         #    response.content)
         self.assertEqual(response.status_code, 400)
 
@@ -816,7 +858,7 @@ class TestDefaultConfig(TestCase):
         self.assertContains(response, 'api_key')
         key = json.loads(response.content).get('api_key', None)
         self.assertIsNotNone(key)
-        ## Create new STBconfig
+        # Create new STBconfig
         url_config = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1'})
         self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
@@ -839,6 +881,9 @@ class TestDefaultConfig(TestCase):
         self.assertContains(response, 'app/tv.PARENTAL_CONTROL')
         self.assertContains(response, '"value": "-1"')
         self.assertContains(response, '"value": "disabled"')
+        response = self.c.get(auth_logoff)
+        self.assertEqual(response.status_code, 200)
+
 
 class SetTopBoxProgramScheduleTest(TestCase):
 
@@ -849,10 +894,10 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.auth_login = reverse('client_auth')
         self.auth_logoff = reverse('client_logoff')
 
-        SetTopBox.options.auto_create = True
-        SetTopBox.options.auto_add_channel = True
-        SetTopBox.options.use_mac_as_serial = True
-        SetTopBox.options.auto_enable_recorder_access = True
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = True
+        models.SetTopBox.options.use_mac_as_serial = True
+        models.SetTopBox.options.auto_enable_recorder_access = True
 
         server = devicemodels.Server.objects.create(
             name='local',
@@ -896,7 +941,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
             nic_sink=nic,
         )
 
-        channel1 = tvmodels.Channel.objects.create(
+        self.channel1 = tvmodels.Channel.objects.create(
             number=51,
             name='Discovery Channel',
             description='Cool tv channel',
@@ -909,7 +954,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.channel2 = tvmodels.Channel.objects.create(
             number=13,
             name='Globo',
-            description=u'Rede globo de televisão',
+            description='Rede globo de televisão',
             channelid='GLB',
             image='',
             enabled=True,
@@ -918,34 +963,36 @@ class SetTopBoxProgramScheduleTest(TestCase):
 
     def test_program_schedule(self):
         """
-        Realiza login com settopbox 1 e settopbox 2
+        Realiza login com models.SetTopBox 1 e models.SetTopBox 2
         """
-        response = self.c1.post(self.auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c1.post(
+            self.auth_login, data={'MAC': '01:02:03:04:05:06'}
+        )
         self.assertEqual(200, response.status_code)
 
-        response = self.c2.post(self.auth_login, data={'MAC': '01:02:03:04:05:07'})
+        response = self.c2.post(
+            self.auth_login, data={'MAC': '01:02:03:04:05:07'}
+        )
         self.assertEqual(200, response.status_code)
 
-        stb1 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:06')
-        stb2 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:07')
+        stb1 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
+        stb2 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:07')
 
-        ch1 = tvmodels.Channel.objects.get(name='Discovery Channel')
-        ch2 = tvmodels.Channel.objects.get(name='Globo')
-
-        #tz = timezone.utc
-        #post_date = datetime(2014, 4, 9, 18,53,13,0,tz)
+        # tz = timezone.utc
+        # post_date = datetime(2014, 4, 9, 18,53,13,0,tz)
 
         """
-        Realiza um agendamento no settopbox 1 e dois agendamentos no settopbox 2
+        Realiza um agendamento no models.SetTopBox 1 e
+        dois agendamentos no models.SetTopBox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
         response = self.c1.post(urlrelation, data=json.dumps({
             'settopbox': '1',
             'channel': '51',
-            'url': u'/tv/api/1',
-            'message': u'O programa Y foi agendado com sucesso!',
-            'schedule_date':'1388657410'}),
+            'url': '/tv/api/1',
+            'message': 'O programa Y foi agendado com sucesso!',
+            'schedule_date': '1388657410'}),
             content_type='application/json')
         self.assertEqual(201, response.status_code)
 
@@ -954,9 +1001,9 @@ class SetTopBoxProgramScheduleTest(TestCase):
         response = self.c2.post(urlrelation, data=json.dumps({
             'settopbox': '1',
             'channel': '13',
-            'url': u'/tv/api/1',
-            'message': u'O programa X foi agendado com sucesso!',
-            'schedule_date':'1388657410'}),
+            'url': '/tv/api/1',
+            'message': 'O programa X foi agendado com sucesso!',
+            'schedule_date': '1388657410'}),
             content_type='application/json')
         self.assertEqual(201, response.status_code)
 
@@ -965,33 +1012,33 @@ class SetTopBoxProgramScheduleTest(TestCase):
         response = self.c2.post(urlrelation, data=json.dumps({
             'settopbox': '1',
             'channel': '13',
-            'url': u'/tv/api/1',
-            'message': u'O programa Z foi agendado com sucesso!',
-            'schedule_date':'1388657410'}),
+            'url': '/tv/api/1',
+            'message': 'O programa Z foi agendado com sucesso!',
+            'schedule_date': '1388657410'}),
             content_type='application/json')
         self.assertEqual(201, response.status_code)
 
         """
-        Valida dados de agendamento no settopbox 1 e settopbox 2
+        Valida dados de agendamento no models.SetTopBox 1 e models.SetTopBox 2
         """
         ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)[0]
         ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)[0]
 
-        self.assertEqual(ps1.message, u'O programa Y foi agendado com sucesso!')
-        self.assertEqual(ps1.url, u'/tv/api/1')
-        #dt = datetime(2014, 4, 9, 18,53,13,0,tz)
+        self.assertEqual(ps1.message, 'O programa Y foi agendado com sucesso!')
+        self.assertEqual(ps1.url, '/tv/api/1')
+        # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps1.schedule_date, 1388657410)
 
-        self.assertEqual(ps2.message, u'O programa X foi agendado com sucesso!')
-        self.assertEqual(ps2.url, u'/tv/api/1')
-        #dt = datetime(2014, 4, 9, 18,53,13,0,tz)
+        self.assertEqual(ps2.message, 'O programa X foi agendado com sucesso!')
+        self.assertEqual(ps2.url, '/tv/api/1')
+        # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps2.schedule_date, 1388657410)
 
         ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
-        self.assertEqual(ps1.count(), 1);
+        self.assertEqual(ps1.count(), 1)
 
         """
-        Remove agendamento no settopbox 1
+        Remove agendamento no models.SetTopBox 1
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1004,41 +1051,44 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(204, response.status_code)
 
         """
-        Valida remoção do agendamento no settopbox 1
+        Valida remoção do agendamento no models.SetTopBox 1
         """
         ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
-        self.assertEqual(ps1.count(), 0);
+        self.assertEqual(ps1.count(), 0)
 
         """
-        Realiza login com settopbox 3
+        Realiza login com models.SetTopBox 3
         """
-        response = self.c3.post(self.auth_login, data={'MAC': '01:02:03:04:05:08'})
+        response = self.c3.post(
+            self.auth_login, data={'MAC': '01:02:03:04:05:08'}
+        )
         self.assertEqual(200, response.status_code)
 
-        stb3 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:08')
+        stb3 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:08')
 
         """
-        Valida se o settopbox 3 não possui agendamentos
+        Valida se o models.SetTopBox 3 não possui agendamentos
         """
         ps3 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb3)
         self.assertEqual(ps3.count(), 0)
 
         """
-        Valida se a remoção do agendamento no settopbox 1 não influenciou no agendamento do settopbox 2
+        Valida se a remoção do agendamento no models.SetTopBox 1
+        não influenciou no agendamento do models.SetTopBox 2
         """
-        stb2 = models.SetTopBox.objects.get(serial_number=u'01:02:03:04:05:07')
+        stb2 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:07')
 
         ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
-        self.assertEqual(ps2.count(), 2);
+        self.assertEqual(ps2.count(), 2)
 
         ps2 = ps2[0]
-        self.assertEqual(ps2.message, u'O programa X foi agendado com sucesso!')
-        self.assertEqual(ps2.url, u'/tv/api/1')
-        #dt = datetime(2014, 4, 9, 18,53,13,0,tz)
+        self.assertEqual(ps2.message, 'O programa X foi agendado com sucesso!')
+        self.assertEqual(ps2.url, '/tv/api/1')
+        # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps2.schedule_date, 1388657410)
 
         """
-        Valida Update no registro do settopbox 2
+        Valida Update no registro do models.SetTopBox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1049,7 +1099,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
 
         urlrelation = jsdata['objects'][0]['resource_uri']
         response = self.c2.patch(urlrelation, data=json.dumps({
-            'message': u'O programa YY foi agendado com sucesso!'}),
+            'message': 'O programa YY foi agendado com sucesso!'}),
             content_type='application/json')
         self.assertEqual(202, response.status_code)
 
@@ -1059,9 +1109,11 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(200, response.status_code)
 
         ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
-        self.assertEqual(ps2.count(), 2);
+        self.assertEqual(ps2.count(), 2)
         ps2 = ps2[0]
-        self.assertEqual(ps2.message, u'O programa YY foi agendado com sucesso!')
+        self.assertEqual(
+            ps2.message, 'O programa YY foi agendado com sucesso!'
+        )
 
         """
         Valida aquisição de um agendamento especifico
@@ -1078,10 +1130,14 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(200, response.status_code)
 
         jsdata = json.loads(response.content)
-        self.assertEqual(jsdata['message'], u'O programa YY foi agendado com sucesso!')
+        self.assertEqual(
+            jsdata['message'],
+            'O programa YY foi agendado com sucesso!'
+        )
 
         """
-        Validar se settopbox 1 pode remover agendamento em settopbox 2
+        Validar se models.SetTopBox 1 pode remover
+        agendamento em models.SetTopBox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1093,10 +1149,11 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(401, response.status_code)
 
         ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
-        self.assertEqual(ps2.count(), 2);
+        self.assertEqual(ps2.count(), 2)
 
         """
-        Validar se settopbox 1 pode atualizar agendamento em settopbox 2
+        Validar se models.SetTopBox 1 pode atualizar
+        agendamento em models.SetTopBox 2
         """
 
         urlrelation = reverse('client:api_dispatch_list', kwargs={
@@ -1108,7 +1165,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
 
         urlrelation = jsdata['objects'][0]['resource_uri']
         response = self.c1.patch(urlrelation, data=json.dumps({
-            'message': u'O programa ZZ foi agendado com sucesso!'}),
+            'message': 'O programa ZZ foi agendado com sucesso!'}),
             content_type='application/json')
         self.assertEqual(401, response.status_code)
 
@@ -1118,6 +1175,73 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(200, response.status_code)
 
         ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
-        self.assertEqual(ps2.count(), 2);
+        self.assertEqual(ps2.count(), 2)
         ps2 = ps2[0]
-        self.assertEqual(ps2.message, u'O programa YY foi agendado com sucesso!')
+        self.assertEqual(
+            ps2.message, 'O programa YY foi agendado com sucesso!'
+        )
+
+
+class RemoteControlTest(TestCase):
+
+    def setUp(self):
+        log.debug('RemoteControlTest::setUp')
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(
+            'adm', 'adm@cianet.ind.br', '123'
+        )
+        self.c = Client()
+        models.SetTopBox.objects.create(
+            serial_number='lulul', mac='FF:00:00:00:01:61'
+        )
+        models.SetTopBox.objects.create(
+            serial_number='lalala', mac='FF:21:30:70:64:33'
+        )
+        models.SetTopBox.objects.create(
+            serial_number='lelele', mac='00:1A:D0:1A:D3:CA'
+        )
+
+    def tearDown(self):
+        models.SetTopBox.objects.all().delete()
+
+    def test_api_get_settopbox(self):
+        url_get = reverse(
+            'client_v1:api_dispatch_list',
+            kwargs={'resource_name': 'settopbox', 'api_name': 'v1'}
+        )
+        self.c.login(username='adm', password='123')
+        response = self.c.get(url_get)
+        self.assertEqual(response.status_code, 200)
+        jobj = json.loads(response.content)
+        log.debug('Conteudo=%s', jobj)
+        #self.assertEqual(jobj[''], second, msg)
+
+    def test_call_channel(self):
+        # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
+        # ['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']
+        from nbridge.models import Nbridge
+        server = devicemodels.Server.objects.create(
+            name='local',
+            host='127.0.0.1',
+            ssh_port=22,
+            username='nginx',  # getpass.getuser(),
+            rsakey='~/.ssh/id_rsa'
+        )
+        nb = Nbridge.objects.create(
+            middleware_addr='127.0.0.1:8000',
+            debug=True,
+            debug_port=5858,
+            log_level=3,
+            env_val='production',
+            server=server
+        )
+        nb.status = True
+        nb.save()
+        log.debug('Nbridge=%s', nb)
+        obj = resolve('/tv/client/route/FF:21:30:70:64:33;FF:01:67:77:21:80;FF:32:32:26:11:21/key/tv/1')
+        log.debug('req=%s', obj)
+        url = reverse('client_route', kwargs={'stbs': ';'.join(['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']), 'key': 'key', 'cmd': 'tv/1'})
+        log.debug('rev=%s', url)
+        response = self.c.get(url)
+        self.assertEqual('OK', response.content)
+        self.assertEqual('/tv/client/route/FF%3A21%3A30%3A70%3A64%3A33%3BFF%3A01%3A67%3A77%3A21%3A80%3BFF%3A32%3A32%3A26%3A11%3A21/key/tv/1', url)
