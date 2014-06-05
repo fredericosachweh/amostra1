@@ -38,11 +38,17 @@ class LogoToReplace(dbsettings.ImageValue):
             dst = '/iptv/var/www/sites/frontend/dist/img/menu.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
+            dst = '%smenu.png' % settings.MEDIA_ROOT 
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
         if self.attribute_name == 'logo_small_menu':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((163, 67), Image.ANTIALIAS)
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor1.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
+            dst = '%slogo_menor1.png' % settings.MEDIA_ROOT 
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'logo_small':
@@ -52,11 +58,17 @@ class LogoToReplace(dbsettings.ImageValue):
             dst = '/iptv/var/www/sites/frontend/dist/img/logo_menor2.png'
             log.debug('Save to:%s', dst)
             thumb.save(dst)
+            dst = '%slogo_menor2.png' % settings.MEDIA_ROOT 
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
         if self.attribute_name == 'banner_epg':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((450, 80), Image.ANTIALIAS)
-            dst = '/iptv/var/www/sites/frontend/dist/img/banner_aron.jpg'
+            dst = '/iptv/var/www/sites/frontend/dist/img/banner_repg.png'
+            log.debug('Save to:%s', dst)
+            thumb.save(dst)
+            dst = '%sbanner_repg.png' % settings.MEDIA_ROOT 
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         log.debug('name=%s', self.attribute_name)
@@ -355,10 +367,13 @@ class SetTopBoxBehaviorFlag(models.Model):
         _('Chave'), max_length=250, db_index=True,
         help_text=_('Chave de indentificação da flag de comportamento')
     )
+
+
     value = models.CharField(
         _('Valor'), max_length=250,
         help_text=_('Valor do comportamento. Ex. 0.5'), db_index=True
     )
+    
     value_type = models.CharField(_('Tipo do parametro'), max_length=50)
 
     class Meta:
