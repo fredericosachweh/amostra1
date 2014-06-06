@@ -97,7 +97,8 @@ class Channel(models.Model):
         if self._is_recording() is True:
             ret.append(_(u'Gravando'))
         if len(ret) > 0:
-            s = _(u" e ").join(ret)
+            print(ret)
+            s = _(u" e ").join(unicode(v) for v in ret)
             return '<a href="%s" id="tv_id_%d" style="color:green;">' \
                    '%s</a>' % (reverse('channel_stop', args=[self.pk]),
                                self.pk, s)
