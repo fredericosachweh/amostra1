@@ -254,7 +254,7 @@ class XML_Epg_Importer(object):
                     L, created = Lang.objects.get_or_create(
                         value=child.get('lang'))
                     D, created = Display_Name.objects.get_or_create(
-                        value=child.text, lang=L)
+                        value=child.text or '', lang=L)
                     C.display_names.add(D)
                     self.serialize(D)
                 elif child.tag == 'icon':
