@@ -424,7 +424,7 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(400, response.status_code)
         # Respond properly error message on duplicated
         self.assertContains(
-            response, 'not unique', status_code=400
+            response, 'settopbox_id', status_code=400
         )
 
     def test_settopbox_options(self):
@@ -800,7 +800,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 4)
         # login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
@@ -817,7 +817,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 4)
         # Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})
