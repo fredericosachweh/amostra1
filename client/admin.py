@@ -76,8 +76,23 @@ class SetTopBoxMessageAdmin(ModelAdmin):
     #model =
     pass
 
+#class MyForm(ModelForm):
+#
+#    MY_CHOICES = [('green', 'green'), ('red', 'red')]
+#    def __init__(self, *args, **kwargs):
+#        super(MyForm, self).__init__(*args, **kwargs)
+#        if self.instance.id:
+#            CHOICES_INCLUDING_DB_VALUE = [(self.instance.field,)*2] + self.MY_CHOICES
+#                                           self.fields['my_field'] = forms.ChoiceField(
+#                                           choices=CHOICES_INCLUDING_DB_VALUE)
+
+
+#class SetTopBoxBehaviorFlag(ModelAdmin):
+    # form = 
+#    form = MyForm
+
 site.register(models.SetTopBox, SetTopBoxAdmin)
-#site.register(models.SetTopBoxParameter)
+# site.register(models.SetTopBoxParameter)
 site.register(models.SetTopBoxProgramSchedule)
 site.register(models.SetTopBoxChannel, SetTopBoxChannelAdmin)
 site.register(models.SetTopBoxConfig, SetTopBoxConfigAdmin)
