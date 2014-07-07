@@ -255,6 +255,18 @@ class SetTopBox(models.Model):
                 {'channel': True, 'message': message}
             )
 
+    @classmethod
+    def get_stb_from_user(self, user):
+        if user.username.find(settings.STB_USER_PREFIX) == 0:
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            try:
+                stb = SetTopBox.objects.get(serial_number=serial)
+                return stb
+            except:
+                return None
+        else:
+            return None
+
 
 class SetTopBoxParameter(models.Model):
     'Class to store key -> values of SetTopBox'

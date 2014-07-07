@@ -24,12 +24,12 @@ import json
 
 log = logging.getLogger('api')
 
-## Validation:
-#http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-
-#treat-a-field-as-unique
+# Validation:
+# http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-
+# treat-a-field-as-unique
 
-#http://10.1.1.52:8100/tv/api/client/v1/settopboxconfig/8/
-#{"key": "app/tv.PARENTAL_CONTROL",
+# http://10.1.1.52:8100/tv/api/client/v1/settopboxconfig/8/
+# {"key": "app/tv.PARENTAL_CONTROL",
 #    "resource_uri": "/tv/api/client/v1/settopboxconfig/8/", "value": "-1",
 #    "value_type": "number"}
 
@@ -48,11 +48,11 @@ class MyAuthorization(DjangoAuthorization):
 
 class SetTopBoxResource(NamespacedModelResource):
 
-    #mac = fields.CharField(u'mac', unique=True, help_text=u'Endereço MAC')
-    #serial_number = fields.CharField(u'serial_number', unique=True,
+    # mac = fields.CharField(u'mac', unique=True, help_text=u'Endereço MAC')
+    # serial_number = fields.CharField(u'serial_number', unique=True,
     #     help_text=u'Número serial no equipamento')
 
-    class Meta:
+    class Meta(object):
         queryset = models.SetTopBox.objects.all()
         resource_name = 'settopbox'
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
@@ -71,8 +71,9 @@ class SetTopBoxResource(NamespacedModelResource):
         log.debug('New STB=%s', bundle.data.get('serial_number'))
         with transaction.atomic():
             try:
-                bundle = super(SetTopBoxResource, self).obj_create(bundle,
-                    **kwargs)
+                bundle = super(SetTopBoxResource, self).obj_create(
+                    bundle, **kwargs
+                )
             except IntegrityError as e:
                 log.error('%s', e)
                 transaction.rollback()
@@ -84,8 +85,9 @@ class SetTopBoxResource(NamespacedModelResource):
         log.debug('Update STB=%s', bundle.data.get('serial_number'))
         with transaction.atomic():
             try:
-                bundle = super(SetTopBoxResource, self).obj_update(bundle,
-                    request=request, **kwargs)
+                bundle = super(SetTopBoxResource, self).obj_update(
+                    bundle, request=request, **kwargs
+                )
             except IntegrityError as e:
                 log.error('%s', e)
                 transaction.rollback()
@@ -97,7 +99,7 @@ class SetTopBoxParameterResource(NamespacedModelResource):
 
     settopbox = fields.ForeignKey(SetTopBoxResource, 'settopbox', null=False)
 
-    class Meta:
+    class Meta(object):
         queryset = models.SetTopBoxParameter.objects.all()
         resource_name = 'settopboxparameter'
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
@@ -139,7 +141,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
 
     def obj_create(self, bundle, request=None, **kwargs):
         from django.db import transaction
-        #log.debug('On obj_create(%s,%s,%s)', bundle, request, kwargs)
+        # log.debug('On obj_create(%s,%s,%s)', bundle, request, kwargs)
         with transaction.atomic():
             try:
                 bundle = super(SetTopBoxChannelResource, self).obj_create(
@@ -414,8 +416,9 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             stb = models.SetTopBox.objects.get(serial_number=serial)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             if hasattr(self._meta.authorization, 'apply_limits'):
-                object_list = self._meta.authorization.apply_limits(request,
-                    object_list)
+                object_list = self._meta.authorization.apply_limits(
+                    request, object_list
+                )
             object_list = object_list.filter(settopbox=stb)
         else:
             object_list = models.SetTopBoxConfig.objects.none()
@@ -423,8 +426,10 @@ class SetTopBoxConfigResource(NamespacedModelResource):
 
     def obj_create(self, bundle, **kwargs):
         from django.db import transaction
-        log.debug('New Parameter:%s=%s (%s)', bundle.data.get('key'),
-            bundle.data.get('value'), bundle.data.get('value_type'))
+        log.debug(
+            'New Parameter:%s=%s (%s)', bundle.data.get('key'),
+            bundle.data.get('value'), bundle.data.get('value_type')
+        )
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
             serial = user.username.replace(settings.STB_USER_PREFIX, '')
@@ -435,7 +440,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                     bundle = super(SetTopBoxConfigResource, self).obj_create(
                         bundle, settopbox=stb, **kwargs)
                 except IntegrityError as e:
-                    log.error('%s', e)
+                    # log.error('%s', e)
                     raise BadRequest(e)
                 return bundle
         else:
@@ -444,8 +449,10 @@ class SetTopBoxConfigResource(NamespacedModelResource):
 
     def obj_update(self, bundle, skip_errors=False, **kwargs):
         from django.db import transaction
-        log.debug('Update key:%s=%s (%s)', bundle.data.get('key'),
-            bundle.data.get('value'), bundle.data.get('value_type'))
+        log.debug(
+            'Update key:%s=%s (%s)', bundle.data.get('key'),
+            bundle.data.get('value'), bundle.data.get('value_type')
+        )
         if bundle.request.user.is_anonymous() is False:
             user = bundle.request.user
             serial = user.username.replace(settings.STB_USER_PREFIX, '')
@@ -453,14 +460,14 @@ class SetTopBoxConfigResource(NamespacedModelResource):
             self._meta.queryset.filter(settopbox=stb)
             log.debug('User:%s, SetTopBox:%s', user, stb)
             # TODO: Não deixar um STB moduficar as configs de outro STB
-            #print(bundle)
-            #if bundle.obj.settopbox_id != stb.id:
-            #    raise BadRequest('')
+            # if bundle.obj.settopbox_id != stb.id:
+            #     raise BadRequest('')
         with transaction.atomic():
             try:
-                #print(dir(bundle.obj))
-                bundle = super(SetTopBoxConfigResource, self).obj_update(bundle,
-                    **kwargs)
+                # print(dir(bundle.obj))
+                bundle = super(SetTopBoxConfigResource, self).obj_update(
+                    bundle, **kwargs
+                )
             except IntegrityError as e:
                 log.error('%s', e)
                 raise BadRequest(e)
@@ -497,7 +504,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
                 if obj_list.settopbox == stb:
                     return obj_list
                 else:
-                    #raise Unauthorized('')
+                    # raise Unauthorized('')
                     obj_list = models.SetTopBoxConfig.objects.none()
         else:
             obj_list = models.SetTopBoxConfig.objects.none()
@@ -517,6 +524,13 @@ class APIKeyAuthorization(Authorization):
         log.debug('Readlist request to:%s', user)
         if user.is_anonymous():
             raise Unauthorized("Unauthorized")
+        stb = models.SetTopBox.get_stb_from_user(bundle.request.user)
+        if stb is not None:
+            log.debug('STB[online]=%s', stb)
+            stb.online = True
+            stb.save()
+        if user.is_superuser:
+            return object_list
         return object_list.filter(user=user)
 
     def read_detail(self, object_list, bundle):
@@ -527,7 +541,11 @@ class APIKeyResource(NamespacedModelResource):
     class Meta:
         queryset = ApiKey.objects.all()
         authorization = APIKeyAuthorization()
-        authentication = ApiKeyAuthentication()
+        authentication = MultiAuthentication(
+            ApiKeyAuthentication(),
+            BasicAuthentication(realm='cianet-middleware'),
+            Authentication(),
+            )
         filtering = {
             "key": ALL
         }
@@ -561,10 +579,12 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
             Authentication(),
             )
 
+
 class SetTopBoxBehaviorFlagResource(NamespacedModelResource):
-    
+
     class Meta:
         queryset = models.SetTopBoxBehaviorFlag.objects.all()
+
 
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())

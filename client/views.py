@@ -78,6 +78,28 @@ def logoff(request):
     return HttpResponse('Bye', content_type='application/json')
 
 
+@csrf_exempt
+def offline(request):
+    log = logging.getLogger('client')
+    mac = request.GET.get('mac') or request.GET.get('MAC')
+    sn = request.GET.get('sn') or request.GET.get('SN')
+    api_key = request.GET.get('api_key') or request.GET.get('api_key')
+    log.debug(
+        'User=%s, sn=%s, mac=%s, api_key=%s',
+        request.user,
+        sn,
+        mac,
+        api_key
+    )
+    if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
+        sn = mac
+    stb = models.SetTopBox.get_stb_from_user(request.user)
+    if stb is not None:
+        stb.online = False
+        stb.save()
+    return HttpResponse('OK', content_type='application/json')
+
+
 def change_route(request, stbs=None, key=None, cmd=None):
     import requests
     server_key = settings.NBRIDGE_SERVER_KEY
