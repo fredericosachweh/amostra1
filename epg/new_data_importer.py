@@ -23,6 +23,7 @@ from models import *
 import hotshot
 import time
 import logging
+import md5
 
 PROFILE_LOG_BASE = "/tmp"
 
@@ -117,6 +118,7 @@ class XML_Epg_Importer(object):
     def __init__(self, xml, xmltv_source=None, epg_source=None,
             log=open('/dev/null', 'w')):
         log = logging.getLogger('epg_import')
+        
         self.xmltv_source = xmltv_source
         self.epg_source = epg_source
         self.xml = xml
@@ -124,13 +126,19 @@ class XML_Epg_Importer(object):
 
         self.tree = etree.parse(self.xml.name)
         # get number of elements
-        self.total_channel = self.tree.xpath("count(//channel)")
+        #self.total_channel = self.tree.xpath("count(//channel)")
         self.total_programme = self.tree.xpath("count(//programme)")
-        log.info('channel=%d , programme=%d', self.total_channel,
-            self.total_programme)
+        #log.info('channel=%d , programme=%d', self.total_channel,
+        #    self.total_programme)
+        log.info('programme=%d', self.total_programme)
+        #self.epg_source.numberofElements += \
+        #    self.total_channel +\
+        #    self.total_programme
         self.epg_source.numberofElements += \
-            self.total_channel +\
             self.total_programme
+        print "###############################"     
+        print 'Programs: %s' % self.total_programme
+        print "###############################"     
         # get meta data
         self.xmltv_source.generator_info_name = \
             self.tree.xpath('string(//tv[1]/@generator-info-name)')
@@ -244,28 +252,18 @@ class XML_Epg_Importer(object):
         log.info('Importing Channel elements')
         self.xml.seek(0)
         #for ev, elem in etree.iterparse(self.xml.name, tag='channel'):
-        for elem in self.tree.xpath('channel'):
-
+        for elem in self.tree.xpath('programme'):
             C, created = Channel.objects.get_or_create(
-                channelid=elem.get('id'))
+                channelid=elem.get('channel'))
 
-            for child in elem.iterchildren():
-                if child.tag == 'display-name':
-                    L, created = Lang.objects.get_or_create(
-                        value=child.get('lang'))
-                    D, created = Display_Name.objects.get_or_create(
-                        value=child.text or '', lang=L)
-                    C.display_names.add(D)
-                    self.serialize(D)
-                elif child.tag == 'icon':
-                    I, created = Icon.objects.get_or_create(
-                        src=child.get('src'))
-                    C.icons.add(I)
-                    self.serialize(I)
-                elif child.tag == 'url':
-                    U, created = Url.objects.get_or_create(value=child.text)
-                    C.urls.add(U)
-                    self.serialize(U)
+            L, created = Lang.objects.get_or_create(
+                value='pt')
+            D, created = Display_Name.objects.get_or_create(
+                value=elem.get('channel') or '', lang=L)
+           
+            C.display_names.add(D)
+            
+            self.serialize(D)
 
             #self.serialize(C)
 
@@ -287,17 +285,41 @@ class XML_Epg_Importer(object):
         import_ant = datetime.now()
         nant = 0
         imported = 0
-
+        title = ''
+        desc = ''
         self.xml.seek(0)
         try:
             #for event, elem in etree.iterparse(self.xml, tag='programme'):
-            for elem in self.tree.xpath('programme'):
+            for event, elem in etree.iterparse(self.xml, tag='programme'):
+            #for elem in self.tree.xpath('programme'):
+                if elem.get('channel') is not None:
+                    channel = elem.get('channel')
+                else:
+                    channel = None
                 if elem.find('date') is not None:
                     date = elem.find('date').text
                 else:
                     date = None
+                
+                if elem.find('title') is not None:
+                    title = elem.find('title').text
+                    a = elem.find('title').attrib
+                else:
+                    title = ''
+                
+                if elem.find('desc') is not None:
+                    desc = elem.find('desc').text
+                else:
+                    desc = ''
+                
+                programid = title + desc
 
-                programid = elem.get('program_id')
+                #print programid
+                m = md5.new()
+                m.update(programid.encode("utf8","ignore"))
+                programid = m.hexdigest()
+                #print programid
+                
                 #log.info('program_id=%s', programid)
                 P, c = Programme.objects.get_or_create(programid=programid)
                 P.date = date
@@ -367,15 +389,9 @@ class XML_Epg_Importer(object):
                             value=child.text)
                         P.country = obj
                     elif child.tag == 'rating':
-                        sys='default'
-                        val='default'
-                        if child.get('system') != None:
-                            sys = child.get('system')
-                        if child.find('value').text != None:
-                            val = child.find('value').text
                         obj, created = Rating.objects.get_or_create(
-                            system=sys,
-                            value=val)
+                            system=child.get('system'),
+                            value=child.find('value').text)
                         P.rating = obj
                     elif child.tag == 'star-rating':
                         obj, created = Star_Rating.objects.get_or_create(
@@ -470,9 +486,11 @@ class XML_Epg_Importer(object):
                 # from the root node to <Title>
                 while elem.getprevious() is not None:
                     del elem.getparent()[0]
-
+                
                 imported += 1
-                if imported % 100 == 0:
+                #print imported
+                #print self.total_programme
+                if imported % 1000 == 0:
                     nant = imported - nant
                     #db.transaction.autocommit()
                     db.transaction.commit()
@@ -523,7 +541,6 @@ class XML_Epg_Importer(object):
         #self.xmltv_source.save()
 
         #self.serialize(epg_source)
-
         for k, v in self.dump_data['file_handlers'].items():
             log.info('Writing %d %s objects' % (
                 len(self.dump_data['object_ids'][k]), k))
