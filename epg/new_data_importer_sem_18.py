@@ -288,6 +288,12 @@ class XML_Epg_Importer(object):
         title = ''
         desc = ''
         self.xml.seek(0)
+        pornlist = []
+        pornlist.append('SEXY HOT')
+        pornlist.append('PLAYBOY')
+        pornlist.append('VENUS')
+        pornlist.append('FORMAN')
+        pornlist.append('SEX PRIVÉ')
         try:
             #for event, elem in etree.iterparse(self.xml, tag='programme'):
             for event, elem in etree.iterparse(self.xml, tag='programme'):
@@ -302,6 +308,11 @@ class XML_Epg_Importer(object):
                     channel = elem.get('channel')
                 else:
                     channel = None
+		
+		remove = False
+                for i in pornlist:
+                    if channel == i:
+                        remove = True
                 
                 if elem.find('date') is not None:
                     date = elem.find('date').text
@@ -348,6 +359,7 @@ class XML_Epg_Importer(object):
                 G, created = Guide.objects.get_or_create(
                     start=start, stop=stop,
                     channel_id=channel_id, programme=P)
+
                 for child in elem.iterchildren():
                     if child.tag == 'desc':
                         if child.get('lang'):
@@ -414,7 +426,7 @@ class XML_Epg_Importer(object):
                             value=child.text)
                         P.country = obj
                     elif child.tag == 'rating':
-                        obj, created = Rating.objects.get_or_create(
+			obj, created = Rating.objects.get_or_create(
                             system=child.get('system'),
                             value=child.find('value').text)
                         P.rating = obj
