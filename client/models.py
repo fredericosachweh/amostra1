@@ -252,12 +252,12 @@ class SetTopBox(models.Model):
             thread.start_new_thread(reboot_stb, (s, self))
 
     def reload_channels(self, channel=False, message=None):
-        nbs = Nbridge.objects.filter(status=True)
-        if self.online is True:
+        if self.online is True and self.nbridge is not None:
             thread.start_new_thread(
                 reload_channels, (self.nbridge, self),
                 {'channel': True, 'message': message}
             )
+        #nbs = Nbridge.objects.filter(status=True)
         #for s in nbs:
         #    thread.start_new_thread(
         #        reload_channels, (s, self),
