@@ -357,6 +357,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
     if player.status and player.pid and channel == player.recorder.channel:
         pass
     else:
+        if player.server != recorder.server:
+            player.stop()
         player.recorder = recorder
         player.server = recorder.server
         player.stb_port = settings.CHANNEL_PLAY_PORT
