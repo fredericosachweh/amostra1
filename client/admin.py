@@ -49,13 +49,17 @@ class SetTopBoxChannelInline(admin.TabularInline):
 
 class SetTopBoxAdmin(ModelAdmin):
     search_fields = ('mac', 'serial_number', 'description', )
-    list_display = ('serial_number', 'mac', 'description', 'online', )
+    list_display = (
+        'serial_number', 'mac', 'description', 'online', 'ip', 'nbridge',
+    )
     actions = [reboot_stb]
     inlines = [SetTopBoxChannelInline, ]
 
     def get_readonly_fields(self, request, obj = None):
         if obj:
-            return ('mac', 'serial_number', ) + self.readonly_fields
+            return (
+                'mac', 'serial_number', 'online', 'nbridge', 'ip',
+            ) + self.readonly_fields
         return self.readonly_fields
 
 
