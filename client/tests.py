@@ -781,12 +781,20 @@ class TestRequests(TestCase):
         self.assertContains(response, 'api_key')
         key = json.loads(response.content).get('api_key', None)
         self.assertIsNotNone(key)
+        
         # Create new STBconfig
         url_config = reverse(
             'client:api_dispatch_list',
             kwargs={'resource_name': 'settopboxconfig', 'api_name': 'v1'}
         )
         self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
+        
+        # Get STBconfig
+        response = self.c.get(url_config)
+        self.assertEqual(response.status_code, 200)
+        jobj = simplejson.loads(response.content)
+        self.assertEqual(jobj['meta']['total_count'], 2)
+        
         # Create a config
         data = simplejson.dumps(
             {"key": "VOLUME_LEVEL", "value": "0.5", "value_type": "Number"}
@@ -800,7 +808,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 4)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         # login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
@@ -817,7 +825,8 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 4)
+        log.debug(jobj)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         # Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})

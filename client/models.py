@@ -165,6 +165,7 @@ def reload_channels(
         nbridge, settopbox, message=None, userchannel=True, channel=True
         ):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
+    # reloaduserdata
     url = 'http://%s/ws/eval' % (nbridge.server.host)
     command = ''
     if userchannel:
@@ -214,6 +215,9 @@ class SetTopBox(models.Model):
         _('Descrição opcional'), max_length=255,
         blank=True, null=True)
     online = models.BooleanField(_('On-line'), default=False)
+    ip = models.GenericIPAddressField(
+        _('Endereço IP'), protocol='IPv4', blank=True, null=True, default=None
+    )
     nbridge = models.ForeignKey(
         'nbridge.Nbridge', blank=True, null=True, default=None,
         db_constraint=False)
@@ -248,12 +252,29 @@ class SetTopBox(models.Model):
             thread.start_new_thread(reboot_stb, (s, self))
 
     def reload_channels(self, channel=False, message=None):
-        nbs = Nbridge.objects.filter(status=True)
-        for s in nbs:
+        if self.online is True and self.nbridge is not None:
             thread.start_new_thread(
-                reload_channels, (s, self),
+                reload_channels, (self.nbridge, self),
                 {'channel': True, 'message': message}
             )
+        #nbs = Nbridge.objects.filter(status=True)
+        #for s in nbs:
+        #    thread.start_new_thread(
+        #        reload_channels, (s, self),
+        #        {'channel': True, 'message': message}
+        #    )
+
+    @classmethod
+    def get_stb_from_user(self, user):
+        if user.username.find(settings.STB_USER_PREFIX) == 0:
+            serial = user.username.replace(settings.STB_USER_PREFIX, '')
+            try:
+                stb = SetTopBox.objects.get(serial_number=serial)
+                return stb
+            except:
+                return None
+        else:
+            return None
 
 
 class SetTopBoxParameter(models.Model):

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
 
 from django.db import models
 from django.db.models import signals
@@ -109,7 +112,7 @@ class Title(models.Model):
 
 
 class Description(models.Model):
-    value = models.CharField(max_length=512, blank=True, null=True)
+    value = models.TextField(blank=True, null=True)
     lang = models.ForeignKey(Lang, blank=True, null=True)
 
 
@@ -149,17 +152,17 @@ class Rating(models.Model):
         return '%s:%s' % (self.system, self.value)
 
     def save(self, *args, **kwargs):
-        if self.value == 'Programa livre para todas as idades':
+        if (self.value == 'Programa livre para todas as idades') or (int(self.value) < 10):
             self.int_value = 0
-        elif self.value == 'Programa impróprio para menores de 10 anos':
+        elif self.value == 'Programa impróprio para menores de 10 anos' or (int(self.value) == 10):
             self.int_value = 10
-        elif self.value == 'Programa impróprio para menores de 12 anos':
+        elif self.value == 'Programa impróprio para menores de 12 anos' or (int(self.value) == 11) or (int(self.value) == 12):
             self.int_value = 12
-        elif self.value == 'Programa impróprio para menores de 14 anos':
+        elif self.value == 'Programa impróprio para menores de 14 anos' or (int(self.value) == 13) or (int(self.value) == 14):
             self.int_value = 14
-        elif self.value == 'Programa impróprio para menores de 16 anos':
+        elif self.value == 'Programa impróprio para menores de 16 anos' or (int(self.value) == 15) or (int(self.value) == 16):
             self.int_value = 16
-        elif self.value == 'Programa impróprio para menores de 18 anos':
+        elif self.value == 'Programa impróprio para menores de 18 anos' or (int(self.value) >= 17):
             self.int_value = 18
         super(Rating, self).save(*args, **kwargs)
 
@@ -182,7 +185,7 @@ class Star_Rating(models.Model):
 
 
 class Programme(models.Model):
-    programid = models.PositiveIntegerField(unique=True, db_index=True)
+    programid = models.CharField(max_length=32,db_index=True)
     titles = models.ManyToManyField(Title, related_name='titles', blank=True,
         null=True)
     secondary_titles = models.ManyToManyField(Title,
@@ -233,8 +236,8 @@ class Programme(models.Model):
     def __unicode__(self):
         vlist = self.titles.values_list()
         if len(vlist) == 0:
-            return u""
-        return u"%s" % (self.titles.values_list()[0][1])
+            return ""
+        return "%s" % (self.titles.values_list()[0][1])
 
 
 class Guide(models.Model):
@@ -269,7 +272,7 @@ class Guide(models.Model):
 
 @receiver(post_save, sender=Guide)
 def Guide_post_save(sender, instance, created, **kwargs):
-    u"Before save lookup for previous and next guide for channel"
+    "Before save lookup for previous and next guide for channel"
     if created:
         log = logging.getLogger('debug')
         ## Remove conflicts

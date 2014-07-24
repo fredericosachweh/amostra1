@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
 from epg.models import XMLTV_Source, Epg_Source
-from epg.data_importer import Zip_to_XML, XML_Epg_Importer
+from epg.new_data_importer_sem_18 import Zip_to_XML, XML_Epg_Importer
 
 from datetime import datetime
 from dateutil.parser import parse
