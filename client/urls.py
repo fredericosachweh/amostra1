@@ -13,6 +13,7 @@ urlpatterns = patterns('',
     url(r'^auth/$', csrf_exempt(Auth.as_view()), name='client_auth'),
     url(r'^logoff/$', 'client.views.logoff', name='client_logoff'),
     url(r'^offline/$', 'client.views.offline', name='client_offline'),
+    url(r'^online/$', 'client.views.online', name='client_online'),
     url(r'^route/(?P<stbs>[^/]+)/(?P<key>\w+)/(?P<cmd>.+)$',
         'client.views.change_route', name='client_route'),
     )

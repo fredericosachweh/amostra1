@@ -25,7 +25,8 @@ class Auth(View):
         log = logging.getLogger('client')
         mac = request.POST.get('mac') or request.POST.get('MAC')
         sn = request.POST.get('sn') or request.POST.get('SN')
-        log.debug('auth:mac=%s, sn=%s', mac, sn)
+        ip = request.POST.get('ip') or request.POST.get('IP')
+        log.debug('auth:mac=%s, sn=%s, ip=%s', mac, sn, ip)
         if mac is None:
             return HttpResponse('Invalid request', status=401)
         valid = self.mac_re.match(mac)
@@ -61,6 +62,7 @@ class Auth(View):
             p.stop()
             p.delete()
         stb.online = True
+        stb.ip = ip
         stb.save()
         response = HttpResponse(
             '{"login": "OK", "User": "%s", "api_key": "%s"}' % (
@@ -76,6 +78,31 @@ def logoff(request):
     log.debug('logoff user:%s', request.user)
     logout(request)
     return HttpResponse('Bye', content_type='application/json')
+
+
+@csrf_exempt
+def online(request):
+    log = logging.getLogger('client')
+    mac = request.GET.get('mac') or request.GET.get('MAC')
+    sn = request.GET.get('sn') or request.GET.get('SN')
+    api_key = request.GET.get('api_key') or request.GET.get('api_key')
+    nbridge = request.GET.get('nbridge') or request.GET.get('nbridge')
+    log.debug(
+        'User=%s, sn=%s, mac=%s, api_key=%s, nbridge=%s',
+        request.user,
+        sn,
+        mac,
+        api_key,
+        nbridge
+    )
+    if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
+        sn = mac
+    stb = models.SetTopBox.get_stb_from_user(request.user)
+    if stb is not None:
+        stb.online = True
+        stb.nbridge_id = nbridge
+        stb.save()
+    return HttpResponse('OK', content_type='application/json')
 
 
 @csrf_exempt
@@ -96,6 +123,8 @@ def offline(request):
     stb = models.SetTopBox.get_stb_from_user(request.user)
     if stb is not None:
         stb.online = False
+        stb.ip = None
+        stb.nbridge_id = None
         stb.save()
     return HttpResponse('OK', content_type='application/json')
 
