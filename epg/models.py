@@ -8,7 +8,7 @@ sys.setdefaultencoding("utf-8")
 from django.db import models
 from django.db.models import signals
 from django.dispatch import receiver
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save
 from django.utils.translation import ugettext as _
 
 import os
