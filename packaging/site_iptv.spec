@@ -26,7 +26,7 @@ BuildRequires:  python-devel python-setuptools-devel
 BuildRequires:  systemd-units
 
 
-%if 0%{?fedora} >= 19
+%if 0%{?fedora} >= 19 || 0%{?rhel} >= 7
 Requires:       python-pillow
 %else
 Requires:       python-imaging
@@ -172,6 +172,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Fri Aug 01 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.15.0-1
+- Fix import epg. Fix search on tv.
 * Thu Jul 24 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.14.0-1
 - EPG importer, on/off-line nbridge-stb.
 * Mon Jun 02 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.13.0-1
