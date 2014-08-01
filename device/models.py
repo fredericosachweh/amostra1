@@ -38,7 +38,7 @@ class AbstractServer(models.Model):
     offline_mode = models.BooleanField(default=False)
     _is_offline = False
 
-    class Meta:
+    class Meta(object):
         abstract = True
         verbose_name = _('Servidor de Recursos')
         verbose_name_plural = _('Servidores de Recursos')
@@ -84,8 +84,8 @@ class AbstractServer(models.Model):
             self.msg = 'OK'
         except Exception as ex:
             log = logging.getLogger('device.remotecall')
-            log.error('%s(%s:%s %s):%s' % (self, self.host, self.ssh_port,
-                self.username, ex))
+            log.error('%s(%s:%s %s):%s', self, self.host, self.ssh_port,
+                self.username, ex)
             self.status = False
             self.disconect()
             self._is_offline = True
@@ -108,7 +108,7 @@ class AbstractServer(models.Model):
             self._is_offline = s is None
         except Exception as ex:
             self.msg = 'Can not connect:' + str(ex)
-            log.error('[%s]:%s' % (self, ex))
+            log.error('[%s]:%s', self, ex)
             self._is_offline = True
             self.save()
             return 'Can not connect'
@@ -139,7 +139,7 @@ class AbstractServer(models.Model):
             self.msg = ex
             self.status = False
             self._is_offline = True
-            log.error('[%s]:%s' % (self, ex))
+            log.error('[%s]:%s', self, ex)
             raise ex
         ret = s.execute_daemon(command, log_path)
         exit_code = ret.get('exit_code')
@@ -433,7 +433,7 @@ class NIC(models.Model):
     server = models.ForeignKey(Server)
     ipv4 = models.IPAddressField(_('Endereço ip v4 atual'))
 
-    class Meta:
+    class Meta(object):
         unique_together = ('name', 'server')
 
     def __unicode__(self):
@@ -444,7 +444,7 @@ class UniqueIP(models.Model):
     """
     Classe de endereço ip externo (na rede dos clientes)
     """
-    class Meta:
+    class Meta(object):
         ordering = ('ip', )
         verbose_name = _('Endereço IPv4 multicast')
         verbose_name_plural = _('Endereços IPv4 multicast')
@@ -667,7 +667,7 @@ def DeviceServer_pre_delete(sender, instance, **kwargs):
 
 
 class Antenna(models.Model):
-    class Meta:
+    class Meta(object):
         verbose_name = _('Antena parabólica')
         verbose_name_plural = _('Antenas parabólicas')
 
@@ -687,7 +687,7 @@ class Antenna(models.Model):
 
 
 class DemuxedService(DeviceServer):
-    class Meta:
+    class Meta(object):
         verbose_name = _('Entrada demultiplexada')
         verbose_name_plural = _('Entradas demultiplexadas')
 
@@ -755,7 +755,7 @@ class DemuxedService(DeviceServer):
 
 class InputModel(models.Model):
     "Each model of input type should inherit this"
-    class Meta:
+    class Meta(object):
         abstract = True
 
     class GotNoLockException(Exception):
@@ -930,7 +930,7 @@ class DigitalTunerHardware(models.Model):
     uniqueid = models.CharField(max_length=100, unique=True, null=True)
     adapter_nr = models.PositiveSmallIntegerField()
 
-    class Meta:
+    class Meta(object):
         unique_together = ('server', 'adapter_nr')
 
     def __unicode__(self):
@@ -1030,7 +1030,7 @@ class DigitalTunerHardware(models.Model):
 
 
 class DigitalTuner(InputModel, DeviceServer):
-    class Meta:
+    class Meta(object):
         abstract = True
 
     frequency = models.PositiveIntegerField(_('Frequência'), help_text='MHz')
@@ -1067,7 +1067,7 @@ class DigitalTuner(InputModel, DeviceServer):
 
 
 class DvbTuner(DigitalTuner):
-    class Meta:
+    class Meta(object):
         verbose_name = _('Sintonizador DVB-S/S2')
         verbose_name_plural = _('Sintonizadores DVB-S/S2')
 
@@ -1151,7 +1151,7 @@ class DvbTuner(DigitalTuner):
 
 class IsdbTuner(DigitalTuner):
     "http://pt.wikipedia.org/wiki/SBTVD"
-    class Meta:
+    class Meta(object):
         verbose_name = _('Sintonizador ISDB-Tb')
         verbose_name_plural = _('Sintonizadores ISDB-Tb')
 
@@ -1211,7 +1211,7 @@ class IsdbTuner(DigitalTuner):
 
 class IPInput(InputModel, DeviceServer):
     "Generic IP input class"
-    class Meta:
+    class Meta(object):
         abstract = True
 
     PROTOCOL_CHOICES = (
@@ -1242,7 +1242,7 @@ class IPInput(InputModel, DeviceServer):
 
 class UnicastInput(IPInput):
     "Unicast MPEG2TS IP input stream"
-    class Meta:
+    class Meta(object):
         verbose_name = _('Entrada IP unicast')
         verbose_name_plural = _('Entradas IP unicast')
 
@@ -1276,7 +1276,7 @@ class UnicastInput(IPInput):
 
 class MulticastInput(IPInput):
     "Multicast MPEG2TS IP input stream"
-    class Meta:
+    class Meta(object):
         verbose_name = _('Entrada IP multicast')
         verbose_name_plural = _('Entradas IP multicast')
 
@@ -1338,7 +1338,7 @@ class FileInput(DeviceServer):
     VLC streaming device.
     file -> vlc -> output -> ip
     """
-    class Meta:
+    class Meta(object):
         verbose_name = _('Arquivo de entrada')
         verbose_name_plural = _('Arquivos de entrada')
 
@@ -1392,7 +1392,7 @@ class FileInput(DeviceServer):
 
 class OutputModel(models.Model):
     "Each model of output type should inherit this"
-    class Meta:
+    class Meta(object):
         abstract = True
 
     content_type = models.ForeignKey(ContentType,
@@ -1412,7 +1412,7 @@ class OutputModel(models.Model):
 
 class IPOutput(OutputModel, DeviceServer):
     "Generic IP output class"
-    class Meta:
+    class Meta(object):
         abstract = True
 
     PROTOCOL_CHOICES = (
@@ -1447,7 +1447,7 @@ class IPOutput(OutputModel, DeviceServer):
 
 class MulticastOutput(IPOutput):
     u"Multicast MPEG2TS IP output stream"
-    class Meta:
+    class Meta(object):
         verbose_name = _('Saída IP multicast')
         verbose_name_plural = _('Saídas IP multicast')
         ordering = ('ip', )
@@ -1576,7 +1576,7 @@ class StreamRecorder(OutputModel, DeviceServer):
     stream_hd = models.BooleanField(_('Fluxo é HD'),
         help_text=_('Marcar se o fluxo do canal for HD'), default=False)
 
-    class Meta:
+    class Meta(object):
         verbose_name = _('Gravador de fluxo')
         verbose_name_plural = _('Gravadores de fluxo')
 
@@ -1746,7 +1746,7 @@ class StreamPlayer(OutputModel, DeviceServer):
     time_shift = models.PositiveIntegerField(_('Segundos'), default=0)
     stb = models.ForeignKey('client.SetTopBox', null=True, blank=True)
 
-    class Meta:
+    class Meta(object):
         verbose_name = _('Reprodutor de fluxo gravado')
         verbose_name_plural = _('Reprodutores de fluxo gravado')
 
@@ -1827,15 +1827,20 @@ class StreamPlayer(OutputModel, DeviceServer):
 
     def start(self, recursive=False, time_shift=0):
         # Start multicat
+        log = logging.getLogger('tvod')
         log_path = '%splayer_%d' % (settings.MULTICAT_LOGS_DIR, self.id)
         cmd = self._get_cmd(time_shift=time_shift)
         self.pid = self.server.execute_daemon(cmd, log_path=log_path)
+        if self.pid <= 0:
+            log.error('Não iniciou o player:%s', cmd)
+            return False
         self.status = True
         self.time_shift = time_shift
         storage = self.recorder.storage
         storage.n_players += 1
         storage.save()
         self.save()
+        return True
 
     def stop(self, *args, **kwargs):
         log = logging.getLogger('tvod')
@@ -1882,7 +1887,7 @@ class SoftTranscoder(DeviceServer):
         default=0, null=True, blank=True)  # --offset-value
     restart = False
 
-    class Meta:
+    class Meta(object):
         verbose_name = _('Transcodificador em Software')
         verbose_name_plural = _('Transcodificadores em Software')
 
