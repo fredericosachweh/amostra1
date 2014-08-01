@@ -15,7 +15,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Helber Maciel Guerra', 'helber@cianet.ind.br'),
     ('Emanoel Monster', 'emanoel@cianet.ind.br'),
-    ('Emilio Cleiton', 'emilio.silva@cianet.ind.br'),
+    ('Suporte Kingrus', 'suporte-kingrus@cianet.ind.br'),
 )
 
 MANAGERS = ADMINS
@@ -298,8 +298,6 @@ INSTALLED_APPS = (
     'south',
     # Nose tests
     'django_nose',
-    # Interface dos setup-box
-    #'box',
     # Aplicação de controle de stream
     'device',
     # EPG
@@ -331,15 +329,15 @@ LOGIN_REDIRECT_URL = '/%sadministracao/' % ROOT_URL
 STB_USER_PREFIX = 'STB_'
 
 # Auxiliar apps configuration
-MULTICAT_COMMAND = '/iptv/bin/multicat'
+MULTICAT_COMMAND = '/iptv/bin/multicat -N'
 MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 MULTICATCTL_COMMAND = '/iptv/bin/multicatctl'
 
 CHANNEL_RECORD_USE_PCRPID = False
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
-CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
-CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'
+CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat -N'
+CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat -N'
 CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
 CHANNEL_PLAY_PORT = 12000
 CHANNEL_RECORD_DISKCONTROL = '/iptv/bin/diskctrl'
@@ -446,4 +444,3 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
     }
 }
-
