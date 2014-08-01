@@ -338,7 +338,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         channel=channel,
         keep_time__gte=(int(seek / 3600))
         )
-    log.info('avaliable recorders: %s' % recorders)
+    log.info('avaliable recorders: %s', recorders)
     if recorders.count() == 0:
         log.info('Record Unavaliable')
         cache.delete(key)
@@ -355,7 +355,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             recorder=recorder,
             stb=stb
             )
-        log.debug('new player created to ip: %s' % ip)
+        log.debug('new player created to ip: %s', ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
     log.debug('Current channel=%s, New channel=%s', channel,
         player.recorder.channel)
@@ -377,7 +377,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             return HttpResponse(
                 '{"response":"%s", "port":%d}' % (resp, player.stb_port),
                 mimetype='application/javascript', status=200)
-            #player.play(time_shift=int(seek))
+            # player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
             resp = ''
