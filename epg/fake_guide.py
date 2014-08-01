@@ -65,8 +65,8 @@ def programmeXML(start, stop, channel, rate):
 def main(argv):
     time_zone = '-0300'
     current_date = datetime.now()
-    programme_interval = 1
-    guide_days = 60
+    programme_interval = 3
+    guide_days = 2
     guide_offset = (guide_days / 2) * 24
     initial_time = current_date - timedelta(hours=guide_offset)
     final_time = current_date + timedelta(hours=guide_offset)
@@ -110,7 +110,7 @@ def main(argv):
         initial_aux = initial_time
         while (initial_aux < final_time):
             start = initial_aux
-            stop = initial_aux + timedelta(hours=programme_interval)
+            stop = initial_aux + timedelta(minutes=programme_interval)
             initial_aux = stop
             tv.append(programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
                                    stop.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
