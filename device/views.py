@@ -154,7 +154,7 @@ def server_fileinput_scanfolder(request):
 @csrf_exempt
 def server_coldstart(request, pk):
     log = logging.getLogger('debug')
-    log.debug('Iniciando rotina de coldstart no server com pk=%s' % pk)
+    log.debug('Iniciando rotina de coldstart no server com pk=%s', pk)
     server = get_object_or_404(models.Server, id=pk)
     # Erase all
     models.DigitalTunerHardware.objects.filter(server=server).delete()
@@ -167,7 +167,7 @@ def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
     url = request.META.get('HTTP_REFERER')
     if url is None:
-        url = reverse('admin:device_%s_changelist' % klass._meta.module_name)
+        url = reverse('admin:device_%s_changelist' % (klass._meta.module_name))
     if action == 'start':
         device.start(recursive=True)
     elif action == 'stop':
@@ -234,7 +234,7 @@ def auto_fill_tuner_form(request, ttype):
 
 
 def run_play(player, seektime, cache, key):
-    player.play(time_shift=int(seektime))
+    ret = player.play(time_shift=int(seektime))
     cache.delete(key)
 
 
@@ -278,7 +278,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
     ip = request.META.get('REMOTE_ADDR')
     ## Find request on cache
     key = 'tvod_ip_%s' % ip
-    if cache.get(key) is None:
+    key_value = cache.get(key)
+    if key_value is None:
         log.info('cache new key="%s"', key)
         cache.set(key, 1)
     else:
@@ -286,8 +287,12 @@ def tvod(request, channel_number=None, command=None, seek=0):
         if command != 'stop':
             return HttpResponse(u'',
                 mimetype='application/javascript', status=409)
-    log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"' % (command, ip,
-        channel_number, seek))
+    if key_value == 1:
+        log.error('player is starting key:%s', key_value)
+        return HttpResponse(u'Anothe instance is starting',
+            mimetype='application/javascript', status=409)
+    log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"',command, ip,
+        channel_number, seek)
     ## User
     if request.user.is_anonymous():
         log.debug('User="%s" can\'t play', request.user)
@@ -333,7 +338,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         channel=channel,
         keep_time__gte=(int(seek / 3600))
         )
-    log.info('avaliable recorders: %s' % recorders)
+    log.info('avaliable recorders: %s', recorders)
     if recorders.count() == 0:
         log.info('Record Unavaliable')
         cache.delete(key)
@@ -350,7 +355,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             recorder=recorder,
             stb=stb
             )
-        log.debug('new player created to ip: %s' % ip)
+        log.debug('new player created to ip: %s', ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
     log.debug('Current channel=%s, New channel=%s', channel,
         player.recorder.channel)
@@ -372,7 +377,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             return HttpResponse(
                 '{"response":"%s", "port":%d}' % (resp, player.stb_port),
                 mimetype='application/javascript', status=200)
-            #player.play(time_shift=int(seek))
+            # player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
             resp = ''

@@ -67,7 +67,7 @@ class ChannelAdmin(admin.ModelAdmin):
         'buffer_size',)
     save_as = True
     list_per_page = 10
-    search_fields = ['name', 'channelid', 'source']
+    search_fields = ['name', 'channelid']
     formfield_overrides = {models.ImageField: {'widget': AdminImageWidget}}
     actions = [start_channels_action, stop_channels_action]
 
