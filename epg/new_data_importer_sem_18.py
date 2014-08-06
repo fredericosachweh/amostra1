@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-# from django.conf import settings
+from django.conf import settings
 from django import db
 from django.db import transaction
 from django.core import serializers
@@ -12,9 +12,8 @@ import zipfile
 import tempfile
 import shutil
 from lxml import etree
-# from datetime import tzinfo, datetime
-from datetime import datetime
-from datetime import timedelta
+#from datetime import tzinfo, datetime
+from datetime import timedelta, datetime
 from dateutil.parser import parse
 from pytz import timezone
 from types import NoneType
@@ -24,7 +23,7 @@ from models import *
 import hotshot
 import time
 import logging
-import md5
+import hashlib
 
 PROFILE_LOG_BASE = "/tmp"
 
@@ -54,7 +53,8 @@ def profile(log_file):
             base = base + "-" + time.strftime("%Y%m%dT%H%M%S", time.gmtime())
             final_log_file = base + ext
 
-            prof = hotshot.Profile(final_log_file)
+            aroa = hotshot.Poofile(final_log_file)
+
             try:
                 ret = prof.runcall(f, *args, **kwargs)
             finally:
@@ -66,7 +66,6 @@ def profile(log_file):
 
 
 class Zip_to_XML(object):
-
     '''
     This class is used to pre-treat an input file
     that can be a XML, a ZIP with one XML file inside or
@@ -74,6 +73,7 @@ class Zip_to_XML(object):
     '''
 
     def __init__(self, input_file_path):
+        
         import mimetypes
         file_type, encoding = mimetypes.guess_type(input_file_path)
         if file_type == 'application/zip':
@@ -87,6 +87,7 @@ class Zip_to_XML(object):
 
     # Return one or multiple XML file handles inside a Zip archive
     def _get_zip(self):
+        
         ret = []
         for f in self.input_file.namelist():
             filename = os.path.basename(f)
@@ -107,11 +108,11 @@ class Zip_to_XML(object):
 
     # Return a file handle of a XML file
     def _get_xml(self):
+        
         return (open(self.input_file),)
 
 
 class XML_Epg_Importer(object):
-
     '''
     Used to import XMLTV compliant files to the database.
     It receives a XML file handle as input.
@@ -119,21 +120,30 @@ class XML_Epg_Importer(object):
     '''
 
     def __init__(self, xml, xmltv_source=None, epg_source=None,
-                 log=open('/dev/null', 'w')):
+            log=open('/dev/null', 'w')):
+        
         log = logging.getLogger('epg_import')
-
+        
         self.xmltv_source = xmltv_source
         self.epg_source = epg_source
         self.xml = xml
         self.log = log
-        self.tree = etree.parse(self.xml)
+
+        self.tree = etree.parse(self.xml.name)
+        # get number of elements
+        #self.total_channel = self.tree.xpath("count(//channel)")
         self.total_programme = self.tree.xpath("count(//programme)")
+        #log.info('channel=%d , programme=%d', self.total_channel,
+        #    self.total_programme)
         log.info('programme=%d', self.total_programme)
+        #self.epg_source.numberofElements += \
+        #    self.total_channel +\
+        #    self.total_programme
         self.epg_source.numberofElements += \
             self.total_programme
-        print "###############################"
+        print "###############################"     
         print 'Programs: %s' % self.total_programme
-        print "###############################"
+        print "###############################"     
         # get meta data
         self.xmltv_source.generator_info_name = \
             self.tree.xpath('string(//tv[1]/@generator-info-name)')
@@ -143,6 +153,7 @@ class XML_Epg_Importer(object):
         self.xmltv_source.save()
 
     def serialize(self, obj):
+        
         # use recursion to iterate
         try:
             [self.serialize(o) for o in obj]
@@ -151,7 +162,7 @@ class XML_Epg_Importer(object):
 
         name = obj.__class__.__name__
         # check if there is an opened file descriptor for this kind of obj
-        if name not in self.dump_data['file_handlers']:
+        if not name in self.dump_data['file_handlers']:
             self.dump_data['file_handlers'][name] = open(
                 '%s/%s.json' % (self.tempdir, name), 'w')
             self.dump_data['object_ids'][name] = []
@@ -164,6 +175,7 @@ class XML_Epg_Importer(object):
         self.dump_data['file_handlers'][name].write(data)
 
     def already_serialized(self, obj):
+        
         name = obj.__class__.__name__
         try:
             self.dump_data['object_ids'][name].index(obj.id)
@@ -175,15 +187,19 @@ class XML_Epg_Importer(object):
             return 0
 
     def count_channel_elements(self):
+        
         return len(self.tree.findall('channel'))
 
     def count_programme_elements(self):
+        
         return len(self.tree.findall('programme'))
 
     def get_number_of_elements(self):
+        
         return self.count_channel_elements() + self.count_programme_elements()
 
     def get_period_of_the_file(self):
+        
         programmes = self.tree.findall('programme')
         starts = map(lambda p: parse(p.get('start')), programmes)
         stops = map(lambda p: parse(p.get('stop')), programmes)
@@ -195,29 +211,33 @@ class XML_Epg_Importer(object):
             s_stop.astimezone(timezone('UTC')).replace(tzinfo=utc)
 
     def get_xml_info(self):
+        
         tv = self.tree.getroot()
         return {
-            'source_info_url': tv.get('source-info-url'),
-            'source_info_name': tv.get('source-info-name'),
-            'source_data_url': tv.get('source-data-url'),
-            'generator_info_name': tv.get('generator-info-name'),
+            'source_info_url': tv.get('source-info-url'), \
+            'source_info_name': tv.get('source-info-name'), \
+            'source_data_url': tv.get('source-data-url'), \
+            'generator_info_name': tv.get('generator-info-name'), \
             'generator_info_url': tv.get('generator-info-url')
         }
 
-    # @transaction.commit_on_success
+    #@transaction.commit_on_success
     def _increment_importedElements(self):
+        
         if isinstance(self.epg_source, Epg_Source):
             self.epg_source.importedElements += 1
             self.epg_source.save()
 
-    # @transaction.commit_on_success
+    #@transaction.commit_on_success
     def _decrement_importedElements(self):
+        
         if isinstance(self.epg_source, Epg_Source) \
-           and self.epg_source.importedElements > 0:
+            and self.epg_source.importedElements > 0:
             self.epg_source.importedElements -= 1
             self.epg_source.save()
 
     def _get_dict_for_langs(self):
+        
         # Search for lang attributes in the xml
         lang_set = set()
         for l in self.tree.findall(".//*[@lang]"):
@@ -229,6 +249,7 @@ class XML_Epg_Importer(object):
         return langs
 
     def grab_info(self):
+        
         log = logging.getLogger('epg_import')
         log.info('Grabbing meta information')
 
@@ -241,12 +262,13 @@ class XML_Epg_Importer(object):
 
         self.xmltv_source.save()
 
-    # @transaction.commit_on_success
+    #@transaction.commit_on_success
     def import_channel_elements(self):
+        
         log = logging.getLogger('epg_import')
         log.info('Importing Channel elements')
-        # self.xml.seek(0)
-        # for ev, elem in etree.iterparse(self.xml.name, tag='channel'):
+        self.xml.seek(0)
+        #for ev, elem in etree.iterparse(self.xml.name, tag='channel'):
         for elem in self.tree.xpath('programme'):
             C, created = Channel.objects.get_or_create(
                 channelid=elem.get('channel'))
@@ -255,21 +277,23 @@ class XML_Epg_Importer(object):
                 value='pt')
             D, created = Display_Name.objects.get_or_create(
                 value=elem.get('channel') or '', lang=L)
-
+           
             C.display_names.add(D)
-
+            
             self.serialize(D)
 
-            # self.serialize(C)
+            #self.serialize(C)
 
             elem.clear()
             # Also eliminate now-empty references from the root node to <Title>
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
 
+
     # @profile("programme.prof")
     @transaction.commit_manually
     def import_programme_elements(self, limit=0):
+        
         log = logging.getLogger('epg_import')
         log.debug('Importing Programme elements:%s', self.xml)
         # Get channels from db
@@ -291,7 +315,7 @@ class XML_Epg_Importer(object):
         try:
             # for event, elem in etree.iterparse(self.xml, tag='programme'):
             for event, elem in etree.iterparse(self.xml, tag='programme'):
-                # import pdb; pdb.set_trace()
+                # 
                 # remove = False
                 # for child in elem.iterchildren():
                 #    if child.tag == 'rating':
@@ -331,7 +355,7 @@ class XML_Epg_Importer(object):
 
                 programid = title + desc
 
-                m = md5.new()
+                m = hashlib.md5()
                 m.update(programid.encode("utf8", "ignore"))
                 programid = m.hexdigest()
 
@@ -350,12 +374,12 @@ class XML_Epg_Importer(object):
                     print stop
                     print '################'
                     fucking_remove = True
-                    
+
                 if not fucking_remove:
                     P, c = Programme.objects.get_or_create(programid=programid)
                     P.date = date
                     P.save()
-                
+
                     # Insert guide
                     channel_id = channels[elem.get('channel')]
                     G, created = Guide.objects.get_or_create(
@@ -548,9 +572,14 @@ class XML_Epg_Importer(object):
         db.transaction.commit()
         db.reset_queries()
 
-    # @transaction.commit_on_success
+
+    #@transaction.commit_on_success
     def import_to_db(self):
+        
         log = logging.getLogger('epg_import')
+        zip = zipfile.ZipFile(
+            '%s/%dfull.zip' % (os.path.join(settings.MEDIA_ROOT, 'epg'),
+                self.xmltv_source.pk), "w", zipfile.ZIP_DEFLATED)
 
         # create temp dir
         self.tempdir = tempfile.mkdtemp()
@@ -558,25 +587,25 @@ class XML_Epg_Importer(object):
         # init dict with file handlers and
         self.dump_data = {'file_handlers': {}, 'object_ids': {}}
 
-        # self.grab_info()
+        #self.grab_info()
 
-        # epg_source = self.xmltv_source.epg_source_ptr
+        #epg_source = self.xmltv_source.epg_source_ptr
 
         # Import <channel> elements
         self.import_channel_elements()
         # Import <programme> elements
         self.import_programme_elements(limit=0)
         # count elements
-        # epg_source.numberofElements = \
+        #epg_source.numberofElements = \
         #    Programme.objects.filter(source=epg_source).count() + \
         #    Channel.objects.filter(source=epg_source).count()
         # Update importedElements
-        # epg_source.importedElements = self.xmltv_source.numberofElements
+        #epg_source.importedElements = self.xmltv_source.numberofElements
         # save changes
-        # epg_source.save()
-        # self.xmltv_source.save()
+        #epg_source.save()
+        #self.xmltv_source.save()
 
-        # self.serialize(epg_source)
+        #self.serialize(epg_source)
         for k, v in self.dump_data['file_handlers'].items():
             log.info('Writing %d %s objects' % (
                 len(self.dump_data['object_ids'][k]), k))
@@ -593,26 +622,29 @@ class XML_Epg_Importer(object):
             file.write(output)
             file.flush()
 
+            zip.write(file.name, os.path.basename(file.name))
             file.close()
+        zip.close()
         # remove temp dir
         shutil.rmtree(self.tempdir)
-        # Rebuild linked list
-        # sql_linked_list = "update epg_guide g set \
-# previous_id = (\
-# select o.id from epg_guide o where o.start < g.start AND \
-# o.channel_id = g.channel_id order by o.start desc limit 1\
-# ),\
-# next_id = (\
-# select o.id from epg_guide o where o.start > g.start AND \
-# o.channel_id = g.channel_id order by o.start asc limit 1\
-# );\
-# "
-        # from django.db import connection
-        # cursor = connection.cursor()
-        # cursor.execute(sql_linked_list)
+        ## Rebuild linked list
+        sql_linked_list = "update epg_guide g set \
+previous_id = (\
+select o.id from epg_guide o where o.start < g.start AND \
+o.channel_id = g.channel_id order by o.start desc limit 1\
+),\
+next_id = (\
+select o.id from epg_guide o where o.start > g.start AND \
+o.channel_id = g.channel_id order by o.start asc limit 1\
+);\
+"
+        #from django.db import connection
+        #cursor = connection.cursor()
+        #cursor.execute(sql_linked_list)
 
 
 def get_info_from_epg_source(epg_source):
+    
 
     # Update Epg_Source fields
     numberofElements = 0
@@ -621,7 +653,7 @@ def get_info_from_epg_source(epg_source):
         importer = XML_Epg_Importer(f, epg_source_instance=epg_source)
         numberofElements += importer.get_number_of_elements()
         # Retrive maximum stop time and minimum start time
-        if (epg_source.minor_start is not None) and (epg_source.major_stop is not None):
+        if (epg_source.minor_start != None) and (epg_source.major_stop != None):
             minor_start, major_stop = importer.get_period_of_the_file()
             if (epg_source.minor_start > minor_start):
                 epg_source.minor_start = minor_start
@@ -645,11 +677,12 @@ def get_info_from_epg_source(epg_source):
 
 
 def diff_epg_dumps(input1, input2):
+    
     "diff 2 zip files containing json object dumps"
     # create tempdir and output zip file
     tempdir = tempfile.mkdtemp()
     zip = zipfile.ZipFile('%sdiff.zip' % input2[:-8],
-                          "w", zipfile.ZIP_DEFLATED)
+        "w", zipfile.ZIP_DEFLATED)
     # open input zip files
     z1 = zipfile.ZipFile(input1, 'r')
     z2 = zipfile.ZipFile(input2, 'r')
