@@ -166,7 +166,7 @@ class Rating(models.Model):
             elif self.value == 'Programa impróprio para menores de 18 anos' or (int(self.value) >= 17):
                 self.int_value = 18
         else:
-            self.int_value = 0
+            self.int_value = 18
         super(Rating, self).save(*args, **kwargs)
 
 
