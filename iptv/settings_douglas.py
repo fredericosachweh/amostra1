@@ -53,9 +53,9 @@ TASTYPIE_FULL_DEBUG = True
 TASTYPIE_ABSTRACT_APIKEY = False
 
 EPG_IMPORT_CREDENTIALS = {
-    'site': '83.222.124.34',
-    'username': '91037581920@revistaeletronica.com.br',
-    'password': '91037581920',
+    'site': 'guide.aron.tv.br',
+    'username': 'epg',
+    'password': 'bhhD.ahg3f',
 }
 
 IPTV_LOG_DIR = '%s/log' % PROJECT_ROOT_PATH
