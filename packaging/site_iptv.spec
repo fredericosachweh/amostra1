@@ -172,6 +172,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Mon Aug 11 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.16.0-1
+- Remove some dependencies, add some epg import fix
 * Fri Aug 01 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.15.0-1
 - Fix import epg. Fix search on tv.
 * Thu Jul 24 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.14.0-1
