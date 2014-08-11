@@ -25,6 +25,12 @@ import time
 import logging
 import hashlib
 
+import xml.etree.ElementTree as ET
+from lxml import etree
+from datetime import timedelta
+from dateutil.parser import parse
+from lxml.etree import XMLSyntaxError
+
 PROFILE_LOG_BASE = "/tmp"
 
 
@@ -65,6 +71,129 @@ def profile(log_file):
     return _outer
 
 
+class xmlVerification:
+    """ this class is used to verify xml file """
+
+    linkxml = None
+
+    def xml_validation(self, filename):
+        try:
+            with open(filename) as f:
+                doc = etree.parse(f)
+            log.info('This document is valid to verification')
+        except XMLSyntaxError as e:
+            log.error('This documment have some problems:')
+            log.error(e)
+            exit(1)
+
+    def insert_unavailable(self, channel, start, stop, rating):
+        self.linkxml.write(u'<programme start="%s" stop="%s" channel="%s">\n'.encode('ascii', 'xmlcharrefreplace') % (start, stop, channel))
+        self.linkxml.flush()
+        self.linkxml.write(u'<title lang="pt">Programação Indisponível</title>\n'.encode('ascii', 'xmlcharrefreplace'))
+        self.linkxml.flush()
+        self.linkxml.write(u'<category lang="pt">Categoria Indisponível</category>\n'.encode('ascii', 'xmlcharrefreplace'))
+        self.linkxml.flush()
+        self.linkxml.write(u'<country>País Indisponível</country>\n'.encode('ascii', 'xmlcharrefreplace'))
+        self.linkxml.flush()
+        self.linkxml.write("<video>\n")
+        self.linkxml.flush()
+        self.linkxml.write("<colour>yes</colour>\n")
+        self.linkxml.flush()
+        self.linkxml.write("</video>\n")
+        self.linkxml.flush()
+        self.linkxml.write("<rating system=\"Advisory\">\n")
+        self.linkxml.flush()
+        self.linkxml.write("<value>%s</value>\n" % rating)
+        self.linkxml.flush()
+        self.linkxml.write("</rating>\n")
+        self.linkxml.flush()
+        self.linkxml.write("</programme>\n")
+        self.linkxml.flush()
+
+    def xml_verification(self, filename):
+        xml = filename
+        current_channel = None
+
+        # create XML - TV
+        self.linkxml = file(os.path.join('/tmp/xml_verified.xml'), "w+")
+        #self.linkxml = open('/tmp/xml_verified.xml', 'w')
+
+        head = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"
+        tv_info = "<tv generator-info-name=\"WWW.EPG.COM.BR\" generator-info-url=\"http://epg.com.br\">\n"
+        self.linkxml.write(head)
+        self.linkxml.flush()
+        self.linkxml.write(tv_info)
+        self.linkxml.flush()
+        past_elem = None
+
+        for event, elem in etree.iterparse(xml, tag='programme'):
+            for child in elem.iterchildren():
+                if child.tag == 'rating':
+                    rating = child.find('value').text
+                    if not rating.isdigit():
+                        child.find('value').text = '18'
+
+            if elem.get('channel') is not None:
+                channel = elem.get('channel')
+            else:
+                channel = None
+
+            start = parse(elem.get('start'))
+            stop = parse(elem.get('stop'))
+
+            if (current_channel is None) or (current_channel != channel):
+                current_channel = channel
+                aux_stop = parse(elem.get('stop'))
+                aux_start = parse(elem.get('start'))
+                past_elem = elem
+            else:
+                if start > stop:
+                    log.info('programa com problema: start > stop')
+                elif aux_start > start:
+                    log.info('programa com problema: start do atual < start do anterior')
+                elif start > aux_stop:
+                    log.info('intervalo vazio')
+                    if (start - aux_stop) > timedelta(minutes=5):
+                        log.info('intervalo maior que 5 min')
+                        self.linkxml.write(ET.tostring(past_elem))
+                        insert = True
+                        while insert:
+                            if (start - aux_stop) <= timedelta(minutes=60):
+                                self.insert_unavailable(channel, aux_stop, start, rating)
+                                insert = False
+                            else:
+                                self.insert_unavailable(channel, aux_stop, aux_stop + timedelta(minutes=60), rating)
+                                aux_stop += timedelta(minutes=60)
+
+                        aux_stop = parse(elem.get('stop'))
+                        aux_start = parse(elem.get('start'))
+                        past_elem = elem
+                    else:
+                        log.info('intervalo menor que 5 min')
+                        past_elem.set('stop', elem.get('start'))
+                        aux_stop = parse(elem.get('stop'))
+                        aux_start = parse(elem.get('start'))
+                        self.linkxml.write(ET.tostring(past_elem))
+                        past_elem = elem
+                elif start < aux_stop:
+                    log.info('intercessão')
+                    past_elem.set('stop', elem.get('start'))
+                    aux_stop = parse(elem.get('stop'))
+                    aux_start = parse(elem.get('start'))
+                    self.linkxml.write(ET.tostring(past_elem))
+                    past_elem = elem
+                elif start == aux_stop:
+                    aux_stop = parse(elem.get('stop'))
+                    aux_start = parse(elem.get('start'))
+                    self.linkxml.write(ET.tostring(past_elem))
+                    past_elem = elem
+
+        self.linkxml.write(ET.tostring(past_elem))
+        tv_end = "</tv>\n"
+        self.linkxml.write(tv_end)
+        self.linkxml.flush()
+        return self.linkxml
+
 class Zip_to_XML(object):
     '''
     This class is used to pre-treat an input file
@@ -90,25 +219,32 @@ class Zip_to_XML(object):
         
         ret = []
         for f in self.input_file.namelist():
+
             filename = os.path.basename(f)
 
             # skip directories
             if not filename:
                 continue
-
             # copy file (taken from zipfile's extract)
             source = self.input_file.open(f)
             target = file(os.path.join('/tmp', filename), "w+")
             shutil.copyfileobj(source, target)
             source.close()
-            target.seek(0)
-
-            ret.append(target)
+            target.close()
+            
+            log.info('/tmp/'+filename)
+            verif = xmlVerification()
+            verif.xml_validation('/tmp/'+filename)
+            verified = verif.xml_verification('/tmp/'+filename)
+            #verified = file(os.path.join('/tmp/xml_verified.xml'), "w+")
+            #verified.seek(0)
+            
+            ret.append(verified)
         return ret
 
     # Return a file handle of a XML file
     def _get_xml(self):
-        
+      
         return (open(self.input_file),)
 
 
@@ -128,7 +264,6 @@ class XML_Epg_Importer(object):
         self.epg_source = epg_source
         self.xml = xml
         self.log = log
-
         self.tree = etree.parse(self.xml.name)
         # get number of elements
         #self.total_channel = self.tree.xpath("count(//channel)")
@@ -141,9 +276,6 @@ class XML_Epg_Importer(object):
         #    self.total_programme
         self.epg_source.numberofElements += \
             self.total_programme
-        print "###############################"     
-        print 'Programs: %s' % self.total_programme
-        print "###############################"     
         # get meta data
         self.xmltv_source.generator_info_name = \
             self.tree.xpath('string(//tv[1]/@generator-info-name)')
@@ -264,7 +396,6 @@ class XML_Epg_Importer(object):
 
     #@transaction.commit_on_success
     def import_channel_elements(self):
-        
         log = logging.getLogger('epg_import')
         log.info('Importing Channel elements')
         self.xml.seek(0)
@@ -293,7 +424,6 @@ class XML_Epg_Importer(object):
     # @profile("programme.prof")
     @transaction.commit_manually
     def import_programme_elements(self, limit=0):
-        
         log = logging.getLogger('epg_import')
         log.debug('Importing Programme elements:%s', self.xml)
         # Get channels from db
@@ -367,12 +497,12 @@ class XML_Epg_Importer(object):
 
                 fucking_remove = False
                 if stop < start:
-                    print '################'
-                    print channel
-                    print title
-                    print start
-                    print stop
-                    print '################'
+                    log.info('################')
+                    log.info(channel)
+                    log.info(title)
+                    log.info(start)
+                    log.info(stop)
+                    log.info('################')
                     fucking_remove = True
 
                 if not fucking_remove:
@@ -551,8 +681,6 @@ class XML_Epg_Importer(object):
                         del elem.getparent()[0]
 
                     imported += 1
-                    # print imported
-                    # print self.total_programme
                     if imported % 1000 == 0:
                         nant = imported - nant
                         # db.transaction.autocommit()
@@ -649,6 +777,7 @@ def get_info_from_epg_source(epg_source):
     # Update Epg_Source fields
     numberofElements = 0
     file_list = Zip_to_XML(epg_source.filefield.path)
+    
     for f in file_list.get_all_files():
         importer = XML_Epg_Importer(f, epg_source_instance=epg_source)
         numberofElements += importer.get_number_of_elements()
