@@ -63,8 +63,8 @@ Requires:       nginxcianet >= 1.4.3
 Requires:       python-requests
 
 ## Por hora para a versão de demo vai instalar
-Requires:       multicat >= 2.0.1
-Requires:       dvblast >= 2.2.1
+# Requires:       multicat >= 2.0.1
+# Requires:       dvblast >= 2.2.1
 
 %description
 Sistema middleware de IPTV
