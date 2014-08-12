@@ -150,6 +150,8 @@ class xmlVerification:
                 if start > stop:
                     log.info('programa com problema: start > stop')
                 elif aux_start > start:
+                    print aux_start
+                    print start
                     log.info('programa com problema: start do atual < start do anterior')
                 elif start > aux_stop:
                     log.info('intervalo vazio')
