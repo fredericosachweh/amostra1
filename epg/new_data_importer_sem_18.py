@@ -77,14 +77,50 @@ class xmlVerification:
     linkxml = None
 
     def xml_validation(self, filename):
-        try:
-            with open(filename) as f:
-                doc = etree.parse(f)
-            log.info('This document is valid to verification')
-        except XMLSyntaxError as e:
-            log.error('This documment have some problems:')
-            log.error(e)
-            exit(1)
+        validated = False        
+        while not validated:
+            try:
+                with open(filename) as f:
+                    doc = etree.parse(f)
+                log.info('This document is valid to verification')
+                validated = True
+            except XMLSyntaxError as e:
+                log.info('This documment have some problems:')
+                log.info(e)
+                m = re.search("line (\d+)", str(e))
+                remove_line = int(m.group(1))
+                f = open(filename,"r")
+                lines = f.readlines()
+                f.close()
+                f = open(filename,"w")
+                i = 1
+                is_trash = False
+                aux = ''
+                for line in lines:
+                    if i <= 2:
+                        f.write(line)
+                    elif not is_trash:
+                        if i != remove_line:
+                            aux += line
+                            result = re.match("</programme>", line)
+                            if result is not None:
+                                if result.group(0) == "</programme>":
+                                    f.write(aux)
+                                    aux = ''
+                        else:
+                            is_trash = True
+                    else:
+                        result = re.match("</programme>", line)
+                        if result is not None:
+                            if result.group(0) == "</programme>":
+                                is_trash = False
+
+                    result = re.match("</tv>", line)
+                    if result is not None:
+                        if result.group(0) == "</tv>":
+                            f.write(line)
+                    i += 1
+                f.close()
 
     def insert_unavailable(self, channel, start, stop, rating):
         self.linkxml.write(u'<programme start="%s" stop="%s" channel="%s">\n'.encode('ascii', 'xmlcharrefreplace') % (start, stop, channel))
@@ -143,50 +179,48 @@ class xmlVerification:
 
             if (current_channel is None) or (current_channel != channel):
                 current_channel = channel
-                aux_stop = parse(elem.get('stop'))
-                aux_start = parse(elem.get('start'))
+                past_stop = parse(elem.get('stop'))
+                past_start = parse(elem.get('start'))
                 past_elem = elem
             else:
                 if start > stop:
                     log.info('programa com problema: start > stop')
-                elif aux_start > start:
-                    print aux_start
-                    print start
+                elif past_start > start:
                     log.info('programa com problema: start do atual < start do anterior')
-                elif start > aux_stop:
+                elif start > past_stop:
                     log.info('intervalo vazio')
-                    if (start - aux_stop) > timedelta(minutes=5):
+                    if (start - past_stop) > timedelta(minutes=5):
                         log.info('intervalo maior que 5 min')
                         self.linkxml.write(ET.tostring(past_elem))
                         insert = True
                         while insert:
-                            if (start - aux_stop) <= timedelta(minutes=60):
-                                self.insert_unavailable(channel, aux_stop, start, rating)
+                            if (start - past_stop) <= timedelta(minutes=60):
+                                self.insert_unavailable(channel, past_stop, start, rating)
                                 insert = False
                             else:
-                                self.insert_unavailable(channel, aux_stop, aux_stop + timedelta(minutes=60), rating)
-                                aux_stop += timedelta(minutes=60)
+                                self.insert_unavailable(channel, past_stop, past_stop + timedelta(minutes=60), rating)
+                                past_stop += timedelta(minutes=60)
 
-                        aux_stop = parse(elem.get('stop'))
-                        aux_start = parse(elem.get('start'))
+                        past_stop = parse(elem.get('stop'))
+                        past_start = parse(elem.get('start'))
                         past_elem = elem
                     else:
                         log.info('intervalo menor que 5 min')
                         past_elem.set('stop', elem.get('start'))
-                        aux_stop = parse(elem.get('stop'))
-                        aux_start = parse(elem.get('start'))
+                        past_stop = parse(elem.get('stop'))
+                        past_start = parse(elem.get('start'))
                         self.linkxml.write(ET.tostring(past_elem))
                         past_elem = elem
-                elif start < aux_stop:
+                elif start < past_stop:
                     log.info('intercessão')
                     past_elem.set('stop', elem.get('start'))
-                    aux_stop = parse(elem.get('stop'))
-                    aux_start = parse(elem.get('start'))
+                    past_stop = parse(elem.get('stop'))
+                    past_start = parse(elem.get('start'))
                     self.linkxml.write(ET.tostring(past_elem))
                     past_elem = elem
-                elif start == aux_stop:
-                    aux_stop = parse(elem.get('stop'))
-                    aux_start = parse(elem.get('start'))
+                elif start == past_stop:
+                    past_stop = parse(elem.get('stop'))
+                    past_start = parse(elem.get('start'))
                     self.linkxml.write(ET.tostring(past_elem))
                     past_elem = elem
 
