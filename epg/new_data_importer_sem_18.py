@@ -104,14 +104,14 @@ class xmlVerification:
                     except:
                         log.info('programa com problema: stop inválido')
                         remove = True
-                m = re.search("<date>(\d*)", str(line))
+                m = re.search("<date>(\S*)<", str(line))
                 if m is not None:
                     try:
                         date = int(m.group(1))
                     except:
                         log.info('programa com problema: date inválido')
                         remove = True
-                m = re.search("<value>(\d*)", str(line))
+                m = re.search("<value>(\S*)<", str(line))
                 if m is not None:
                     try:
                         rating = int(m.group(1))
