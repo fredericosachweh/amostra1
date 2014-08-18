@@ -76,8 +76,58 @@ class xmlVerification:
 
     linkxml = None
 
+    def xml_value_validation(self, filename):
+        f = open(filename,"r")
+        lines = f.readlines()
+        f.close()
+        f = open(filename,"w")
+        i = 1
+        aux = ''
+        for line in lines:
+            remove = False
+            if i == 1:
+                f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>")
+            elif i == 2:
+                f.write("<tv generator-info-name=\"WWW.CIANET.IND.BR\" generator-info-url=\"http://www.cianet.ind.br\">")
+            else:
+                m = re.search("start=\"(\S* \S*)\"", str(line))
+                if m is not None:
+                    try:
+                        start = parse(str(m.group(1)))
+                    except:
+                        log.info('programa com problema: start inválido')
+                        remove = True
+                m = re.search("stop=\"(\S* \S*)\"", str(line))
+                if m is not None:
+                    try:
+                        stop = parse(str(m.group(1)))
+                    except:
+                        log.info('programa com problema: stop inválido')
+                        remove = True
+                m = re.search("<date>(\d*)", str(line))
+                if m is not None:
+                    try:
+                        date = int(m.group(1))
+                    except:
+                        log.info('programa com problema: date inválido')
+                        remove = True
+                m = re.search("<value>(\d*)", str(line))
+                if m is not None:
+                    try:
+                        rating = int(m.group(1))
+                    except:
+                        f.write("<value>0</value>")
+                        log.info('programa com problema: rating inválido')
+                        remove = True
+                if not remove:
+                    f.write(line)
+            i += 1
+        f.close()
+        log.info('This document has value validated')
+
+
     def xml_validation(self, filename):
-        validated = False        
+        validated = False
         while not validated:
             try:
                 with open(filename) as f:
@@ -87,7 +137,9 @@ class xmlVerification:
             except XMLSyntaxError as e:
                 log.info('This documment have some problems:')
                 log.info(e)
-                m = re.search("line (\d+)", str(e))
+                m = re.search("line (\d+),", str(e))
+                if m is None:
+                    m = re.search("line (\d+)", str(e))
                 remove_line = int(m.group(1))
                 f = open(filename,"r")
                 lines = f.readlines()
@@ -110,11 +162,11 @@ class xmlVerification:
                         else:
                             is_trash = True
                     else:
-                        result = re.match("</programme>", line)
+                        result = re.search("<programme", line)
                         if result is not None:
-                            if result.group(0) == "</programme>":
+                            if result.group(0) == "<programme":
+                                aux += line
                                 is_trash = False
-
                     result = re.match("</tv>", line)
                     if result is not None:
                         if result.group(0) == "</tv>":
@@ -228,6 +280,7 @@ class xmlVerification:
         tv_end = "</tv>\n"
         self.linkxml.write(tv_end)
         self.linkxml.flush()
+        log.info('This document is valid to import')
         return self.linkxml
 
 class Zip_to_XML(object):
@@ -270,6 +323,7 @@ class Zip_to_XML(object):
             
             log.info('/tmp/'+filename)
             verif = xmlVerification()
+            verif.xml_value_validation('/tmp/'+filename)
             verif.xml_validation('/tmp/'+filename)
             verified = verif.xml_verification('/tmp/'+filename)
             #verified = file(os.path.join('/tmp/xml_verified.xml'), "w+")
@@ -877,3 +931,4 @@ def diff_epg_dumps(input1, input2):
     # cleanups
     zip.close()
     shutil.rmtree(tempdir)
+
