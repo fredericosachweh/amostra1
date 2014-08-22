@@ -427,9 +427,9 @@ nginx-mw
 """
 
 EPG_IMPORT_CREDENTIALS = {
-    'site': 'guide.aron.tv.br',
-    'username': '91037581920@revistaeletronica.com.br',
-    'password': '91037581920',
+        'site': 'guide.aron.tv.br',
+        'username': 'epg',
+        'password': 'bhhD.ahg3f',
 }
 
 ALLOWED_HOSTS = [
