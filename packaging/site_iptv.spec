@@ -54,7 +54,7 @@ Requires:       pydot
 Requires:       net-snmp-python
 Requires:       python-mimeparse
 # SOAP client to CAS (Verimatrix)
-Requires:       python-suds
+Requires:       python-suds-jurko
 # Monitoramento
 Requires:       pynag-cianet >= 0.1.1
 
@@ -172,6 +172,9 @@ echo -e "\033[0m"
 
 
 %changelog
+* Fri Aug 22 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.16.1-1
+- Replace python-suds to python-suds-jurko.
+- Merge dev epg to fix importation.
 * Mon Aug 11 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.16.0-1
 - Remove some dependencies, add some epg import fix
 * Fri Aug 01 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.15.0-1
