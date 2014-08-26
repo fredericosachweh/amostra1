@@ -61,6 +61,10 @@ class SetTopBoxResource(NamespacedModelResource):
         authorization = MyAuthorization()
         validation = Validation()
         always_return_data = False
+        filtering = {
+            'mac': ALL,
+            'serial_number': ALL
+        }
         authentication = MultiAuthentication(
             BasicAuthentication(realm='cianet-middleware'),
             Authentication(),
