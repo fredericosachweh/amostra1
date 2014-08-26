@@ -19,7 +19,10 @@ def programmeXML(start, stop, channel, rate):
     # create XML - Title
     title_pt = etree.Element('title')
     title_pt.attrib['lang'] = 'pt'
-    title_pt.text = u'Programação ' + channel.decode("utf-8")
+    if channel.decode("utf-8") == u'Áudio':
+        title_pt.text = u'Programação de ' + channel.decode("utf-8")
+    else:
+        title_pt.text = u'Programação ' + channel.decode("utf-8")
     programme.append(title_pt)
 
     # create XML - Credits
@@ -65,8 +68,8 @@ def programmeXML(start, stop, channel, rate):
 def main(argv):
     time_zone = '-0300'
     current_date = datetime.now()
-    programme_interval = 3
-    guide_days = 2
+    programme_interval = 60
+    guide_days = 30
     guide_offset = (guide_days / 2) * 24
     initial_time = current_date - timedelta(hours=guide_offset)
     final_time = current_date + timedelta(hours=guide_offset)
