@@ -14,6 +14,16 @@ from nbridge.models import Nbridge
 # from device.forms import GenericRelationForm
 
 
+def reload_channels_stb(modeladmin, request, queryset):
+    message='Lista de canais atualizada'
+    for s in queryset:
+        s.reload_channels(message=message, channel=False)
+
+
+reload_channels_stb.short_description = ugettext_lazy(
+    'Recarregar canais para %(verbose_name_plural)s selecionados')
+
+
 def reboot_stbs(queryset, nbridge):
     url = 'http://%s/ws/reboot/' % (nbridge.server.host)
     macs = []
@@ -52,7 +62,7 @@ class SetTopBoxAdmin(ModelAdmin):
     list_display = (
         'serial_number', 'mac', 'description', 'online', 'ip', 'nbridge',
     )
-    actions = [reboot_stb]
+    actions = [reboot_stb, reload_channels_stb]
     inlines = [SetTopBoxChannelInline, ]
 
     def get_readonly_fields(self, request, obj = None):
@@ -89,11 +99,6 @@ class SetTopBoxMessageAdmin(ModelAdmin):
 #            CHOICES_INCLUDING_DB_VALUE = [(self.instance.field,)*2] + self.MY_CHOICES
 #                                           self.fields['my_field'] = forms.ChoiceField(
 #                                           choices=CHOICES_INCLUDING_DB_VALUE)
-
-
-#class SetTopBoxBehaviorFlag(ModelAdmin):
-    # form = 
-#    form = MyForm
 
 site.register(models.SetTopBox, SetTopBoxAdmin)
 # site.register(models.SetTopBoxParameter)
