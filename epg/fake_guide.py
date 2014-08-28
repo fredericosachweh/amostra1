@@ -8,13 +8,12 @@ from datetime import time
 import sys
 import getopt
 
-
 def programmeXML(start, stop, channel, rate):
     # create XML - Programme
     programme = etree.Element('programme')
     programme.attrib['start'] = start
     programme.attrib['stop'] = stop
-    programme.attrib['channel'] = channel.decode("utf-8")
+    programme.attrib['channel'] = 'static_' + channel.decode("utf-8")
 
     # create XML - Title
     title_pt = etree.Element('title')
@@ -75,7 +74,8 @@ def main(argv):
     final_time = current_date + timedelta(hours=guide_offset)
     rate = '0'
     channel = []
-    channel.append('CIANET CHANNEL')
+    elem = ('CIANET CHANNEL', programme_interval)
+    channel.append(elem)
 
     try:
         opts, args = getopt.getopt(argv, "hc:i:r:f:")
@@ -93,7 +93,9 @@ def main(argv):
                 channel = []
                 fp = open(arg, 'r')
                 for line in fp:
-                    channel.append(line.replace('\n', '').replace('\r', ''))
+                    splited_line = line.split(';')
+                    elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')))
+                    channel.append(elem)
             except ValueError:
                 print 'arquivo invalido'
                 sys.exit()
@@ -109,15 +111,16 @@ def main(argv):
     tv = etree.Element('tv')
     tv.attrib['generator-info-name'] = 'CIANET'
     tv.attrib['generator-info-url'] = 'www.cianet.ind.br'
-    for c in channel:
+    for ch in channel:
         initial_aux = initial_time
+        programme_interval = ch[1]
         while (initial_aux < final_time):
             start = initial_aux
             stop = initial_aux + timedelta(minutes=programme_interval)
             initial_aux = stop
             tv.append(programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
                                    stop.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
-                                   c, rate))
+                                   ch[0], rate))
 
     # pretty string
     xml_guide = etree.tostring(tv, pretty_print=True, xml_declaration=True, encoding='iso-8859-1')
