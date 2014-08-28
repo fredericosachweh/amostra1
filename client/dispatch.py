@@ -110,14 +110,14 @@ def Channel_post_save(sender, instance, created, **kwargs):
             if created is True:
                 log.debug('New SetTopBox-Channel:%s', reference)
 
-@receiver(post_save, sender=models.SetTopBoxChannel)
-def SetTopBoxChannel_post_save(sender, instance, created, **kwargs):
-    if created:
-        log.debug('New stb channel created=%s', instance)
-        message = 'Canal adicionado=%s' % (instance.channel.name)
-        instance.settopbox.reload_channels(message=message, channel=True)
-
-@receiver(post_delete, sender=models.SetTopBoxChannel)
-def SetTopBoxChannel_post_delete(sender, instance, **kwargs):
-    message = 'Canal removido=%s' % (instance.channel.name)
-    instance.settopbox.reload_channels(message=message, channel=True)
+# @receiver(post_save, sender=models.SetTopBoxChannel)
+# def SetTopBoxChannel_post_save(sender, instance, created, **kwargs):
+#     if created:
+#         log.debug('New stb channel created=%s', instance)
+#         message = 'Canal adicionado=%s' % (instance.channel.name)
+#         instance.settopbox.reload_channels(message=message, channel=True)
+#
+# @receiver(post_delete, sender=models.SetTopBoxChannel)
+# def SetTopBoxChannel_post_delete(sender, instance, **kwargs):
+#     message = 'Canal removido=%s' % (instance.channel.name)
+#     instance.settopbox.reload_channels(message=message, channel=True)
