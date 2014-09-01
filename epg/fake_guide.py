@@ -80,14 +80,16 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "hc:i:r:f:")
     except getopt.GetoptError:
-        print 'fake_guide.py -c <lista de canais separados por , > -i <intervalo de cada programa> -r <rating do programa> or -f <lista de canais em arquivo>'
+        print 'fake_guide.py -c "channel;interval" -r <rating do programa> or -f <lista de canais em arquivo>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'fake_guide.py -c <lista de canais separados por , > -i <intervalo de cada programa> -r <rating do programa> or -f <lista de canais em arquivo>'
+            print 'fake_guide.py -c "channel;interval" -r <rating do programa> or -f <lista de canais em arquivo>'
             sys.exit()
         elif opt in ("-c"):
-            channel = arg.split(",")
+            splited_line = arg.split(';')
+            elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')))
+            channel.append(elem)
         elif opt in ("-f"):
             try:
                 channel = []
@@ -98,12 +100,6 @@ def main(argv):
                     channel.append(elem)
             except ValueError:
                 print 'arquivo invalido'
-                sys.exit()
-        elif opt in ("-i"):
-            try:
-                programme_interval = int(arg)
-            except ValueError:
-                print 'intervalio deve ser um numero'
                 sys.exit()
         elif opt in ("-r"):
             rate = arg
