@@ -74,8 +74,6 @@ def main(argv):
     final_time = current_date + timedelta(hours=guide_offset)
     rate = '0'
     channel = []
-    elem = ('CIANET CHANNEL', programme_interval)
-    channel.append(elem)
 
     try:
         opts, args = getopt.getopt(argv, "hc:i:r:f:")
