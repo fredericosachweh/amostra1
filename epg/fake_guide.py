@@ -76,18 +76,21 @@ def main(argv):
     channel = []
 
     try:
-        opts, args = getopt.getopt(argv, "hc:i:r:f:")
+        opts, args = getopt.getopt(argv, "hc:r:f:")
     except getopt.GetoptError:
-        print 'fake_guide.py -c "channel;interval" -r <rating do programa> or -f <lista de canais em arquivo>'
+        print 'fake_guide.py -c "channel;interval,channel2;interval2" -r <rating do programa> or -f <lista de canais em arquivo>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'fake_guide.py -c "channel;interval" -r <rating do programa> or -f <lista de canais em arquivo>'
+            print 'fake_guide.py -c "channel;interval,channel2;interval2" -r <rating do programa> or -f <lista de canais em arquivo>'
             sys.exit()
         elif opt in ("-c"):
-            splited_line = arg.split(';')
-            elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')))
-            channel.append(elem)
+            tmp = []
+            tmp = arg.split(',')
+            for t in tmp:
+                splited_line = t.split(';')
+                elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')))
+                channel.append(elem)
         elif opt in ("-f"):
             try:
                 channel = []
