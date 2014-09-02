@@ -62,6 +62,9 @@ Requires:       nginxcianet >= 1.4.3
 # Para requests http no nbridge
 Requires:       python-requests
 
+# Para depuração com o django-debug-toolbar
+Requires:       python-sqlparse
+
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
 # Requires:       dvblast >= 2.2.1
