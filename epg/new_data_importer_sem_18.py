@@ -137,6 +137,9 @@ class xmlVerification:
             except XMLSyntaxError as e:
                 log.info('This documment have some problems:')
                 log.info(e)
+                m = re.search("Document is empty,", str(e))
+                if m is not None:
+                    exit(1)
                 m = re.search("line (\d+),", str(e))
                 if m is None:
                     m = re.search("line (\d+)", str(e))
