@@ -1,17 +1,20 @@
 # -*- encoding:utf8 -*
 from __future__ import unicode_literals
+
 import logging
 import re
-from django.http import HttpResponse
+
+from device.models import StreamPlayer
+from django.conf import settings
 from django.contrib.auth import login, authenticate, logout
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
-from device.models import StreamPlayer
-from django.conf import settings
+from nbridge.models import Nbridge
 
 from . import models
-from nbridge.models import Nbridge
+
 
 class Auth(View):
     mac_re = re.compile(r'^([0-9a-fA-F]{2}(:?|$)){6}$')
@@ -87,6 +90,7 @@ def online(request):
     sn = request.GET.get('sn') or request.GET.get('SN')
     api_key = request.GET.get('api_key') or request.GET.get('api_key')
     nbridge = request.GET.get('nbridge') or request.GET.get('nbridge')
+    ip = request.GET.get('ip') or request.GET.get('ip')
     log.debug(
         'User=%s, sn=%s, mac=%s, api_key=%s, nbridge=%s',
         request.user,
@@ -101,6 +105,7 @@ def online(request):
     if stb is not None:
         stb.online = True
         stb.nbridge_id = nbridge
+        stb.ip = ip
         stb.save()
     return HttpResponse('OK', content_type='application/json')
 
@@ -157,5 +162,22 @@ def change_route(request, stbs=None, key=None, cmd=None):
             log.error('ERROR:%s', e)
             return HttpResponse('ERROR=%s' % (e), content_type='application/json')
         finally:
-            log.info('Finalizado o request')    
-    return HttpResponse('OK', content_type='application/json')
+            log.info('Finalizado o request')
+    return HttpResponse('{"status": "OK"}', content_type='application/json')
+
+
+def reload_channels(request, stbs=None, message=None):
+    log = logging.getLogger('api')
+    if request.user.is_anonymous():
+        return HttpResponse('Error: Unauthorized', status=401)
+    macs = []
+    stb_list = stbs.split(';')
+    for m in stb_list:
+        if len(m) == 17:
+            macs.append(m)
+    log.debug('Recebido=%s lista=%s', stbs, macs)
+    stbs = models.SetTopBox.objects.filter(mac__in=macs)
+    for s in stbs:
+        log.debug('Enviando para o STB=%s, msg=%s', s, message)
+        s.reload_channels(message=message)
+    return HttpResponse('{"status": "OK"}', content_type='application/json')

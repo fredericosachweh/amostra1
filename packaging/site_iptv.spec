@@ -62,6 +62,9 @@ Requires:       nginxcianet >= 1.4.3
 # Para requests http no nbridge
 Requires:       python-requests
 
+# Para depuração com o django-debug-toolbar
+Requires:       python-sqlparse
+
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
 # Requires:       dvblast >= 2.2.1
@@ -132,6 +135,7 @@ echo "Para um app especifico"
 echo "%{__python} %{site_home}/manage.py migrate <app>"
 echo "========================================================================="
 echo -e "\033[0m"
+/bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput"
 
 %preun
 %systemd_preun
@@ -172,6 +176,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Thu Sep 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.0-1
+- Release with reload_channel API. Some fix.
 * Fri Aug 22 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.16.1-1
 - Replace python-suds to python-suds-jurko.
 - Merge dev epg to fix importation.

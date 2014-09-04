@@ -107,3 +107,9 @@ if DEBUG is True:
         pass
 
 TASTYPIE_ABSTRACT_APIKEY = False
+
+NOSE_ARGS = [
+#    '--with-coverage',
+#    '--cover-package=client',
+#    '--cover-html',
+]

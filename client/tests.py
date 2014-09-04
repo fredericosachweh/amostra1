@@ -793,7 +793,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 2)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         
         # Create a config
         data = simplejson.dumps(
@@ -808,7 +808,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 4)
         # login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
@@ -826,7 +826,7 @@ class TestRequests(TestCase):
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
         log.debug(jobj)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 4)
         # Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})
@@ -1201,7 +1201,7 @@ class RemoteControlTest(TestCase):
         )
         self.c = Client()
         models.SetTopBox.objects.create(
-            serial_number='lulul', mac='FF:00:00:00:01:61'
+            serial_number='lululu', mac='FF:A0:00:00:01:61'
         )
         models.SetTopBox.objects.create(
             serial_number='lalala', mac='FF:21:30:70:64:33'
@@ -1252,5 +1252,13 @@ class RemoteControlTest(TestCase):
         url = reverse('client_route', kwargs={'stbs': ';'.join(['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']), 'key': 'key', 'cmd': 'tv/1'})
         log.debug('rev=%s', url)
         response = self.c.get(url)
-        self.assertEqual('OK', response.content)
+        self.assertEqual('{"status": "OK"}', response.content)
         self.assertEqual('/tv/client/route/FF%3A21%3A30%3A70%3A64%3A33%3BFF%3A01%3A67%3A77%3A21%3A80%3BFF%3A32%3A32%3A26%3A11%3A21/key/tv/1', url)
+
+    def test_reload_channels(self):
+        models.SetTopBox.objects.create(
+            serial_number='do_helber', mac='FF:00:00:00:01:61'
+        )
+        url = reverse('client_reload_channels', kwargs={'stbs': ';'.join(
+                ['do_helber', 'lalala', 'lelele', 'lululu']
+            ), 'message': 'Mensagem de teste;;/dsa'})
