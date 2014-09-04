@@ -607,7 +607,7 @@ class DeviceServer(models.Model):
             self.status = False
             self.pid = None
         except ValueError:
-            print('Execute error: %s' % ValueError)
+            log.debug('Execute error: %s', ValueError)
         self.save()
         return not self.status
 
@@ -899,7 +899,6 @@ class InputModel(models.Model):
             if number is 0:
                 continue  # Program 0 never works
             pmt = self._read_ctl('get_pmt %d' % number)
-            print("PMT=%s", pmt)
             ct = ContentType.objects.get_for_model(self)
             service, created = \
                 DemuxedService.objects.get_or_create(server=self.server,
@@ -1599,7 +1598,7 @@ class StreamRecorder(OutputModel, DeviceServer):
             log.info('Record is using pcrpid')
             ## Busca o pid do pcr para o metodo novo de gravação
             demux = self.sink
-            print(type(demux))
+            log.debug('type(demux)', type(demux))
             while type(demux) is not DemuxedService and demux is not None and \
                 hasattr(demux, 'sink'):
                 demux = demux.sink
