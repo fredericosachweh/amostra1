@@ -170,7 +170,7 @@ def reload_channels(
     command = ''
     if userchannel:
         command += 'require(\"api/tv/userchannel\").fetch();'
-    if all:
+    if channel:
         command += 'require(\"api/tv/channel\").fetch();'
     if message:
         command += 'alert(\"%s.\");' % (message)
@@ -257,12 +257,6 @@ class SetTopBox(models.Model):
                 reload_channels, (self.nbridge, self),
                 {'channel': True, 'message': message}
             )
-        #nbs = Nbridge.objects.filter(status=True)
-        #for s in nbs:
-        #    thread.start_new_thread(
-        #        reload_channels, (s, self),
-        #        {'channel': True, 'message': message}
-        #    )
 
     @classmethod
     def get_stb_from_user(self, user):
