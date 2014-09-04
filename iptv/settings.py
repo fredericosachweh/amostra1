@@ -366,6 +366,7 @@ NODEJS_COMMAND = '/usr/bin/node'
 NBRIDGE_COMMAND = '/iptv/usr/lib/nbridge/main.js'
 NBRIDGE_LOGS_DIR = '/iptv/var/log/nbridge/'
 NBRIDGE_SOCKETS_DIR = '/iptv/var/run/nbridge/'
+NBRIDGE_UPSTREAM_DIR = '/iptv/etc/nginx-fe/upstream/'
 NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
 NBRIDGE_CONF_DIR = '/iptv/etc/nbridge/'
 NBRIDGE_SERVER_KEY = '36410c96-c157-4b2a-ac19-1a2b7365ca11'
@@ -405,16 +406,26 @@ if 'test' in sys.argv:
     MULTICAT_DUMMY = os.path.join(HELPER_FOLDER, 'multicat_dummy.py')
     MULTICATCTL_DUMMY = os.path.join(HELPER_FOLDER, 'multicatctl_dummy.py')
     VLC_DUMMY = os.path.join(HELPER_FOLDER, 'vlc_dummy.py')
+    # Settings nbridge
+    NBRIDGE_LOGS_DIR = tmpdir + NBRIDGE_LOGS_DIR
+    os.makedirs(NBRIDGE_LOGS_DIR)
+    os.chmod(NBRIDGE_LOGS_DIR, 0777)
+    NBRIDGE_SOCKETS_DIR = tmpdir + NBRIDGE_SOCKETS_DIR
+    os.makedirs(NBRIDGE_SOCKETS_DIR)
+    os.chmod(NBRIDGE_SOCKETS_DIR, 0777)
+    NBRIDGE_UPSTREAM = tmpdir + NBRIDGE_UPSTREAM
+    NBRIDGE_CONF_DIR = tmpdir + NBRIDGE_CONF_DIR
+    os.makedirs(NBRIDGE_CONF_DIR)
+    os.chmod(NBRIDGE_CONF_DIR, 0777)
+    NBRIDGE_UPSTREAM_DIR = tmpdir + NBRIDGE_UPSTREAM_DIR
+    os.makedirs(NBRIDGE_UPSTREAM_DIR)
+    os.chmod(NBRIDGE_UPSTREAM_DIR, 0777)
+    NBRIDGE_SERVER_KEY = 'fake'
 
 TASTYPIE_FULL_DEBUG = DEBUG
 TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-#NOSE_ARGS = [
-#    '--with-coverage',
-#    '--cover-package=client',
-#    '--cover-html',
-#]
+#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 RPM_CHECK_VERSION = """
 site_iptv
