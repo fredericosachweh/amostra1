@@ -427,18 +427,18 @@ TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
 #TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-RPM_CHECK_VERSION = """
-site_iptv
-multicat
-dvblast
-frontend_iptv
-nodejs-nbridge
-nginx-fe
-nginx-mw
+RPM_CHECK_VERSION = """\
+site_iptv \
+multicat \
+dvblast \
+frontend_iptv \
+nodejs-nbridge \
+nginx-fe \
+nginx-mw \
 """
 
 EPG_IMPORT_CREDENTIALS = {
-        'site': 'guide.aron.tv.br',
+        'site': 'guide.kingrus.net',
         'username': 'epg',
         'password': 'bhhD.ahg3f',
 }

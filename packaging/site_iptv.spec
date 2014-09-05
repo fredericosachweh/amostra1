@@ -135,7 +135,8 @@ echo "Para um app especifico"
 echo "%{__python} %{site_home}/manage.py migrate <app>"
 echo "========================================================================="
 echo -e "\033[0m"
-/bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput"
+
+/bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput" > /dev/null
 
 %preun
 %systemd_preun
@@ -176,6 +177,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Fri Sep 05 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.1-1
+- Fix rpm query on server.
 * Thu Sep 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.0-1
 - Release with reload_channel API. Some fix.
 * Fri Aug 22 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.16.1-1
