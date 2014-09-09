@@ -1247,18 +1247,35 @@ class RemoteControlTest(TestCase):
         nb.status = True
         nb.save()
         log.debug('Nbridge=%s', nb)
-        obj = resolve('/tv/client/route/FF:21:30:70:64:33;FF:01:67:77:21:80;FF:32:32:26:11:21/key/tv/1')
+        obj = resolve(
+            '/tv/client/route/FF:21:30:70:64:33;FF:01:67:77:21:80;'
+            'FF:32:32:26:11:21/key/tv/1'
+            )
         log.debug('req=%s', obj)
-        url = reverse('client_route', kwargs={'stbs': ';'.join(['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']), 'key': 'key', 'cmd': 'tv/1'})
+        url = reverse('client_route', kwargs={'stbs': ';'.join(
+            ['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']
+        ), 'key': 'key', 'cmd': 'tv/1'})
         log.debug('rev=%s', url)
         response = self.c.get(url)
         self.assertEqual('{"status": "OK"}', response.content)
-        self.assertEqual('/tv/client/route/FF%3A21%3A30%3A70%3A64%3A33%3BFF%3A01%3A67%3A77%3A21%3A80%3BFF%3A32%3A32%3A26%3A11%3A21/key/tv/1', url)
+        self.assertEqual(
+            '/tv/client/route/FF%3A21%3A30%3A70%3A64%3A33%3BFF%3A01%3A67%3A77'
+            '%3A21%3A80%3BFF%3A32%3A32%3A26%3A11%3A21/key/tv/1', url
+        )
 
     def test_reload_channels(self):
         models.SetTopBox.objects.create(
             serial_number='do_helber', mac='FF:00:00:00:01:61'
         )
-        url = reverse('client_reload_channels', kwargs={'stbs': ';'.join(
-                ['do_helber', 'lalala', 'lelele', 'lululu']
-            ), 'message': 'Mensagem de teste;;/dsa'})
+        url = reverse('client_reload_channels', kwargs={'stbs': ';'.join([
+                'FF:00:00:00:01:61',
+                'FF:21:30:70:64:33',
+                '00:1A:D0:1A:D3:CA',
+                'FF:A0:00:00:01:61'
+            ]), 'message': 'Mensagem de teste;;/dsa'})
+        self.assertEqual(
+            url, '/tv/client/commands/reload_channels/FF%3A00%3A00%3A00%3A01'
+            '%3A61%3BFF%3A21%3A30%3A70%3A64%3A33%3B00%3A1A%3AD0%3A1A%3AD3%3'
+            'ACA%3BFF%3AA0%3A00%3A00%3A01%3A61/Mensagem%20de%20teste%3B%3B/dsa'
+        )
+
