@@ -60,7 +60,7 @@ class SetTopBoxResource(NamespacedModelResource):
         urlconf_namespace = 'client'
         authorization = MyAuthorization()
         validation = Validation()
-        always_return_data = False
+        always_return_data = True
         filtering = {
             'mac': ALL,
             'serial_number': ALL
@@ -108,7 +108,7 @@ class SetTopBoxParameterResource(NamespacedModelResource):
         resource_name = 'settopboxparameter'
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
-        always_return_data = False
+        always_return_data = True
         filtering = {
             "settopbox": ALL,  # ALL_WITH_RELATIONS
             "key": ALL,
@@ -131,7 +131,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
         queryset = models.SetTopBoxChannel.objects.all()
         resource_name = 'settopboxchannel'
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
-        always_return_data = False
+        always_return_data = True
         filtering = {
             "settopbox": ALL,
             "channel": ALL
@@ -394,7 +394,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
         fields = ['key', 'value', 'value_type']
-        always_return_data = False
+        always_return_data = True
         filtering = {
             "key": ALL,
             "value_type": ALL,
@@ -568,7 +568,7 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
         fields = ['schedule_date', 'message', 'url']
-        always_return_data = False
+        always_return_data = True
         filtering = {
             "schedule_date": ALL,
             "message": ALL,
