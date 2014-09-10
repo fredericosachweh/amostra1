@@ -190,6 +190,23 @@ def reboot_stb(nbridge, settopbox):
         log.info('Finalizado o request')
 
 
+def remote_debug_stb(settopbox):
+    log.debug('Enable STB remote debuger=%s', settopbox)
+    url = 'http://%s/ws/eval' % (settopbox.nbridge.server.host)
+    command = '(function(e){e.src="http://middleware.iptvdomain:8880/target/target-script-min.js#cianet";document.head.appendChild(e);})(document.createElement("script"));'
+    log.debug('Comando=%s', command)
+    try:
+        response = requests.post(url, timeout=10, data={
+            'server_key': server_key,
+            'command': command,
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
+    finally:
+        log.info('Finalizado o request')
+
+
 class SetTopBox(models.Model):
     'Class to authenticate and manipulate IPTV client - SetTopBox'
 
@@ -245,6 +262,10 @@ class SetTopBox(models.Model):
                 reload_channels, (self.nbridge, self),
                 {'channel': True, 'message': message}
             )
+
+    def remote_debug(self):
+        if self.online is True and self.nbridge is not None:
+            remote_debug_stb(self)
 
     @classmethod
     def get_stb_from_user(self, user):
