@@ -24,6 +24,14 @@ reload_channels_stb.short_description = ugettext_lazy(
     'Recarregar canais para %(verbose_name_plural)s selecionados')
 
 
+def start_remote_debug(modeladmin, request, queryset):
+    for s in queryset:
+        s.remote_debug()
+
+start_remote_debug.short_description = ugettext_lazy(
+    'DEBUG %(verbose_name_plural)s selecionados')
+
+
 def reboot_stbs(queryset, nbridge):
     url = 'http://%s/ws/reboot/' % (nbridge.server.host)
     macs = []
@@ -62,7 +70,7 @@ class SetTopBoxAdmin(ModelAdmin):
     list_display = (
         'serial_number', 'mac', 'description', 'online', 'ip', 'nbridge',
     )
-    actions = [reboot_stb, reload_channels_stb]
+    actions = [reboot_stb, reload_channels_stb, start_remote_debug]
     inlines = [SetTopBoxChannelInline, ]
 
     def get_readonly_fields(self, request, obj = None):
