@@ -177,6 +177,11 @@ echo -e "\033[0m"
 
 
 %changelog
+* Wed Sep 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.3-1
+- Remote debug STB on admin.
+* Tue Sep 09 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.2-1
+- Devolve o objeto criado sempre por causa do bug do backbone.
+- Não salva mais os logos no frontend pois não faz mais sentido.
 * Fri Sep 05 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.1-1
 - Fix rpm query on server.
 * Thu Sep 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.17.0-1
