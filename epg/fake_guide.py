@@ -66,7 +66,9 @@ def programmeXML(start, stop, channel, rate):
 
 def main(argv):
     time_zone = '-0300'
-    current_date = datetime.now()
+    now = datetime.now()
+    current_date = datetime(now.year, now.month, now.day,
+                            now.hour, 0, 0, 0)
     programme_interval = 60
     guide_days = 30
     guide_offset = (guide_days / 2) * 24
