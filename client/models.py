@@ -177,7 +177,7 @@ def reload_channels(
 
 def reboot_stb(nbridge, settopbox):
     log.debug('Send reboot to STB=%s using nbridge=%s', settopbox, nbridge)
-    url = 'http://%s/ws/reboot/' % (nbridge.server.host)
+    url = 'http://%s/ws/reboot/' % (settopbox.nbridge.server.host)
     try:
         response = requests.post(url, timeout=10, data={
             'server_key': server_key,

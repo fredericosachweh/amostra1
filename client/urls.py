@@ -17,5 +17,6 @@ urlpatterns = patterns('',
     url(r'^route/(?P<stbs>[^/]+)/(?P<key>\w+)/(?P<cmd>.+)$',
         'client.views.change_route', name='client_route'),
     url(r'^commands/reload_channels/(?P<stbs>[^/]+)/(?P<message>.+)',
-        'client.views.reload_channels', name='client_reload_channels')
+        'client.views.reload_channels', name='client_reload_channels'),
+    url(r'^nbridgedown/$', 'client.views.nbridge_down', name='client_nbridge'),
     )

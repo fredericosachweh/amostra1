@@ -181,3 +181,15 @@ def reload_channels(request, stbs=None, message=None):
         log.debug('Enviando para o STB=%s, msg=%s', s, message)
         s.reload_channels(message=message)
     return HttpResponse('{"status": "OK"}', content_type='application/json')
+
+
+def nbridge_down(request):
+    log = logging.getLogger('api')
+    nbridge = request.GET.get('nbridge') or request.GET.get('nbridge')
+    log.debug('Nbridge shutdown %s ', nbridge)
+    nbobject = Nbridge.objects.get(pk=nbridge)
+    res = models.SetTopBox.objects.filter(nbridge=nbobject).update(
+        ip=None, online=False, nbridge=None
+    )
+    return HttpResponse('{"status": "OK"}', content_type='application/json')
+
