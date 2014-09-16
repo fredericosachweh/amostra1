@@ -34,6 +34,7 @@ start_remote_debug.short_description = ugettext_lazy(
 
 def reboot_stbs(queryset, nbridge):
     url = 'http://%s/ws/reboot/' % (nbridge.server.host)
+    log.debug('URL=%s', url)
     macs = []
     # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
     for s in queryset:
@@ -42,6 +43,7 @@ def reboot_stbs(queryset, nbridge):
         'server_key': server_key,
         'mac[]': [macs]
         }
+    log.debug('Reboot=%s, macs[]=%s', url, macs)
     log.debug('DATA=%s', data)
     try:
         response = requests.post(url, timeout=10, data=data)
@@ -53,8 +55,11 @@ def reboot_stbs(queryset, nbridge):
 
 
 def reboot_stb(modeladmin, request, queryset):
+    log.debug('Reboot')
     nbs = Nbridge.objects.filter(status=True)
+    log.debug('NBS=%s', nbs)
     for s in nbs:
+        log.debug('Enviando para nb=%s', s)
         thread.start_new_thread(reboot_stbs, (queryset, s))
 
 reboot_stb.short_description = ugettext_lazy(

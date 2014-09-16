@@ -6,17 +6,20 @@ Modulo administrativo do controle de midias e gravacoes
 """
 
 from __future__ import unicode_literals
+import logging
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy, ugettext as _
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.contrib.contenttypes import generic
+
 import models
 import forms
 
 from django.contrib.sites.models import Site
 
+log = logging.getLogger('debug')
 
 def test_all_servers(modeladmin, request, queryset):
     for s in queryset:
@@ -112,6 +115,8 @@ class AdminDvbTuner(admin.ModelAdmin):
                     'antenna', 'tuned', 'switch_link')
     form = forms.DvbTunerForm
     list_per_page = 20
+    search_fields = ['description', ]
+    list_filter = ['server', 'antenna', 'status', ]
 
 
 class AdminIsdbTuner(admin.ModelAdmin):
@@ -119,6 +124,8 @@ class AdminIsdbTuner(admin.ModelAdmin):
     list_display = ('server', 'frequency', 'tuned', 'switch_link')
     form = forms.IsdbTunerForm
     list_per_page = 20
+    search_fields = ['description', ]
+    list_filter = ['server', 'status', ]
 
 
 class AdminUnicastInput(admin.ModelAdmin):
@@ -127,6 +134,7 @@ class AdminUnicastInput(admin.ModelAdmin):
                     'tuned', 'server', 'switch_link')
     form = forms.UnicastInputForm
     list_per_page = 20
+    list_filter = ['status', 'server', ]
 
 
 class AdminMulticastInput(admin.ModelAdmin):
@@ -135,6 +143,8 @@ class AdminMulticastInput(admin.ModelAdmin):
         'tuned', 'switch_link')
     form = forms.MulticastInputForm
     list_per_page = 20
+    search_fields = ['ip',]
+    list_filter = ['status', 'server', ]
 
 
 class UniqueIPInline(generic.GenericTabularInline):
@@ -166,6 +176,8 @@ class AdminMulticastOutput(admin.ModelAdmin):
     )
     form = forms.MulticastOutputForm
     list_per_page = 20
+    search_fields = ['ip', ]
+    list_filter = ['status', 'server', ]
 
 
 class AdminDemuxedService(admin.ModelAdmin):
@@ -173,6 +185,19 @@ class AdminDemuxedService(admin.ModelAdmin):
                     'server', 'nic_src', 'sink', 'switch_link')
     form = forms.DemuxedServiceForm
     list_per_page = 20
+    search_fields = ['provider', 'service_desc', 'service_desc']
+    list_filter = ['status', 'server']
+
+    # TODO: Complex filter using generic foreign key
+    #def get_search_results(self, request, queryset, search_term):
+    #    qs, use_distinct = super(
+    #        AdminDemuxedService, self
+    #    ).get_search_results(request, queryset, search_term)
+    #    ctt_multicastinput = ContentType.objects.get_for_model(models.MulticastInput)
+    #    multi = models.MulticastInput.objects.filter(ip__icontains=search_term)
+    #    qs_multi = models.DemuxedService.objects.filter(content_type=ctt_multicastinput, object_id__in=multi)
+    #    qs = qs | qs_multi
+    #    return qs, use_distinct
 
 
 class AdminStreamRecorder(admin.ModelAdmin):
@@ -180,6 +205,8 @@ class AdminStreamRecorder(admin.ModelAdmin):
                     'keep_time', 'channel', 'storage', 'switch_link')
     form = forms.StreamRecorderForm
     list_per_page = 20
+    search_fields = ['description', 'channel__name']
+    list_filter = ['status', 'storage', 'server', ]
 
 
 class AdminUniqueIP(admin.ModelAdmin):
@@ -195,6 +222,7 @@ class AdminUniqueIP(admin.ModelAdmin):
     )
     form = forms.UniqueIPForm
     list_per_page = 20
+    search_fields = ['ip',]
 
 
 class AdminSoftTranscoder(admin.ModelAdmin):
@@ -229,6 +257,8 @@ class AdminStorage(admin.ModelAdmin):
         'hdd_ssd', 'peso', 'folder', 'switch_link')
     form = forms.StorageForm
     list_per_page = 20
+    search_fields = ['description', ]
+    list_filter = ['server']
 
 
 class AdminDigitalTunerHardware(admin.ModelAdmin):
