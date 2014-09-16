@@ -177,7 +177,7 @@ echo -e "\033[0m"
 
 
 %changelog
-* Thu Sep 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.18.1-1
+* Tue Sep 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.18.1-1
 - Nbridge offline.
 - Middleware API filter.
 - Remote debug on admin to STB.
