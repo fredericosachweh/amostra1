@@ -13,6 +13,7 @@ from django.core.urlresolvers import reverse
 from django.dispatch import receiver
 from django.db.models import signals
 from django.conf import settings
+
 log = logging.getLogger('nbridge')
 
 CHOICES_ENV_VAR = (
