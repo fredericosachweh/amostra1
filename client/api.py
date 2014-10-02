@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
+import logging
+import json
+from django.db import IntegrityError
+from django.conf import settings
 from tastypie.authorization import DjangoAuthorization, Authorization
 from tastypie.authentication import BasicAuthentication
 from tastypie.authentication import Authentication
@@ -10,19 +14,16 @@ from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 from tastypie import fields
 from tastypie.constants import ALL
-from tastypie.validation import Validation
+from tastypie.validation import Validation, FormValidation
 from tastypie.serializers import Serializer
 from tastypie.exceptions import BadRequest, Unauthorized
 from tastypie.models import ApiKey
-from django.db import IntegrityError
-from django.conf import settings
-from . import models
 from device import models as devicemodels
 from tv.api import ChannelResource
-import logging
-import json
-
+from . import models
+from . import forms
 log = logging.getLogger('api')
+erp = logging.getLogger('erp')
 
 # Validation:
 # http://stackoverflow.com/questions/7435986/how-do-i-configure-tastypie-to-
@@ -36,14 +37,27 @@ log = logging.getLogger('api')
 
 class MyAuthorization(DjangoAuthorization):
 
-    def is_authorized(self, request, bundle_object=None):
+    def is_authorized(self, request, bundle_object=None, *args, **kwargs):
         log.debug('On is_authorized')
-        ok = super(MyAuthorization, self).is_authorized(request, object)
+        ok = super(MyAuthorization, self).is_authorized(
+            request, bundle_object=bundle_object, *args, **kwargs
+        )
         if ok is False:
             log.debug('Method:%s', request.method)
             log.debug('User:%s', request.user)
             log.debug('OK:%s', ok)
         return ok
+
+
+class SetTopBoxValidation(FormValidation):
+
+    def is_valid(self, bundle, request=None, *args, **kwargs):
+        if not bundle.data:
+            return {'__all__': 'Missing data'}
+        return super(SetTopBoxValidation, self).is_valid(
+                bundle, request=request,  *args, **kwargs
+            )
+
 
 
 class SetTopBoxResource(NamespacedModelResource):
@@ -59,7 +73,7 @@ class SetTopBoxResource(NamespacedModelResource):
         fields = ['serial_number', 'mac']
         urlconf_namespace = 'client'
         authorization = MyAuthorization()
-        validation = Validation()
+        validation = SetTopBoxValidation(form_class=forms.SetTopBoxForm)
         always_return_data = True
         filtering = {
             'mac': ALL,
@@ -72,28 +86,28 @@ class SetTopBoxResource(NamespacedModelResource):
 
     def obj_create(self, bundle, request=None, **kwargs):
         from django.db import transaction
-        log.debug('New STB=%s', bundle.data.get('serial_number'))
+        erp.info('New STB=%s', bundle.data.get('serial_number'))
         with transaction.atomic():
             try:
                 bundle = super(SetTopBoxResource, self).obj_create(
                     bundle, **kwargs
                 )
             except IntegrityError as e:
-                log.error('%s', e)
+                erp.error('Error:%s', e)
                 transaction.rollback()
                 raise BadRequest(e)
         return bundle
 
     def obj_update(self, bundle, request=None, skip_errors=False, **kwargs):
         from django.db import transaction
-        log.debug('Update STB=%s', bundle.data.get('serial_number'))
+        erp.debug('Update STB=%s', bundle.data.get('serial_number'))
         with transaction.atomic():
             try:
                 bundle = super(SetTopBoxResource, self).obj_update(
                     bundle, request=request, **kwargs
                 )
             except IntegrityError as e:
-                log.error('%s', e)
+                erp.error('Error:%s', e)
                 transaction.rollback()
                 raise BadRequest(e)
         return bundle
@@ -151,7 +165,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
                 bundle = super(SetTopBoxChannelResource, self).obj_create(
                     bundle, **kwargs)
             except IntegrityError as e:
-                log.error('%s', e)
+                erp.error('%s', e)
                 raise BadRequest(e)
         return bundle
 
@@ -163,7 +177,7 @@ class SetTopBoxChannelResource(NamespacedModelResource):
                     bundle, **kwargs
                 )
             except IntegrityError as e:
-                log.error('%s', e)
+                erp.error('%s', e)
                 raise BadRequest(e)
         return bundle
 
@@ -188,14 +202,7 @@ class SetTopBoxSerializer(Serializer):
             raise BadRequest(errors)
 
 
-class SetTopBoxValidation(Validation):
-
-    def is_valid(self, bundle, request=None):
-        if not bundle.data:
-            return {'__all__': 'Missing data'}
-
-
-class ProgramScheduleValidation(SetTopBoxValidation):
+class ProgramScheduleValidation(Validation):
 
     def is_valid(self, bundle, request=None):
         if not bundle.data:
@@ -394,6 +401,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
         fields = ['key', 'value', 'value_type']
+        max_limit = 5000
+        limit = 2000
         always_return_data = True
         filtering = {
             "key": ALL,
