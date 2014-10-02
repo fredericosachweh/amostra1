@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 import logging
 import thread
 import requests
@@ -11,9 +11,9 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django import forms
 from tv.models import Channel
+from .fields import MACAddressField
 
 import dbsettings
-server_key = settings.NBRIDGE_SERVER_KEY
 from nbridge.models import Nbridge
 log = logging.getLogger('client')
 
@@ -165,7 +165,7 @@ def reload_channels(
     log.debug('Comando=%s', command)
     try:
         response = requests.post(url, timeout=10, data={
-            'server_key': server_key,
+            'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': command,
             'mac': [settopbox.mac]})
         log.debug('Resposta=[%s]%s', response.status_code, response.text)
@@ -180,7 +180,7 @@ def reboot_stb(nbridge, settopbox):
     url = 'http://%s/ws/reboot/' % (settopbox.nbridge.server.host)
     try:
         response = requests.post(url, timeout=10, data={
-            'server_key': server_key,
+            'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': '',
             'mac': [settopbox.mac]})
         log.debug('Resposta=[%s]%s', response.status_code, response.text)
@@ -197,7 +197,7 @@ def remote_debug_stb(settopbox):
     log.debug('Comando=%s', command)
     try:
         response = requests.post(url, timeout=10, data={
-            'server_key': server_key,
+            'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': command,
             'mac': [settopbox.mac]})
         log.debug('Resposta=[%s]%s', response.status_code, response.text)
@@ -213,7 +213,7 @@ class SetTopBox(models.Model):
     serial_number = models.CharField(
         _('Número serial'), max_length=255,
         help_text=_('Número serial do SetTopBox'), unique=True)
-    mac = models.CharField(
+    mac = MACAddressField(
         _('Endereço MAC'), max_length=255,
         help_text=_('Endereço MAC do SetTopBox'), unique=True)
     description = models.CharField(
