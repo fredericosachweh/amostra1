@@ -151,7 +151,7 @@ class SetTopBoxDefaultConfig(dbsettings.Group):
 
 def reload_channels(
         nbridge, settopbox, message=None, userchannel=True, channel=True
-        ):
+    ):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
     # reloaduserdata
     url = 'http://%s/ws/eval' % (nbridge.server.host)

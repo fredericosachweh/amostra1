@@ -8,10 +8,9 @@ from django.core.urlresolvers import reverse, resolve
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.conf import settings
-from django.test.client import Client, FakePayload, MULTIPART_CONTENT
+from django.test.client import Client
 from django.test import client
 from django.utils import timezone
-from urlparse import urlparse
 
 from device import models as devicemodels
 from tv import models as tvmodels
