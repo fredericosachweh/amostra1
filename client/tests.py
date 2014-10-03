@@ -796,10 +796,12 @@ class SetTopBoxChannelTest(TestCase):
         # Do logoff
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={
+            'sn': 'lala' , 'MAC': '01:02:03:04:05:06'
+        })
         self.assertEqual(200, response.status_code)
         user = User.objects.get(
-            username=settings.STB_USER_PREFIX + '01:02:03:04:05:06'
+            username=settings.STB_USER_PREFIX + 'lala'
         )
         self.assertIsNotNone(user)
         api_key = ApiKey.objects.get(user=user)
@@ -837,7 +839,9 @@ class TestRequests(TestCase):
         models.SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={
+            'sn': 'lala','MAC': '01:02:03:04:05:06'
+        })
         self.assertContains(response, 'api_key')
         key = json.loads(response.content).get('api_key', None)
         self.assertIsNotNone(key)
@@ -853,7 +857,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 2)
         
         # Create a config
         data = simplejson.dumps(
@@ -868,7 +872,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 4)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         # login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
@@ -886,7 +890,7 @@ class TestRequests(TestCase):
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
         log.debug(jobj)
-        self.assertEqual(jobj['meta']['total_count'], 4)
+        self.assertEqual(jobj['meta']['total_count'], 3)
         # Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})
@@ -897,7 +901,7 @@ class TestRequests(TestCase):
         response = self.c.put(
             url_vol, data=data, content_type='application/json'
         )
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
         conf = models.SetTopBoxConfig.objects.get(id=5)
         self.assertEqual('0.2', conf.value)
         response = self.c.get(auth_logoff)
