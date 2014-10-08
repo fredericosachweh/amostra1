@@ -226,6 +226,12 @@ LOGGING = {
             'filename': '%s/unittest.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.erp': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/erp.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -280,6 +286,11 @@ LOGGING = {
         },
         'unittest': {
             'handlers': ['file.unittest'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'erp': {
+            'handlers': ['file.erp'],
             'level': 'DEBUG',
             'propagate': True
         },

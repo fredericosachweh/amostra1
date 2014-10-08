@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 import logging
 import thread
 import requests
@@ -8,10 +8,10 @@ from django.contrib import admin
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
-import models
-log = logging.getLogger('client')
+from . import models
 from nbridge.models import Nbridge
-# from device.forms import GenericRelationForm
+
+log = logging.getLogger('client')
 
 
 def reload_channels_stb(modeladmin, request, queryset):
@@ -68,6 +68,7 @@ reboot_stb.short_description = ugettext_lazy(
 
 class SetTopBoxChannelInline(admin.TabularInline):
     model = models.SetTopBoxChannel
+    #template = 'admin/client/edit_inline/settopboxchannel.html'
 
 
 class SetTopBoxAdmin(ModelAdmin):
@@ -77,6 +78,8 @@ class SetTopBoxAdmin(ModelAdmin):
     )
     actions = [reboot_stb, reload_channels_stb, start_remote_debug]
     inlines = [SetTopBoxChannelInline, ]
+    list_filter = ['online',]
+    # list_select_related = True
 
     def get_readonly_fields(self, request, obj = None):
         if obj:
@@ -99,7 +102,7 @@ class SetTopBoxChannelAdmin(ModelAdmin):
 
 
 class SetTopBoxMessageAdmin(ModelAdmin):
-    #form = GenericRelationForm()
+    #forms = GenericRelationForm()
     #model =
     pass
 
