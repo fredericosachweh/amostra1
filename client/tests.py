@@ -11,6 +11,7 @@ from django.conf import settings
 from django.test.client import Client
 from django.test import client
 from django.utils import timezone
+from dbsettings.models import Setting as settingsmoldes
 
 from device import models as devicemodels
 from tv import models as tvmodels
@@ -18,21 +19,6 @@ from tv import models as tvmodels
 from . import models
 
 log = logging.getLogger('unittest')
-
-
-def patch_request_factory():
-    def _method(
-            self, path, data='', content_type='application/octet-stream',
-            follow=False, **extra
-        ):
-        response = self.generic("PATCH", path, data, content_type, **extra)
-        if follow:
-            response = self._handle_redirects(response, **extra)
-        return response
-
-    if not hasattr(client, "_patched"):
-        client._patched = True
-        client.Client.patch = _method
 
 
 # curl --dump-header - -H "Content-Type: application/json" -X POST --data \
@@ -81,6 +67,7 @@ class APITest(TestCase):
         self.user = User.objects.create_user(
             'erp', 'erp@cianet.ind.br', '123'
         )
+        self.user.save()
 
     def test_SetTopBox(self):
         from django.contrib.auth.models import Permission
@@ -88,7 +75,6 @@ class APITest(TestCase):
         models.SetTopBox.options.auto_add_channel = False
         models.SetTopBox.options.use_mac_as_serial = True
         models.SetTopBox.options.auto_enable_recorder_access = True
-        patch_request_factory()
         c = Client()
         # Buscando o schema
         urlschema = reverse(
@@ -156,9 +142,9 @@ class APITest(TestCase):
             'serial_number',
             status_code=400)
         # Delete one stb
-        urldelete = reverse('client:api_dispatch_detail',
-            kwargs={'resource_name': 'settopbox', 'api_name': 'v1', 'pk': 1},
-            )
+        urldelete = reverse('client:api_dispatch_detail',kwargs={
+            'resource_name': 'settopbox', 'api_name': 'v1', 'pk': stbs[0].pk
+        })
         response = c.delete(urldelete)
         # Deve retornar 401 UNAUTHORIZED
         self.assertEqual(response.status_code, 401)
@@ -223,6 +209,10 @@ class APITest(TestCase):
         from django.contrib.auth.models import Permission
         c = Client()
         c.login(username='erp', password='123')
+        p = self.user.user_permissions
+        p.add(Permission.objects.get(codename='add_settopbox'))
+        p.add(Permission.objects.get(codename='change_settopbox'))
+        p.add(Permission.objects.get(codename='delete_settopbox'))
         url = reverse(
             'client:api_dispatch_list',
             kwargs={'resource_name': 'settopbox', 'api_name': 'v1'},
@@ -266,6 +256,8 @@ class APITest(TestCase):
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
 @override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
 @override_settings(MULTICAT_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(CHANNEL_RECORD_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(CHANNEL_RECORD_PLAY_COMMAND=settings.MULTICAT_DUMMY)
 @override_settings(MULTICATCTL_COMMAND=settings.MULTICATCTL_DUMMY)
 @override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class SetTopBoxChannelTest(TestCase):
@@ -289,14 +281,19 @@ class SetTopBoxChannelTest(TestCase):
         perm_delete_relation = Permission.objects.get(
             codename='delete_settopboxchannel')
         self.user.user_permissions.add(perm_delete_relation)
-        server = devicemodels.Server.objects.create(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username='nginx',  # getpass.getuser(),
-            rsakey='~/.ssh/id_rsa'
+        server, created = devicemodels.Server.objects.get_or_create(
+            host='127.0.0.1', offline_mode=True
         )
-        nic = devicemodels.NIC.objects.create(server=server, ipv4='127.0.0.1')
+        server.name = 'local'
+        server.ssh_port = 22
+        server.username = 'nginx'
+        server.rsakey='~/.ssh/id_rsa'
+        server.offline_mode = True
+        server.status = False
+        server.save()
+        nic, created = devicemodels.NIC.objects.get_or_create(
+            server=server, ipv4='127.0.0.1'
+        )
         unicastin = devicemodels.UnicastInput.objects.create(
             server=server,
             interface=nic,
@@ -409,19 +406,19 @@ class SetTopBoxChannelTest(TestCase):
         models.SetTopBox.options.auto_add_channel = False
         models.SetTopBox.options.use_mac_as_serial = True
         self.assertEqual(models.SetTopBox.options.auto_add_channel, False)
-        models.SetTopBox.objects.create(
+        stb1 = models.SetTopBox.objects.create(
             serial_number='lalala', mac='00:00:00:00:00:00'
         )
-        models.SetTopBox.objects.create(
+        stb2 = models.SetTopBox.objects.create(
             serial_number='lelele', mac='00:00:00:00:00:01'
         )
-        models.SetTopBox.objects.create(
+        stb3 = models.SetTopBox.objects.create(
             serial_number='lilili', mac='00:00:00:00:00:02'
         )
-        models.SetTopBox.objects.create(
+        stb4 = models.SetTopBox.objects.create(
             serial_number='lololo', mac='00:00:00:00:00:03'
         )
-        models.SetTopBox.objects.create(
+        stb5 = models.SetTopBox.objects.create(
             serial_number='lululu', mac='00:00:00:00:00:04'
         )
         self.assertEqual(models.SetTopBox.objects.all().count(), 5)
@@ -458,8 +455,8 @@ class SetTopBoxChannelTest(TestCase):
             'resource_name': 'settopboxchannel', 'api_name': 'v1'})
         response = self.c.post(
             urlrelation, data=json.dumps({
-                'settopbox': '/tv/api/client/v1/settopbox/1/',
-                'channel': '/tv/api/tv/v1/channel/2/',
+                'settopbox': '/tv/api/client/v1/settopbox/%s/' % (stb1.pk),
+                'channel': '/tv/api/tv/v1/channel/%s/' % (self.channel2.pk),
                 'recorder': True}),
             content_type='application/json'
         )
@@ -468,15 +465,15 @@ class SetTopBoxChannelTest(TestCase):
             'Content:%s' % response.content
         )
         response = self.c.post(urlrelation, data=json.dumps({
-            'settopbox': '/tv/api/client/v1/settopbox/2/',
-            'channel': '/tv/api/tv/v1/channel/2/',
+            'settopbox': '/tv/api/client/v1/settopbox/%s/' % (stb2.pk),
+            'channel': '/tv/api/tv/v1/channel/%s/' % (self.channel2.pk),
             'recorder': True}),
             content_type='application/json')
         # Retorna erro ao criar uma associação duplicada
         response = self.c.post(
             urlrelation, data=json.dumps({
-                'settopbox': '/tv/api/client/v1/settopbox/1/',
-                'channel': '/tv/api/tv/v1/channel/2/',
+                'settopbox': '/tv/api/client/v1/settopbox/%s/' % (stb1.pk),
+                'channel': '/tv/api/tv/v1/channel/%s/' % (self.channel2.pk),
                 'recorder': True}
             ),
             content_type='application/json'
@@ -606,7 +603,9 @@ class SetTopBoxChannelTest(TestCase):
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={
+            'sn': '01:02:03:04:05:06', 'MAC': '01:02:03:04:05:06'
+        })
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
         tvchannels = tvmodels.Channel.objects.all()
@@ -638,7 +637,9 @@ class SetTopBoxChannelTest(TestCase):
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={
+            'SN': '01:02:03:04:05:06', 'MAC': '01:02:03:04:05:06'
+        })
         self.assertEqual(200, response.status_code)
         stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
         self.assertEqual(stb.serial_number, '01:02:03:04:05:06')
@@ -684,7 +685,7 @@ class SetTopBoxChannelTest(TestCase):
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
         # Do login
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={'SN': '01:02:03:04:05:06', 'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         # Get list of records
         recs = devicemodels.StreamRecorder.objects.all()
@@ -733,30 +734,36 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.get(url_play)
         self.assertEqual(401, response.status_code)
         # Do login
-        response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
+        response = self.c.post(auth_login, data={
+            'sn': 'lala', 'MAC': '01:02:03:04:05:06'
+        })
         self.assertEqual(200, response.status_code)
         # No channel
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 15,
             'command': 'play',
-            'seek': 20}))
+            'seek': 20
+        }))
         self.assertEqual(404, response.status_code)
         # No seek avaliable
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 13,
             'command': 'play',
-            'seek': 200000}))
+            'seek': 200000
+        }))
         self.assertEqual(404, response.status_code)
         # All OK
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 13,
             'command': 'play',
-            'seek': 200}))
+            'seek': 200
+        }))
         self.assertEqual(200, response.status_code)
         response = self.c.get(reverse('device.views.tvod', kwargs={
             'channel_number': 13,
             'command': 'stop',
-            'seek': 20}))
+            'seek': 20
+        }))
         self.assertEqual(200, response.status_code)
 
     def test_list_disable_channel(self):
@@ -783,6 +790,53 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.get(url_channel)
         jobj = json.loads(response.content)
         self.assertEqual(2, jobj['meta']['total_count'])
+
+    def test_patch_stb_channel(self):
+        from django.contrib.auth.models import User, Permission
+        models.SetTopBox.options.auto_create = True
+        models.SetTopBox.options.auto_add_channel = False
+        models.SetTopBox.options.use_mac_as_serial = False
+        models.SetTopBox.options.auto_enable_recorder_access = False
+        auth_login = reverse('client_auth')
+        auth_logoff = reverse('client_logoff')
+        # Do logoff
+        response = self.c.get(auth_logoff)
+        self.assertEqual(200, response.status_code)
+        response = self.c.post(auth_login, data={
+            'sn': 'a1', 'MAC': '01:02:03:04:05:06'
+        })
+        self.assertEqual(200, response.status_code)
+        url_userchannel = reverse('tv_v2:api_dispatch_list', kwargs={
+            'resource_name': 'userchannel', 'api_name': 'v2'})
+        self.assertEqual('/tv/api/tv/v2/userchannel/', url_userchannel)
+        # Get list of channels
+        response = self.c.get(url_userchannel)
+        jobj = json.loads(response.content)
+        self.assertEqual(0, jobj['meta']['total_count'])
+        self.channel2.enabled = False
+        self.channel2.save()
+        response = self.c.get(url_userchannel)
+        jobj = json.loads(response.content)
+        self.assertEqual(0, jobj['meta']['total_count'])
+        # Agora tem 3 canais sendo 1 desabilitado
+        urllogin = reverse('sys_login')
+        response = self.c.post(urllogin,
+            {'username': 'erp', 'password': '123'},
+            follow=True)
+        self.assertEqual(response.status_code, 200)
+        perm_add_relation = Permission.objects.get(
+            codename='add_settopboxchannel')
+        self.user.user_permissions.add(perm_add_relation)
+        perm_delete_relation = Permission.objects.get(
+            codename='delete_settopboxchannel')
+        self.user.user_permissions.add(perm_delete_relation)
+        url_channel = reverse('tv_v2:api_dispatch_list', kwargs={
+            'resource_name': 'channel', 'api_name': 'v2'
+        })
+        response = self.c.get(url_channel)
+        log.debug('All=%s', response.content)
+        response = self.c.get(url_userchannel)
+        log.debug('User=%s', response.content)
 
     def test_api_key_channel(self):
         from tastypie.models import ApiKey
@@ -845,20 +899,20 @@ class TestRequests(TestCase):
         self.assertContains(response, 'api_key')
         key = json.loads(response.content).get('api_key', None)
         self.assertIsNotNone(key)
-        
+
         # Create new STBconfig
         url_config = reverse(
             'client:api_dispatch_list',
             kwargs={'resource_name': 'settopboxconfig', 'api_name': 'v1'}
         )
         self.assertEqual('/tv/api/client/v1/settopboxconfig/', url_config)
-        
+
         # Get STBconfig
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 2)
-        
+        self.assertEqual(jobj['meta']['total_count'], 3)
+
         # Create a config
         data = simplejson.dumps(
             {"key": "VOLUME_LEVEL", "value": "0.5", "value_type": "Number"}
@@ -872,7 +926,7 @@ class TestRequests(TestCase):
         response = self.c.get(url_config)
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 4)
         # login on new STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
@@ -890,7 +944,7 @@ class TestRequests(TestCase):
         self.assertEqual(response.status_code, 200)
         jobj = simplejson.loads(response.content)
         log.debug(jobj)
-        self.assertEqual(jobj['meta']['total_count'], 3)
+        self.assertEqual(jobj['meta']['total_count'], 4)
         # Change volume value
         url_vol = reverse('client:api_dispatch_detail', kwargs={
             'resource_name': 'settopboxconfig', 'api_name': 'v1', 'pk': 5})
@@ -901,7 +955,7 @@ class TestRequests(TestCase):
         response = self.c.put(
             url_vol, data=data, content_type='application/json'
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         conf = models.SetTopBoxConfig.objects.get(id=5)
         self.assertEqual('0.2', conf.value)
         response = self.c.get(auth_logoff)
@@ -972,15 +1026,18 @@ class SetTopBoxProgramScheduleTest(TestCase):
         models.SetTopBox.options.use_mac_as_serial = True
         models.SetTopBox.options.auto_enable_recorder_access = True
 
-        server = devicemodels.Server.objects.create(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username='nginx',  # getpass.getuser(),
-            rsakey='~/.ssh/id_rsa'
+        server, created = devicemodels.Server.objects.get_or_create(
+            host='127.0.0.1', offline_mode=True
         )
+        server.name = 'local'
+        server.ssh_port = 22
+        server.username = 'nginx'
+        server.rsakey='~/.ssh/id_rsa'
+        server.offline_mode = True
+        server.status = False
+        server.save()
 
-        nic = devicemodels.NIC.objects.create(server=server, ipv4='127.0.0.1')
+        nic, created = devicemodels.NIC.objects.get_or_create(server=server, ipv4='127.0.0.1')
 
         unicastin = devicemodels.UnicastInput.objects.create(
             server=server,
@@ -1102,7 +1159,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps1.schedule_date, 1388657410)
 
-        self.assertEqual(ps2.message, 'O programa X foi agendado com sucesso!')
+        self.assertEqual(ps2.message, 'O programa Z foi agendado com sucesso!')
         self.assertEqual(ps2.url, '/tv/api/1')
         # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps2.schedule_date, 1388657410)
@@ -1155,7 +1212,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(ps2.count(), 2)
 
         ps2 = ps2[0]
-        self.assertEqual(ps2.message, 'O programa X foi agendado com sucesso!')
+        self.assertEqual(ps2.message, 'O programa Z foi agendado com sucesso!')
         self.assertEqual(ps2.url, '/tv/api/1')
         # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps2.schedule_date, 1388657410)
@@ -1274,9 +1331,6 @@ class RemoteControlTest(TestCase):
             serial_number='lelele', mac='00:1A:D0:1A:D3:CA'
         )
 
-    def tearDown(self):
-        models.SetTopBox.objects.all().delete()
-
     def test_api_get_settopbox(self):
         url_get = reverse(
             'client_v1:api_dispatch_list',
@@ -1293,24 +1347,16 @@ class RemoteControlTest(TestCase):
         # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
         # ['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']
         from nbridge.models import Nbridge
-        server = devicemodels.Server.objects.create(
-            name='local',
-            host='127.0.0.1',
-            ssh_port=22,
-            username='nginx',  # getpass.getuser(),
-            rsakey='~/.ssh/id_rsa'
+        server, created = devicemodels.Server.objects.get_or_create(
+            host='127.0.0.1', offline_mode=True
         )
-        nb = Nbridge.objects.create(
-            middleware_addr='127.0.0.1:8000',
-            debug=True,
-            debug_port=5858,
-            log_level=3,
-            env_val='production',
-            server=server
-        )
-        nb.status = True
-        nb.save()
-        log.debug('Nbridge=%s', nb)
+        server.name = 'local'
+        server.ssh_port = 22
+        server.username = 'nginx'
+        server.rsakey='~/.ssh/id_rsa'
+        server.offline_mode = True
+        server.status = False
+        server.save()
         obj = resolve(
             '/tv/client/route/FF:21:30:70:64:33;FF:01:67:77:21:80;'
             'FF:32:32:26:11:21/key/tv/1'

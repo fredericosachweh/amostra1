@@ -40,6 +40,7 @@ else:
             'USER': 'iptv',
             'PASSWORD': 'iptv',
             'HOST': '/tmp',
+            'CONN_MAX_AGE': 120, # Tempo em segundos (persistente)
             #'PORT': '5432'
         }
     }
@@ -449,9 +450,9 @@ nginx-mw \
 """
 
 EPG_IMPORT_CREDENTIALS = {
-        'site': 'guide.kingrus.net',
-        'username': 'epg',
-        'password': 'bhhD.ahg3f',
+    'site': 'guide.kingrus.net',
+    'username': 'epg',
+    'password': 'bhhD.ahg3f',
 }
 
 ALLOWED_HOSTS = [
