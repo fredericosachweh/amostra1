@@ -177,6 +177,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Wed Oct 08 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.0-1
+- Fix TVoD, validate MAC addr.
 * Tue Sep 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.18.1-1
 - Nbridge offline.
 - Middleware API filter.
