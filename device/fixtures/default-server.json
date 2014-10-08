@@ -3,15 +3,15 @@
     "pk": 1,
     "model": "device.server",
     "fields": {
-      "username": "helber",
-      "status": true,
+      "username": "nginx",
+      "status": false,
       "name": "local",
       "server_type": "local",
       "ssh_port": 22,
       "rsakey": "~/.ssh/id_rsa",
       "modified": "2012-04-13T14:57:12",
       "host": "127.0.0.1",
-      "offline_mode": false,
+      "offline_mode": true,
       "msg": "OK",
       "password": ""
     }
