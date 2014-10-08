@@ -4,29 +4,30 @@ from settings import *
 
 DEBUG = True
 
-if 'test' in sys.argv:
-    ## Banco de dados teste
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': ''
-        }
+# if 'test' in sys.argv:
+#    ## Banco de dados teste
+#    DATABASES = {
+#        'default': {
+#            'ENGINE': 'django.db.backends.sqlite3',
+#            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+#            'USER': '',
+#            'PASSWORD': '',
+#            'HOST': '',
+#            'PORT': ''
+#        }
+#    }
+# else:
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '/tmp',
+        'CONN_MAX_AGE': 120, # Tempo em segundos (persistente)
+        #'PORT': ,
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'iptv',
-            'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '/tmp',
-            #'PORT': ,
-        }
-    }
+}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
@@ -107,7 +108,7 @@ if DEBUG is True:
         pass
 
 TASTYPIE_ABSTRACT_APIKEY = False
-
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = [
 #    '--with-coverage',
 #    '--cover-package=client',
