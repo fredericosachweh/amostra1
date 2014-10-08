@@ -270,9 +270,11 @@ def tvod(request, channel_number=None, command=None, seek=0):
     status = cache._cache.get_stats()
     if len(status) == 0:
         log.error('Memcached is not running')
-        return HttpResponse('',
+        return HttpResponse(
+            u'{"status": "error" ,"error": "memcached not running"}',
             mimetype='application/javascript',
-            status=500)
+            status=500
+        )
     resp = ''
     ## Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
@@ -283,53 +285,97 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.info('cache new key="%s"', key)
         cache.set(key, 1)
     else:
-        log.error('duplicated request key:"%s"', key)
-        if command != 'stop':
-            return HttpResponse(u'',
-                mimetype='application/javascript', status=409)
+        log.error('duplicated request key:"%s", cmd=%s', key, command)
+        if command != u'stop':
+            return HttpResponse(
+                u'{"status": "error" ,"error": "duplicated request"}',
+                mimetype='application/javascript',
+                status=409
+            )
     if key_value == 1:
         log.error('player is starting key:%s', key_value)
-        return HttpResponse(u'Anothe instance is starting',
-            mimetype='application/javascript', status=409)
+        if command != u'stop':
+            return HttpResponse(
+                u'{"status": "error" ,"error": "Another instance is starting"}',
+                mimetype='application/javascript',
+                status=409
+            )
     log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"',command, ip,
         channel_number, seek)
     ## User
     if request.user.is_anonymous():
         log.debug('User="%s" can\'t play', request.user)
         cache.delete(key)
-        return HttpResponse('', mimetype='application/javascript',
-            status=401)
+        return HttpResponse(
+            u'{"status": "error" ,"error": "Anonymous request"}',
+            mimetype='application/javascript',
+            status=401
+        )
     if request.user.groups.filter(name='settopbox').exists():
         serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
         stb = SetTopBox.objects.get(serial_number=serial)
         log.info('Filter for STB=%s', stb)
     else:
         cache.delete(key)
-        return HttpResponse('', mimetype='application/javascript',
-            status=401)
+        return HttpResponse(
+            u'{"status": "error" ,"error": "Not a STB"}',
+            mimetype='application/javascript',
+            status=401
+        )
+    # Colocando o stop antes de outros comandos
+    if command == u'stop':
+        try:
+            player = StreamPlayer.objects.get(stb_ip=ip)
+        except:
+            log.error('cmd=%s but no player with ip=%s', command, ip)
+            return HttpResponse(
+                u'{"status": "error" ,"error": "Player not fould"}',
+                mimetype='application/javascript',
+                status=401
+            )
+        if player.pid and player.status:
+            player.stop()
+        resp = command
+        cache.delete(key)
+        return HttpResponse(
+            u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
+            mimetype='application/javascript',
+            status=200
+        )
     ## Load channel
     try:
         channel = Channel.objects.get(number=channel_number)
     except:
         cache.delete(key)
-        log.warning('Not Found: %s', request.get_full_path())
-        return HttpResponse(u'', mimetype='application/javascript',
-            status=404)
+        log.warning('Channel not found: %s', request.get_full_path())
+        return HttpResponse(
+            u'{"status": "error" ,"error": "Channel not found"}',
+            mimetype='application/javascript',
+            status=404
+        )
     ## Verifica se existe gravação solicitada
     ## Correção do horário de verão
     seek = int(seek)
     localtimezone = timezone.get_current_timezone()
     log.info('Timezone=%s', localtimezone)
-    seconds_fix = (timezone.now() - timedelta(seconds=seek)).astimezone(localtimezone).dst().seconds
+    seconds_fix = (timezone.now() - \
+        timedelta(seconds=seek)).astimezone(localtimezone).dst().seconds
     log.info('Seconds fix=%s', seconds_fix)
     seek += seconds_fix
 
     record_time = timezone.now() - timedelta(seconds=seek)
-    log.debug('Agora(%s) - delta(%s) = %s', timezone.now(), timedelta(seconds=seek), record_time)
+    log.debug(
+        'Agora(%s) - delta(%s) = %s',
+        timezone.now(),
+        timedelta(seconds=seek),
+        record_time
+    )
 
     ## Find a recorder with request
-    log.debug('rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
-        record_time, channel, (seek / 3600))
+    log.debug(
+        'rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
+        record_time, channel, (seek / 3600)
+    )
     recorders = StreamRecorder.objects.filter(
         status=True,
         channel__settopboxchannel__settopbox=stb,
@@ -342,8 +388,11 @@ def tvod(request, channel_number=None, command=None, seek=0):
     if recorders.count() == 0:
         log.info('Record Unavaliable')
         cache.delete(key)
-        return HttpResponse(u'', mimetype='application/javascript',
-            status=404)
+        return HttpResponse(
+            u'{"status": "error" ,"error": "Record not found"}',
+            mimetype='application/javascript',
+            status=404
+        )
     # Priorize server (random)
     recorder = get_random_on_storage(recorders)
     log.debug('Current recorder:%s', recorder)
@@ -357,8 +406,11 @@ def tvod(request, channel_number=None, command=None, seek=0):
             )
         log.debug('new player created to ip: %s', ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
-    log.debug('Current channel=%s, New channel=%s', channel,
-        player.recorder.channel)
+    log.debug(
+        'Current channel=%s, New channel=%s',
+        channel,
+        player.recorder.channel
+    )
     if player.status and player.pid and channel == player.recorder.channel:
         pass
     else:
@@ -375,24 +427,24 @@ def tvod(request, channel_number=None, command=None, seek=0):
             thread.start_new_thread(run_play, (player, seek, cache, key))
             resp = ''
             return HttpResponse(
-                '{"response":"%s", "port":%d}' % (resp, player.stb_port),
-                mimetype='application/javascript', status=200)
+                u'{"response":"%s", "port":%d}' % (resp, player.stb_port),
+                mimetype='application/javascript',
+                status=200
+            )
             # player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
             resp = ''
-    elif command == 'pause':
+    elif command == u'pause':
         resp = player.pause(time_shift=int(seek))
-        resp = ''
-    elif command == 'stop':
-        if player.pid and player.status:
-            player.stop()
         resp = ''
     log.debug('Player: %s', player)
     cache.delete(key)
     return HttpResponse(
-        '{"response":"%s", "port":%d}' % (resp, player.stb_port),
-        mimetype='application/javascript', status=200)
+        u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
+        mimetype='application/javascript',
+        status=200
+    )
 
 
 def tvod_list(request):

@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 import logging
 import thread
 import requests
@@ -11,9 +11,9 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django import forms
 from tv.models import Channel
+from .fields import MACAddressField
 
 import dbsettings
-server_key = settings.NBRIDGE_SERVER_KEY
 from nbridge.models import Nbridge
 log = logging.getLogger('client')
 
@@ -35,28 +35,28 @@ class LogoToReplace(dbsettings.ImageValue):
             thumb = Image.open(fname)
             log.debug('Tamanho:%s', thumb.size)
             thumb.thumbnail((450, 164), Image.ANTIALIAS)
-            dst = '%smenu.png' % settings.MEDIA_ROOT 
+            dst = '%smenu.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'logo_small_menu':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((163, 67), Image.ANTIALIAS)
-            dst = '%slogo_menor1.png' % settings.MEDIA_ROOT 
+            dst = '%slogo_menor1.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'logo_small':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((163, 67), Image.ANTIALIAS)
-            dst = '%slogo_menor2.png' % settings.MEDIA_ROOT 
+            dst = '%slogo_menor2.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'banner_epg':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((450, 80), Image.ANTIALIAS)
-            dst = '%sbanner_repg.png' % settings.MEDIA_ROOT 
+            dst = '%sbanner_repg.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         log.debug('name=%s', self.attribute_name)
@@ -151,7 +151,7 @@ class SetTopBoxDefaultConfig(dbsettings.Group):
 
 def reload_channels(
         nbridge, settopbox, message=None, userchannel=True, channel=True
-        ):
+    ):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
     # reloaduserdata
     url = 'http://%s/ws/eval' % (nbridge.server.host)
@@ -165,7 +165,7 @@ def reload_channels(
     log.debug('Comando=%s', command)
     try:
         response = requests.post(url, timeout=10, data={
-            'server_key': server_key,
+            'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': command,
             'mac': [settopbox.mac]})
         log.debug('Resposta=[%s]%s', response.status_code, response.text)
@@ -180,7 +180,7 @@ def reboot_stb(nbridge, settopbox):
     url = 'http://%s/ws/reboot/' % (settopbox.nbridge.server.host)
     try:
         response = requests.post(url, timeout=10, data={
-            'server_key': server_key,
+            'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': '',
             'mac': [settopbox.mac]})
         log.debug('Resposta=[%s]%s', response.status_code, response.text)
@@ -197,7 +197,7 @@ def remote_debug_stb(settopbox):
     log.debug('Comando=%s', command)
     try:
         response = requests.post(url, timeout=10, data={
-            'server_key': server_key,
+            'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': command,
             'mac': [settopbox.mac]})
         log.debug('Resposta=[%s]%s', response.status_code, response.text)
@@ -213,7 +213,7 @@ class SetTopBox(models.Model):
     serial_number = models.CharField(
         _('Número serial'), max_length=255,
         help_text=_('Número serial do SetTopBox'), unique=True)
-    mac = models.CharField(
+    mac = MACAddressField(
         _('Endereço MAC'), max_length=255,
         help_text=_('Endereço MAC do SetTopBox'), unique=True)
     description = models.CharField(

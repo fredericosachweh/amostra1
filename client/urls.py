@@ -3,8 +3,10 @@
 module: client.urls
 @author: helber
 '''
+
 from django.conf.urls import patterns, url
 from django.views.decorators.csrf import csrf_exempt
+from . import dispatch
 from .views import Auth
 
 urlpatterns = patterns('',

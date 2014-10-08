@@ -80,18 +80,18 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "hc:r:f:")
     except getopt.GetoptError:
-        print 'fake_guide.py -c "channel;interval,channel2;interval2" -r <rating do programa> or -f <lista de canais em arquivo>'
+        print 'fake_guide.py -c "channel;interval;rating,channel2;interval2;rating2" or -f <lista de canais em arquivo>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'fake_guide.py -c "channel;interval,channel2;interval2" -r <rating do programa> or -f <lista de canais em arquivo>'
+            print 'fake_guide.py -c "channel;interval;rating,channel2;interval2;rating2" or -f <lista de canais em arquivo>'
             sys.exit()
         elif opt in ("-c"):
             tmp = []
             tmp = arg.split(',')
             for t in tmp:
                 splited_line = t.split(';')
-                elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')))
+                elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')), splited_line[2].replace('\n', '').replace('\r', ''))
                 channel.append(elem)
         elif opt in ("-f"):
             try:
@@ -99,7 +99,7 @@ def main(argv):
                 fp = open(arg, 'r')
                 for line in fp:
                     splited_line = line.split(';')
-                    elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')))
+                    elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')), splited_line[2].replace('\n', '').replace('\r', ''))
                     channel.append(elem)
             except ValueError:
                 print 'arquivo invalido'
@@ -119,7 +119,7 @@ def main(argv):
             initial_aux = stop
             tv.append(programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
                                    stop.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
-                                   ch[0], rate))
+                                   ch[0], ch[2]))
 
     # pretty string
     xml_guide = etree.tostring(tv, pretty_print=True, xml_declaration=True, encoding='iso-8859-1')

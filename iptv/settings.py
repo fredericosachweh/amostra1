@@ -40,6 +40,7 @@ else:
             'USER': 'iptv',
             'PASSWORD': 'iptv',
             'HOST': '/tmp',
+            'CONN_MAX_AGE': 120, # Tempo em segundos (persistente)
             #'PORT': '5432'
         }
     }
@@ -226,6 +227,12 @@ LOGGING = {
             'filename': '%s/unittest.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.erp': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/erp.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -280,6 +287,11 @@ LOGGING = {
         },
         'unittest': {
             'handlers': ['file.unittest'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'erp': {
+            'handlers': ['file.erp'],
             'level': 'DEBUG',
             'propagate': True
         },
@@ -438,9 +450,9 @@ nginx-mw \
 """
 
 EPG_IMPORT_CREDENTIALS = {
-        'site': 'guide.kingrus.net',
-        'username': 'epg',
-        'password': 'bhhD.ahg3f',
+    'site': 'guide.kingrus.net',
+    'username': 'epg',
+    'password': 'bhhD.ahg3f',
 }
 
 ALLOWED_HOSTS = [
