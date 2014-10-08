@@ -35,28 +35,28 @@ class LogoToReplace(dbsettings.ImageValue):
             thumb = Image.open(fname)
             log.debug('Tamanho:%s', thumb.size)
             thumb.thumbnail((450, 164), Image.ANTIALIAS)
-            dst = '%smenu.png' % settings.MEDIA_ROOT 
+            dst = '%smenu.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'logo_small_menu':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((163, 67), Image.ANTIALIAS)
-            dst = '%slogo_menor1.png' % settings.MEDIA_ROOT 
+            dst = '%slogo_menor1.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'logo_small':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((163, 67), Image.ANTIALIAS)
-            dst = '%slogo_menor2.png' % settings.MEDIA_ROOT 
+            dst = '%slogo_menor2.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         if self.attribute_name == 'banner_epg':
             fname = os.path.join(settings.MEDIA_ROOT, val)
             thumb = Image.open(fname)
             thumb.thumbnail((450, 80), Image.ANTIALIAS)
-            dst = '%sbanner_repg.png' % settings.MEDIA_ROOT 
+            dst = '%sbanner_repg.png' % (settings.MEDIA_ROOT)
             log.debug('Save to:%s', dst)
             thumb.save(dst)
         log.debug('name=%s', self.attribute_name)
