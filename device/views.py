@@ -359,6 +359,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     ).first()
     if stb_ch is None:
         cache.delete(key)
+        log.warning('No access on channel')
         return HttpResponse(
             u'{"status": "error" ,"error": "No access on channel"}',
             mimetype='application/javascript',
@@ -366,6 +367,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         )
     elif stb_ch.recorder is False:
         cache.delete(key)
+        log.warning('No access on recorder')
         return HttpResponse(
             u'{"status": "error" ,"error": "No access on recorder"}',
             mimetype='application/javascript',
