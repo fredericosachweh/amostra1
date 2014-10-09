@@ -77,16 +77,22 @@ class SetTopBoxAdmin(ModelAdmin):
         'serial_number', 'mac', 'description', 'online', 'ip', 'nbridge',
     )
     actions = [reboot_stb, reload_channels_stb, start_remote_debug]
-    inlines = [SetTopBoxChannelInline, ]
     list_filter = ['online',]
-    # list_select_related = True
 
     def get_readonly_fields(self, request, obj = None):
         if obj:
             return (
                 'mac', 'serial_number', 'online', 'nbridge', 'ip',
             ) + self.readonly_fields
+        else:
+            return (
+                'online', 'nbridge', 'ip',
+            ) + self.readonly_fields
         return self.readonly_fields
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        self.inlines = [SetTopBoxChannelInline, ]
+        return super(SetTopBoxAdmin, self).change_view(request, object_id)
 
 
 class SetTopBoxConfigAdmin(ModelAdmin):
