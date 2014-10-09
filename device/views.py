@@ -259,7 +259,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     from django.utils import timezone
     from models import StreamPlayer, StreamRecorder
     from tv.models import Channel
-    from client.models import SetTopBox
+    from client.models import SetTopBox, SetTopBoxChannel
     from django.core.cache import get_cache
     # TODO: Limit number of players
     # from django.db.models import F
@@ -317,6 +317,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.info('Filter for STB=%s', stb)
     else:
         cache.delete(key)
+        log.warn('Not a STB (not on settopbox group)')
         return HttpResponse(
             u'{"status": "error" ,"error": "Not a STB"}',
             mimetype='application/javascript',
@@ -353,6 +354,27 @@ def tvod(request, channel_number=None, command=None, seek=0):
             mimetype='application/javascript',
             status=404
         )
+    # Verifica se o STB tem acesso à gravações para o canal
+    stb_ch = SetTopBoxChannel.objects.filter(
+        settopbox=stb, channel=channel
+    ).first()
+    if stb_ch is None:
+        cache.delete(key)
+        log.warning('No access on channel')
+        return HttpResponse(
+            u'{"status": "error" ,"error": "No access on channel"}',
+            mimetype='application/javascript',
+            status=401
+        )
+    elif stb_ch.recorder is False:
+        cache.delete(key)
+        log.warning('No access on recorder')
+        return HttpResponse(
+            u'{"status": "error" ,"error": "No access on recorder"}',
+            mimetype='application/javascript',
+            status=401
+        )
+
     ## Verifica se existe gravação solicitada
     ## Correção do horário de verão
     seek = int(seek)
