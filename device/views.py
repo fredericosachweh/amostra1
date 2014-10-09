@@ -317,6 +317,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.info('Filter for STB=%s', stb)
     else:
         cache.delete(key)
+        log.warn('Not a STB (not on settopbox group)')
         return HttpResponse(
             u'{"status": "error" ,"error": "Not a STB"}',
             mimetype='application/javascript',
