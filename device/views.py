@@ -1,4 +1,7 @@
 # -*- encoding:utf-8 -*-
+import thread
+import logging
+
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import HttpResponseBadRequest
@@ -14,9 +17,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 import models
 import forms
-import logging
-
-import thread
 
 
 def home(request):
@@ -283,7 +283,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     key_value = cache.get(key)
     if key_value is None:
         log.info('cache new key="%s"', key)
-        cache.set(key, 1)
+        cache.set(key, 1, 4) # Define o lock com timeout de 4 segundos
     else:
         log.error('duplicated request key:"%s", cmd=%s', key, command)
         if command != u'stop':
