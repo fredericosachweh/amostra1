@@ -86,6 +86,10 @@ class SetTopBoxAdmin(ModelAdmin):
             return (
                 'mac', 'serial_number', 'online', 'nbridge', 'ip',
             ) + self.readonly_fields
+        else:
+            return (
+                'online', 'nbridge', 'ip',
+            ) + self.readonly_fields
         return self.readonly_fields
 
 
