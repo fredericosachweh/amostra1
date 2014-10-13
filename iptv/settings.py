@@ -307,7 +307,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     # South http://south.aeracode.org/docs/
-    'south',
+    # 'south',
     # Nose tests
     'django_nose',
     # Aplicação de controle de stream
