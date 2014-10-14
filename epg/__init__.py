@@ -1,3 +1,6 @@
+# -*- encoding:utf8 -*
+
+from __future__ import unicode_literals
 from django.conf import settings
 import os
 
@@ -8,3 +11,6 @@ try:
     os.makedirs(os.path.join(MEDIA_ROOT, 'epg'))
 except:
     pass
+
+
+default_app_config = 'epg.apps.EPGConfig'
