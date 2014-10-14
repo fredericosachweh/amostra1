@@ -5,10 +5,9 @@ import logging
 import simplejson
 
 from django.core.urlresolvers import reverse, resolve
-from django.test import TestCase
-from django.test.utils import override_settings
 from django.conf import settings
-from django.test.client import Client
+from django.test import modify_settings, override_settings
+from django.test import TestCase
 from django.test import client
 from django.utils import timezone
 from dbsettings.models import Setting as settingsmoldes
@@ -75,7 +74,7 @@ class APITest(TestCase):
         models.SetTopBox.options.auto_add_channel = False
         models.SetTopBox.options.use_mac_as_serial = True
         models.SetTopBox.options.auto_enable_recorder_access = True
-        c = Client()
+        c = client.Client()
         # Buscando o schema
         urlschema = reverse(
             'client:api_get_schema', kwargs={'resource_name': 'settopbox',
@@ -159,7 +158,7 @@ class APITest(TestCase):
 
     def test_PATCH(self):
         from django.contrib.auth.models import Permission
-        c = Client()
+        c = client.Client()
         c.login(username='erp', password='123')
         # urllogin = reverse('sys_login')
         # response = c.post(urllogin, {'username': 'erp', 'password': '123'},
@@ -190,7 +189,7 @@ class APITest(TestCase):
 
     def test_missing_mac(self):
         from django.contrib.auth.models import Permission
-        c = Client()
+        c = client.Client()
         c.login(username='erp', password='123')
         url = reverse(
             'client:api_dispatch_list',
@@ -207,7 +206,7 @@ class APITest(TestCase):
 
     def test_invalid_mac(self):
         from django.contrib.auth.models import Permission
-        c = Client()
+        c = client.Client()
         c.login(username='erp', password='123')
         p = self.user.user_permissions
         p.add(Permission.objects.get(codename='add_settopbox'))
@@ -266,7 +265,7 @@ class SetTopBoxChannelTest(TestCase):
         # import getpass
         from django.contrib.auth.models import User, Permission
         super(SetTopBoxChannelTest, self).setUp()
-        self.c = Client()
+        self.c = client.Client()
         self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
         self.user.is_staff = True
         self.user.save()
@@ -884,7 +883,7 @@ class SetTopBoxChannelTest(TestCase):
 class TestRequests(TestCase):
 
     def setUp(self):
-        self.c = Client()
+        self.c = client.Client()
 
     def test_call_login(self):
         models.SetTopBox.options.auto_create = True
@@ -969,7 +968,7 @@ class TestRequests(TestCase):
 class TestDefaultConfig(TestCase):
 
     def setUp(self):
-        self.c = Client()
+        self.c = client.Client()
 
     def test_call_login(self):
         models.SetTopBox.options.auto_create = True
@@ -1015,9 +1014,9 @@ class TestDefaultConfig(TestCase):
 class SetTopBoxProgramScheduleTest(TestCase):
 
     def setUp(self):
-        self.c1 = Client()
-        self.c2 = Client()
-        self.c3 = Client()
+        self.c1 = client.Client()
+        self.c2 = client.Client()
+        self.c3 = client.Client()
         self.auth_login = reverse('client_auth')
         self.auth_logoff = reverse('client_logoff')
 
@@ -1320,7 +1319,7 @@ class RemoteControlTest(TestCase):
         self.user = User.objects.create_user(
             'adm', 'adm@cianet.ind.br', '123'
         )
-        self.c = Client()
+        self.c = client.Client()
         models.SetTopBox.objects.create(
             serial_number='lululu', mac='FF:A0:00:00:01:61'
         )
