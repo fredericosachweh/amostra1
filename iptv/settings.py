@@ -56,7 +56,7 @@ TIME_ZONE = 'America/Sao_Paulo'
 
 # Novo no django 1.4
 USE_TZ = True
-#WSGI_APPLICATION = 'wsgi.application'
+WSGI_APPLICATION = 'iptv.wsgi.application'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -299,13 +299,13 @@ LOGGING = {
 }
 
 INSTALLED_APPS = (
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.admin',
     # South http://south.aeracode.org/docs/
     # 'south',
     # Nose tests
@@ -437,7 +437,7 @@ if 'test' in sys.argv:
 TASTYPIE_FULL_DEBUG = DEBUG
 TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
-#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 RPM_CHECK_VERSION = """\
 site_iptv \
