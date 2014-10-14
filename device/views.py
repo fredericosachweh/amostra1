@@ -272,7 +272,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.error('Memcached is not running')
         return HttpResponse(
             u'{"status": "error" ,"error": "memcached not running"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=500
         )
     resp = ''
@@ -289,7 +289,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         if command != u'stop':
             return HttpResponse(
                 u'{"status": "error" ,"error": "duplicated request"}',
-                mimetype='application/javascript',
+                content_type='application/javascript',
                 status=409
             )
     if key_value == 1:
@@ -297,7 +297,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         if command != u'stop':
             return HttpResponse(
                 u'{"status": "error" ,"error": "Another instance is starting"}',
-                mimetype='application/javascript',
+                content_type='application/javascript',
                 status=409
             )
     log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"',command, ip,
@@ -308,7 +308,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         return HttpResponse(
             u'{"status": "error" ,"error": "Anonymous request"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=401
         )
     if request.user.groups.filter(name='settopbox').exists():
@@ -320,7 +320,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.warn('Not a STB (not on settopbox group)')
         return HttpResponse(
             u'{"status": "error" ,"error": "Not a STB"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=401
         )
     # Colocando o stop antes de outros comandos
@@ -331,7 +331,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             log.error('cmd=%s but no player with ip=%s', command, ip)
             return HttpResponse(
                 u'{"status": "error" ,"error": "Player not fould"}',
-                mimetype='application/javascript',
+                content_type='application/javascript',
                 status=401
             )
         if player.pid and player.status:
@@ -340,7 +340,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         return HttpResponse(
             u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=200
         )
     ## Load channel
@@ -351,7 +351,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.warning('Channel not found: %s', request.get_full_path())
         return HttpResponse(
             u'{"status": "error" ,"error": "Channel not found"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=404
         )
     # Verifica se o STB tem acesso à gravações para o canal
@@ -363,7 +363,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.warning('No access on channel')
         return HttpResponse(
             u'{"status": "error" ,"error": "No access on channel"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=401
         )
     elif stb_ch.recorder is False:
@@ -371,7 +371,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.warning('No access on recorder')
         return HttpResponse(
             u'{"status": "error" ,"error": "No access on recorder"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=401
         )
 
@@ -412,7 +412,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         return HttpResponse(
             u'{"status": "error" ,"error": "Record not found"}',
-            mimetype='application/javascript',
+            content_type='application/javascript',
             status=404
         )
     # Priorize server (random)
@@ -450,7 +450,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             resp = ''
             return HttpResponse(
                 u'{"response":"%s", "port":%d}' % (resp, player.stb_port),
-                mimetype='application/javascript',
+                content_type='application/javascript',
                 status=200
             )
             # player.play(time_shift=int(seek))
@@ -464,7 +464,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     cache.delete(key)
     return HttpResponse(
         u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
-        mimetype='application/javascript',
+        content_type='application/javascript',
         status=200
     )
 
@@ -489,14 +489,14 @@ def tvod_list(request):
     if request.user.is_anonymous():
         log.debug('Return empt list to %s', request.user)
         json = simplejson.dumps({'meta': meta, 'objects': obj})
-        return HttpResponse(json, mimetype='application/javascript')
+        return HttpResponse(json, content_type='application/javascript')
     if request.user.groups.filter(name='settopbox').exists():
         serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
         stb = SetTopBox.objects.get(serial_number=serial)
         log.debug('Filter for STB=%s', stb)
     else:
         json = simplejson.dumps({'meta': meta, 'objects': obj})
-        return HttpResponse(json, mimetype='application/javascript')
+        return HttpResponse(json, content_type='application/javascript')
     ip = request.META.get('REMOTE_ADDR')
     log.debug('tvod_list from ip=%s' % ip)
     rec = StreamRecorder.objects.filter(status=True,
@@ -524,4 +524,4 @@ def tvod_list(request):
         json = 'callback(' + json + ')'
     if request.GET.get('callback') != None:
         json = request.GET.get('callback') + '(' + json + ')'
-    return HttpResponse(json, mimetype='application/javascript')
+    return HttpResponse(json, content_type='application/javascript')
