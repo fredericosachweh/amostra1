@@ -99,17 +99,19 @@ def main(argv):
                 fp = open(arg, 'r')
                 for line in fp:
                     splited_line = line.split(';')
-                    elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')), splited_line[2].replace('\n', '').replace('\r', ''))
-                    channel.append(elem)
+                    if len(splited_line) == 3:
+                        elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')), splited_line[2].replace('\n', '').replace('\r', ''))
+                        channel.append(elem)
             except ValueError:
                 print 'arquivo invalido'
                 sys.exit()
         elif opt in ("-r"):
             rate = arg
     # create XML - TV
-    tv = etree.Element('tv')
-    tv.attrib['generator-info-name'] = 'CIANET'
-    tv.attrib['generator-info-url'] = 'www.cianet.ind.br'
+    head = '<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n'
+    head += '<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">'
+    fakexml = open('fake_guide.xml', 'w')
+    fakexml.write(head)
     for ch in channel:
         initial_aux = initial_time
         programme_interval = ch[1]
@@ -117,16 +119,16 @@ def main(argv):
             start = initial_aux
             stop = initial_aux + timedelta(minutes=programme_interval)
             initial_aux = stop
-            tv.append(programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
+            programme = programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
                                    stop.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
-                                   ch[0], ch[2]))
-
-    # pretty string
-    xml_guide = etree.tostring(tv, pretty_print=True, xml_declaration=True, encoding='iso-8859-1')
-
+                                   ch[0], ch[2])
+            prog = etree.tostring(programme, pretty_print=True, xml_declaration=False)
+            fakexml.write(prog)
+            fakexml.flush()
+    foot = '</tv>'
     # Save to XML file
-    fakexml = open('fake_guide.xml', 'w')
-    fakexml.write(xml_guide)
+    fakexml.write(foot)
+    fakexml.close()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
