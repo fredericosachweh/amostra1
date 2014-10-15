@@ -78,13 +78,13 @@ def main(argv):
     channel = []
 
     try:
-        opts, args = getopt.getopt(argv, "hc:r:f:")
+        opts, args = getopt.getopt(argv, "hc:r:f:p:")
     except getopt.GetoptError:
-        print 'fake_guide.py -c "channel;interval;rating,channel2;interval2;rating2" or -f <lista de canais em arquivo>'
+        print 'fake_guide.py -c "channel;interval;rating,channel2;interval2;rating2" or -f <lista de canais em arquivo> or -p <canal para teste parental>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'fake_guide.py -c "channel;interval;rating,channel2;interval2;rating2" or -f <lista de canais em arquivo>'
+            print 'fake_guide.py -c "channel;interval;rating,channel2;interval2;rating2" or -f <lista de canais em arquivo> or -p <canal para teste parental>'
             sys.exit()
         elif opt in ("-c"):
             tmp = []
@@ -102,6 +102,45 @@ def main(argv):
                     if len(splited_line) == 3:
                         elem = (splited_line[0].replace('\n', '').replace('\r', ''), int(splited_line[1].replace('\n', '').replace('\r', '')), splited_line[2].replace('\n', '').replace('\r', ''))
                         channel.append(elem)
+            except ValueError:
+                print 'arquivo invalido'
+                sys.exit()
+        elif opt in ("-p"):
+            try:
+                parental_list = []
+                parental_list.append('0')
+                parental_list.append('10')
+                parental_list.append('12')
+                parental_list.append('16')
+                parental_list.append('18')
+                head = '<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n'
+                head += '<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">'
+                fakexml = open('fake_guide.xml', 'w')
+                fakexml.write(head)
+                elem = (arg, 5)
+                channel.append(elem)
+                for ch in channel:
+                    initial_aux = initial_time
+                    programme_interval = ch[1]
+                    parental_index = 0
+                    while (initial_aux < final_time):
+                        start = initial_aux
+                        stop = initial_aux + timedelta(minutes=programme_interval)
+                        initial_aux = stop
+                        programme = programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
+                                   stop.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
+                                   ch[0], parental_list[parental_index])
+                        prog = etree.tostring(programme, pretty_print=True, xml_declaration=False)
+                        fakexml.write(prog)
+                        fakexml.flush()
+                        if parental_index > 3:
+                            parental_index = 0
+                        else:
+                            parental_index += 1
+                foot = '</tv>'
+                fakexml.write(foot)
+                fakexml.close()
+                sys.exit()
             except ValueError:
                 print 'arquivo invalido'
                 sys.exit()
