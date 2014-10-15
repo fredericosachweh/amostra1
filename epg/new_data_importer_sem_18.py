@@ -269,11 +269,14 @@ class xmlVerification:
                         past_elem = elem
                 elif start < past_stop:
                     log.info('intercessão')
-                    past_elem.set('stop', elem.get('start'))
-                    past_stop = parse(elem.get('stop'))
-                    past_start = parse(elem.get('start'))
-                    self.linkxml.write(ET.tostring(past_elem))
-                    past_elem = elem
+                    if start == past_start:
+                        log.info('programa repetido')
+                    else:
+                        past_elem.set('stop', elem.get('start'))
+                        past_stop = parse(elem.get('stop'))
+                        past_start = parse(elem.get('start'))
+                        self.linkxml.write(ET.tostring(past_elem))
+                        past_elem = elem
                 elif start == past_stop:
                     past_stop = parse(elem.get('stop'))
                     past_start = parse(elem.get('start'))
