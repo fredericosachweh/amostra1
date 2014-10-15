@@ -114,7 +114,7 @@ def main(argv):
                 parental_list.append('16')
                 parental_list.append('18')
                 head = '<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n'
-                head += '<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">'
+                head += '<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">\n'
                 fakexml = open('fake_guide.xml', 'w')
                 fakexml.write(head)
                 elem = (arg, 5)
@@ -148,7 +148,7 @@ def main(argv):
             rate = arg
     # create XML - TV
     head = '<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n'
-    head += '<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">'
+    head += '<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">\n'
     fakexml = open('fake_guide.xml', 'w')
     fakexml.write(head)
     for ch in channel:
