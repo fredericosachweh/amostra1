@@ -8,6 +8,61 @@ from datetime import time
 import sys
 import getopt
 
+def programmeXMLParental(start, stop, channel, rate, parental_id):
+    # create XML - Programme
+    programme = etree.Element('programme')
+    programme.attrib['start'] = start
+    programme.attrib['stop'] = stop
+    programme.attrib['channel'] = 'static_' + channel.decode("utf-8")
+
+    # create XML - Title
+    title_pt = etree.Element('title')
+    title_pt.attrib['lang'] = 'pt'
+    if channel.decode("utf-8") == u'Áudio':
+        title_pt.text = u'Programação de ' + channel.decode("utf-8") + parental_id
+    else:
+        title_pt.text = u'Programação ' + channel.decode("utf-8") + parental_id
+    programme.append(title_pt)
+
+    # create XML - Credits
+    credits = etree.Element('credits')
+    actor = etree.Element('actor')
+    actor.text = 'CIANET'
+    credits.append(actor)
+    programme.append(credits)
+
+    # create XML - Date
+    date = etree.Element('date')
+    date.text = '2014'
+    programme.append(date)
+
+    # create XML - Category
+    category = etree.Element('category')
+    category.attrib['lang'] = 'pt'
+    category.text = 'Fake'
+    programme.append(category)
+
+    # create XML - Country
+    country = etree.Element('country')
+    country.text = 'Brasil'
+    programme.append(country)
+
+    # create XML - Video
+    video = etree.Element('video')
+    colour = etree.Element('colour')
+    colour.text = 'yes'
+    video.append(colour)
+    programme.append(video)
+
+    # create XML - Rating
+    rating = etree.Element('rating')
+    rating.attrib['system'] = 'Advisory'
+    value = etree.Element('value')
+    value.text = rate
+    rating.append(value)
+    programme.append(rating)
+    return programme
+
 def programmeXML(start, stop, channel, rate):
     # create XML - Programme
     programme = etree.Element('programme')
@@ -127,9 +182,9 @@ def main(argv):
                         start = initial_aux
                         stop = initial_aux + timedelta(minutes=programme_interval)
                         initial_aux = stop
-                        programme = programmeXML(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
+                        programme = programmeXMLParental(start.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
                                    stop.strftime("%Y%m%d%H%M%S") + ' ' + time_zone,
-                                   ch[0], parental_list[parental_index])
+                                   ch[0], parental_list[parental_index], parental_list[parental_index])
                         prog = etree.tostring(programme, pretty_print=True, xml_declaration=False)
                         fakexml.write(prog)
                         fakexml.flush()

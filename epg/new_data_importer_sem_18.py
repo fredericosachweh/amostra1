@@ -291,22 +291,27 @@ class xmlVerification:
         current_date = datetime(now.year, now.month, now.day,
                                 now.hour, 0, 0, 0, None)
         email_msg = 'Olá Maneca\nEu sou apenas um script do Douglas\nEstou aqui para te dar uma triste notícia, sim é verdade, estamos novamente com problemas com a guia =(\nSegue a seguir a lista de canais como \'problemas\':\n'
+        log.info(critical_list)
+        need_mail = False
         for dic in critical_list.items():
             last_date = dic[1]
             last_date = datetime(last_date.year, last_date.month, last_date.day,
                                  last_date.hour, 0, 0, 0, None)
             if last_date < current_date:
+                need_mail = True
                 email_msg += 'Critial problems: \n'
                 email_msg += 'Channel: %s\n' % dic[0]
                 email_msg += 'atual: %s\n' % current_date
                 email_msg += 'ultima: %s\n' % last_date
             elif ((last_date - timedelta(days=2)) < current_date):
+                need_mail = True
                 email_msg += 'Not a Critial problems: \n'
                 email_msg += 'Channel: %s\n' % dic[0]
                 email_msg += 'atual: %s\n' % current_date
                 email_msg += 'ultima: %s\n' % last_date
-        send_mail('EPG Critical Channels', email_msg, 'douglas.figueiredo@cianet.ind.br',
-                 ['emanoel@cianet.ind.br'], fail_silently=False)
+        if need_mail:
+            send_mail('EPG Critical Channels', email_msg, 'douglas.figueiredo@cianet.ind.br',
+                    ['emanoel@cianet.ind.br'], fail_silently=False)
         log.info('This document is valid to import')
         return self.linkxml
 
