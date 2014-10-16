@@ -6,13 +6,14 @@ from django.contrib import admin
 from django.contrib.admin.widgets import ForeignKeyRawIdWidget
 from django.db.models.fields.related import ManyToOneRel
 from widgets import ContentTypeSelect
-import models
+
+from . import models
 from dvbinfo import models as dvbinfo_models
 
 
 class GenericRelationForm(forms.ModelForm):
     class Meta(object):
-        exclude = ('',)
+        pass
 
     def __init__(self, *args, **kwargs):
         super(GenericRelationForm, self).__init__(*args, **kwargs)
@@ -20,7 +21,7 @@ class GenericRelationForm(forms.ModelForm):
             model = self.instance.content_type.model_class()
             model_key = model._meta.pk.name
         except Exception:
-            model = self.Meta.model
+            model = self._meta.model
             model_key = 'id'
         self.fields['object_id'].widget = ForeignKeyRawIdWidget(
             rel=ManyToOneRel('object_id', model, model_key),
@@ -145,7 +146,7 @@ class SoftTranscoderForm(GenericRelationForm):
 class StorageForm(forms.ModelForm):
     class Meta:
         model = models.Storage
-        exclude = ('',)
+        exclude = ('n_recorders', 'n_players',)
 
 
 class DigitalTunerHardwareForm(forms.ModelForm):
