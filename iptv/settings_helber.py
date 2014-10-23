@@ -84,7 +84,7 @@ if DEBUG is True:
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
-        DEBUG_TOOLBAR_PATCH_SETTINGS = False
+        DEBUG_TOOLBAR_PATCH_SETTINGS = True
         DEBUG_TOOLBAR_PANELS = [
             'debug_toolbar.panels.versions.VersionsPanel',
             'debug_toolbar.panels.timer.TimerPanel',
