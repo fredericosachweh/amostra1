@@ -177,6 +177,12 @@ echo -e "\033[0m"
 
 
 %changelog
+* Thu Oct 23 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.4-1
+- Desativando fix de tvod
+- Permissão de acesso do STB na gravação com respostas diferenciadas do motivo
+- Habilita o inline só na edição de STB
+- logs
+- Campo com problema na migração
 * Thu Oct 09 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.1-1
 - Timeout to tvod lock.
 * Wed Oct 08 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.0-1
