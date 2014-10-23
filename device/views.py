@@ -380,8 +380,9 @@ def tvod(request, channel_number=None, command=None, seek=0):
     seek = int(seek)
     localtimezone = timezone.get_current_timezone()
     log.info('Timezone=%s', localtimezone)
-    seconds_fix = (timezone.now() - \
-        timedelta(seconds=seek)).astimezone(localtimezone).dst().seconds
+    dst_now = timezone.now().astimezone(localtimezone).dst().seconds
+    dst_seek = (timezone.now() - timedelta(seconds=seek)).astimezone(localtimezone).dst().seconds
+    seconds_fix = dst_now - dst_seek
     log.info('Seconds fix=%s', seconds_fix)
     seek += seconds_fix
 
