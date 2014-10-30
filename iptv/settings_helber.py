@@ -108,8 +108,11 @@ if DEBUG is True:
         pass
 
 TASTYPIE_ABSTRACT_APIKEY = False
-# TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+
+# TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+# INSTALLED_APPS += ('django_nose',)
 NOSE_ARGS = [
 #    '--with-coverage',
 #    '--cover-package=client',
