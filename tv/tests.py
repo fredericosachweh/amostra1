@@ -229,10 +229,11 @@ class APITest(TestCase):
         self.assertEqual(obj[1]['next'], obj[2]['resource_uri'])
         self.assertEqual(obj[2]['next'], None)
         self.assertEqual(response.status_code, 200)
+        chid = self.channel2.id
         url = reverse('tv_v2:api_dispatch_detail',
-            kwargs={'pk': '2', 'api_name': 'v2', 'resource_name': 'channel'})
+            kwargs={'pk': chid, 'api_name': 'v2', 'resource_name': 'channel'})
         log.debug('URL=%s', url)
-        self.assertEqual(url, '/tv/api/tv/v2/channel/2/')
+        self.assertEqual(url, '/tv/api/tv/v2/channel/%d/' % (chid))
         response = c.get(url)
         log.debug('Resposta=%s', response.content)
         self.assertEqual(response.status_code, 200)
@@ -281,25 +282,22 @@ class APITest(TestCase):
         #log.debug('Conteudo:%s', response.content)
         canais = Channel.objects.all()
         log.debug('STB-CH=%s', SetTopBoxChannel.objects.all())
-        # 
         s1 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[1], recorder=False)
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
         #log.debug('Conteudo:%s', response.content)
         self.assertContains(response, canais[1].channelid)
-        # 
         s2 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[0], recorder=True)
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
         log.debug('Conteudo:%s', response.content)
         self.assertContains(response, canais[0].channelid)
-        # 
         s3 = SetTopBoxChannel.objects.create(settopbox=stb, channel=canais[2], recorder=True)
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
         log.debug('Conteudo:%s', response.content)
         self.assertContains(response, canais[2].channelid)
-        # Cria um novo STB 
+        # Cria um novo STB
         stb1 = SetTopBox.objects.create(
             serial_number='01:02:03:04:05:07',
             mac='01:02:03:04:05:07')
@@ -320,11 +318,3 @@ class APITest(TestCase):
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
         self.assertContains(response, '"total_count": 1')
-
-
-
-
-
-
-
-
