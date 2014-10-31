@@ -32,6 +32,9 @@ from datetime import timedelta
 from dateutil.parser import parse
 from lxml.etree import XMLSyntaxError
 
+import filecmp
+import os.path
+
 PROFILE_LOG_BASE = "/tmp"
 
 
@@ -342,7 +345,6 @@ class Zip_to_XML(object):
         for f in self.input_file.namelist():
 
             filename = os.path.basename(f)
-
             # skip directories
             if not filename:
                 continue
@@ -352,6 +354,17 @@ class Zip_to_XML(object):
             shutil.copyfileobj(source, target)
             source.close()
             target.close()
+            if os.path.isfile('/tmp/' + filename + '.old'):
+                if filecmp.cmp('/tmp/' + filename, '/tmp/' + filename + '.old'):
+                    log.info('Arquivos iguais, importação encerrada.')
+                    exit(0)
+                else:
+                    os.unlink('/tmp/' + filename + '.old')
+                    shutil.copy2('/tmp/' + filename, '/tmp/' + filename + '.old')
+                    log.info('Arquivos diferentes, iniciando importação')
+            else:
+                log.info('Arquivo antigo não encontrado, iniciando importação')
+                shutil.copy2('/tmp/' + filename, '/tmp/' + filename + '.old')
             
             log.info('/tmp/'+filename)
             verif = xmlVerification()
