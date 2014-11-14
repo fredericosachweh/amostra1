@@ -56,7 +56,7 @@ Requires:       python-mimeparse
 # SOAP client to CAS (Verimatrix)
 Requires:       python-suds-jurko
 # Monitoramento
-Requires:       pynag-cianet >= 0.1.1
+Requires:       pynag
 
 Requires:       nginxcianet >= 1.4.3
 # Para requests http no nbridge
@@ -177,6 +177,8 @@ echo -e "\033[0m"
 
 
 %changelog
+* Tue Nov 18 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.0-1
+- Update Django 1.7 exclude south.
 * Thu Oct 23 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.4-1
 - Desativando fix de tvod
 - Permissão de acesso do STB na gravação com respostas diferenciadas do motivo
