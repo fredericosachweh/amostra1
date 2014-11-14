@@ -15,14 +15,17 @@ from django.template.response import TemplateResponse
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from django.contrib.auth.decorators import user_passes_test, login_required
 import models
 import forms
-
+# Para requer admin:
+# @user_passes_test(lambda u: u.is_superuser)
 
 def home(request):
     return HttpResponseRedirect(reverse('admin:index'))
 
 
+@login_required
 def server_status(request, pk=None):
     server = get_object_or_404(models.Server, id=pk)
     server.connect()
@@ -38,6 +41,7 @@ def server_status(request, pk=None):
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
 
+@login_required
 def server_list_interfaces(request):
     log = logging.getLogger('device.view')
     pk = request.GET.get('server')
@@ -50,6 +54,7 @@ def server_list_interfaces(request):
     return HttpResponse(response)
 
 
+@login_required
 def server_list_storages(request):
     log = logging.getLogger('device.view')
     pk = request.GET.get('server')
@@ -63,6 +68,7 @@ def server_list_storages(request):
 
 
 @csrf_exempt
+@login_required
 def server_update_adapter(request, pk, action):
     import re
     log = logging.getLogger('debug')
@@ -96,6 +102,7 @@ def server_update_adapter(request, pk, action):
     return HttpResponse('')
 
 
+@login_required
 def server_list_dvbadapters(request):
     u"Returns avaible DVBWorld devices on server, excluding already used"
     log = logging.getLogger('debug')
@@ -131,6 +138,7 @@ def server_list_dvbadapters(request):
     return HttpResponse(response)
 
 
+@login_required
 def server_available_isdbtuners(request):
     "Returns the number of non-used PixelView adapters"
     pk = request.GET.get('server', None)
@@ -153,6 +161,7 @@ def server_available_isdbtuners(request):
     return HttpResponse(free_adapters + (adapters - tuners))
 
 
+@login_required
 def server_fileinput_scanfolder(request):
     pk = request.GET.get('server')
     server = get_object_or_404(models.Server, id=pk)
@@ -175,6 +184,7 @@ def server_coldstart(request, pk):
     return HttpResponse(str(tuners))
 
 
+@login_required
 def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
     url = request.META.get('HTTP_REFERER')
@@ -194,6 +204,7 @@ def deviceserver_switchlink(request, action, klass, pk):
     return HttpResponseRedirect(url)
 
 
+@login_required
 def inputmodel_scan(request):
     "Scan's a input device showing the results to the user"
     ct = int(request.GET.get('ct'))
@@ -221,6 +232,7 @@ def inputmodel_scan(request):
     return TemplateResponse(request, 'scan_result.html', context)
 
 
+@login_required
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
         if ttype == 'dvbs':
