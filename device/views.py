@@ -50,6 +50,18 @@ def server_list_interfaces(request):
     return HttpResponse(response)
 
 
+def server_list_storages(request):
+    log = logging.getLogger('device.view')
+    pk = request.GET.get('server')
+    log.debug('Server com pk=%s', pk)
+    server = get_object_or_404(models.Server, id=pk)
+    log.info('Listing Storage from server (pk=%s)', pk)
+    response = '<option selected="selected" value="">---------</option>'
+    for i in models.Storage.objects.filter(server=server):
+        response += ('<option value="%s">%s</option>' % (i.pk, i))
+    return HttpResponse(response)
+
+
 @csrf_exempt
 def server_update_adapter(request, pk, action):
     import re
