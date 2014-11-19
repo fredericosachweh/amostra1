@@ -261,6 +261,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
     from tv.models import Channel
     from client.models import SetTopBox, SetTopBoxChannel
     from django.core.cache import get_cache
+    import hashlib
     # TODO: Limit number of players
     # from django.db.models import F
     # q = StreamRecorder.objects.filter(
@@ -278,12 +279,16 @@ def tvod(request, channel_number=None, command=None, seek=0):
     resp = ''
     ## Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
+    # Get path to create stop hash
+    md5_path = hashlib.md5(request.path).hexdigest()
+    stop_key = 'tvod_stop_key_%s' % (md5_path)
     ## Find request on cache
     key = 'tvod_ip_%s' % ip
     key_value = cache.get(key)
     if key_value is None:
         log.info('cache new key="%s"', key)
-        cache.set(key, 1, 4) # Define o lock com timeout de 4 segundos
+        if command != u'stop':
+            cache.set(key, 1, 4) # Define o lock com timeout de 4 segundos
     else:
         log.error('duplicated request key:"%s", cmd=%s', key, command)
         if command != u'stop':
@@ -300,7 +305,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
                 mimetype='application/javascript',
                 status=409
             )
-    log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"',command, ip,
+    log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"', command, ip,
         channel_number, seek)
     ## User
     if request.user.is_anonymous():
@@ -325,6 +330,13 @@ def tvod(request, channel_number=None, command=None, seek=0):
         )
     # Colocando o stop antes de outros comandos
     if command == u'stop':
+        can_stop = cache.get('tvod_stop_key_%s' % (seek))
+        if can_stop is None and key_value is not None:
+            return HttpResponse(
+                u'{"status": "error" ,"error": "Stop ignored"}',
+                mimetype='application/javascript',
+                status=409
+            )
         try:
             player = StreamPlayer.objects.get(stb_ip=ip)
         except:
@@ -338,6 +350,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             player.stop()
         resp = command
         cache.delete(key)
+        cache.delete(can_stop)
         return HttpResponse(
             u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
             mimetype='application/javascript',
@@ -443,6 +456,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         player.server = recorder.server
         player.stb_port = settings.CHANNEL_PLAY_PORT
         player.save()
+    cache.set(stop_key, 1, 4)
     if command == 'play':
         try:
             if player.status and player.pid:
