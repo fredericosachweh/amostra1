@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
-#from base import *
+from __future__ import unicode_literals
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -29,19 +29,19 @@ class Channel(models.Model):
         help_text='Imagem do canal'
     )
     updated = models.DateTimeField(auto_now=True)
-    enabled = models.BooleanField(_(u'Disponível'), default=False)
+    enabled = models.BooleanField(_('Disponível'), default=False)
     source = models.ForeignKey('device.MulticastOutput', unique=False)
-    buffer_size = models.PositiveIntegerField(_(u'STB Buffer (milisegundos)'),
-        default=1000, help_text=u'For easy STB 300 > and < 5000')
+    buffer_size = models.PositiveIntegerField(_('STB Buffer (milisegundos)'),
+        default=1000, help_text='For easy STB 300 > and < 5000')
 
     _p = None
     _n = None
 
     def __unicode__(self):
-        return u"[%d] num=%s %s" % (self.id, self.number, self.name)
+        return "[%d] num=%s %s" % (self.id, self.number, self.name)
 
     def image_thum(self):
-        return u'<img width="40" alt="Thum não existe" src="%s" />' % (
+        return '<img width="40" alt="Thum não existe" src="%s" />' % (
              self.thumb.url)
 
     image_thum.short_description = 'Miniatura'
@@ -60,7 +60,7 @@ class Channel(models.Model):
         return ch
 
     @previous.setter
-    def previous(self, val):
+    def _previous(self, val):
         self._p = val
 
     @property
@@ -72,7 +72,7 @@ class Channel(models.Model):
         return ch
 
     @next.setter
-    def next(self, val):
+    def _next(self, val):
         self._n = val
 
     def _is_streaming(self):
@@ -89,12 +89,12 @@ class Channel(models.Model):
             return '<a>Desconfigurado</a>'
         ret = []
         if self._is_streaming() is True:
-            ret.append(_(u'Estrimando'))
+            ret.append(_('Estrimando'))
         if self._is_recording() is True:
-            ret.append(_(u'Gravando'))
+            ret.append(_('Gravando'))
         if len(ret) > 0:
             print(ret)
-            s = _(u" e ").join(unicode(v) for v in ret)
+            s = _(" e ").join(v for v in ret)
             return '<a href="%s" id="tv_id_%d" style="color:green;">' \
                    '%s</a>' % (reverse('channel_stop', args=[self.pk]),
                                self.pk, s)
@@ -103,7 +103,7 @@ class Channel(models.Model):
                    'Parado</a>' % (reverse('channel_start',
                                     kwargs={'pk': self.pk}), self.pk)
     switch_link.allow_tags = True
-    switch_link.short_description = u'Status'
+    switch_link.short_description = 'Status'
 
     def delete(self):
         """
@@ -132,10 +132,9 @@ class Channel(models.Model):
         obj = self.source
         ret = []
         while True:
-            ret.append(unicode(u"%s '%s'" % \
-                (obj.__class__.__name__, unicode(obj))))
+            ret.append("%s '%s'" % (obj.__class__.__name__, obj))
             if hasattr(obj, 'sink') and obj.sink is not None:
                 obj = obj.sink
             else:
                 break
-        return u" --> ".join(ret)
+        return " --> ".join(ret)

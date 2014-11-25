@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
-
+from __future__ import unicode_literals
 from django.contrib import admin
-from models         import Channel
-from django.db      import models
+from .models import Channel
+from django.db import models
 
 from django.contrib.admin.widgets import AdminFileWidget
-from django.utils.safestring      import mark_safe
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy
+
 
 def start_channels_action(modeladmin, request, queryset):
     for channel in queryset:
@@ -15,6 +16,7 @@ def start_channels_action(modeladmin, request, queryset):
 
 start_channels_action.short_description = ugettext_lazy(
     'Iniciar %(verbose_name_plural)s selecionados')
+
 
 def stop_channels_action(modeladmin, request, queryset):
     for channel in queryset:
@@ -34,7 +36,7 @@ class AdminImageWidget(AdminFileWidget):
             image_url = value.url
             file_name = str(value)
             output.append(
-                u'<a href="%s" target="_blank"><img src="%s" alt="%s" /></a>%s'
+                '<a href="%s" target="_blank"><img src="%s" alt="%s" /></a>%s'
                 % (
                     image_url,
                     image_url.replace('original', 'thumb'),
@@ -43,7 +45,7 @@ class AdminImageWidget(AdminFileWidget):
                 )
             )
         output.append(super(AdminFileWidget, self).render(name, value, attrs))
-        return mark_safe(u''.join(output))
+        return mark_safe(''.join(output))
 
 
 class ChannelAdmin(admin.ModelAdmin):
@@ -74,7 +76,7 @@ class ChannelAdmin(admin.ModelAdmin):
     ## Colocando imegem dentro do formulario
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'image':
-            request = kwargs.pop("request", None)
+            kwargs.pop("request", None)
             kwargs['widget'] = AdminImageWidget
             return db_field.formfield(**kwargs)
         return super(ChannelAdmin, self).formfield_for_dbfield(db_field,
