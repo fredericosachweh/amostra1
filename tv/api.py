@@ -43,8 +43,10 @@ class ChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=True,
-            source__isnull=False)
+        queryset = models.Channel.objects.filter(
+            enabled=True,
+            source__isnull=False
+        )
         authorization = ChannelResourceAuthorization()
         #authorization = SetTopBoxAuthorization()
         #authorization = Authorization()
@@ -123,8 +125,10 @@ class AllChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=True,
-            source__isnull=False)
+        queryset = models.Channel.objects.filter(
+            enabled=True,
+            source__isnull=False
+        )
         authorization = ReadOnlyAuthorization()
         excludes = ['enabled']
         allowed_methods = ['get']
@@ -172,8 +176,10 @@ class MyChannelResource(NamespacedModelResource):
     source = fields.CharField(blank=True)
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=True,
-            source__isnull=False)
+        queryset = models.Channel.objects.filter(
+            enabled=True,
+            source__isnull=False
+        )
         #excludes = ['enabled', 'description', 'enabled', 'name']
         fields = ['id', 'channelid', 'number', 'buffer_size']
         allowed_methods = ['get']
