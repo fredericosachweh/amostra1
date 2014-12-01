@@ -25,23 +25,25 @@ def channel_post_save(signal, instance, sender, **kwargs):
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         # Caso não exista, cria o diretório
         if os.path.exists(
-            os.path.join(MEDIA_ROOT, 'tv/channel/image/thumb')
-            ) is False:
+                os.path.join(MEDIA_ROOT, 'tv/channel/image/thumb')
+                ) is False:
             os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/thumb'))
         if os.path.exists(
-            os.path.join(MEDIA_ROOT, 'tv/channel/image/original')
-            ) is False:
+                os.path.join(MEDIA_ROOT, 'tv/channel/image/original')
+                ) is False:
             os.mkdir(os.path.join(MEDIA_ROOT, 'tv/channel/image/original'))
         # Criação da miniatura
-        instance.thumb.name = 'tv/channel/image/thumb/%d.%s' % (instance.id,
-extensao)
+        instance.thumb.name = 'tv/channel/image/thumb/%d.%s' % (
+            instance.id, extensao
+        )
         thumb = Image.open(instance.image.path)
         thumb.thumbnail((200, 200), Image.ANTIALIAS)
         thumb.save(instance.thumb.path)
         # Imagem original
         original = 'tv/channel/image/original/%d.%s' % (instance.id, extensao)
-        shutil.copyfile(instance.image.path, os.path.join(MEDIA_ROOT,
-original))
+        shutil.copyfile(instance.image.path, os.path.join(
+            MEDIA_ROOT, original)
+        )
         # Remove arquivo temporário
         os.unlink(instance.image.path)
         # instance.thumb.file
