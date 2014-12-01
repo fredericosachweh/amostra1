@@ -105,8 +105,9 @@ class Channel(models.Model):
             print(ret)
             s = _(" e ").join(v for v in ret)
             return '<a href="%s" id="tv_id_%d" style="color:green;">' \
-                   '%s</a>' % (reverse('channel_stop', args=[self.pk]),
-                               self.pk, s)
+                '%s</a>' % (
+                    reverse('channel_stop', args=[self.pk]), self.pk, s
+                )
         else:
             return '<a href="%s" id="tv_id_%d" style="color:red;">' \
                 'Parado</a>' % (

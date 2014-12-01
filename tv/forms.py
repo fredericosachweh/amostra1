@@ -21,8 +21,9 @@ class GenericRelationFormWizard(forms.ModelForm):
 class ChannelForm(forms.ModelForm):
     class Meta:
         model = tv.models.Channel
-        fields = ('number', 'name', 'channelid', 'description', 'enabled',
-'source')
+        fields = (
+            'number', 'name', 'channelid', 'description', 'enabled', 'source'
+        )
     epg_model = Channel.objects.all()
     epg_values = []
     for m in epg_model:
@@ -64,8 +65,9 @@ class AudioConfigsForm(BetterModelForm):
         list_display = ('audio_codec', 'switch_link')
         fieldsets = (
             (_('Conexão com outros devices'), {
-                'fields': ('server', 'nic_sink', 'nic_src', 'content_type',
-                    'object_id')
+                'fields': (
+                    'server', 'nic_sink', 'nic_src', 'content_type', 'object_id'
+                )
             }),
             (_('Transcodificador de Áudio'), {
                 'fields': ('transcode_audio', 'audio_codec')
