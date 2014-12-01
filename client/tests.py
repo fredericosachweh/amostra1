@@ -763,7 +763,7 @@ class SetTopBoxChannelTest(TestCase):
             'command': 'stop',
             'seek': 20
         }))
-        self.assertEqual(200, response.status_code)
+        self.assertEqual(409, response.status_code)
 
     def test_list_disable_channel(self):
         models.SetTopBox.options.auto_create = True
