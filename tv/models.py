@@ -20,19 +20,23 @@ class Channel(models.Model):
     name = models.CharField(_('Nome'), max_length=100)
     description = models.TextField(_('Descricao'))
     channelid = models.CharField(_('ID do Canal'), max_length=255)
-    image = models.ImageField(_('Logo'),
+    image = models.ImageField(
+        _('Logo'),
         upload_to='tv/channel/image/tmp',
         help_text='Imagem do canal'
     )
-    thumb = models.ImageField(_('Miniatura'),
+    thumb = models.ImageField(
+        _('Miniatura'),
         upload_to='tv/channel/image/thumb',
         help_text='Imagem do canal'
     )
     updated = models.DateTimeField(auto_now=True)
     enabled = models.BooleanField(_('Disponível'), default=False)
     source = models.ForeignKey('device.MulticastOutput', unique=False)
-    buffer_size = models.PositiveIntegerField(_('STB Buffer (milisegundos)'),
-        default=1000, help_text='For easy STB 300 > and < 5000')
+    buffer_size = models.PositiveIntegerField(
+        _('STB Buffer (milisegundos)'),
+        default=1000, help_text='For easy STB 300 > and < 5000'
+    )
 
     _p = None
     _n = None
@@ -42,7 +46,8 @@ class Channel(models.Model):
 
     def image_thum(self):
         return '<img width="40" alt="Thum não existe" src="%s" />' % (
-             self.thumb.url)
+            self.thumb.url
+        )
 
     image_thum.short_description = 'Miniatura'
     image_thum.allow_tags = True
@@ -55,8 +60,10 @@ class Channel(models.Model):
     def previous(self):
         if self._p is not None:
             return self._p
-        ch = Channel.objects.filter(number__lt=self.number, enabled=True,
-            source__isnull=False).order_by('-number')[0]
+        ch = Channel.objects.filter(
+            number__lt=self.number, enabled=True,
+            source__isnull=False
+        ).order_by('-number')[0]
         return ch
 
     @previous.setter
@@ -67,8 +74,10 @@ class Channel(models.Model):
     def next(self):
         if self._n is not None:
             return self._n
-        ch = Channel.objects.filter(number__gt=self.number, enabled=True,
-            source__isnull=False).order_by('number')[0]
+        ch = Channel.objects.filter(
+            number__gt=self.number, enabled=True,
+            source__isnull=False
+        ).order_by('number')[0]
         return ch
 
     @next.setter
@@ -100,8 +109,9 @@ class Channel(models.Model):
                                self.pk, s)
         else:
             return '<a href="%s" id="tv_id_%d" style="color:red;">' \
-                   'Parado</a>' % (reverse('channel_start',
-                                    kwargs={'pk': self.pk}), self.pk)
+                'Parado</a>' % (
+                    reverse('channel_start', kwargs={'pk': self.pk}), self.pk
+                )
     switch_link.allow_tags = True
     switch_link.short_description = 'Status'
 
