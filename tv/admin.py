@@ -56,17 +56,21 @@ class ChannelAdmin(admin.ModelAdmin):
         'fields': (
             ('number', 'name', 'channelid', 'enabled'),
             'description', 'image', 'buffer_size',
-                ('source'),
-            ),
-        }),)
+            ('source'),
+        ),
+    }),)
     #readonly_fields = ('thumb',)
     #filter_horizontal = ('programa',)
     #fields = ('numero','nome','descricao','logo','sigla','source', )
-    list_display = ('image_thum', 'number', 'name', 'channelid', 'source',
-        'buffer_size', 'enabled', 'switch_link')
+    list_display = (
+        'image_thum', 'number', 'name', 'channelid', 'source',
+        'buffer_size', 'enabled', 'switch_link'
+    )
     list_display_links = ('image_thum',)
-    list_editable = ('number', 'source', 'name', 'enabled',
-        'buffer_size',)
+    list_editable = (
+        'number', 'source', 'name', 'enabled',
+        'buffer_size'
+    )
     save_as = True
     list_per_page = 10
     search_fields = ['name', 'channelid']
@@ -79,7 +83,8 @@ class ChannelAdmin(admin.ModelAdmin):
             kwargs.pop("request", None)
             kwargs['widget'] = AdminImageWidget
             return db_field.formfield(**kwargs)
-        return super(ChannelAdmin, self).formfield_for_dbfield(db_field,
-            **kwargs)
+        return super(ChannelAdmin, self).formfield_for_dbfield(
+            db_field, **kwargs
+        )
 
 admin.site.register(Channel, ChannelAdmin)
