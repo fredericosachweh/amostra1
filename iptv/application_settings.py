@@ -76,8 +76,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Nose tests
-    # 'django_nose',
     # Aplicação de controle de stream
     'device',
     # EPG
@@ -86,8 +84,6 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
-    # Video on demand
-    #'vod',
     # Node bridge
     'nbridge',
     # Tools app
