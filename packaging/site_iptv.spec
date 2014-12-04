@@ -40,8 +40,6 @@ Requires:       python-nose
 Requires:       python-django-nose
 
 ## Por hora sem migração Usando embutino no pacote com submodulo
-# Requires:       Django-south
-# Requires:       django-tastypie >= 0.9.14
 Requires:       python-paramiko
 Requires:       python-dateutil
 Requires:       pytz
@@ -107,6 +105,9 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__install} -p -m 0644 %{SOURCE7} %{buildroot}%{_unitdir}/postgresql_iptv.service
 %{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/recorder
 %{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/videos
+# Definindo um arquivo para colocar o nome da versão
+%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
+echo "%{version}-%{release}" > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/site_iptv_version
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -126,17 +127,12 @@ echo "Após configurado executar os comandos:"
 echo "Inicializar o banco de dados:"
 echo "su - postgres"
 echo "initdb -D /iptv/var/lib/postgresql"
-echo "su - nginx"
-echo "%{__python} %{site_home}/manage.py collectstatic --noinput"
-echo ""
-echo "Para fazer a migração de banco:"
-echo "%{__python} %{site_home}/manage.py migrate"
-echo "Para um app especifico"
-echo "%{__python} %{site_home}/manage.py migrate <app>"
 echo "========================================================================="
 echo -e "\033[0m"
-
+echo "Coletando static"
 /bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput" > /dev/null
+echo "Migrando banco de dados"
+/bin/su nginx -c "%{__python} %{site_home}/manage.py migrate"
 
 %preun
 %systemd_preun
@@ -174,9 +170,16 @@ echo -e "\033[0m"
 %{_unitdir}/site_iptv.service
 %{_unitdir}/postgresql_iptv.service
 %config(noreplace) %{_sysconfdir}/sysconfig/site_iptv
+# Arquivo com a versão do pacote
+%{_sysconfdir}/sysconfig/site_iptv_version
 
 
 %changelog
+* Thu Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1
+- Auto migração de banco de dados
+- Arquivo com a versão do pacote para atualizações
+* Wed Nov 19 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.5-1
+- lock to stop tvod
 * Thu Oct 23 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.4-1
 - Desativando fix de tvod
 - Permissão de acesso do STB na gravação com respostas diferenciadas do motivo
