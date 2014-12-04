@@ -175,7 +175,7 @@ echo "Migrando banco de dados"
 
 
 %changelog
-* Tue Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1
+* Thu Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1
 - Auto migração de banco de dados
 - Arquivo com a versão do pacote para atualizações
 * Wed Nov 19 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.5-1
