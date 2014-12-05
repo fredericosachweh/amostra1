@@ -1,10 +1,10 @@
 import sys
 import os
+from .settings import DEBUG
 
 if 'test' in sys.argv:
     from tempfile import mkdtemp
     from .settings import (
-        DEBUG,
         PROJECT_ROOT_PATH,
         MULTICAT_LOGS_DIR,
         MULTICAT_SOCKETS_DIR,
