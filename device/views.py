@@ -1,4 +1,5 @@
 # -*- encoding:utf-8 -*-
+from __future__ import unicode_literals
 import thread
 import logging
 
@@ -15,22 +16,28 @@ from django.template.response import TemplateResponse
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
-import models
-import forms
+from django.contrib.auth.decorators import login_required
+from . import models
+from . import forms
+# Para requer admin:
+# @user_passes_test(lambda u: u.is_superuser)
 
 
 def home(request):
     return HttpResponseRedirect(reverse('admin:index'))
 
 
+@login_required
 def server_status(request, pk=None):
     server = get_object_or_404(models.Server, id=pk)
     server.connect()
     log = logging.getLogger('device.view')
     log.debug('server_status(pk=%s)', pk)
     if server.status is False:
-        log.error(u'Cant connect with server:(%s) %s:%d %s',
-            server, server.host, server.ssh_port, server.msg)
+        log.error(
+            'Cant connect with server:(%s) %s:%d %s',
+            server, server.host, server.ssh_port, server.msg
+        )
     else:
         server.auto_create_nic()
     log.info('Server:%s [%s]', server, server.status)
@@ -38,6 +45,7 @@ def server_status(request, pk=None):
     return HttpResponseRedirect(reverse('admin:device_server_changelist'))
 
 
+@login_required
 def server_list_interfaces(request):
     log = logging.getLogger('device.view')
     pk = request.GET.get('server')
@@ -50,13 +58,27 @@ def server_list_interfaces(request):
     return HttpResponse(response)
 
 
+@login_required
+def server_list_storages(request):
+    log = logging.getLogger('device.view')
+    pk = request.GET.get('server')
+    log.debug('Server com pk=%s', pk)
+    server = get_object_or_404(models.Server, id=pk)
+    log.info('Listing Storage from server (pk=%s)', pk)
+    response = '<option selected="selected" value="">---------</option>'
+    for i in models.Storage.objects.filter(server=server):
+        response += ('<option value="%s">%s</option>' % (i.pk, i))
+    return HttpResponse(response)
+
+
 @csrf_exempt
+@login_required
 def server_update_adapter(request, pk, action):
     import re
     log = logging.getLogger('debug')
     adapter_nr = request.POST.get('adapter_nr')
-    log.debug(u'Requisição para mudança de estado de um adapter')
-    log.debug(u'server: %s, action: %s, adapter_nr: %s' % (
+    log.debug('Requisição para mudança de estado de um adapter')
+    log.debug('server: %s, action: %s, adapter_nr: %s' % (
         pk, action, adapter_nr))
     server = get_object_or_404(models.Server, id=pk)
     # The adapter_nr will come in the format dvb1.frontend0, \
@@ -67,34 +89,40 @@ def server_update_adapter(request, pk, action):
     nr = aux.group(1)
     if action == 'add':
         try:
-            adapter = models.DigitalTunerHardware.objects.get(server=server,
-                                                        adapter_nr=nr)
-            log.debug(u'adapter já existia na base de dados')
+            adapter = models.DigitalTunerHardware.objects.get(
+                server=server, adapter_nr=nr
+            )
+            log.debug('adapter já existia na base de dados')
         except models.DigitalTunerHardware.DoesNotExist:
-            adapter = models.DigitalTunerHardware(server=server,
-                                                        adapter_nr=nr)
-            log.debug(u'adapter vai ser inserido na base de dados')
+            adapter = models.DigitalTunerHardware(
+                server=server, adapter_nr=nr
+            )
+            log.debug('adapter vai ser inserido na base de dados')
         adapter.grab_info()
         adapter.save()
     elif action == 'remove':
-        adapter = get_object_or_404(models.DigitalTunerHardware,
-                                   server=server, adapter_nr=nr)
+        adapter = get_object_or_404(
+            models.DigitalTunerHardware, server=server, adapter_nr=nr
+        )
         adapter.delete()
-        log.debug(u'o adapter %s foi removido da base de dados' % adapter)
+        log.debug('o adapter %s foi removido da base de dados' % adapter)
     return HttpResponse('')
 
 
+@login_required
 def server_list_dvbadapters(request):
-    u"Returns avaible DVBWorld devices on server, excluding already used"
+    "Returns avaible DVBWorld devices on server, excluding already used"
     log = logging.getLogger('debug')
     pk = request.GET.get('server', None)
     server = get_object_or_404(models.Server, pk=pk)
     tuner_type = request.GET.get('type')
     log.info('List device type:%s on server:%s', tuner_type, server)
     if tuner_type == 'dvb':
-        id_vendor = '04b4'  # DVBWorld S/S2
+        # id_vendor = '04b4'  # DVBWorld S/S2
+        pass
     elif tuner_type == 'isdb':
-        id_vendor = '1554'  # PixelView SBTVD
+        # id_vendor = '1554'  # PixelView SBTVD
+        pass
     else:
         return HttpResponseBadRequest('Must specify the type of device')
     response = '<option value="">---------</option>'
@@ -119,6 +147,7 @@ def server_list_dvbadapters(request):
     return HttpResponse(response)
 
 
+@login_required
 def server_available_isdbtuners(request):
     "Returns the number of non-used PixelView adapters"
     pk = request.GET.get('server', None)
@@ -141,12 +170,13 @@ def server_available_isdbtuners(request):
     return HttpResponse(free_adapters + (adapters - tuners))
 
 
+@login_required
 def server_fileinput_scanfolder(request):
     pk = request.GET.get('server')
     server = get_object_or_404(models.Server, id=pk)
-    l = u'<option value="">---------</option>\n'
+    l = '<option value="">---------</option>\n'
     for f in server.list_dir(settings.VLC_VIDEOFILES_DIR):
-        l += u'<option value="%s%s">%s</option>\n' % (
+        l += '<option value="%s%s">%s</option>\n' % (
             settings.VLC_VIDEOFILES_DIR, f, f)
     return HttpResponse(l)
 
@@ -163,6 +193,7 @@ def server_coldstart(request, pk):
     return HttpResponse(str(tuners))
 
 
+@login_required
 def deviceserver_switchlink(request, action, klass, pk):
     device = get_object_or_404(klass, id=pk)
     url = request.META.get('HTTP_REFERER')
@@ -182,6 +213,7 @@ def deviceserver_switchlink(request, action, klass, pk):
     return HttpResponseRedirect(url)
 
 
+@login_required
 def inputmodel_scan(request):
     "Scan's a input device showing the results to the user"
     ct = int(request.GET.get('ct'))
@@ -196,7 +228,7 @@ def inputmodel_scan(request):
     try:
         results = [(device, device.scan()) for device in queryset]
     except models.InputModel.GotNoLockException as ex:
-        response = _(u'Sem sinal: "%s"' % ex)
+        response = _('Sem sinal: "%s"' % ex)
         t = loader.get_template('device_500.html')
         c = RequestContext(request, {'error': response})
         return HttpResponseServerError(t.render(c))
@@ -209,32 +241,42 @@ def inputmodel_scan(request):
     return TemplateResponse(request, 'scan_result.html', context)
 
 
+@login_required
 def auto_fill_tuner_form(request, ttype):
     if request.method == 'GET':
         if ttype == 'dvbs':
-            return render_to_response('dvbs_autofill_form.html',
+            return render_to_response(
+                'dvbs_autofill_form.html',
                 {'fields': forms.DvbTunerAutoFillForm},
-                context_instance=RequestContext(request))
+                context_instance=RequestContext(request)
+            )
         elif ttype == 'isdb':
-            return render_to_response('isdb_autofill_form.html',
+            return render_to_response(
+                'isdb_autofill_form.html',
                 {'fields': forms.IsdbTunerAutoFillForm},
-                context_instance=RequestContext(request))
+                context_instance=RequestContext(request)
+            )
     elif request.method == 'POST':
         if ttype == 'dvbs':
-            return HttpResponse(\
-'<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s",\
-"%s","%s", "%s", "%s");</script>' % \
-(request.POST['freq'], request.POST['sr'], request.POST['pol'], \
- request.POST['mod'], request.POST['fec']))
+            return HttpResponse(
+                '<script type="text/javascript">opener.dismissAutoFillPopup('
+                'window, "%s", "%s","%s", "%s", "%s");</script>' % (
+                    request.POST['freq'],
+                    request.POST['sr'],
+                    request.POST['pol'],
+                    request.POST['mod'],
+                    request.POST['fec']
+                )
+            )
         elif ttype == 'isdb':
-            return HttpResponse(\
-'<script type="text/javascript">opener.dismissAutoFillPopup(window, "%s");\
-</script>' % \
-(request.POST['freq']))
+            return HttpResponse(
+                '<script type="text/javascript">opener.dismissAutoFillPopup('
+                'window, "%s");</script>' % (request.POST['freq'])
+            )
 
 
 def run_play(player, seektime, cache, key):
-    ret = player.play(time_shift=int(seektime))
+    player.play(time_shift=int(seektime))
     cache.delete(key)
 
 
@@ -254,7 +296,7 @@ def get_random_on_storage(recorders):
 
 
 def tvod(request, channel_number=None, command=None, seek=0):
-    u'TVOD commands'
+    'TVOD commands'
     from datetime import timedelta
     from django.utils import timezone
     from models import StreamPlayer, StreamRecorder
@@ -272,8 +314,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
     if len(status) == 0:
         log.error('Memcached is not running')
         return HttpResponse(
-            u'{"status": "error" ,"error": "memcached not running"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "memcached not running"}',
+            content_type='application/javascript',
             status=500
         )
     resp = ''
@@ -287,33 +329,35 @@ def tvod(request, channel_number=None, command=None, seek=0):
     key_value = cache.get(key)
     if key_value is None:
         log.info('cache new key="%s"', key)
-        if command != u'stop':
-            cache.set(key, 1, 4) # Define o lock com timeout de 4 segundos
+        if command != 'stop':
+            cache.set(key, 1, 4)  # Define o lock com timeout de 4 segundos
     else:
         log.error('duplicated request key:"%s", cmd=%s', key, command)
-        if command != u'stop':
+        if command != 'stop':
             return HttpResponse(
-                u'{"status": "error" ,"error": "duplicated request"}',
-                mimetype='application/javascript',
+                '{"status": "error" ,"error": "duplicated request"}',
+                content_type='application/javascript',
                 status=409
             )
     if key_value == 1:
         log.error('player is starting key:%s', key_value)
-        if command != u'stop':
+        if command != 'stop':
             return HttpResponse(
-                u'{"status": "error" ,"error": "Another instance is starting"}',
-                mimetype='application/javascript',
+                '{"status": "error" ,"error": "Another instance is starting"}',
+                content_type='application/javascript',
                 status=409
             )
-    log.info('tvod[%s] client:"%s" channel:"%s" seek:"%s"', command, ip,
-        channel_number, seek)
+    log.info(
+        'tvod[%s] client:"%s" channel:"%s" seek:"%s"',
+        command, ip, channel_number, seek
+    )
     ## User
     if request.user.is_anonymous():
         log.debug('User="%s" can\'t play', request.user)
         cache.delete(key)
         return HttpResponse(
-            u'{"status": "error" ,"error": "Anonymous request"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "Anonymous request"}',
+            content_type='application/javascript',
             status=401
         )
     if request.user.groups.filter(name='settopbox').exists():
@@ -324,17 +368,17 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         log.warn('Not a STB (not on settopbox group)')
         return HttpResponse(
-            u'{"status": "error" ,"error": "Not a STB"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "Not a STB"}',
+            content_type='application/javascript',
             status=401
         )
     # Colocando o stop antes de outros comandos
-    if command == u'stop':
+    if command == 'stop':
         can_stop = cache.get('tvod_stop_key_%s' % (seek))
         if can_stop is None and key_value is not None:
             return HttpResponse(
-                u'{"status": "error" ,"error": "Stop ignored"}',
-                mimetype='application/javascript',
+                '{"status": "error" ,"error": "Stop ignored"}',
+                content_type='application/javascript',
                 status=409
             )
         try:
@@ -342,8 +386,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         except:
             log.error('cmd=%s but no player with ip=%s', command, ip)
             return HttpResponse(
-                u'{"status": "error" ,"error": "Player not fould"}',
-                mimetype='application/javascript',
+                '{"status": "error" ,"error": "Player not fould"}',
+                content_type='application/javascript',
                 status=401
             )
         if player.pid and player.status:
@@ -352,8 +396,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         cache.delete(can_stop)
         return HttpResponse(
-            u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
-            mimetype='application/javascript',
+            '{"status":"%s", "port":%d}' % (resp, player.stb_port),
+            content_type='application/javascript',
             status=200
         )
     ## Load channel
@@ -363,8 +407,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         log.warning('Channel not found: %s', request.get_full_path())
         return HttpResponse(
-            u'{"status": "error" ,"error": "Channel not found"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "Channel not found"}',
+            content_type='application/javascript',
             status=404
         )
     # Verifica se o STB tem acesso à gravações para o canal
@@ -375,29 +419,20 @@ def tvod(request, channel_number=None, command=None, seek=0):
         cache.delete(key)
         log.warning('No access on channel')
         return HttpResponse(
-            u'{"status": "error" ,"error": "No access on channel"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "No access on channel"}',
+            content_type='application/javascript',
             status=401
         )
     elif stb_ch.recorder is False:
         cache.delete(key)
         log.warning('No access on recorder')
         return HttpResponse(
-            u'{"status": "error" ,"error": "No access on recorder"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "No access on recorder"}',
+            content_type='application/javascript',
             status=401
         )
 
-    ## Verifica se existe gravação solicitada
-    ## Correção do horário de verão
     seek = int(seek)
-    # localtimezone = timezone.get_current_timezone()
-    # log.info('Timezone=%s', localtimezone)
-    # dst_now = timezone.now().astimezone(localtimezone).dst().seconds
-    # dst_seek = (timezone.now() - timedelta(seconds=seek)).astimezone(localtimezone).dst().seconds
-    # seconds_fix = dst_now - dst_seek
-    # log.info('Seconds fix=%s', seconds_fix)
-    # seek += seconds_fix
 
     record_time = timezone.now() - timedelta(seconds=seek)
     log.debug(
@@ -425,8 +460,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         log.info('Record Unavaliable')
         cache.delete(key)
         return HttpResponse(
-            u'{"status": "error" ,"error": "Record not found"}',
-            mimetype='application/javascript',
+            '{"status": "error" ,"error": "Record not found"}',
+            content_type='application/javascript',
             status=404
         )
     # Priorize server (random)
@@ -464,28 +499,28 @@ def tvod(request, channel_number=None, command=None, seek=0):
             thread.start_new_thread(run_play, (player, seek, cache, key))
             resp = ''
             return HttpResponse(
-                u'{"response":"%s", "port":%d}' % (resp, player.stb_port),
-                mimetype='application/javascript',
+                '{"response":"%s", "port":%d}' % (resp, player.stb_port),
+                content_type='application/javascript',
                 status=200
             )
             # player.play(time_shift=int(seek))
         except Exception as e:
             log.error(e)
             resp = ''
-    elif command == u'pause':
+    elif command == 'pause':
         resp = player.pause(time_shift=int(seek))
         resp = ''
     log.debug('Player: %s', player)
     cache.delete(key)
     return HttpResponse(
-        u'{"status":"%s", "port":%d}' % (resp, player.stb_port),
-        mimetype='application/javascript',
+        '{"status":"%s", "port":%d}' % (resp, player.stb_port),
+        content_type='application/javascript',
         status=200
     )
 
 
 def tvod_list(request):
-    u'Get list of current recorders'
+    'Get list of current recorders'
     import simplejson
     from datetime import timedelta
     from django.utils import timezone
@@ -504,20 +539,21 @@ def tvod_list(request):
     if request.user.is_anonymous():
         log.debug('Return empt list to %s', request.user)
         json = simplejson.dumps({'meta': meta, 'objects': obj})
-        return HttpResponse(json, mimetype='application/javascript')
+        return HttpResponse(json, content_type='application/javascript')
     if request.user.groups.filter(name='settopbox').exists():
         serial = request.user.username.replace(settings.STB_USER_PREFIX, '')
         stb = SetTopBox.objects.get(serial_number=serial)
         log.debug('Filter for STB=%s', stb)
     else:
         json = simplejson.dumps({'meta': meta, 'objects': obj})
-        return HttpResponse(json, mimetype='application/javascript')
+        return HttpResponse(json, content_type='application/javascript')
     ip = request.META.get('REMOTE_ADDR')
     log.debug('tvod_list from ip=%s' % ip)
-    rec = StreamRecorder.objects.filter(status=True,
+    rec = StreamRecorder.objects.filter(
+        status=True,
         channel__settopboxchannel__settopbox=stb,
         channel__settopboxchannel__recorder=True
-        )
+    )
     log.debug('Recorders:%s', rec)
     for r in rec:
         meta['total_count'] += 1
@@ -534,9 +570,9 @@ def tvod_list(request):
             'channel': r.channel.number
             })
     json = simplejson.dumps({'meta': meta, 'objects': obj})
-    if request.GET.get('format') == 'jsonp' and \
-        request.GET.get('callback') == None:
+    if request.GET.get('format') == 'jsonp'\
+            and request.GET.get('callback') is None:
         json = 'callback(' + json + ')'
-    if request.GET.get('callback') != None:
+    if request.GET.get('callback') is not None:
         json = request.GET.get('callback') + '(' + json + ')'
-    return HttpResponse(json, mimetype='application/javascript')
+    return HttpResponse(json, content_type='application/javascript')

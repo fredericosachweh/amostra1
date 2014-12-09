@@ -14,7 +14,7 @@ __all__ = 'DinamicChoiceField', 'ImageField2Wizard',
 
 class DinamicChoiceField(forms.ChoiceField):
     '''
-    Campo ChoiceField dinÃ¢mico, alimentado por Ajax.
+    Campo ChoiceField dinâmico, alimentado por Ajax.
     A validacao deve apenas verificar se o campo esta vazio, nao deve
     verificar se o valor esta no 'choices'.
     '''
@@ -26,7 +26,7 @@ class DinamicChoiceField(forms.ChoiceField):
 
 class DinamicChoiceFieldDemux(forms.ChoiceField):
     '''
-    Campo ChoiceField dinÃ¢mico, alimentado por Ajax.
+    Campo ChoiceField dinâmico, alimentado por Ajax.
     A validacao deve apenas verificar se o campo esta vazio, nao deve
     verificar se o valor esta no 'choices'.
     '''
@@ -57,20 +57,3 @@ class ImageField2Wizard(forms.ImageField):
                     break
         if used_session is None:
             raise forms.ValidationError(self.error_messages['empty'])
-
-#    def clean(self, data, initial=None):
-#        sessions = Session.objects.all()
-#        used_session = None
-#        for session in sessions:
-#            decoded_session = session.get_decoded()
-#            if 'file_name' in decoded_session.keys():
-#                file_dir = str(decoded_session['file_name'])
-#                file_dir = os.path.join(settings.MEDIA_ROOT, file_dir)
-#                used_session = session
-#                try:
-#                    with open(file_dir) as f:
-#                        pass
-#                except IOError as e:
-#                    raise forms.ValidationError(self.error_messages['empty'])
-#        if used_session is None:
-#            raise forms.ValidationError(self.error_messages['empty'])

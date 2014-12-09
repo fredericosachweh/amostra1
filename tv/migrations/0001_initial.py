@@ -1,48 +1,35 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Channel'
-        db.create_table(u'tv_channel', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('number', self.gf('django.db.models.fields.PositiveSmallIntegerField')(unique=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=100)),
-            ('description', self.gf('django.db.models.fields.TextField')()),
-            ('channelid', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('image', self.gf('django.db.models.fields.files.ImageField')(max_length=100)),
-            ('thumb', self.gf('django.db.models.fields.files.ImageField')(max_length=100)),
-            ('updated', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('enabled', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('buffer_size', self.gf('django.db.models.fields.PositiveIntegerField')(default=1000)),
-        ))
-        db.send_create_signal(u'tv', ['Channel'])
+    dependencies = [
+        ('device', '0001_initial'),
+    ]
 
-
-    def backwards(self, orm):
-        # Deleting model 'Channel'
-        db.delete_table(u'tv_channel')
-
-
-    models = {
-        u'tv.channel': {
-            'Meta': {'ordering': "('number',)", 'object_name': 'Channel'},
-            'buffer_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1000'}),
-            'channelid': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {}),
-            'enabled': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'image': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'number': ('django.db.models.fields.PositiveSmallIntegerField', [], {'unique': 'True'}),
-            'thumb': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
-        }
-    }
-
-    complete_apps = ['tv']
+    operations = [
+        migrations.CreateModel(
+            name='Channel',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('number', models.PositiveSmallIntegerField(unique=True, verbose_name='Numero')),
+                ('name', models.CharField(max_length=100, verbose_name='Nome')),
+                ('description', models.TextField(verbose_name='Descricao')),
+                ('channelid', models.CharField(max_length=255, verbose_name='ID do Canal')),
+                ('image', models.ImageField(help_text=b'Imagem do canal', upload_to=b'tv/channel/image/tmp', verbose_name='Logo')),
+                ('thumb', models.ImageField(help_text=b'Imagem do canal', upload_to=b'tv/channel/image/thumb', verbose_name='Miniatura')),
+                ('updated', models.DateTimeField(auto_now=True)),
+                ('enabled', models.BooleanField(default=False, verbose_name='Dispon\xedvel')),
+                ('buffer_size', models.PositiveIntegerField(default=1000, help_text='For easy STB 300 > and < 5000', verbose_name='STB Buffer (milisegundos)')),
+                ('source', models.ForeignKey(to='device.MulticastOutput')),
+            ],
+            options={
+                'ordering': ('number',),
+                'verbose_name_plural': 'Canais',
+            },
+            bases=(models.Model,),
+        ),
+    ]

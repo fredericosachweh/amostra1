@@ -6,6 +6,7 @@ from django import db
 from django.db import transaction
 from django.core import serializers
 from django.utils.timezone import utc
+from django.core.mail import send_mail
 
 import re
 import zipfile
@@ -30,6 +31,9 @@ from lxml import etree
 from datetime import timedelta
 from dateutil.parser import parse
 from lxml.etree import XMLSyntaxError
+
+import filecmp
+import os.path
 
 PROFILE_LOG_BASE = "/tmp"
 
@@ -216,7 +220,7 @@ class xmlVerification:
         self.linkxml.write(tv_info)
         self.linkxml.flush()
         past_elem = None
-
+        critical_list = {}
         for event, elem in etree.iterparse(xml, tag='programme'):
             for child in elem.iterchildren():
                 if child.tag == 'rating':
@@ -231,7 +235,7 @@ class xmlVerification:
 
             start = parse(elem.get('start'))
             stop = parse(elem.get('stop'))
-
+            critical_list[channel] = start
             if (current_channel is None) or (current_channel != channel):
                 current_channel = channel
                 past_stop = parse(elem.get('stop'))
@@ -268,11 +272,14 @@ class xmlVerification:
                         past_elem = elem
                 elif start < past_stop:
                     log.info('intercessão')
-                    past_elem.set('stop', elem.get('start'))
-                    past_stop = parse(elem.get('stop'))
-                    past_start = parse(elem.get('start'))
-                    self.linkxml.write(ET.tostring(past_elem))
-                    past_elem = elem
+                    if start == past_start:
+                        log.info('programa repetido')
+                    else:
+                        past_elem.set('stop', elem.get('start'))
+                        past_stop = parse(elem.get('stop'))
+                        past_start = parse(elem.get('start'))
+                        self.linkxml.write(ET.tostring(past_elem))
+                        past_elem = elem
                 elif start == past_stop:
                     past_stop = parse(elem.get('stop'))
                     past_start = parse(elem.get('start'))
@@ -283,6 +290,31 @@ class xmlVerification:
         tv_end = "</tv>\n"
         self.linkxml.write(tv_end)
         self.linkxml.flush()
+        now = datetime.now()
+        current_date = datetime(now.year, now.month, now.day,
+                                now.hour, 0, 0, 0, None)
+        email_msg = 'Olá Maneca\nEu sou apenas um script do Douglas\nEstou aqui para te dar uma triste notícia, sim é verdade, estamos novamente com problemas com a guia =(\nSegue a seguir a lista de canais como \'problemas\':\n'
+        log.info(critical_list)
+        need_mail = False
+        for dic in critical_list.items():
+            last_date = dic[1]
+            last_date = datetime(last_date.year, last_date.month, last_date.day,
+                                 last_date.hour, 0, 0, 0, None)
+            if last_date < current_date:
+                need_mail = True
+                email_msg += 'Critial problems: \n'
+                email_msg += 'Channel: %s\n' % dic[0]
+                email_msg += 'atual: %s\n' % current_date
+                email_msg += 'ultima: %s\n' % last_date
+            elif ((last_date - timedelta(days=2)) < current_date):
+                need_mail = True
+                email_msg += 'Not a Critial problems: \n'
+                email_msg += 'Channel: %s\n' % dic[0]
+                email_msg += 'atual: %s\n' % current_date
+                email_msg += 'ultima: %s\n' % last_date
+        if need_mail:
+            send_mail('EPG Critical Channels', email_msg, 'douglas.figueiredo@cianet.ind.br',
+                    ['emanoel@cianet.ind.br'], fail_silently=False)
         log.info('This document is valid to import')
         return self.linkxml
 
@@ -313,7 +345,6 @@ class Zip_to_XML(object):
         for f in self.input_file.namelist():
 
             filename = os.path.basename(f)
-
             # skip directories
             if not filename:
                 continue
@@ -323,6 +354,17 @@ class Zip_to_XML(object):
             shutil.copyfileobj(source, target)
             source.close()
             target.close()
+            if os.path.isfile('/tmp/' + filename + '.old'):
+                if filecmp.cmp('/tmp/' + filename, '/tmp/' + filename + '.old'):
+                    log.info('Arquivos iguais, importação encerrada.')
+                    exit(0)
+                else:
+                    os.unlink('/tmp/' + filename + '.old')
+                    shutil.copy2('/tmp/' + filename, '/tmp/' + filename + '.old')
+                    log.info('Arquivos diferentes, iniciando importação')
+            else:
+                log.info('Arquivo antigo não encontrado, iniciando importação')
+                shutil.copy2('/tmp/' + filename, '/tmp/' + filename + '.old')
             
             log.info('/tmp/'+filename)
             verif = xmlVerification()

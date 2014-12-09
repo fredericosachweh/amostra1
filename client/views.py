@@ -64,7 +64,7 @@ class Auth(View):
             log.debug('Stop player %s', p)
             p.stop()
             p.delete()
-        stb.online = True
+        stb.online = False
         stb.ip = ip
         stb.save()
         response = HttpResponse(
@@ -192,4 +192,3 @@ def nbridge_down(request):
         ip=None, online=False, nbridge=None
     )
     return HttpResponse('{"status": "OK"}', content_type='application/json')
-

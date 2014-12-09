@@ -7,7 +7,7 @@ from device.models import DvbTuner
 from django.core.urlresolvers import reverse
 from device.models import UniqueIP, DemuxedService
 
-import models
+from . import models
 import logging
 
 
@@ -27,24 +27,29 @@ def input_list_interfaces(request):
     log = logging.getLogger('tv.view')
     pk = request.GET.get('type')
     log.debug('Type com pk=%s', pk)
-    table = {'arquivos_de_entrada': FileInput.objects.all(),
-             'entradas_multicast': MulticastInput.objects.all(),
-             'entradas_unicast': UnicastInput.objects.all(),
-             'isdb': IsdbTuner.objects.all(),
-             'dvbs': DvbTuner.objects.all()}[pk]
+    table = {
+        'arquivos_de_entrada': FileInput.objects.all(),
+        'entradas_multicast': MulticastInput.objects.all(),
+        'entradas_unicast': UnicastInput.objects.all(),
+        'isdb': IsdbTuner.objects.all(),
+        'dvbs': DvbTuner.objects.all()
+    }[pk]
     response = '<option selected="selected" value="">---------</option>'
     for v in table:
-        response += ('<option value="%s">%s %s</option>' % (v.id,
-v.description, v))
+        response += ('<option value="%s">%s %s</option>' % (
+            v.id, v.description, v
+        ))
     return HttpResponse(response)
 
 
 def get_content_type_id(content_type_key):
     ''' Values from device_content_type '''
-    content_type = {'dvbs': 26,
-                    'isdb': 27,
-                    'entradas_unicast': 28,
-                    'entradas_multicast': 29}[content_type_key]
+    content_type = {
+        'dvbs': 26,
+        'isdb': 27,
+        'entradas_unicast': 28,
+        'entradas_multicast': 29
+    }[content_type_key]
     return content_type
 
 

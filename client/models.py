@@ -307,7 +307,9 @@ class SetTopBoxChannel(models.Model):
 
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
     channel = models.ForeignKey('tv.Channel', db_index=True)
-    recorder = models.BooleanField(_('Pode acessar conteúdo gravado'))
+    recorder = models.BooleanField(
+        _('Pode acessar conteúdo gravado'), default=False
+    )
 
     class Meta:
         unique_together = (('settopbox', 'channel',),)

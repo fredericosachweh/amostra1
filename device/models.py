@@ -11,6 +11,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.utils.encoding import python_2_unicode_compatible
 
 #from client.models import SetTopBox
 
@@ -440,6 +441,7 @@ class NIC(models.Model):
         return '[%s] %s (%s)' % (self.server, self.name, self.ipv4)
 
 
+@python_2_unicode_compatible
 class UniqueIP(models.Model):
     """
     Classe de endereço ip externo (na rede dos clientes)
@@ -458,14 +460,14 @@ class UniqueIP(models.Model):
         default=2)
 
     ## Para o relacionamento genérico de origem
-    sink = generic.GenericForeignKey()
+    sink = generic.GenericForeignKey()# 'content_type', 'object_id'
     content_type = models.ForeignKey(ContentType,
         limit_choices_to={"model__in": (
             "demuxedservice", "fileinput", "softtranscoder")},
         blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.sink is None:
             sink = ''
             sink_classname = ''
@@ -483,7 +485,7 @@ class UniqueIP(models.Model):
         if self.sink is None:
             return ''
         return '<a href="%s">&lt;%s&gt; %s</a>' % (
-            reverse('admin:device_%s_change' % self.sink._meta.module_name,
+            reverse('admin:device_%s_change' % self.sink._meta.model_name,
                 args=[self.sink.pk]), self.sink._meta.verbose_name, self.sink)
     sink_str.allow_tags = True
     sink_str.short_description = _('Entrada (sink)')
@@ -494,7 +496,7 @@ class UniqueIP(models.Model):
         ret = []
         for obj in self.src:
             ret.append('<a href="%s">&lt;%s&gt; %s</a>' % (
-                reverse('admin:device_%s_change' % obj._meta.module_name,
+                reverse('admin:device_%s_change' % obj._meta.model_name,
                     args=[obj.pk]), obj._meta.verbose_name, obj))
         return u"<br />".join(ret)
     src_str.allow_tags = True
@@ -632,26 +634,26 @@ class DeviceServer(models.Model):
         return '%s - %s' % (self.__class__, self.description)
 
     def switch_link(self):
-        module_name = self._meta.module_name
+        model_name = self._meta.model_name
         if (hasattr(self, 'src') and self.src is None) or \
            (hasattr(self, 'sink') and self.sink is None):
             return _('Desconfigurado')
         running = self.running()
         if running == False and self.status == True:
-            url = reverse('%s_recover' % module_name,
+            url = reverse('%s_recover' % model_name,
                 kwargs={'pk': self.id})
             return 'Crashed<a href="%s" id="%s_id_%s" style="color:red;">' \
                    ' ( Recuperar )</a> ' % (
-                    url, module_name, self.id)
+                    url, model_name, self.id)
         if running == True and self.status == True:
-            url = reverse('%s_stop' % module_name,
+            url = reverse('%s_stop' % model_name,
                 kwargs={'pk': self.id})
             return '<a href="%s" id="%s_id_%s" style="color:green;">' \
-                   'Rodando</a>' % (url, module_name, self.id)
-        url = reverse('%s_start' % module_name,
+                   'Rodando</a>' % (url, model_name, self.id)
+        url = reverse('%s_start' % model_name,
             kwargs={'pk': self.id})
         return '<a href="%s" id="%s_id_%s" style="color:red;">Parado</a>' \
-            % (url, module_name, self.id)
+            % (url, model_name, self.id)
 
     switch_link.allow_tags = True
     switch_link.short_description = 'Status'
@@ -705,7 +707,7 @@ class DemuxedService(DeviceServer):
             ("dvbtuner", "isdbtuner", "unicastinput", "multicastinput")},
          null=True)
     object_id = models.PositiveIntegerField(null=True)
-    sink = generic.GenericForeignKey()
+    sink = generic.GenericForeignKey() # 'content_type', 'object_id'
 
     def __unicode__(self):
         return ('[%d] %s - %s') % (self.sid, self.provider, self.service_desc)

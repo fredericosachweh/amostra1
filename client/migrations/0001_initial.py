@@ -1,126 +1,113 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import client.fields
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'SetTopBox'
-        db.create_table(u'client_settopbox', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('serial_number', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
-            ('mac', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
-            ('description', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
-            ('online', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal(u'client', ['SetTopBox'])
+    dependencies = [
+    ]
 
-        # Adding model 'SetTopBoxParameter'
-        db.create_table(u'client_settopboxparameter', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('key', self.gf('django.db.models.fields.CharField')(max_length=250, db_index=True)),
-            ('value', self.gf('django.db.models.fields.CharField')(max_length=250, db_index=True)),
-            ('settopbox', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['client.SetTopBox'])),
-        ))
-        db.send_create_signal(u'client', ['SetTopBoxParameter'])
-
-        # Adding unique constraint on 'SetTopBoxParameter', fields ['key', 'value', 'settopbox']
-        db.create_unique(u'client_settopboxparameter', ['key', 'value', 'settopbox_id'])
-
-        # Adding model 'SetTopBoxChannel'
-        db.create_table(u'client_settopboxchannel', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('settopbox', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['client.SetTopBox'])),
-            ('recorder', self.gf('django.db.models.fields.BooleanField')()),
-        ))
-        db.send_create_signal(u'client', ['SetTopBoxChannel'])
-
-        # Adding model 'SetTopBoxConfig'
-        db.create_table(u'client_settopboxconfig', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('key', self.gf('django.db.models.fields.CharField')(max_length=250, db_index=True)),
-            ('value', self.gf('django.db.models.fields.CharField')(max_length=250, db_index=True)),
-            ('value_type', self.gf('django.db.models.fields.CharField')(max_length=50)),
-            ('settopbox', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['client.SetTopBox'])),
-        ))
-        db.send_create_signal(u'client', ['SetTopBoxConfig'])
-
-        # Adding unique constraint on 'SetTopBoxConfig', fields ['key', 'settopbox']
-        db.create_unique(u'client_settopboxconfig', ['key', 'settopbox_id'])
-
-        # Adding model 'SetTopBoxMessage'
-        db.create_table(u'client_settopboxmessage', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('key', self.gf('django.db.models.fields.CharField')(max_length=250, db_index=True)),
-            ('value', self.gf('django.db.models.fields.TextField')()),
-            ('api_reference', self.gf('django.db.models.fields.CharField')(max_length=250)),
-        ))
-        db.send_create_signal(u'client', ['SetTopBoxMessage'])
-
-
-    def backwards(self, orm):
-        # Removing unique constraint on 'SetTopBoxConfig', fields ['key', 'settopbox']
-        db.delete_unique(u'client_settopboxconfig', ['key', 'settopbox_id'])
-
-        # Removing unique constraint on 'SetTopBoxParameter', fields ['key', 'value', 'settopbox']
-        db.delete_unique(u'client_settopboxparameter', ['key', 'value', 'settopbox_id'])
-
-        # Deleting model 'SetTopBox'
-        db.delete_table(u'client_settopbox')
-
-        # Deleting model 'SetTopBoxParameter'
-        db.delete_table(u'client_settopboxparameter')
-
-        # Deleting model 'SetTopBoxChannel'
-        db.delete_table(u'client_settopboxchannel')
-
-        # Deleting model 'SetTopBoxConfig'
-        db.delete_table(u'client_settopboxconfig')
-
-        # Deleting model 'SetTopBoxMessage'
-        db.delete_table(u'client_settopboxmessage')
-
-
-    models = {
-        u'client.settopbox': {
-            'Meta': {'object_name': 'SetTopBox'},
-            'description': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'mac': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
-            'online': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'serial_number': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
-        },
-        u'client.settopboxchannel': {
-            'Meta': {'ordering': "(u'settopbox', u'channel__number')", 'object_name': 'SetTopBoxChannel'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'recorder': ('django.db.models.fields.BooleanField', [], {}),
-            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"})
-        },
-        u'client.settopboxconfig': {
-            'Meta': {'unique_together': "((u'key', u'settopbox'),)", 'object_name': 'SetTopBoxConfig'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
-            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
-            'value': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
-            'value_type': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        u'client.settopboxmessage': {
-            'Meta': {'object_name': 'SetTopBoxMessage'},
-            'api_reference': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
-            'value': ('django.db.models.fields.TextField', [], {})
-        },
-        u'client.settopboxparameter': {
-            'Meta': {'unique_together': "((u'key', u'value', u'settopbox'),)", 'object_name': 'SetTopBoxParameter'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'key': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'}),
-            'settopbox': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['client.SetTopBox']"}),
-            'value': ('django.db.models.fields.CharField', [], {'max_length': '250', 'db_index': 'True'})
-        }
-    }
-
-    complete_apps = ['client']
+    operations = [
+        migrations.CreateModel(
+            name='SetTopBox',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('serial_number', models.CharField(help_text='N\xfamero serial do SetTopBox', unique=True, max_length=255, verbose_name='N\xfamero serial')),
+                ('mac', client.fields.MACAddressField(help_text='Endere\xe7o MAC do SetTopBox', unique=True, max_length=17, verbose_name='Endere\xe7o MAC')),
+                ('description', models.CharField(max_length=255, null=True, verbose_name='Descri\xe7\xe3o opcional', blank=True)),
+                ('online', models.BooleanField(default=False, verbose_name='On-line')),
+                ('ip', models.GenericIPAddressField(protocol='IPv4', default=None, blank=True, null=True, verbose_name='Endere\xe7o IP')),
+            ],
+            options={
+                'verbose_name': 'SetTopBox',
+                'verbose_name_plural': 'SetTopBoxes',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SetTopBoxBehaviorFlag',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('key', models.CharField(help_text='Chave de indentifica\xe7\xe3o da flag de comportamento', max_length=250, verbose_name='Chave', db_index=True)),
+                ('value', models.CharField(help_text='Valor do comportamento. Ex. 0.5', max_length=250, verbose_name='Valor', db_index=True)),
+                ('value_type', models.CharField(max_length=50, verbose_name='Tipo do parametro')),
+            ],
+            options={
+                'verbose_name': 'Flag de comportamento',
+                'verbose_name_plural': 'Flags de comportamento',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SetTopBoxChannel',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('recorder', models.BooleanField(default=False, verbose_name='Pode acessar conte\xfado gravado')),
+            ],
+            options={
+                'ordering': ('settopbox', 'channel__number'),
+                'verbose_name': 'STB <=> Canal (canal habilitado)',
+                'verbose_name_plural': 'STBs <=> Canais (canais habilitados)',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SetTopBoxConfig',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('key', models.CharField(help_text='Chave do parametro. Ex. VOLUME_LEVEL', max_length=250, verbose_name='Chave', db_index=True)),
+                ('value', models.CharField(help_text='Valor do parametro. Ex. 0.5', max_length=250, verbose_name='Valor', db_index=True)),
+                ('value_type', models.CharField(max_length=50, verbose_name='Tipo do parametro')),
+            ],
+            options={
+                'verbose_name': 'Configura\xe7\xe3o do Cliente',
+                'verbose_name_plural': 'Configura\xe7\xf5es do Cliente',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SetTopBoxMessage',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('key', models.CharField(help_text='Chave de indentifica\xe7\xe3o da mensagem', max_length=250, verbose_name='Chave', db_index=True)),
+                ('value', models.TextField(verbose_name='Conte\xfado')),
+                ('api_reference', models.CharField(help_text='API base para consumo de vari\xe1veis', max_length=250, verbose_name='Referencia de API')),
+            ],
+            options={
+                'verbose_name': 'Mensagem do cliente',
+                'verbose_name_plural': 'Mensagens do cliente',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SetTopBoxParameter',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('key', models.CharField(help_text='Chave do parametro. Ex. MACADDR', max_length=250, verbose_name='Chave', db_index=True)),
+                ('value', models.CharField(help_text='Valor do parametro. Ex. 00:00:00:00:00', max_length=250, verbose_name='Valor', db_index=True)),
+            ],
+            options={
+                'verbose_name': 'Parametro do SetTopBox',
+                'verbose_name_plural': 'Parametros dos SetTopBox',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SetTopBoxProgramSchedule',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('url', models.TextField(verbose_name='/tv/api/tv/v1/channel/42/')),
+                ('message', models.TextField(verbose_name='Agendamento realizado com sucesso!')),
+                ('schedule_date', models.BigIntegerField()),
+            ],
+            options={
+                'ordering': ('settopbox', 'channel__number'),
+                'verbose_name': 'Agendamento',
+                'verbose_name_plural': 'Agendamentos',
+            },
+            bases=(models.Model,),
+        ),
+    ]

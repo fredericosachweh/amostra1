@@ -20,7 +20,9 @@ class Satellite(models.Model):
     logo = models.CharField(max_length=300)
     
     def __unicode__(self):
-        return u'%d °%s - %s' % (self.azimuth_degrees, self.azimuth_direction, self.name)
+        return u'%d °%s - %s' % (
+            self.azimuth_degrees, self.azimuth_direction, self.name
+        )
 
 
 class Transponder(models.Model):
@@ -106,8 +108,8 @@ class VirtualChannel(models.Model):
     
     number = models.FloatField(_(u'Canal virtual'))
     name = models.CharField(_(u'Nome'), max_length=200)
-    epg = models.BooleanField(_(u'Guia de programação'))
-    interactivity = models.BooleanField(_(u'Interatividade'))
+    epg = models.BooleanField(_(u'Guia de programação'), default=False)
+    interactivity = models.BooleanField(_(u'Interatividade'), default=False)
     physical_channel = models.ForeignKey(PhysicalChannel, verbose_name=_(u'Canal físico'))
     
     def city(self):

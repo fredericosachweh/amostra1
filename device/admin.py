@@ -5,7 +5,7 @@
 Modulo administrativo do controle de midias e gravacoes
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 import logging
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy, ugettext as _
@@ -13,9 +13,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.contrib.contenttypes import generic
+from django.db.models.fields import FieldDoesNotExist
 
-import models
-import forms
+from . import models
+from . import forms
 
 from django.contrib.sites.models import Site
 
@@ -46,7 +47,14 @@ class NICInline(admin.StackedInline):
     model = models.NIC
 
 
-class AdminServer(admin.ModelAdmin):
+class AdminUnsafeLookup(admin.ModelAdmin):
+
+    def to_field_allowed(self, request, to_field):
+        log.debug('AdminUnsafeLookup: %s, %s', request.GET, to_field)
+        return True
+
+
+class AdminServer(AdminUnsafeLookup):
     readonly_fields = ('status', 'modified', 'msg', 'show_versions')
     list_display = (
         '__unicode__', 'server_type', 'status', 'msg', 'switch_link',
@@ -69,19 +77,19 @@ class AdminServer(admin.ModelAdmin):
     list_per_page = 20
 
 
-class AdminDevice(admin.ModelAdmin):
+class AdminDevice(AdminUnsafeLookup):
     list_display = (
         '__unicode__', 'status', 'link_status', 'server_status', 'switch_link'
     )
     list_per_page = 20
 
 
-class AdminStream(admin.ModelAdmin):
+class AdminStream(AdminUnsafeLookup):
     list_display = ('__unicode__', 'status',)
     list_per_page = 20
 
 
-class AdminSource(admin.ModelAdmin):
+class AdminSource(AdminUnsafeLookup):
     list_display = ('__unicode__', 'in_use', 'destinations',)
     list_per_page = 20
 
@@ -108,7 +116,7 @@ scan_device.short_description = ugettext_lazy(
     "Escanear %(verbose_name_plural)s selecionados")
 
 
-class AdminDvbTuner(admin.ModelAdmin):
+class AdminDvbTuner(AdminUnsafeLookup):
     actions = [start_device, stop_device, scan_device]
     list_display = ('description', 'frequency', 'symbol_rate', 'polarization',
                     'modulation', 'fec', 'server', 'adapter',
@@ -119,7 +127,7 @@ class AdminDvbTuner(admin.ModelAdmin):
     list_filter = ['server', 'antenna', 'status', ]
 
 
-class AdminIsdbTuner(admin.ModelAdmin):
+class AdminIsdbTuner(AdminUnsafeLookup):
     actions = [start_device, stop_device, scan_device]
     list_display = ('server', 'frequency', 'tuned', 'switch_link')
     form = forms.IsdbTunerForm
@@ -128,7 +136,7 @@ class AdminIsdbTuner(admin.ModelAdmin):
     list_filter = ['server', 'status', ]
 
 
-class AdminUnicastInput(admin.ModelAdmin):
+class AdminUnicastInput(AdminUnsafeLookup):
     actions = [start_device, stop_device, scan_device]
     list_display = ('port', 'interface', 'protocol',
                     'tuned', 'server', 'switch_link')
@@ -137,7 +145,7 @@ class AdminUnicastInput(admin.ModelAdmin):
     list_filter = ['status', 'server', ]
 
 
-class AdminMulticastInput(admin.ModelAdmin):
+class AdminMulticastInput(AdminUnsafeLookup):
     actions = [start_device, stop_device, scan_device]
     list_display = ('ip', 'port', 'interface', 'server', 'protocol',
         'tuned', 'switch_link')
@@ -152,7 +160,7 @@ class UniqueIPInline(generic.GenericTabularInline):
     list_per_page = 20
 
 
-class AdminFileInput(admin.ModelAdmin):
+class AdminFileInput(AdminUnsafeLookup):
     inlines = [UniqueIPInline, ]
     list_display = ('filename', 'description', 'server', 'repeat',
         'switch_link')
@@ -160,7 +168,7 @@ class AdminFileInput(admin.ModelAdmin):
     list_per_page = 20
 
 
-class AdminMulticastOutput(admin.ModelAdmin):
+class AdminMulticastOutput(AdminUnsafeLookup):
     list_display = ('ip', 'port', 'protocol',
         'server', 'interface', 'switch_link')
     fieldsets = (
@@ -180,12 +188,14 @@ class AdminMulticastOutput(admin.ModelAdmin):
     list_filter = ['status', 'server', ]
 
 
-class AdminDemuxedService(admin.ModelAdmin):
+class AdminDemuxedService(AdminUnsafeLookup):
+    model = models.DemuxedService
     list_display = ('sid', 'provider', 'service_desc',
                     'server', 'nic_src', 'sink', 'switch_link')
     form = forms.DemuxedServiceForm
     list_per_page = 20
     search_fields = ['provider', 'service_desc', 'service_desc']
+    #raw_id_fields = ('sink', )
     list_filter = ['status', 'server']
 
     # TODO: Complex filter using generic foreign key
@@ -200,7 +210,7 @@ class AdminDemuxedService(admin.ModelAdmin):
     #    return qs, use_distinct
 
 
-class AdminStreamRecorder(admin.ModelAdmin):
+class AdminStreamRecorder(AdminUnsafeLookup):
     list_display = ('server', 'description', 'start_time', 'rotate',
                     'keep_time', 'channel', 'storage', 'switch_link')
     form = forms.StreamRecorderForm
@@ -209,7 +219,7 @@ class AdminStreamRecorder(admin.ModelAdmin):
     list_filter = ['status', 'storage', 'server', ]
 
 
-class AdminUniqueIP(admin.ModelAdmin):
+class AdminUniqueIP(AdminUnsafeLookup):
     list_display = ('ip', 'port', 'sink_str', 'src_str')
     exclude = ('sequential',)
     fieldsets = (
@@ -223,9 +233,11 @@ class AdminUniqueIP(admin.ModelAdmin):
     form = forms.UniqueIPForm
     list_per_page = 20
     search_fields = ['ip',]
+    # list_filter = ['content_type', ]
+    # raw_id_fields = ['src',]
 
 
-class AdminSoftTranscoder(admin.ModelAdmin):
+class AdminSoftTranscoder(AdminUnsafeLookup):
     list_display = ('description', 'audio_codec', 'switch_link')
     fieldsets = (
         (_(u'Sobre'), {
@@ -252,7 +264,7 @@ class AdminSoftTranscoder(admin.ModelAdmin):
     list_per_page = 20
 
 
-class AdminStorage(admin.ModelAdmin):
+class AdminStorage(AdminUnsafeLookup):
     list_display = ('server', 'description', 'n_recorders', 'n_players',
         'hdd_ssd', 'peso', 'folder', 'switch_link')
     form = forms.StorageForm
@@ -261,7 +273,7 @@ class AdminStorage(admin.ModelAdmin):
     list_filter = ['server']
 
 
-class AdminDigitalTunerHardware(admin.ModelAdmin):
+class AdminDigitalTunerHardware(AdminUnsafeLookup):
     list_display = ('server', 'id_vendor', 'id_product', 'bus', 'driver',
         'uniqueid', 'adapter_nr')
     form = forms.DigitalTunerHardwareForm
