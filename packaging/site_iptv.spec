@@ -6,6 +6,9 @@
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
 
+# Referencia:
+# http://pkgs.fedoraproject.org/cgit/python-django.git/tree/python-django.spec
+
 Name:           site_iptv
 Version:        GIT_CURRENT_VERSION
 Release:        1%{?dist}
@@ -22,7 +25,9 @@ Source7:        postgresql_iptv.service
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
-BuildRequires:  python-devel python-setuptools-devel
+BuildRequires:  python2-devel
+# BuildRequires:  python-setuptools
+BuildRequires:  python-sphinx
 BuildRequires:  systemd-units
 
 
