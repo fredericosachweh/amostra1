@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
+from __future__ import unicode_literals
 from django.conf import settings
-from django.conf.urls import url
 from tastypie import fields
-from tastypie.authorization import DjangoAuthorization
 from tastypie.authorization import Authorization
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.authentication import BasicAuthentication
@@ -13,18 +12,16 @@ from tastypie.authentication import MultiAuthentication
 from tastypie.authentication import SessionAuthentication
 
 from tastypie.api import NamespacedApi
-from tastypie.resources import NamespacedModelResource, ModelResource
+from tastypie.resources import NamespacedModelResource
 
-
-from tastypie.authorization import Authorization
-
-from tastypie.exceptions import Unauthorized, ImmediateHttpResponse
+from tastypie.exceptions import Unauthorized
 
 from client.models import SetTopBox
 
-import models
+from . import models
 import logging
 log = logging.getLogger('api')
+
 
 class ChannelResourceAuthorization(Authorization):
     # http://django-tastypie.readthedocs.org/en/latest/authorization.html
@@ -46,8 +43,10 @@ class ChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=True,
-            source__isnull=False)
+        queryset = models.Channel.objects.filter(
+            enabled=True,
+            source__isnull=False
+        )
         authorization = ChannelResourceAuthorization()
         #authorization = SetTopBoxAuthorization()
         #authorization = Authorization()
@@ -108,7 +107,7 @@ class ChannelResource(NamespacedModelResource):
         return obj_list
 
     def dehydrate(self, bundle):
-        u"This method populate previour and next (linked list)"
+        "This method populate previour and next (linked list)"
         if not hasattr(bundle.obj, 'previous'):
             bundle.data['previous'] = None
         else:
@@ -126,8 +125,10 @@ class AllChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=True,
-            source__isnull=False)
+        queryset = models.Channel.objects.filter(
+            enabled=True,
+            source__isnull=False
+        )
         authorization = ReadOnlyAuthorization()
         excludes = ['enabled']
         allowed_methods = ['get']
@@ -138,7 +139,7 @@ class AllChannelResource(NamespacedModelResource):
             ApiKeyAuthentication())
 
     def dehydrate(self, bundle):
-        u"This method populate previour and next (linked list)"
+        "This method populate previour and next (linked list)"
         if not hasattr(bundle.obj, 'previous'):
             bundle.data['previous'] = None
         else:
@@ -171,15 +172,16 @@ class MyChannelResourceAuthorization(Authorization):
         return not bundle.request.user.is_anonymous()
 
 
-
 class MyChannelResource(NamespacedModelResource):
     source = fields.CharField(blank=True)
 
     class Meta:
-        queryset = models.Channel.objects.filter(enabled=True,
-            source__isnull=False)
+        queryset = models.Channel.objects.filter(
+            enabled=True,
+            source__isnull=False
+        )
         #excludes = ['enabled', 'description', 'enabled', 'name']
-        fields = ['id', 'channelid', 'number', 'buffer_size',]
+        fields = ['id', 'channelid', 'number', 'buffer_size']
         allowed_methods = ['get']
         resource_name = 'userchannel'
         authorization = MyChannelResourceAuthorization()
@@ -191,7 +193,6 @@ class MyChannelResource(NamespacedModelResource):
 
     def dehydrate_source(self, bundle):
         return '%s:%d' % (bundle.obj.source.ip, bundle.obj.source.port)
-
 
 
 api_v1 = NamespacedApi(api_name='v1', urlconf_namespace='tv_v1')

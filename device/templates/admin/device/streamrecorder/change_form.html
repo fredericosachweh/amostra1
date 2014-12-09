@@ -7,8 +7,10 @@
 
     <script type="text/javascript">
         django.jQuery(document).ready(function () {
+            populate_recorders();
             populate_interfaces();
             /* Insert the onchange callbacks */
+            django.jQuery('select#id_server').change(populate_recorders);
             django.jQuery('select#id_server').change(populate_interfaces);
         });
         /* Get network adapters list from server and populate the select field */
@@ -24,6 +26,25 @@
                     if (data) {
                         field.append(data);
                         var iface = "{{ original.nic_sink.pk }}";
+                        if (iface)
+                            field.val(iface);
+                        field.removeAttr("disabled");
+                    }
+                  });
+            }
+        }
+        function populate_recorders()
+        {
+            var server_id = django.jQuery('select#id_server').val();
+            var field = django.jQuery('select#id_storage');
+            field.attr("disabled", "disabled");
+            field.empty();
+            if (server_id) {
+                var query = '{% url 'device.views.server_list_storages' %}' + '?server=' + server_id;
+                django.jQuery.get(query, function(data) {
+                    if (data) {
+                        field.append(data);
+                        var iface = "{{ original.pk }}";
                         if (iface)
                             field.val(iface);
                         field.removeAttr("disabled");

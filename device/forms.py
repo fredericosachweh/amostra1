@@ -6,18 +6,22 @@ from django.contrib import admin
 from django.contrib.admin.widgets import ForeignKeyRawIdWidget
 from django.db.models.fields.related import ManyToOneRel
 from widgets import ContentTypeSelect
-import models
+
+from . import models
 from dvbinfo import models as dvbinfo_models
 
 
 class GenericRelationForm(forms.ModelForm):
+    class Meta(object):
+        pass
+
     def __init__(self, *args, **kwargs):
         super(GenericRelationForm, self).__init__(*args, **kwargs)
         try:
             model = self.instance.content_type.model_class()
             model_key = model._meta.pk.name
         except Exception:
-            model = self.Meta.model
+            model = self._meta.model
             model_key = 'id'
         self.fields['object_id'].widget = ForeignKeyRawIdWidget(
             rel=ManyToOneRel('object_id', model, model_key),
@@ -35,6 +39,7 @@ class DvbTunerForm(forms.ModelForm):
         widgets = {
             'adapter': forms.Select(),
         }
+        exclude = ('',)
 
 
 class DvbTunerAutoFillForm(forms.Form):
@@ -76,6 +81,7 @@ class UnicastInputForm(forms.ModelForm):
             'interface': forms.Select(),
             'protocol': forms.RadioSelect(),
         }
+        exclude = ('',)
 
 
 class MulticastInputForm(forms.ModelForm):
@@ -85,6 +91,7 @@ class MulticastInputForm(forms.ModelForm):
             'interface': forms.Select(),
             'protocol': forms.RadioSelect(),
         }
+        exclude = ('',)
 
     def clean_ip(self):
         from django.core.exceptions import ValidationError
@@ -100,6 +107,7 @@ entre 224 e 239.'))
 class DemuxedServiceForm(GenericRelationForm):
     class Meta:
         model = models.DemuxedService
+        exclude = ('',)
 
 
 class FileInputForm(forms.ModelForm):
@@ -108,33 +116,40 @@ class FileInputForm(forms.ModelForm):
         widgets = {
             'filename': forms.Select(),
         }
+        exclude = ('',)
 
 
 class MulticastOutputForm(GenericRelationForm):
     class Meta:
         model = models.MulticastOutput
+        exclude = ('',)
 
 
 class StreamRecorderForm(GenericRelationForm):
     class Meta:
         model = models.StreamRecorder
+        exclude = ('',)
 
 
 class UniqueIPForm(GenericRelationForm):
     class Meta:
         model = models.UniqueIP
+        exclude = ('',)
 
 
 class SoftTranscoderForm(GenericRelationForm):
     class Meta:
         model = models.SoftTranscoder
+        exclude = ('',)
 
 
 class StorageForm(forms.ModelForm):
     class Meta:
         model = models.Storage
+        exclude = ('n_recorders', 'n_players',)
 
 
 class DigitalTunerHardwareForm(forms.ModelForm):
     class Meta:
         model = models.DigitalTunerHardware
+        exclude = ('',)

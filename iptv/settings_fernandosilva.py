@@ -35,7 +35,7 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'tvfiles', 'static')
 STATIC_URL = '/tv/static/'
 #ROOT_URLCONF = '/tv'
 
-IPTV_LOG_DIR = '/home/fernandosilva/log'
+IPTV_LOG_DIR = '/home/fernando/log'
 
 ## Color: \033[35m \033[0m
 # \t%(module)s->%(funcName)s->%(lineno)d

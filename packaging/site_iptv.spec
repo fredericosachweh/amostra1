@@ -36,8 +36,8 @@ Requires:       postgresql-server
 Requires:       python-psycopg2
 Requires:       python-flup
 # Testes unitarios
-Requires:       python-nose
-Requires:       python-django-nose
+# Requires:       python-nose
+# Requires:       python-django-nose
 
 ## Por hora sem migração Usando embutino no pacote com submodulo
 Requires:       python-paramiko
@@ -54,7 +54,7 @@ Requires:       python-mimeparse
 # SOAP client to CAS (Verimatrix)
 Requires:       python-suds-jurko
 # Monitoramento
-Requires:       pynag-cianet >= 0.1.1
+Requires:       pynag
 
 Requires:       nginxcianet >= 1.4.3
 # Para requests http no nbridge
@@ -118,21 +118,77 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/systemctl daemon-reload --system
 /sbin/usermod -a -G video -s /bin/bash nginx
 
-echo -e "\033[0;31m"
-echo "========================================================================="
-echo "Atenção: Criar um usuário com senha no banco de dados."
-echo "Editar a configuração: %{site_home}/settings.py."
-echo ""
-echo "Após configurado executar os comandos:"
-echo "Inicializar o banco de dados:"
-echo "su - postgres"
-echo "initdb -D /iptv/var/lib/postgresql"
-echo "========================================================================="
-echo -e "\033[0m"
-echo "Coletando static"
+# É uma atualização?
+if [ "$1" = "2" ];then
+    current=$(cat %{_sysconfdir}/sysconfig/site_iptv_version)
+    echo "Current=$current"
+    if [[ -f %{_sysconfdir}/sysconfig/site_iptv_version ]];then
+        if [ "$current" = "0.19.6-1.fc20" ]; then
+            # Migração fake
+            echo "Migração fake para atualizar versão Django 1.7"
+            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake"
+        else
+            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate"
+        fi
+    fi
+else
+    echo -e "\033[0;31m"
+    echo "========================================================================="
+    echo "Atenção: Criar um usuário com senha no banco de dados."
+    echo "Editar a configuração: %{site_home}/settings.py."
+    echo ""
+    echo "Após configurado executar os comandos:"
+    echo "Inicializar o banco de dados:"
+    echo "su - postgres"
+    echo "initdb -D /iptv/var/lib/postgresql"
+    echo "========================================================================="
+    echo -e "\033[0m"
+fi
+
 /bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput" > /dev/null
 echo "Migrando banco de dados"
 /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate"
+
+# https://fedoraproject.org/wiki/Packaging:ScriptletSnippets
+%pre -p %{__python}
+# -*- encoding:utf8 -*-
+
+# Caso seja uma atualização:
+# Caso a versão anterior seja anterior à 0.19.6-1 Interrompe a atualização de exibe mensagem de erro avisando que primeiro deve atualizar para 0.19.6-1
+# Caso seja posterior à 0.20.0-1 após a instalação executar migrate noramalmente
+import rpm
+from rpmUtils import miscutils
+import sys, os
+
+install_status = sys.argv[1]
+
+v_migrate = '0.19.6-1.fc20'
+v_current = '%{version}-%{release}'
+
+version_migrate = miscutils.stringToVersion(v_migrate)
+version_current = miscutils.stringToVersion(v_current)
+version_compare = miscutils.compareEVR(version_migrate, version_current)
+
+if install_status >= 2: # Atualização
+    if version_compare <= 0:
+        print('Para atualização, é necessário atualizar para a versão 0.19.6-1 primeiro.')
+        sys.exit(-1)
+    version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
+    if os.path.exists(version_path):
+        with open(version_path) as f:
+            version_info = f.read()
+            old_version_string = version_info.strip()
+            old_version = miscutils.stringToVersion(old_version_string)
+            version_compare = miscutils.compareEVR(version_migrate, old_version)
+            if version_compare <= 0:
+                # Pode atualizar
+                print('Para atualização, é necessário atualizar para a versão 0.19.6-1 primeiro.')
+                sys.exit(-1)
+    else:
+        # É uma versão anteriror à 0.19.6-1
+        print('Para atualização, é necessário atualizar para a versão 0.19.6-1 primeiro.')
+        sys.exit(-1)
+
 
 %preun
 %systemd_preun
@@ -175,6 +231,8 @@ echo "Migrando banco de dados"
 
 
 %changelog
+* Tue Nov 18 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.0-1
+- Update Django 1.7 exclude south.
 * Thu Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1
 - Auto migração de banco de dados
 - Arquivo com a versão do pacote para atualizações

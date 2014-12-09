@@ -25,5 +25,5 @@ class MACAddressField(models.CharField):
         defaults.update(kwargs)
         return super(MACAddressField, self).formfield(**defaults)
 
-from south.modelsinspector import add_introspection_rules
-add_introspection_rules([], ["^client\.fields\.MACAddressField"])
+#from south.modelsinspector import add_introspection_rules
+#add_introspection_rules([], ["^client\.fields\.MACAddressField"])
