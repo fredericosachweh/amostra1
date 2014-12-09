@@ -236,7 +236,7 @@ if install_status >= 2: # Atualização
 
 
 %changelog
-* Tue Nov 18 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.0-1
+* Tue Dec 09 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.0-1
 - Update Django 1.7 exclude south.
 * Thu Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1
 - Auto migração de banco de dados
