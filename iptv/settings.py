@@ -117,6 +117,9 @@ CACHES = {
     }
 }
 
+FORCE_SCRIPT_NAME = ""
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
 try:
     from .local_settings import *
 except ImportError as e:
