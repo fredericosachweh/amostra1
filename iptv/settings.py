@@ -84,8 +84,6 @@ NBRIDGE_UPSTREAM = '/iptv/etc/nginx-fe/upstream/nbridge.conf'
 NBRIDGE_CONF_DIR = '/iptv/etc/nbridge/'
 NBRIDGE_SERVER_KEY = '36410c96-c157-4b2a-ac19-1a2b7365ca11'
 
-from .dev_settings import *
-
 from .log_settings import LOGGING
 
 from .application_settings import *

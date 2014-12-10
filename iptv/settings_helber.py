@@ -4,19 +4,6 @@ from settings import *
 
 DEBUG = True
 
-# if 'test' in sys.argv:
-#    ## Banco de dados teste
-#    DATABASES = {
-#        'default': {
-#            'ENGINE': 'django.db.backends.sqlite3',
-#            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-#            'USER': '',
-#            'PASSWORD': '',
-#            'HOST': '',
-#            'PORT': ''
-#        }
-#    }
-# else:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -66,6 +53,8 @@ TASTYPIE_FULL_DEBUG = True
 #PURPLE="\033[0;35m";
 #LPURPLE="\033[1;35m";
 #NO_COLOUR="\033[0m";
+
+from .dev_settings import *
 
 if DEBUG is True:
     # Envia todas as mensagens de log para o console
