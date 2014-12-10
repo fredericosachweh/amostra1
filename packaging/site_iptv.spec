@@ -128,7 +128,7 @@ if [ "$1" = "2" ];then
     current=$(cat %{_sysconfdir}/sysconfig/site_iptv_version)
     echo "Current=$current"
     if [[ -f %{_sysconfdir}/sysconfig/site_iptv_version ]];then
-        if [ "$current" = "0.19.6-2.fc20" ]; then
+        if [ "$current" = "0.19.6-2{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake"
@@ -167,7 +167,7 @@ import sys, os
 
 install_status = sys.argv[1]
 
-v_migrate = '0.19.6-2.fc20'
+v_migrate = '0.19.6-2{?dist}'
 v_current = '%{version}-%{release}'
 
 version_migrate = miscutils.stringToVersion(v_migrate)
