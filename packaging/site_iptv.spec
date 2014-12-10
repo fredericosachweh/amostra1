@@ -125,14 +125,15 @@ rm -rf $RPM_BUILD_ROOT
 
 # É uma atualização?
 if [ "$1" = "2" ];then
-    current=$(cat %{_sysconfdir}/sysconfig/site_iptv_version)
+    current=$(cat %{_tmppath}/site_iptv_version)
     echo "Current=$current"
-    if [[ -f %{_sysconfdir}/sysconfig/site_iptv_version ]];then
-        if [ "$current" = "0.19.6-2{?dist}" ]; then
+    if [[ -f %{_tmppath}/site_iptv_version ]];then
+        if [ "$current" = "0.19.6-2%{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake"
         else
+            echo "Migração de banco de dados"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate"
         fi
     fi
@@ -151,8 +152,7 @@ else
 fi
 
 /bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput" > /dev/null
-echo "Migrando banco de dados"
-/bin/su nginx -c "%{__python} %{site_home}/manage.py migrate"
+rm -f %{_tmppath}/site_iptv_version
 
 # https://fedoraproject.org/wiki/Packaging:ScriptletSnippets
 %pre -p %{__python}
@@ -163,11 +163,11 @@ echo "Migrando banco de dados"
 # Caso seja posterior à 0.20.0-1 após a instalação executar migrate noramalmente
 import rpm
 from rpmUtils import miscutils
-import sys, os
+import sys, os, shutil
 
 install_status = sys.argv[1]
 
-v_migrate = '0.19.6-2{?dist}'
+v_migrate = '0.19.6-2%{?dist}'
 v_current = '%{version}-%{release}'
 
 version_migrate = miscutils.stringToVersion(v_migrate)
@@ -175,7 +175,8 @@ version_current = miscutils.stringToVersion(v_current)
 version_compare = miscutils.compareEVR(version_migrate, version_current)
 
 if install_status >= 2: # Atualização
-    if version_compare <= 0:
+    if version_compare > 0:
+        print('Verificação 1 %s = %s [%s]' % (version_migrate, version_current, version_compare))
         print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
         sys.exit(-1)
     version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
@@ -185,14 +186,18 @@ if install_status >= 2: # Atualização
             old_version_string = version_info.strip()
             old_version = miscutils.stringToVersion(old_version_string)
             version_compare = miscutils.compareEVR(version_migrate, old_version)
-            if version_compare <= 0:
+            if version_compare > 0:
                 # Pode atualizar
+                print('Verificação 2 %s = %s [%s]' % (version_migrate, old_version, version_compare))
                 print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
                 sys.exit(-1)
     else:
         # É uma versão anteriror à 0.19.6-2
+        print('Verificação 3 not found %s' % (version_path))
         print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
         sys.exit(-1)
+
+shutil.copyfile('%{_sysconfdir}/sysconfig/site_iptv_version', '%{_tmppath}/site_iptv_version')
 
 
 %preun
