@@ -16,9 +16,6 @@
 [submodule "vendor/django-tastypie"]
 	path = vendor/django-tastypie
 	url = https://github.com/toastdriven/django-tastypie.git
-[submodule "vendor/django-south"]
-	path = vendor/django-south
-	url = https://github.com/lambdafu/django-south.git
 [submodule "vendor/model_mommy"]
 	path = vendor/model_mommy
 	url = https://github.com/helber/model_mommy.git
