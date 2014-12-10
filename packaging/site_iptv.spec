@@ -131,10 +131,10 @@ if [ "$1" = "2" ];then
         if [ "$current" = "0.19.6-2%{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
-            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake"
+            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
         else
             echo "Migração de banco de dados"
-            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate"
+            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --noinput"
         fi
     fi
 else
