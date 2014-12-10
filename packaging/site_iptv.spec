@@ -128,7 +128,7 @@ if [ "$1" = "2" ];then
     current=$(cat %{_sysconfdir}/sysconfig/site_iptv_version)
     echo "Current=$current"
     if [[ -f %{_sysconfdir}/sysconfig/site_iptv_version ]];then
-        if [ "$current" = "0.19.6-1.fc20" ]; then
+        if [ "$current" = "0.19.6-2.fc20" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake"
@@ -159,7 +159,7 @@ echo "Migrando banco de dados"
 # -*- encoding:utf8 -*-
 
 # Caso seja uma atualização:
-# Caso a versão anterior seja anterior à 0.19.6-1 Interrompe a atualização de exibe mensagem de erro avisando que primeiro deve atualizar para 0.19.6-1
+# Caso a versão anterior seja anterior à 0.19.6-2 Interrompe a atualização de exibe mensagem de erro avisando que primeiro deve atualizar para 0.19.6-2
 # Caso seja posterior à 0.20.0-1 após a instalação executar migrate noramalmente
 import rpm
 from rpmUtils import miscutils
@@ -167,7 +167,7 @@ import sys, os
 
 install_status = sys.argv[1]
 
-v_migrate = '0.19.6-1.fc20'
+v_migrate = '0.19.6-2.fc20'
 v_current = '%{version}-%{release}'
 
 version_migrate = miscutils.stringToVersion(v_migrate)
@@ -176,7 +176,7 @@ version_compare = miscutils.compareEVR(version_migrate, version_current)
 
 if install_status >= 2: # Atualização
     if version_compare <= 0:
-        print('Para atualização, é necessário atualizar para a versão 0.19.6-1 primeiro.')
+        print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
         sys.exit(-1)
     version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
     if os.path.exists(version_path):
@@ -187,11 +187,11 @@ if install_status >= 2: # Atualização
             version_compare = miscutils.compareEVR(version_migrate, old_version)
             if version_compare <= 0:
                 # Pode atualizar
-                print('Para atualização, é necessário atualizar para a versão 0.19.6-1 primeiro.')
+                print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
                 sys.exit(-1)
     else:
-        # É uma versão anteriror à 0.19.6-1
-        print('Para atualização, é necessário atualizar para a versão 0.19.6-1 primeiro.')
+        # É uma versão anteriror à 0.19.6-2
+        print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
         sys.exit(-1)
 
 
@@ -236,8 +236,10 @@ if install_status >= 2: # Atualização
 
 
 %changelog
-* Tue Dec 09 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.0-1
+* Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.1-1
 - Update Django 1.7 exclude south.
+* Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-2
+- Fix Requires from python rpm.
 * Thu Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1
 - Auto migração de banco de dados
 - Arquivo com a versão do pacote para atualizações
