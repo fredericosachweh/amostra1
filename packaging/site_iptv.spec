@@ -138,8 +138,8 @@ if [ "$1" = "2" ];then
         fi
     fi
 else
-    echo -e "\033[0;31m"
     echo "========================================================================="
+    echo -e "\033[0;31m"
     echo "Atenção: Criar um usuário com senha no banco de dados."
     echo "Editar a configuração: %{site_home}/settings.py."
     echo ""
@@ -147,8 +147,10 @@ else
     echo "Inicializar o banco de dados:"
     echo "su - postgres"
     echo "initdb -D /iptv/var/lib/postgresql"
-    echo "========================================================================="
+    echo "Após instalar e configurar o banco de dados executar a migração para gerar o banco de dados:"
+    echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py migrate --noinput'"
     echo -e "\033[0m"
+    echo "========================================================================="
 fi
 
 /bin/su nginx -c "%{__python} %{site_home}/manage.py collectstatic --noinput" > /dev/null
@@ -160,7 +162,7 @@ rm -f %{_tmppath}/site_iptv_version
 
 # Caso seja uma atualização:
 # Caso a versão anterior seja anterior à 0.19.6-2 Interrompe a atualização de exibe mensagem de erro avisando que primeiro deve atualizar para 0.19.6-2
-# Caso seja posterior à 0.20.0-1 após a instalação executar migrate noramalmente
+# Caso seja posterior à 0.20.5-1 após a instalação executar migrate noramalmente
 import rpm
 from rpmUtils import miscutils
 import sys, os, shutil
@@ -168,34 +170,39 @@ import sys, os, shutil
 install_status = sys.argv[1]
 
 v_migrate = '0.19.6-2%{?dist}'
+v_end = '0.20.5-1%{?dist}'
 v_current = '%{version}-%{release}'
 
-version_migrate = miscutils.stringToVersion(v_migrate)
-version_current = miscutils.stringToVersion(v_current)
-version_compare = miscutils.compareEVR(version_migrate, version_current)
+version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
+version_tmp_path = '%{_tmppath}/site_iptv_version'
 
 if install_status >= 2: # Atualização
-    if version_compare > 0:
+    version_migrate = miscutils.stringToVersion(v_migrate)
+    version_current = miscutils.stringToVersion(v_current)
+    version_compare = miscutils.compareEVR(version_migrate, version_current)
+    if version_compare > 0: # É anterior à 0.19.6-2
         print('Verificação 1 %s = %s [%s]' % (version_migrate, version_current, version_compare))
-        print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
-        sys.exit(-1)
-    version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
+        print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro. E depois a versão 0.20.5-1')
+        sys.exit(1)
+
     if os.path.exists(version_path):
         with open(version_path) as f:
             version_info = f.read()
             old_version_string = version_info.strip()
             old_version = miscutils.stringToVersion(old_version_string)
-            version_compare = miscutils.compareEVR(version_migrate, old_version)
+            version_end = miscutils.stringToVersion(v_end)
+            version_compare = miscutils.compareEVR(version_end, old_version)
+            # Se a versão anterior for maior ou igual à v_end -> deixa passar
             if version_compare > 0:
                 # Pode atualizar
                 print('Verificação 2 %s = %s [%s]' % (version_migrate, old_version, version_compare))
-                print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
-                sys.exit(-1)
+                print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro. E depois a versão 0.20.5-1')
+                sys.exit(1)
     else:
         # É uma versão anteriror à 0.19.6-2
         print('Verificação 3 not found %s' % (version_path))
         print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
-        sys.exit(-1)
+        sys.exit(1)
 
 shutil.copyfile('%{_sysconfdir}/sysconfig/site_iptv_version', '%{_tmppath}/site_iptv_version')
 
