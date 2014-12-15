@@ -204,7 +204,7 @@ if install_status >= 2: # Atualização
         print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
         sys.exit(1)
 
-shutil.copyfile('%{_sysconfdir}/sysconfig/site_iptv_version', '%{_tmppath}/site_iptv_version')
+shutil.copyfile(version_path, version_tmp_path)
 
 
 %preun
