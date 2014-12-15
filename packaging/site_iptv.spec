@@ -182,7 +182,7 @@ if install_status >= 2: # Atualização
     version_compare = miscutils.compareEVR(version_migrate, version_current)
     if version_compare > 0: # É anterior à 0.19.6-2
         print('Verificação 1 %s = %s [%s]' % (version_migrate, version_current, version_compare))
-        print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro. E depois a versão 0.20.5-1')
+        print('Para atualização, é necessário atualizar para a versão %s primeiro. E depois a versão %s' % (v_migrate, v_end))
         sys.exit(1)
 
     if os.path.exists(version_path):
@@ -196,12 +196,12 @@ if install_status >= 2: # Atualização
             if version_compare > 0:
                 # Pode atualizar
                 print('Verificação 2 %s = %s [%s]' % (version_migrate, old_version, version_compare))
-                print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro. E depois a versão 0.20.5-1')
+                print('Para atualização, é necessário atualizar para a versão %s primeiro. E depois a versão %s' % (v_migrate, v_end))
                 sys.exit(1)
     else:
         # É uma versão anteriror à 0.19.6-2
         print('Verificação 3 not found %s' % (version_path))
-        print('Para atualização, é necessário atualizar para a versão 0.19.6-2 primeiro.')
+        print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
         sys.exit(1)
 
 shutil.copyfile(version_path, version_tmp_path)
