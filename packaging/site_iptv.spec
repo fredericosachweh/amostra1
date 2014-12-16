@@ -125,9 +125,9 @@ rm -rf $RPM_BUILD_ROOT
 
 # É uma atualização?
 if [ "$1" = "2" ];then
-    current=$(cat %{_tmppath}/site_iptv_version)
-    echo "Current=$current"
     if [[ -f %{_tmppath}/site_iptv_version ]];then
+        current=$(cat %{_tmppath}/site_iptv_version)
+        echo "Current=$current"
         if [ "$current" = "0.19.6-2%{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
@@ -162,15 +162,15 @@ rm -f %{_tmppath}/site_iptv_version
 
 # Caso seja uma atualização:
 # Caso a versão anterior seja anterior à 0.19.6-2 Interrompe a atualização de exibe mensagem de erro avisando que primeiro deve atualizar para 0.19.6-2
-# Caso seja posterior à 0.20.5-1 após a instalação executar migrate noramalmente
+# Caso seja posterior à 0.20.6-1 após a instalação executar migrate noramalmente
 import rpm
 from rpmUtils import miscutils
 import sys, os, shutil
 
-install_status = sys.argv[1]
+install_status = int(sys.argv[1])
 
 v_migrate = '0.19.6-2%{?dist}'
-v_end = '0.20.5-1%{?dist}'
+v_end = '0.20.6-1%{?dist}'
 v_current = '%{version}-%{release}'
 
 version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
@@ -198,13 +198,12 @@ if install_status >= 2: # Atualização
                 print('Verificação 2 %s = %s [%s]' % (version_migrate, old_version, version_compare))
                 print('Para atualização, é necessário atualizar para a versão %s primeiro. E depois a versão %s' % (v_migrate, v_end))
                 sys.exit(1)
+        shutil.copyfile(version_path, version_tmp_path)
     else:
         # É uma versão anteriror à 0.19.6-2
         print('Verificação 3 not found %s' % (version_path))
         print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
         sys.exit(1)
-
-shutil.copyfile(version_path, version_tmp_path)
 
 
 %preun
@@ -248,6 +247,8 @@ shutil.copyfile(version_path, version_tmp_path)
 
 
 %changelog
+* Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.6-1
+- Fix rpm check update.
 * Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.1-1
 - Update Django 1.7 exclude south.
 * Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-2
