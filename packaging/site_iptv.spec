@@ -170,7 +170,7 @@ import sys, os, shutil
 install_status = int(sys.argv[1])
 
 v_migrate = '0.19.6-2%{?dist}'
-v_end = '0.20.6-1%{?dist}'
+v_end = '0.20.7-1%{?dist}'
 v_current = '%{version}-%{release}'
 
 version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
@@ -191,11 +191,11 @@ if install_status >= 2: # Atualização
             old_version_string = version_info.strip()
             old_version = miscutils.stringToVersion(old_version_string)
             version_end = miscutils.stringToVersion(v_end)
-            version_compare = miscutils.compareEVR(version_end, old_version)
+            version_compare = miscutils.compareEVR(old_version, version_end)
             # Se a versão anterior for maior ou igual à v_end -> deixa passar
             if version_compare > 0:
                 # Pode atualizar
-                print('Verificação 2 %s = %s [%s]' % (version_migrate, old_version, version_compare))
+                print('Verificação 2 %s = %s [%s]' % (old_version, version_end, version_compare))
                 print('Para atualização, é necessário atualizar para a versão %s primeiro. E depois a versão %s' % (v_migrate, v_end))
                 sys.exit(1)
         shutil.copyfile(version_path, version_tmp_path)
@@ -247,6 +247,8 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.7-1
+- Fix rpm check update.
 * Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.6-1
 - Fix rpm check update.
 * Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.1-1
