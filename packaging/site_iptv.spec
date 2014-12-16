@@ -132,6 +132,7 @@ if [ "$1" = "2" ];then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
+            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
         else
             echo "Migração de banco de dados"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --noinput"
@@ -170,7 +171,7 @@ import sys, os, shutil
 install_status = int(sys.argv[1])
 
 v_migrate = '0.19.6-2%{?dist}'
-v_end = '0.20.7-1%{?dist}'
+v_end = '0.20.8-1%{?dist}'
 v_current = '%{version}-%{release}'
 
 version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
@@ -247,6 +248,8 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.8-1
+- Corrige migration --fake
 * Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.7-1
 - Fix rpm check update.
 * Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.6-1
