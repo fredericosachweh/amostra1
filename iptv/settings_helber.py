@@ -20,7 +20,7 @@ DEBUG = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptv',
+        'NAME': 'iptvnb',
         'USER': 'iptv',
         'PASSWORD': 'iptv',
         'HOST': '/tmp',
