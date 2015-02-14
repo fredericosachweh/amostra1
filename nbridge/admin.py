@@ -19,6 +19,7 @@ class AdminNbridge(admin.ModelAdmin):
         (_('Parametros de Inicialização'),{
             'fields': (
                 'middleware_addr',
+                'nbridge_port'
             )
         }),
         (_('Tipo de ambiente'),{

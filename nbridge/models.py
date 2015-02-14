@@ -37,6 +37,10 @@ class Nbridge(DeviceServer):
         'Ambiente de execução', default='production', max_length=20,
         help_text=_('Tipo de execução'), choices=CHOICES_ENV_VAR
     )
+    nbridge_port = models.PositiveSmallIntegerField(
+        _('Porta de serviço'), default=13000,
+        help_text=_('Porta de serviço do servidor de conexão')
+    )
 
     def switch_link(self):
         running = self.running()
@@ -76,7 +80,7 @@ class Nbridge(DeviceServer):
     switch_link.short_description = u'Status'
 
     def __unicode__(self):
-        return '%s' % self.server.name
+        return '%s - %s' % (self.server.name, self.description)
 
     class Meta:
         ordering = ['server__name']
@@ -131,8 +135,9 @@ class Nbridge(DeviceServer):
         servers = Nbridge.objects.filter(status=True, server=self.server)
 
         template = Template('''upstream nbridge {
-    ip_hash;{% for s in servers %}
-    server unix:{{socket_dir}}nbridge_{{s.id}}.sock;{% endfor %}
+    ip_hash;
+    least_conn;{% for s in servers %}
+    server 127.0.0.1:{{s.nbridge_port}};{% endfor %}
 }''')
 
         context = Context({
@@ -141,6 +146,7 @@ class Nbridge(DeviceServer):
         })
 
         upstream = template.render(context)
+        log.debug('UPSTREAM:%s', upstream)
 
         # Reset servers of nginx frontend upstream file.
         if servers.count() > 0:
@@ -150,6 +156,7 @@ class Nbridge(DeviceServer):
         else:
             upstream = '''upstream nbridge {
     ip_hash;
+    least_conn;
     server unix:%snbridge_fake.sock;
 }''' % (settings.NBRIDGE_SOCKETS_DIR)
             cmd = '/usr/bin/echo "%s" > %s' % (
@@ -190,7 +197,7 @@ class Nbridge(DeviceServer):
         else:
             verbose = 'false'
         config = '''{
-    "bind": "%snbridge_%s.sock",
+    "bind": "127.0.0.1:%s",
     "middleware": "%s",
     "api": "/tv/api",
     "server_key": "%s",
@@ -198,7 +205,8 @@ class Nbridge(DeviceServer):
     "log_level": %s,
     "env": "%s",
     "nbridge_id": "%s"
-}''' % (settings.NBRIDGE_SOCKETS_DIR, self.id,
+}''' % (
+            self.nbridge_port,
             self.middleware_addr,
             settings.NBRIDGE_SERVER_KEY
                 or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
