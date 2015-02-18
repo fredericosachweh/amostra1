@@ -126,7 +126,7 @@ class AbstractServer(models.Model):
             self._is_offline = True
             log.error('[%s]:%s', self, ex)
             raise ex
-        ret = s.execute_daemon(command, log_path)
+        ret = ssh.execute_daemon(self.host, self.username, command, log_path)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
             raise Server.ExecutionFailure(
@@ -140,7 +140,7 @@ class AbstractServer(models.Model):
     def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
         s = self.connect()
-        s.get(remotepath, localpath)
+        ssh.get(self.host, self.username, remotepath, localpath)
         #s.close()
 
     def put(self, localpath, remotepath=None):
@@ -188,7 +188,7 @@ class AbstractServer(models.Model):
         if self.offline_mode:
             return ''
         s = self.connect()
-        resp = s.execute('/bin/kill %d' % pid)
+        resp = self.execute('/bin/kill %d' % pid)
         #s.close()
         return resp
 
