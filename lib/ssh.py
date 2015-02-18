@@ -8,6 +8,7 @@ import paramiko
 import time
 import subprocess
 import shlex
+import re
 
 
 def connect(host,
@@ -43,22 +44,15 @@ def connect(host,
         except:
             log.debug('Disconneting ssh from %s', cmd)
 
-def _sftp_connect(self):
-        """Establish the SFTP connection."""
-        log = logging.getLogger('device.remotecall')
-        log.info('Connecting using SFTP')
-        #if not self._sftp_live:
-        #    self._sftp = paramiko.SFTPClient.from_transport(self._transport)
-        #    self._sftp_live = True
-
-def get(self, remotepath, localpath=None):
+def get(host, username, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
         log = logging.getLogger('device.remotecall')
         log.info('geting file from remote:%s -> %s', remotepath, localpath)
         if not localpath:
             localpath = os.path.split(remotepath)[1]
-        self._sftp_connect()
-        self._sftp.get(remotepath, localpath)
+        cmd = 'scp '+username+'@'+host+':'+remotepath+' '+localpath
+        execute(host, username, cmd)
+
 
 def put(host, username, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
@@ -66,16 +60,8 @@ def put(host, username, localpath, remotepath=None):
         log.info('sending file from local:%s -> %s', localpath, remotepath)
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
-        ret = {}
         cmd = 'scp '+localpath+' '+username+'@'+host+':'+remotepath
-        try:        
-            ret['output'] = subprocess.check_output(shlex.split(cmd))
-            ret['exit_code'] = 0
-        except subprocess.CalledProcessError as e:
-            ret['output'] = e.output
-            ret['exit_code'] = e.returncode
-        ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])              
-        log.info('Return status [%s] command:%s', ret['exit_code'], cmd)
+        execute(host, username, cmd)
  
 
 
@@ -83,21 +69,28 @@ def execute(host, username, command):
         """Execute the given commands on a remote machine."""
         log = logging.getLogger('device.remotecall')
         ret = {}
-        cmd = 'ssh '+username+'@'+host+' \"'+command+'\"'
-        try:        
-            ret['output'] = subprocess.check_output(shlex.split(cmd))
-            ret['exit_code'] = 0
+        """Executar comando com a opcao de echo $? no final para
+           descobrir o valor do retorno da execucao do comando"""
+        cmd = 'ssh '+username+'@'+host+' \"'+command+'\" \; echo $?'
+        try:
+            out = subprocess.check_output(shlex.split(cmd))
+            """Necessario separar as linhas em lista, por causa
+               da compatilidade com a implementacao ssh anterior"""
+            out = re.split('\n', out)
+            """Descartar ultima linha por causa da quebra de linha
+               do valor de retorno"""
+            ret['output'] = out[:-2]
+            ret['exit_code'] = int(out[-2])
         except subprocess.CalledProcessError as e:
             ret['output'] = e.output
-            ret['exit_code'] = e.returncode
-        #ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])
-        ret['output'] = ret['output'].encode('utf-8')
-        log.info('Batman returns %s', ret)
+            ret['exit_code'] = int(e.returncode)
+        """Forcar codificacao da string"""
+        ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])           
         log.info('Return status [%s] command:%s', ret['exit_code'], command)
 
         return ret
 
-def execute_daemon(self, command, log_path=None):
+def execute_daemon(host, username, command, log_path=None):
         """
         Executa o comando em daemon e retorna o pid do processo
         Ex.:
@@ -110,20 +103,20 @@ def execute_daemon(self, command, log_path=None):
             --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         """
         log = logging.getLogger('device.remotecall')
-        ret = self.execute('/bin/mktemp')
+        ret = execute(host, username, '/bin/mktemp')
         pidfile_path = ret['output'][0].strip()
         fullcommand = '/usr/sbin/daemonize -p %s ' % pidfile_path
         if log_path:
             fullcommand += '-o %s.out -e %s.err ' % (log_path, log_path)
         fullcommand += '%s' % command.strip()
-        ret = self.execute(fullcommand)
+        ret = execute(host, username, fullcommand)
         pidcommand = "/bin/cat %s" % pidfile_path
         # # Buscando o pid
-        output = self.execute(pidcommand)
+        output = execute(host, username, pidcommand)
         ## unlink pidfile
         unlink_cmd = '/usr/bin/unlink %s' % pidfile_path
         log.debug('Clean pid file:%s', unlink_cmd)
-        self.execute(unlink_cmd)
+        execute(host, username, unlink_cmd)
         if len(output['output']):
             pid = int(output['output'][0].strip())
             log.info('Daemon started with pid [%d] command:%s', pid,
