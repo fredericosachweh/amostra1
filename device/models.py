@@ -133,7 +133,6 @@ class AbstractServer(models.Model):
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
                     (command, ret['exit_code'], self, u"".join(ret['output'])))
         pid = ret.get('pid')
-        #s.close()
         self.save()
         return int(pid)
 
@@ -141,7 +140,6 @@ class AbstractServer(models.Model):
         """Copies a file between the remote host and the local host."""
         s = self.connect()
         ssh.get(self.host, self.username, remotepath, localpath)
-        #s.close()
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
@@ -189,7 +187,6 @@ class AbstractServer(models.Model):
             return ''
         s = self.connect()
         resp = self.execute('/bin/kill %d' % pid)
-        #s.close()
         return resp
 
     def auto_detect_digital_tuners(self):
