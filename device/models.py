@@ -12,9 +12,16 @@ from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-#from client.models import SetTopBox
+import threading
+import time
+from lib import ssh
 
-conn = {}
+"""Lista com os servidores que já tem uma thread
+   específica para controle de conexão
+   A idéia é ter apenas uma conexão para cada server
+   e todas as outras requisicões serem enviadas por
+   dentro dessa primeira conexão estabelecida"""
+conn = []
 
 
 class AbstractServer(models.Model):
@@ -52,46 +59,39 @@ class AbstractServer(models.Model):
     def __unicode__(self):
         return '%s' % (self.name)
 
-    def connect(self):
-        """Conecta-se ao servidor"""
-        from lib import ssh
+    def sshconnthread(self):
+        """Funcão que monitora e reconecta a conexão
+           master SSH à um servidor"""
         log = logging.getLogger('device.remotecall')
-        if self.offline_mode:
-            raise Server.InvalidOperation(
-                "Shouldn't connect when offline mode is set")
-        log.debug('conn:%s', conn)
-        c = conn.get(self.host)
-        if c is not None:
-            log.debug('ssh:%s', c)
-            if c._transport_live:
-                return c
-            else:
-                c = ssh.Connection(host=self.host,
+        while True:
+            # Verifica se está desconectado propositalmente
+            if self.offline_mode == False:
+                self._is_offline = False
+                ssh.connect(host=self.host,
                     port=self.ssh_port,
                     username=self.username,
                     password=self.password,
                     private_key=self.rsakey)
-                conn[self.host] = c
-        try:
-            log.debug('ssh new:%s', self)
-            conn[self.host] = ssh.Connection(host=self.host,
-                port=self.ssh_port,
-                username=self.username,
-                password=self.password,
-                private_key=self.rsakey)
-            self.status = True
-            self._is_offline = False
-            self.msg = 'OK'
-        except Exception as ex:
-            log = logging.getLogger('device.remotecall')
-            log.error('%s(%s:%s %s):%s', self, self.host, self.ssh_port,
-                self.username, ex)
-            self.status = False
-            self.disconect()
-            self._is_offline = True
-            self.msg = ex
-        self.save()
-        return conn.get(self.host)
+                log.debug('Lost master ssh connection to %s', self.host)
+                log.debug('Trying to reconnect to %s in 2 seconds', self.host)
+                self._is_offline = True
+            else:
+                log.debug('Server %s is in offline_mode', self.host)
+            time.sleep(2)
+
+    def connect(self):
+        """Cria uma conexao ssh com o servidor, 
+           se já não houver conexão estabelecida"""
+        log = logging.getLogger('device.remotecall')
+        if conn.count(self.host) == 0:
+            log.debug("Establishing SSH master conn to %s", self.host)
+            sshthread = threading.Thread( None, target=self.sshconnthread ) 
+            sshthread.daemon = True
+            sshthread.start()
+            conn.append(self.host)
+        else:
+            log.debug("Master connection to %s is already opened", self.host)
+        return 0 
 
     def disconect(self):
         c = conn.get(self.host)
@@ -101,25 +101,10 @@ class AbstractServer(models.Model):
     def execute(self, command, persist=True, check=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
-        log.debug('[%s@%s]# %s', self.username, self.name, command)
-        try:
-            s = self.connect()
-            self.msg = 'OK'
-            self._is_offline = s is None
-        except Exception as ex:
-            self.msg = 'Can not connect:' + str(ex)
-            log.error('[%s]:%s', self, ex)
-            self._is_offline = True
-            self.save()
-            return 'Can not connect'
-        log.debug('Offline=%s', self._is_offline)
-        log.debug('Conn=%s', s)
+        log.debug('Executing %s in %s', command, self.host)
         if self._is_offline:
             return 'Server is offline'
-        ret = s.execute(command)
-        if not persist and self.status:
-            log.debug('Close BY  not persist and self.status')
-            s.close()
+        ret = ssh.execute(self.host, self.username, command)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
@@ -160,9 +145,7 @@ class AbstractServer(models.Model):
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
-        s = self.connect()
-        s.put(localpath, remotepath)
-        #s.close()
+        ssh.put(self.host, self.username, localpath, remotepath)
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
