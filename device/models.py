@@ -102,9 +102,11 @@ class AbstractServer(models.Model):
            Caso não tenha sido estabelecida a conexão master,
            aproveita e inicia a thread para cuidar dessa funćão"""
         log = logging.getLogger('device.remotecall')
+
         if conn.count(self.host) == 0:
             self.connect()
             time.sleep(1)
+
         if os.listdir('../../.ssh/socket').count(u''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
             self.status = False
             self.save()
@@ -125,6 +127,7 @@ class AbstractServer(models.Model):
     def execute(self, command, persist=True, check=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
+
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
             return ['Servidor está offline'.encode('utf-8')]
