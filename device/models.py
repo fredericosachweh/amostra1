@@ -14,6 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 
 import threading
 import time
+import os
 from lib import ssh
 
 """Lista com os servidores que já tem uma thread
@@ -43,7 +44,6 @@ class AbstractServer(models.Model):
     status = models.BooleanField(_('Status'), default=False)
     msg = models.TextField(_('Mensagem de retorno'), blank=True)
     offline_mode = models.BooleanField(default=False)
-    _is_offline = False
 
     class Meta(object):
         abstract = True
@@ -66,7 +66,6 @@ class AbstractServer(models.Model):
         while True:
             # Verifica se está desconectado propositalmente
             if self.offline_mode == False:
-                self._is_offline = False
                 ssh.connect(host=self.host,
                     port=self.ssh_port,
                     username=self.username,
@@ -74,7 +73,6 @@ class AbstractServer(models.Model):
                     private_key=self.rsakey)
                 log.debug('Lost master ssh connection to %s', self.host)
                 log.debug('Trying to reconnect to %s in 2 seconds', self.host)
-                self._is_offline = True
             else:
                 log.debug('Server %s is in offline_mode', self.host)
             time.sleep(2)
@@ -93,17 +91,32 @@ class AbstractServer(models.Model):
             log.debug("Master connection to %s is already opened", self.host)
         return 0 
 
+    def checkstatus(self):
+        """Verifica se o servidor está online
+           Caso não tenha sido estabelecida a conexão master,
+           aproveita e inicia a thread para cuidar dessa funćão"""
+        if conn.count(self.host) == 0:
+            self.connect()
+            time.sleep(1)
+        if os.listdir('../../.ssh/socket').count(self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
+            return 'offline'
+        else:
+            return 'online'
+
+    """ Deprecated. Nunca se deverá acabar com a conexão master
+        TODO. Acabar com a conexão master quando o servidor for
+        retirado do banco
     def disconect(self):
         c = conn.get(self.host)
         if c is not None:
-            c.close()
+            c.close()"""
 
     def execute(self, command, persist=True, check=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
         log.debug('Executing %s in %s', command, self.host)
-        if self._is_offline:
-            return 'Server is offline'
+        if self.checkstatus() == 'offline':
+            return u'Servidor está offline'
         ret = ssh.execute(self.host, self.username, command)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
@@ -116,16 +129,8 @@ class AbstractServer(models.Model):
         "Excuta o processo em background (daemon)"
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
-        try:
-            s = self.connect()
-            self.msg = 'OK'
-            self._is_offline = False
-        except Exception as ex:
-            self.msg = ex
-            self.status = False
-            self._is_offline = True
-            log.error('[%s]:%s', self, ex)
-            raise ex
+        if self.checkstatus() == 'offline':
+            raise Exception(u'Servidor está offline')
         ret = ssh.execute_daemon(self.host, self.username, command, log_path)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
@@ -138,17 +143,20 @@ class AbstractServer(models.Model):
 
     def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
-        s = self.connect()
+        if self.checkstatus() == 'offline':
+            raise Exception(u'Servidor está offline')
         ssh.get(self.host, self.username, remotepath, localpath)
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
+        if self.checkstatus() == 'offline':
+            raise Exception(u'Servidor está offline')
         ssh.put(self.host, self.username, localpath, remotepath)
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
-        if self._is_offline:
+        if self.checkstatus() == 'offline':
             return False
         for p in self.list_process(pid):
             if p['pid'] == pid:
@@ -168,7 +176,7 @@ class AbstractServer(models.Model):
         else:
             stdout = self.execute(ps, persist=True)
         ret = []
-        if self._is_offline:
+        if self.checkstatus() == 'offline':
             return ret
         for line in stdout[1:]:
             cmd = line.split()

@@ -111,7 +111,7 @@ def execute_daemon(host, username, command, log_path=None):
         fullcommand += '%s' % command.strip()
         ret = execute(host, username, fullcommand)
         pidcommand = "/bin/cat %s" % pidfile_path
-        # # Buscando o pid
+        ## Buscando o pid
         output = execute(host, username, pidcommand)
         ## unlink pidfile
         unlink_cmd = '/usr/bin/unlink %s' % pidfile_path
