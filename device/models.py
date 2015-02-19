@@ -106,8 +106,12 @@ class AbstractServer(models.Model):
             self.connect()
             time.sleep(1)
         if os.listdir('../../.ssh/socket').count(u''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
+            self.status = False
+            self.save()
             return 'offline'
         else:
+            self.status = True
+            self.save()
             return 'online'
 
     """ Deprecated. Nunca se deverá acabar com a conexão master
@@ -123,7 +127,7 @@ class AbstractServer(models.Model):
         log = logging.getLogger('device.remotecall')
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
-            return u'Servidor está offline'
+            return ['Servidor está offline'.encode('utf-8')]
         ret = ssh.execute(self.host, self.username, command)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
@@ -137,7 +141,7 @@ class AbstractServer(models.Model):
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
         if self.checkstatus() == 'offline':
-            raise Exception(u'Servidor está offline')
+            raise Exception(u'Servidor está offline'.encode('utf-8'))
         ret = ssh.execute_daemon(self.host, self.username, command, log_path)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
@@ -151,13 +155,13 @@ class AbstractServer(models.Model):
     def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
         if self.checkstatus() == 'offline':
-            raise Exception(u'Servidor está offline')
+            raise Exception('Servidor está offline'.encode('utf-8'))
         ssh.get(self.host, self.username, remotepath, localpath)
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         if self.checkstatus() == 'offline':
-            raise Exception(u'Servidor está offline')
+            raise Exception(u'Servidor está offline'.encode('utf-8'))
         ssh.put(self.host, self.username, localpath, remotepath)
 
     def process_alive(self, pid):
