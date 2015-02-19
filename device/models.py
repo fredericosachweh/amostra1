@@ -81,6 +81,12 @@ class AbstractServer(models.Model):
         """Cria uma conexao ssh com o servidor, 
            se já não houver conexão estabelecida"""
         log = logging.getLogger('device.remotecall')
+
+        """Verificar na pasta de sockets ativos"""
+        if os.listdir('../../.ssh/socket').count(self.username+'@'+self.host+':'+str(self.ssh_port)) == 1:
+            return 0
+
+        """Verificar na lista de threads"""
         if conn.count(self.host) == 0:
             log.debug("Establishing SSH master conn to %s", self.host)
             sshthread = threading.Thread( None, target=self.sshconnthread ) 
@@ -95,10 +101,11 @@ class AbstractServer(models.Model):
         """Verifica se o servidor está online
            Caso não tenha sido estabelecida a conexão master,
            aproveita e inicia a thread para cuidar dessa funćão"""
+        log = logging.getLogger('device.remotecall')
         if conn.count(self.host) == 0:
             self.connect()
             time.sleep(1)
-        if os.listdir('../../.ssh/socket').count(self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
+        if os.listdir('../../.ssh/socket').count(u''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
             return 'offline'
         else:
             return 'online'
@@ -191,7 +198,7 @@ class AbstractServer(models.Model):
         u"Mata um processo em execução"
         if type(pid) is not int:
             raise Exception('kill_process expect a number as argument')
-        if self.offline_mode:
+        if self.checkstatus() == 'offline':            
             return ''
         s = self.connect()
         resp = self.execute('/bin/kill %d' % pid)
@@ -258,7 +265,7 @@ class AbstractServer(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
-        if self.offline_mode is True:
+        if self.checkstatus() == 'offline':
             return
         log = logging.getLogger('debug')
         log.info('Creating route on %s dev= %s to %s', self, dev, ip)
@@ -272,7 +279,7 @@ class AbstractServer(models.Model):
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
-        if self.offline_mode is True:
+        if self.checkstatus() == 'offline':        
             return
         log = logging.getLogger('debug')
         log.info('Deleting route on %s dev= %s to %s', self, dev, ip)
@@ -290,7 +297,7 @@ class AbstractServer(models.Model):
         log = logging.getLogger('debug')
         log.info('Listing routes on %s', self)
         resp = []
-        if self.offline_mode is True:
+        if self.checkstatus() == 'offline':        
             return []
         routes = self.execute('/sbin/route -n')
         for route in routes[2:]:
