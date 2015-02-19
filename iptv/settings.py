@@ -2,6 +2,8 @@
 
 import sys
 import os
+import djcelery
+djcelery.setup_loader()
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
@@ -295,6 +297,10 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     }
 }
 
@@ -318,6 +324,8 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
+    # Log to alert users
+    'log',
     # Video on demand
     #'vod',
     # Node bridge
@@ -332,6 +340,8 @@ INSTALLED_APPS = (
     'dbsettings',
     # Aplicativo de monitoramento
     'monitoramento',
+    # Gerenciamento de tarefas em background
+    'djcelery',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
@@ -467,3 +477,6 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
     }
 }
+
+## Pacote utilizado para gerar tasks em backgound
+BROKER_URL = 'redis://localhost:6379/0'

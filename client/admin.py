@@ -4,21 +4,28 @@ import logging
 import thread
 import requests
 from django.contrib.admin import site, ModelAdmin
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
-from . import models
+from . import models, tasks
 from nbridge.models import Nbridge
+from log.models import TaskLog
 
 log = logging.getLogger('client')
 
 
 def reload_channels_stb(modeladmin, request, queryset):
     message='Lista de canais atualizada'
-    for s in queryset:
-        s.reload_channels(message=message, channel=False)
-
+    pks_list = queryset.values_list('pk', flat=True)
+    task = TaskLog.objects.create_or_alert(
+        'reload-channels', pks_list, request.user)
+    if task:
+        tasks.reload_channels.delay(pks_list, message, task.id, channel=False)
+        messages.success(request, 'Atualizando lista de canais.')
+    else:
+        messages.error(request, 'Atualizando lista já está sendo atualizada.')
+    
 
 reload_channels_stb.short_description = ugettext_lazy(
     'Recarregar canais para %(verbose_name_plural)s selecionados')
@@ -32,35 +39,15 @@ start_remote_debug.short_description = ugettext_lazy(
     'DEBUG %(verbose_name_plural)s selecionados')
 
 
-def reboot_stbs(queryset, nbridge):
-    url = 'http://%s/ws/reboot/' % (nbridge.server.host)
-    log.debug('URL=%s', url)
-    macs = []
-    # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
-    for s in queryset:
-        macs.append(s.mac)
-    data = {
-        'server_key': server_key,
-        'mac[]': [macs]
-        }
-    log.debug('Reboot=%s, macs[]=%s', url, macs)
-    log.debug('DATA=%s', data)
-    try:
-        response = requests.post(url, timeout=10, data=data)
-        log.debug('Resposta=[%s]%s', response.status_code, response.text)
-    except Exception as e:
-        log.error('ERROR:%s', e)
-    finally:
-        log.info('Finalizado o request')
-
-
 def reboot_stb(modeladmin, request, queryset):
-    log.debug('Reboot')
-    nbs = Nbridge.objects.filter(status=True)
-    log.debug('NBS=%s', nbs)
-    for s in nbs:
-        log.debug('Enviando para nb=%s', s)
-        thread.start_new_thread(reboot_stbs, (queryset, s))
+    pks_list = queryset.values_list('pk', flat=True)
+    task = TaskLog.objects.create_or_alert(
+        'reboot-stbs', pks_list, request.user)
+    if task:
+        tasks.reboot_stbs.delay(pks_list, task.id)
+        messages.success(request, 'Reiniciando SetTopBoxes.')
+    else:
+        messages.error(request, 'SetTopBoxes já estão sendo reiniciados.')
 
 reboot_stb.short_description = ugettext_lazy(
     'Reiniciar %(verbose_name_plural)s selecionados')
