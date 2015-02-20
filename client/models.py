@@ -154,7 +154,7 @@ def reload_channels(
     ):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
     # reloaduserdata
-    url = 'http://%s/ws/eval' % (nbridge.server.host)
+    url = 'http://%s:%s/eval' % (nbridge.server.host, nbridge.nbridge_port)
     command = ''
     if userchannel:
         command += 'require(\"api/tv/userchannel\").fetch();'
@@ -177,7 +177,7 @@ def reload_channels(
 
 def reboot_stb(nbridge, settopbox):
     log.debug('Send reboot to STB=%s using nbridge=%s', settopbox, nbridge)
-    url = 'http://%s/ws/reboot/' % (settopbox.nbridge.server.host)
+    url = 'http://%s:%s/reboot/' % (settopbox.nbridge.server.host, nbridge.nbridge_port)
     try:
         response = requests.post(url, timeout=10, data={
             'server_key': settings.NBRIDGE_SERVER_KEY,
@@ -192,7 +192,8 @@ def reboot_stb(nbridge, settopbox):
 
 def remote_debug_stb(settopbox):
     log.debug('Enable STB remote debuger=%s', settopbox)
-    url = 'http://%s/ws/eval' % (settopbox.nbridge.server.host)
+    url = 'http://%s:%s/eval' % (settopbox.nbridge.server.host, settopbox.nbridge.nbridge_port)
+    log.debug('URL:%s', url)
     command = '(function(e){e.src="http://middleware.iptvdomain:8880/target/target-script-min.js#cianet";document.head.appendChild(e);})(document.createElement("script"));'
     log.debug('Comando=%s', command)
     try:
