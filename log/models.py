@@ -28,6 +28,7 @@ class TaskLog(models.Model):
     end_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User)
     is_finished = models.BooleanField(default=False)
+    progress = models.DecimalField(default=0.0, decimal_places=2, max_digits=5)
     objects = TaskLogManager()
 
     def __unicode__(self):

@@ -18,7 +18,8 @@ def current_task_log(request):
             current_task = { 
                 'name': log.get_name_display(),
                 'create_at': datetime.datetime.strftime(
-                log.create_at, '%d/%m/%Y %H:%I:%S')
+                log.create_at, '%d/%m/%Y %H:%I:%S'),
+                'progress': "{}%".format(log.progress)
             }
             current_list.append(current_task)
                 

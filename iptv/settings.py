@@ -480,3 +480,9 @@ CACHES = {
 
 ## Pacote utilizado para gerar tasks em backgound
 BROKER_URL = 'redis://localhost:6379/0'
+
+## Define o tempo de intervalo das tasks por segundos
+TASK_INTERVAL = 15
+
+## Define a quantidade de objetos que podem ser modificados por vez
+QUERY_LIMIT = 10

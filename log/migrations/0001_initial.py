@@ -17,6 +17,7 @@ class Migration(SchemaMigration):
             ('end_at', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
             ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
             ('is_finished', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('progress', self.gf('django.db.models.fields.DecimalField')(default=0.0, max_digits=5, decimal_places=2)),
         ))
         db.send_create_signal(u'log', ['TaskLog'])
 
@@ -71,6 +72,7 @@ class Migration(SchemaMigration):
             'is_finished': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'pks_list': ('django.db.models.fields.TextField', [], {}),
+            'progress': ('django.db.models.fields.DecimalField', [], {'default': '0.0', 'max_digits': '5', 'decimal_places': '2'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"})
         }
     }
