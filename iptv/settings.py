@@ -338,10 +338,10 @@ INSTALLED_APPS = (
     'tastypie',
     # AppSettings
     'dbsettings',
-    # Aplicativo de monitoramento
-    'monitoramento',
     # Gerenciamento de tarefas em background
     'djcelery',
+    # Aplicativo de monitoramento
+    'monitoramento',
 )
 
 LOGIN_URL = '/%saccounts/login' % ROOT_URL
