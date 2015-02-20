@@ -35,7 +35,6 @@ def reboot_stbs(settopboxes_pks, task_id):
     splitted_pks = split_pks(settopboxes_pks) 
     task = TaskLog.objects.get(pk=task_id)
     for n, pks in enumerate(splitted_pks):
-        print n
         settopboxes = SetTopBox.objects.filter(pk__in=pks)
         log.debug('Reboot')
         nbs = Nbridge.objects.filter(status=True)
