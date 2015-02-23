@@ -83,7 +83,7 @@ class AbstractServer(models.Model):
         log = logging.getLogger('device.remotecall')
 
         """Verificar na pasta de sockets ativos"""
-        if os.listdir('../../.ssh/socket').count(self.username+'@'+self.host+':'+str(self.ssh_port)) == 1:
+        if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(self.username+'@'+self.host+':'+str(self.ssh_port)) == 1:
             return 0
 
         """Verificar na lista de threads"""
@@ -103,13 +103,12 @@ class AbstractServer(models.Model):
            aproveita e inicia a thread para cuidar dessa funćão"""
         log = logging.getLogger('device.remotecall')
 
-        if conn.count(self.host) == 0:
-            self.connect()
-            time.sleep(1)
-
-        if os.listdir('../../.ssh/socket').count(u''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
+        if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(u''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
             self.status = False
             self.save()
+            if conn.count(self.host) == 0:
+                self.connect()
+                time.sleep(1)
             return 'offline'
         else:
             self.status = True
