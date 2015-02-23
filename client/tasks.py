@@ -4,7 +4,7 @@ import time
 
 from celery import task
 from decimal import Decimal as D
-from .models import SetTopBox
+from .models import SetTopBox, SetTopBoxChannel
 from log.models import TaskLog
 from nbridge.models import Nbridge
 from django.conf import settings
@@ -63,5 +63,23 @@ def reboot_stbs(settopboxes_pks, task_id):
             task.progress = D(n) / len(splitted_pks) * 100
             task.save()
             time.sleep(settings.TASK_INTERVAL)
+    task.is_finished = True
+    task.save()
+
+@task(name='accept-recorder')
+def accept_recorder(settopboxes_pks, message, task_id, channel=False):
+    task = TaskLog.objects.get(pk=task_id)
+    settopboxes = SetTopBoxChannel.objects.filter(
+        settopbox__id__in=settopboxes_pks, recorder=False)
+    settopboxes.update(recorder=True)
+    task.is_finished = True
+    task.save()
+
+@task(name='refuse-recorder')
+def refuse_recorder(settopboxes_pks, message, task_id, channel=False):
+    task = TaskLog.objects.get(pk=task_id)
+    settopboxes = SetTopBoxChannel.objects.filter(
+        settopbox__id__in=settopboxes_pks, recorder=True)
+    settopboxes.update(recorder=False)
     task.is_finished = True
     task.save()

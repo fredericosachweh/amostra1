@@ -16,7 +16,7 @@ log = logging.getLogger('client')
 
 
 def reload_channels_stb(modeladmin, request, queryset):
-    message='Lista de canais atualizada'
+    message = 'Lista de canais atualizada'
     pks_list = queryset.values_list('pk', flat=True)
     task = TaskLog.objects.create_or_alert(
         'reload-channels', pks_list, request.user)
@@ -24,11 +24,41 @@ def reload_channels_stb(modeladmin, request, queryset):
         tasks.reload_channels.delay(pks_list, message, task.id, channel=False)
         messages.success(request, 'Atualizando lista de canais.')
     else:
-        messages.error(request, 'Atualizando lista já está sendo atualizada.')
-    
-
+        messages.error(request, 'Lista de canais já está sendo atualizada.')
 reload_channels_stb.short_description = ugettext_lazy(
     'Recarregar canais para %(verbose_name_plural)s selecionados')
+
+
+def accept_recorder(modeladmin, request, queryset):
+    message = u'Liberar canais para acessar conteúdo gravado concluído.'
+    pks_list = queryset.values_list('pk', flat=True)
+    task = TaskLog.objects.create_or_alert(
+        'accept-recorder', pks_list, request.user)
+    if task:
+        tasks.accept_recorder.delay(pks_list, message, task.id, channel=False)
+        messages.success(request, u'Atualizando canais para acessar'
+                         'conteúdo gravado.')
+    else:
+        messages.error(request, u'Liberar canais para acessar conteúdo'
+                       'gravado já está em execução.')
+accept_recorder.short_description = ugettext_lazy(
+    u'Liberar canais para acessar conteúdo gravado.')
+
+
+def refuse_recorder(modeladmin, request, queryset):
+    message = u'Bloquear canais para acessar conteúdo gravado concluído.'
+    pks_list = queryset.values_list('pk', flat=True)
+    task = TaskLog.objects.create_or_alert(
+        'refuse-recorder', pks_list, request.user)
+    if task:
+        tasks.refuse_recorder.delay(pks_list, message, task.id, channel=False)
+        messages.success(request, u'Atualizando canais para bloquear'
+                         'conteúdo gravado.')
+    else:
+        messages.error(request, u'Bloquear canais para acessar conteúdo'
+                       'gravado já está em execução.')
+refuse_recorder.short_description = ugettext_lazy(
+    u'Bloquear canais para acessar conteúdo gravado.')
 
 
 def start_remote_debug(modeladmin, request, queryset):
@@ -63,7 +93,8 @@ class SetTopBoxAdmin(ModelAdmin):
     list_display = (
         'serial_number', 'mac', 'description', 'online', 'ip', 'nbridge',
     )
-    actions = [reboot_stb, reload_channels_stb, start_remote_debug]
+    actions = [reboot_stb, reload_channels_stb, start_remote_debug,
+               accept_recorder, refuse_recorder]
     list_filter = ['online',]
 
     def get_readonly_fields(self, request, obj = None):

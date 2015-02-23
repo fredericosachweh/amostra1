@@ -1,7 +1,6 @@
+# -*- coding:utf-8 -*-
 from django.db import models
 from django.contrib.auth.models import User
-
-# Create your models here.
 
 
 class TaskLogManager(models.Manager):
@@ -19,7 +18,10 @@ class TaskLogManager(models.Manager):
 NAME_CHOICES = (
     ('reload-channels', 'Recarregar lista de canais'),
     ('reboot-stbs', 'Reiniciar SetTopBoxes'),
+    ('accept-recorder', u'Liberar canais para acessar gravação'),
+    ('refused-recorder', u'Bloquear canais para acessar gravação'),
 )
+
 
 class TaskLog(models.Model):
     name = models.CharField(max_length=255, choices=NAME_CHOICES)
@@ -32,4 +34,4 @@ class TaskLog(models.Model):
     objects = TaskLogManager()
 
     def __unicode__(self):
-        return self.name
+        return self.get_name_display()
