@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -18,8 +19,8 @@ class TaskLogManager(models.Manager):
 NAME_CHOICES = (
     ('reload-channels', 'Recarregar lista de canais'),
     ('reboot-stbs', 'Reiniciar SetTopBoxes'),
-    ('accept-recorder', u'Liberar canais para acessar gravação'),
-    ('refused-recorder', u'Bloquear canais para acessar gravação'),
+    ('accept-recorder', 'Liberar canais para acessar gravação'),
+    ('refuse-recorder', 'Bloquear canais para acessar gravação'),
 )
 
 
