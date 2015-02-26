@@ -638,6 +638,8 @@ class DeviceServer(models.Model):
            (hasattr(self, 'sink') and self.sink is None):
             return _('Desconfigurado')
         running = self.running()
+	if self.server.checkstatus() == 'offline':
+            return _('Offline')
         if running == False and self.status == True:
             url = reverse('%s_recover' % module_name,
                 kwargs={'pk': self.id})
