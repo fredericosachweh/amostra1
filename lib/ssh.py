@@ -76,11 +76,11 @@ def execute(host, username, command):
             out = subprocess.check_output(shlex.split(cmd))
             """Necessario separar as linhas em lista, por causa
                da compatilidade com a implementacao ssh anterior"""
-            out = re.split('\n', out)
+            out = out.splitlines(True)
             """Descartar ultima linha por causa da quebra de linha
                do valor de retorno"""
-            ret['output'] = out[:-2]
-            ret['exit_code'] = int(out[-2])
+            ret['output'] = out[:-1]
+            ret['exit_code'] = int(out[-1])
         except subprocess.CalledProcessError as e:
             ret['output'] = e.output
             ret['exit_code'] = int(e.returncode)
