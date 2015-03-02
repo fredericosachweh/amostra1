@@ -34,7 +34,7 @@ class Nbridge(DeviceServer):
         help_text=_('Porta de debug do serviço (padrão = 5858)')
     )
     log_level = models.PositiveSmallIntegerField(
-        'Nível de log', default=0,
+        'Nível de log', default=0, blank=True, null=True,
         help_text=_('Nível de log para debug interno (0, 1, 2 ou 3)')
     )
     env_val = models.CharField(
@@ -54,7 +54,11 @@ class Nbridge(DeviceServer):
     def clean(self):
         cleaned_data = super(Nbridge, self).clean()
         if self.debug is True and self.debug_port is None:
-            raise ValidationError('Se o debug está habilitado a porta deve ser informada')
+            raise ValidationError(
+                'Se o debug está habilitado a Porta de serviço deve ser informada'
+            )
+        if self.debug is True and self.log_level is None:
+            raise ValidationError('Se o debug está habilitado o Nível de log deve ser informado')
 
     def switch_link(self):
         running = self.running()
