@@ -223,7 +223,7 @@ class Nbridge(DeviceServer):
             self.middleware_addr,
             settings.NBRIDGE_SERVER_KEY or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
             verbose,
-            self.log_level,
+            self.log_level or 0,
             self.env_val,
             self.id)
         cmd = '/usr/bin/echo \'%s\' > %s' % (config, config_file)
