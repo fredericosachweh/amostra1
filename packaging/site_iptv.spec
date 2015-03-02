@@ -38,6 +38,8 @@ Requires:       python-flup
 # Testes unitarios
 Requires:       python-nose
 Requires:       python-django-nose
+# Django south será substituido pelo django core na versão 1.7
+Requires:       python-django-south
 
 ## Por hora sem migração Usando embutino no pacote com submodulo
 Requires:       python-paramiko
