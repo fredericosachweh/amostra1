@@ -13,6 +13,7 @@ from django.core.urlresolvers import reverse
 from django.dispatch import receiver
 from django.db.models import signals
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 log = logging.getLogger('nbridge')
 
@@ -28,7 +29,10 @@ class Nbridge(DeviceServer):
         help_text=_('Ex. 10.1.1.100:8800')
     )
     debug = models.BooleanField(_('Debug'), default=False)
-    debug_port = models.PositiveSmallIntegerField(_('Porta'))
+    debug_port = models.PositiveSmallIntegerField(
+        _('Porta'), blank=True, null=True, default=5858, unique=True,
+        help_text=_('Porta de debug do serviço (padrão = 5858)')
+    )
     log_level = models.PositiveSmallIntegerField(
         'Nível de log', default=0,
         help_text=_('Nível de log para debug interno (0, 1, 2 ou 3)')
@@ -38,9 +42,19 @@ class Nbridge(DeviceServer):
         help_text=_('Tipo de execução'), choices=CHOICES_ENV_VAR
     )
     nbridge_port = models.PositiveSmallIntegerField(
-        _('Porta de serviço'), default=13000,
+        _('Porta de serviço'), default=13000, unique=True,
         help_text=_('Porta de serviço do servidor de conexão')
     )
+
+    class Meta:
+        ordering = ['server__name']
+        verbose_name = _('Servidor NBridge')
+        verbose_name_plural = _('Servidores NBridge')
+
+    def clean(self):
+        cleaned_data = super(Nbridge, self).clean()
+        if self.debug is True and self.debug_port is None:
+            raise ValidationError('Se o debug está habilitado a porta deve ser informada')
 
     def switch_link(self):
         running = self.running()
@@ -81,11 +95,6 @@ class Nbridge(DeviceServer):
 
     def __unicode__(self):
         return '%s - %s' % (self.server.name, self.description)
-
-    class Meta:
-        ordering = ['server__name']
-        verbose_name = _('Servidor NBridge')
-        verbose_name_plural = _('Servidores NBridge')
 
     def _status_and_pid(self):
         is_running = False
@@ -208,8 +217,7 @@ class Nbridge(DeviceServer):
 }''' % (
             self.nbridge_port,
             self.middleware_addr,
-            settings.NBRIDGE_SERVER_KEY
-                or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
+            settings.NBRIDGE_SERVER_KEY or '36410c96-c157-4b2a-ac19-1a2b7365ca11',
             verbose,
             self.log_level,
             self.env_val,

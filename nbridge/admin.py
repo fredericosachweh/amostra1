@@ -16,13 +16,13 @@ class AdminNbridge(admin.ModelAdmin):
                 'server', 'description'
             )
         }),
-        (_('Parametros de Inicialização'),{
+        (_('Parametros de Inicialização'), {
             'fields': (
                 'middleware_addr',
                 'nbridge_port'
             )
         }),
-        (_('Tipo de ambiente'),{
+        (_('Tipo de ambiente'), {
             'fields': (
                 'env_val',
             )
@@ -42,4 +42,3 @@ class AdminNbridge(admin.ModelAdmin):
 
 
 admin.site.register(models.Nbridge, AdminNbridge)
-
