@@ -103,6 +103,9 @@ class AbstractServer(models.Model):
            aproveita e inicia a thread para cuidar dessa funćão"""
         log = logging.getLogger('device.remotecall')
 
+        log.debug('CMD=%s', os.listdir(os.path.expanduser("~")+"/.ssh/socket"))
+        con = os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(''+self.username+'@'+self.host+':'+str(self.ssh_port))
+        log.debug('COUNT=%s[%s]', con, type(con))
         if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
             self.status = False
             self.save()
@@ -129,7 +132,7 @@ class AbstractServer(models.Model):
 
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
-            return ['Servidor está offline'.encode('utf-8')]
+            return ['Servidor está offline']
         ret = ssh.execute(self.host, self.username, command)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
