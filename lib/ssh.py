@@ -51,7 +51,7 @@ def get(host, username, remotepath, localpath=None, port=22):
         if not localpath:
             localpath = os.path.split(remotepath)[1]
         cmd = 'scp -P '+str(port)+' '+username+'@'+host+':'+remotepath+' '+localpath
-        execute(host, username, cmd, port=22)
+        os.spawn(cmd)
 
 
 def put(host, username, localpath, remotepath=None, port=22):
@@ -61,8 +61,7 @@ def put(host, username, localpath, remotepath=None, port=22):
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
         cmd = 'scp -P '+str(port)+' '+localpath+' '+username+'@'+host+':'+remotepath
-        execute(host, username, cmd, port=22)
- 
+        os.spawn(cmd) 
 
 
 def execute(host, username, command, port=22):
