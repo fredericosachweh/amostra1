@@ -379,7 +379,9 @@ def Server_post_save(sender, instance, created, **kwargs):
     from tempfile import NamedTemporaryFile
     from helper.template_scripts import INIT_SCRIPT, UDEV_CONF, MODPROBE_CONF
     if created is True and instance.offline_mode is False:
-        if instance.connect() is None:
+        instance.connect()
+        time.sleep(1)
+        if self.checkstatus() == 'offline':
             log = logging.getLogger('debug')
             log.info("The server %s was unreachable, "
                      "so we couldn't configure it", instance)
