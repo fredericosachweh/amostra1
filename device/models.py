@@ -381,7 +381,7 @@ def Server_post_save(sender, instance, created, **kwargs):
     if created is True and instance.offline_mode is False:
         instance.connect()
         time.sleep(1)
-        if self.checkstatus() == 'offline':
+        if instance.checkstatus() == 'offline':
             log = logging.getLogger('debug')
             log.info("The server %s was unreachable, "
                      "so we couldn't configure it", instance)
