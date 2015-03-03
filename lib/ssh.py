@@ -51,8 +51,12 @@ def get(host, username, remotepath, localpath=None, port=22):
         if not localpath:
             localpath = os.path.split(remotepath)[1]
         cmd = 'scp -P '+str(port)+' '+username+'@'+host+':'+remotepath+' '+localpath
-        subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)        
-
+        try:
+            null = open('/dev/null', 'w')        
+            subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
+            null.close()
+        except Except as e:
+            log.debug('Could not retrieve %s file from %s: Error %s', remotepath, host, e)
 
 def put(host, username, localpath, remotepath=None, port=22):
         """Copies a file between the local host and the remote host."""
@@ -61,8 +65,12 @@ def put(host, username, localpath, remotepath=None, port=22):
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
         cmd = 'scp -P '+str(port)+' '+localpath+' '+username+'@'+host+':'+remotepath
-        subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
-
+        try:
+            null = open('/dev/null', 'w')
+            subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
+            null.close()
+        except Except as e:
+            log.debug('Could not send %s file to %s: Error %s', localpath, host, e)
 
 def execute(host, username, command, port=22):
         """Execute the given commands on a remote machine."""
