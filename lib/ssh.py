@@ -78,10 +78,13 @@ def execute(host, username, command, port=22):
         ret = {}
         """Executar comando com a opcao de echo $? no final para
            descobrir o valor do retorno da execucao do comando"""
-        cmd = 'ssh -p '+str(port)+' '+username+'@'+host+' \"'+command+'\" \; echo $?'
+        cmd = 'ssh -p '+str(port)+' '+username+'@'+host
+	cmd = shlex.split(cmd)
+	command = command+' ; echo $?'
+	cmd.append(command)
         log.info('COMMAND=%s', cmd)
         try:
-            out = subprocess.check_output(shlex.split(cmd))
+            out = subprocess.check_output(cmd)
             """Necessario separar as linhas em lista, por causa
                da compatilidade com a implementacao ssh anterior"""
             out = out.splitlines(True)
