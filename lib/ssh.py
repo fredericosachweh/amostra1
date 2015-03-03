@@ -20,7 +20,7 @@ def connect(host,
         log = logging.getLogger('device.remotecall')
         if not username:
             username = os.environ['LOGNAME']
-        cmd = "ssh %s@%s" % (username, host)
+        cmd = "ssh %s@%s -p %s" % (username, host, port)
 
         # Complete command according to variables received
         if password:
@@ -44,34 +44,35 @@ def connect(host,
         except:
             log.debug('Disconneting ssh from %s', cmd)
 
-def get(host, username, remotepath, localpath=None):
+def get(host, username, remotepath, localpath=None, port=22):
         """Copies a file between the remote host and the local host."""
         log = logging.getLogger('device.remotecall')
         log.info('geting file from remote:%s -> %s', remotepath, localpath)
         if not localpath:
             localpath = os.path.split(remotepath)[1]
-        cmd = 'scp '+username+'@'+host+':'+remotepath+' '+localpath
-        execute(host, username, cmd)
+        cmd = 'scp -P '+str(port)+' '+username+'@'+host+':'+remotepath+' '+localpath
+        execute(host, username, cmd, port=22)
 
 
-def put(host, username, localpath, remotepath=None):
+def put(host, username, localpath, remotepath=None, port=22):
         """Copies a file between the local host and the remote host."""
         log = logging.getLogger('device.remotecall')
         log.info('sending file from local:%s -> %s', localpath, remotepath)
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
-        cmd = 'scp '+localpath+' '+username+'@'+host+':'+remotepath
-        execute(host, username, cmd)
+        cmd = 'scp -P '+str(port)+' '+localpath+' '+username+'@'+host+':'+remotepath
+        execute(host, username, cmd, port=22)
  
 
 
-def execute(host, username, command):
+def execute(host, username, command, port=22):
         """Execute the given commands on a remote machine."""
         log = logging.getLogger('device.remotecall')
         ret = {}
         """Executar comando com a opcao de echo $? no final para
            descobrir o valor do retorno da execucao do comando"""
-        cmd = 'ssh '+username+'@'+host+' \"'+command+'\" \; echo $?'
+        cmd = 'ssh -p '+str(port)+' '+username+'@'+host+' \"'+command+'\" \; echo $?'
+        log.info('COMMAND=%s', cmd)
         try:
             out = subprocess.check_output(shlex.split(cmd))
             """Necessario separar as linhas em lista, por causa
@@ -90,7 +91,7 @@ def execute(host, username, command):
 
         return ret
 
-def execute_daemon(host, username, command, log_path=None):
+def execute_daemon(host, username, command, log_path=None, port=22):
         """
         Executa o comando em daemon e retorna o pid do processo
         Ex.:
@@ -116,7 +117,7 @@ def execute_daemon(host, username, command, log_path=None):
         ## unlink pidfile
         unlink_cmd = '/usr/bin/unlink %s' % pidfile_path
         log.debug('Clean pid file:%s', unlink_cmd)
-        execute(host, username, unlink_cmd)
+        execute(host, username, unlink_cmd, port=port)
         if len(output['output']):
             pid = int(output['output'][0].strip())
             log.info('Daemon started with pid [%d] command:%s', pid,
@@ -158,7 +159,7 @@ def genKey(self):
 def main():
     """Little test when called directly."""
     # Set these to your own details.
-    myssh = Connection('example.com')
+    myssh = connect('example.com')
     myssh.put('ssh.py')
     myssh.close()
 
