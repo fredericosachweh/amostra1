@@ -79,9 +79,9 @@ def execute(host, username, command, port=22):
         """Executar comando com a opcao de echo $? no final para
            descobrir o valor do retorno da execucao do comando"""
         cmd = 'ssh -p '+str(port)+' '+username+'@'+host
-	cmd = shlex.split(cmd)
-	command = command+' ; echo $?'
-	cmd.append(command)
+        cmd = shlex.split(cmd)
+        command = command+' ; echo $?'
+        cmd.append(command)
         log.info('COMMAND=%s', cmd)
         try:
             out = subprocess.check_output(cmd)
