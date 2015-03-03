@@ -41,8 +41,8 @@ def connect(host,
             null = open('/dev/null', 'w')
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
             null.close()
-        except:
-            log.debug('Disconneting ssh from %s', cmd)
+        except Exception as e:
+            log.debug('Disconneting ssh from %s, cause=', cmd, e)
 
 def get(host, username, remotepath, localpath=None, port=22):
         """Copies a file between the remote host and the local host."""
@@ -55,7 +55,7 @@ def get(host, username, remotepath, localpath=None, port=22):
             null = open('/dev/null', 'w')        
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
             null.close()
-        except Except as e:
+        except Exception as e:
             log.debug('Could not retrieve %s file from %s: Error %s', remotepath, host, e)
 
 def put(host, username, localpath, remotepath=None, port=22):
@@ -69,7 +69,7 @@ def put(host, username, localpath, remotepath=None, port=22):
             null = open('/dev/null', 'w')
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
             null.close()
-        except Except as e:
+        except Exception as e:
             log.debug('Could not send %s file to %s: Error %s', localpath, host, e)
 
 def execute(host, username, command, port=22):
