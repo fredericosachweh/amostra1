@@ -103,7 +103,7 @@ class AbstractServer(models.Model):
            aproveita e inicia a thread para cuidar dessa funćão"""
         log = logging.getLogger('device.remotecall')
 
-        if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(u''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
+        if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
             self.status = False
             self.save()
             if conn.count(self.host) == 0:
@@ -135,7 +135,7 @@ class AbstractServer(models.Model):
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, u"".join(ret['output'])))
+                    (command, ret['exit_code'], self, "".join(ret['output'])))
         return ret['output']
 
     def execute_daemon(self, command, log_path=None):
@@ -143,13 +143,13 @@ class AbstractServer(models.Model):
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
         if self.checkstatus() == 'offline':
-            raise Exception(u'Servidor está offline'.encode('utf-8'))
+            raise Exception('Servidor está offline'.encode('utf-8'))
         ret = ssh.execute_daemon(self.host, self.username, command, log_path)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
             raise Server.ExecutionFailure(
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, u"".join(ret['output'])))
+                    (command, ret['exit_code'], self, "".join(ret['output'])))
         pid = ret.get('pid')
         self.save()
         return int(pid)
@@ -163,7 +163,7 @@ class AbstractServer(models.Model):
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         if self.checkstatus() == 'offline':
-            raise Exception(u'Servidor está offline'.encode('utf-8'))
+            raise Exception('Servidor está offline'.encode('utf-8'))
         ssh.put(self.host, self.username, localpath, remotepath)
 
     def process_alive(self, pid):
@@ -201,7 +201,7 @@ class AbstractServer(models.Model):
         return ret
 
     def kill_process(self, pid):
-        u"Mata um processo em execução"
+        "Mata um processo em execução"
         if type(pid) is not int:
             raise Exception('kill_process expect a number as argument')
         if self.checkstatus() == 'offline':            
@@ -497,7 +497,7 @@ class UniqueIP(models.Model):
             ret.append('<a href="%s">&lt;%s&gt; %s</a>' % (
                 reverse('admin:device_%s_change' % obj._meta.module_name,
                     args=[obj.pk]), obj._meta.verbose_name, obj))
-        return u"<br />".join(ret)
+        return "<br />".join(ret)
     src_str.allow_tags = True
     src_str.short_description = _('Saídas (src)')
 
@@ -1448,7 +1448,7 @@ class IPOutput(OutputModel, DeviceServer):
 
 
 class MulticastOutput(IPOutput):
-    u"Multicast MPEG2TS IP output stream"
+    "Multicast MPEG2TS IP output stream"
     class Meta(object):
         verbose_name = _('Saída IP multicast')
         verbose_name_plural = _('Saídas IP multicast')
@@ -1562,7 +1562,7 @@ class Storage(DeviceServer):
 # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
 #@239.10.0.1:10000/ifaddr=172.17.0.1 -U -r 97200000000 -u /iptv/recorder/6
 class StreamRecorder(OutputModel, DeviceServer):
-    u"""
+    """
     Serviço de gravação dos fluxos multimidia.
     """
     rotate = models.PositiveIntegerField(_('Tempo em minutos do arquivo'),
@@ -1734,7 +1734,7 @@ class StreamRecorder(OutputModel, DeviceServer):
 # /usr/bin/multicat -r 97200000000 -k -$(( 27000000 * 60  * 5)) \
 #-U /iptv/recorder/6 192.168.0.244:10000
 class StreamPlayer(OutputModel, DeviceServer):
-    u"""Player de conteúdo gravado nos servidores (catshup-TV)"""
+    """Player de conteúdo gravado nos servidores (catshup-TV)"""
     recorder = models.ForeignKey(StreamRecorder)
     """Client IP address"""
     stb_ip = models.IPAddressField(_('IP destino'), db_index=True,
@@ -1979,4 +1979,4 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
 
 
 class RealTimeEncript(models.Model):
-    u"""RealTime to manage stream flow"""
+    """RealTime to manage stream flow"""
