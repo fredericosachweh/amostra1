@@ -309,7 +309,7 @@ INSTALLED_APPS = (
     # South http://south.aeracode.org/docs/
     'south',
     # Nose tests
-    'django_nose',
+    # 'django_nose',
     # Aplicação de controle de stream
     'device',
     # EPG
