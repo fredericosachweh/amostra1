@@ -63,6 +63,10 @@ Requires:       python-requests
 # Para depuração com o django-debug-toolbar
 Requires:       python-sqlparse
 
+# Para o celery
+Requires:       python-django-celery
+Requires:       python-celery
+
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
 # Requires:       dvblast >= 2.2.1
