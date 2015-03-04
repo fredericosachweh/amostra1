@@ -18,6 +18,7 @@ Source:         %{name}-%{version}.tar.gz
 Source5:        site_iptv.service
 Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
+Source8:        ssh_config
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -54,7 +55,8 @@ Requires:       python-mimeparse
 # SOAP client to CAS (Verimatrix)
 Requires:       python-suds-jurko
 # Monitoramento
-Requires:       pynag-cianet >= 0.1.1
+# Requires:       pynag-cianet >= 0.1.1
+Requires:       pynag
 
 Requires:       nginxcianet >= 1.4.3
 # Para requests http no nbridge
@@ -105,6 +107,10 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__install} -p -m 0644 %{SOURCE7} %{buildroot}%{_unitdir}/postgresql_iptv.service
 %{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/recorder
 %{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/videos
+# Diretório de ssh do nginx
+%{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/lib/nginx/.ssh/socket
+%{__install} -p -d -m 0600 %{SOURCE8}\
+ %{buildroot}%{iptv_root}%{_localstatedir}/lib/nginx/.ssh/config
 # Definindo um arquivo para colocar o nome da versão
 %{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
 echo "%{version}-%{release}" > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/site_iptv_version
@@ -163,6 +169,11 @@ echo "Migrando banco de dados"
 %config(noreplace) %{site_home}/iptv/settings.py
 %dir %{_localstatedir}/lib/iptv/recorder
 %dir %{_localstatedir}/lib/iptv/videos
+# Diretório de ssh do nginx
+%defattr(600,%{nginx_user},%{nginx_group},700)
+%dir %{iptv_root}%{_localstatedir}/lib/nginx/.ssh
+%dir %{iptv_root}%{_localstatedir}/lib/nginx/.ssh/socket
+%config(noreplace) %{iptv_root}%{_localstatedir}/lib/nginx/.ssh/config
 # IPTV Database
 %defattr(-,postgres,postgres,-)
 %dir %{iptv_root}%{_localstatedir}/lib/postgresql
