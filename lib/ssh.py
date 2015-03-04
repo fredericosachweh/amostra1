@@ -6,96 +6,102 @@ import os
 import logging
 import paramiko
 import time
+import subprocess
+import shlex
+import re
 
 
-class Connection(object):
-    """Connects and logs into the specified hostname.
-    Arguments that are not given are guessed from the environment."""
-
-    def __init__(self,
-                 host,
-                 username=None,
-                 private_key=None,
-                 password=None,
-                 port=22,
-                 ):
+def connect(host,
+            username=None,
+            private_key=None,
+            password=None,
+            port=22,
+            ):
         log = logging.getLogger('device.remotecall')
-        self._sftp_live = False
-        self._sftp = None
-        self._transport_live = False
         if not username:
             username = os.environ['LOGNAME']
+        cmd = "ssh %s@%s -p %s" % (username, host, port)
 
-        # Begin the SSH transport.
-        self._transport = paramiko.Transport((host, port))
-        # self._transport.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self._transport_live = True
-        # Authenticate the transport.
+        # Complete command according to variables received
         if password:
             # Using Password.
             log.info('Connection using password')
-            self._transport.connect(username=username, password=password)
-        else:
+            cmd += ' -P %s' % (password)
+        elif private_key:
             # Use Private Key.
             log.info('Connection using rsa key')
-            if not private_key:
-                # Try to use default key.
-                if os.path.exists(os.path.expanduser('~/.ssh/id_rsa')):
-                    private_key = '~/.ssh/id_rsa'
-                elif os.path.exists(os.path.expanduser('~/.ssh/id_dsa')):
-                    private_key = '~/.ssh/id_dsa'
-                else:
-                    log.error('Need password or key to connect')
-                    raise "You have not specified a password or key."
-            private_key_file = os.path.expanduser(private_key)
-            rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
-            self._transport.connect(username=username, pkey=rsa_key)
+            cmd += ' -i %s' % (private_key)
+        else:
+            log.error('Need password or key to connect')
+            raise "You have not specified a password or key."
 
-    def _sftp_connect(self):
-        """Establish the SFTP connection."""
-        log = logging.getLogger('device.remotecall')
-        log.info('Connecting using SFTP')
-        if not self._sftp_live:
-            self._sftp = paramiko.SFTPClient.from_transport(self._transport)
-            self._sftp_live = True
+        # Spawn new connection
+        log.debug('Connecting ssh using %s', cmd)
+        try:
+            null = open('/dev/null', 'w')
+            subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
+            null.close()
+        except Exception as e:
+            log.debug('Disconneting ssh from %s, cause=', cmd, e)
 
-    def get(self, remotepath, localpath=None):
+def get(host, username, remotepath, localpath=None, port=22):
         """Copies a file between the remote host and the local host."""
         log = logging.getLogger('device.remotecall')
         log.info('geting file from remote:%s -> %s', remotepath, localpath)
         if not localpath:
             localpath = os.path.split(remotepath)[1]
-        self._sftp_connect()
-        self._sftp.get(remotepath, localpath)
+        cmd = 'scp -P '+str(port)+' '+username+'@'+host+':'+remotepath+' '+localpath
+        try:
+            null = open('/dev/null', 'w')        
+            subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
+            null.close()
+        except Exception as e:
+            log.debug('Could not retrieve %s file from %s: Error %s', remotepath, host, e)
 
-    def put(self, localpath, remotepath=None):
+def put(host, username, localpath, remotepath=None, port=22):
         """Copies a file between the local host and the remote host."""
         log = logging.getLogger('device.remotecall')
         log.info('sending file from local:%s -> %s', localpath, remotepath)
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
-        self._sftp_connect()
-        self._sftp.put(localpath, remotepath)
+        cmd = 'scp -P '+str(port)+' '+localpath+' '+username+'@'+host+':'+remotepath
+        try:
+            null = open('/dev/null', 'w')
+            subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
+            null.close()
+        except Exception as e:
+            log.debug('Could not send %s file to %s: Error %s', localpath, host, e)
 
-    def execute(self, command):
+def execute(host, username, command, port=22):
         """Execute the given commands on a remote machine."""
         log = logging.getLogger('device.remotecall')
         ret = {}
-        channel = self._transport.open_session()
-        #channel.get_pty()
-        channel.exec_command(command)
-        ret_code = channel.recv_exit_status()
-        log.info('Return status [%s] command:%s', ret_code, command)
-        ret['exit_code'] = ret_code
-        output = channel.makefile('rb', -1).readlines()
-        if output:
-            ret['output'] = map(lambda x: unicode(x, 'utf-8'), output)
-        else:
-            ret['output'] = map(lambda x: unicode(x, 'utf-8'),
-                channel.makefile_stderr('rb', -1).readlines())
+        """Executar comando com a opcao de echo $? no final para
+           descobrir o valor do retorno da execucao do comando"""
+        cmd = 'ssh -p '+str(port)+' '+username+'@'+host
+        cmd = shlex.split(cmd)
+        command = command+' ; echo $?'
+        cmd.append(command)
+        log.info('COMMAND=%s', cmd)
+        try:
+            out = subprocess.check_output(cmd)
+            """Necessario separar as linhas em lista, por causa
+               da compatilidade com a implementacao ssh anterior"""
+            out = out.splitlines(True)
+            """Descartar ultima linha por causa da quebra de linha
+               do valor de retorno"""
+            ret['output'] = out[:-1]
+            ret['exit_code'] = int(out[-1])
+        except subprocess.CalledProcessError as e:
+            ret['output'] = e.output
+            ret['exit_code'] = int(e.returncode)
+        """Forcar codificacao da string"""
+        ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])           
+        log.info('Return status [%s] command:%s', ret['exit_code'], command)
+
         return ret
 
-    def execute_daemon(self, command, log_path=None):
+def execute_daemon(host, username, command, log_path=None, port=22):
         """
         Executa o comando em daemon e retorna o pid do processo
         Ex.:
@@ -108,20 +114,20 @@ class Connection(object):
             --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         """
         log = logging.getLogger('device.remotecall')
-        ret = self.execute('/bin/mktemp')
+        ret = execute(host, username, '/bin/mktemp')
         pidfile_path = ret['output'][0].strip()
         fullcommand = '/usr/sbin/daemonize -p %s ' % pidfile_path
         if log_path:
             fullcommand += '-o %s.out -e %s.err ' % (log_path, log_path)
         fullcommand += '%s' % command.strip()
-        ret = self.execute(fullcommand)
+        ret = execute(host, username, fullcommand)
         pidcommand = "/bin/cat %s" % pidfile_path
-        # # Buscando o pid
-        output = self.execute(pidcommand)
+        ## Buscando o pid
+        output = execute(host, username, pidcommand)
         ## unlink pidfile
         unlink_cmd = '/usr/bin/unlink %s' % pidfile_path
         log.debug('Clean pid file:%s', unlink_cmd)
-        self.execute(unlink_cmd)
+        execute(host, username, unlink_cmd, port=port)
         if len(output['output']):
             pid = int(output['output'][0].strip())
             log.info('Daemon started with pid [%d] command:%s', pid,
@@ -129,24 +135,24 @@ class Connection(object):
             ret['pid'] = pid
         return ret
 
-    def close(self):
+def close(self):
         """Closes the connection and cleans up."""
         if logging is not None:
             log = logging.getLogger('device.remotecall')
         # Close SFTP Connection.
-        if self._sftp_live:
-            self._sftp.close()
-            self._sftp_live = False
-            if logging is not None:
-                log.debug('close sftp')
+        #if self._sftp_live:
+        #    self._sftp.close()
+        #    self._sftp_live = False
+        #    if logging is not None:
+        #        log.debug('close sftp')
         # Close the SSH Transport.
-        if self._transport_live:
-            self._transport.close()
-            self._transport_live = False
-            if logging is not None:
-                log.debug('close ssh')
+        #if self._transport_live:
+        #    self._transport.close()
+        #    self._transport_live = False
+        #    if logging is not None:
+        #        log.debug('close ssh')
 
-    def __del__(self):
+def __del__(self):
         """Attempt to clean up if not explicitly closed."""
         if logging is not None:
             pass
@@ -154,7 +160,7 @@ class Connection(object):
             #log.debug('__DEL__:%s', self)
         self.close()
 
-    def genKey(self):
+def genKey(self):
         log = logging.getLogger('device.remotecall')
         log.debug('genKey')
         return paramiko.RSAKey.generate(2048)
@@ -163,7 +169,7 @@ class Connection(object):
 def main():
     """Little test when called directly."""
     # Set these to your own details.
-    myssh = Connection('example.com')
+    myssh = connect('example.com')
     myssh.put('ssh.py')
     myssh.close()
 
