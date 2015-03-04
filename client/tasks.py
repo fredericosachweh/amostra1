@@ -55,7 +55,7 @@ def reboot_stbs(settopboxes_pks, task_id):
         log.debug('NBS=%s', nbs)
         for nbridge in nbs:
             log.debug('Enviando para nb=%s', nbridge)
-            url = 'http://%s/ws/reboot/' % (nbridge.server.host)
+            url = 'http://%s:%s/reboot/' % (nbridge.server.host, nbridge.nbridge_port)
             log.debug('URL=%s', url)
             macs = []
             # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21

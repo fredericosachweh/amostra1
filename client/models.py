@@ -210,7 +210,7 @@ def remote_debug_stb(settopbox):
 
 def reload_frontend_stb(settopbox):
     log.debug('Reload frontend STB remote %s', settopbox)
-    url = 'http://%s/ws/eval' % (settopbox.nbridge.server.host)
+    url = 'http://%s:%s/eval' % (settopbox.nbridge.server.host, settopbox.nbridge.nbridge_port)
     command = 'window.location.reload();'
     log.debug('Comando=%s', command)
     try:
