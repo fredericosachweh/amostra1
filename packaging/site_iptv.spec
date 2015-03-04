@@ -66,6 +66,7 @@ Requires:       python-sqlparse
 # Para o celery
 Requires:       python-django-celery
 Requires:       python-celery
+Requires:       redis
 
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
