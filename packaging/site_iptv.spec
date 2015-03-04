@@ -123,8 +123,7 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__mkdir_p} %{buildroot}%{_localstatedir}/lib/iptv/videos
 # Diretório de ssh do nginx
 %{__mkdir_p} %{buildroot}%{iptv_root}%{_localstatedir}/lib/nginx/.ssh/socket
-%{__install} -p -d -m 0600 %{SOURCE8}\
- %{buildroot}%{iptv_root}%{_localstatedir}/lib/nginx/.ssh/config
+%{__install} -p -m 0600 %{SOURCE8} %{buildroot}%{iptv_root}%{_localstatedir}/lib/nginx/.ssh/config
 # Definindo um arquivo para colocar o nome da versão
 %{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
 echo "%{version}-%{release}" > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/site_iptv_version
@@ -270,7 +269,9 @@ if install_status >= 2: # Atualização
 
 
 %changelog
-* Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.8-1
+* Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.9-1
+- Correção do arquivo do nginx/.ssh/config
+* Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.8-1
 - Preparando migração de south para django-migration
 - Refatoração de ssh
 - Processo de celery para gerenciar tarefas
