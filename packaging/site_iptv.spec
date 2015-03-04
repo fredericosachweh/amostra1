@@ -5,6 +5,8 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
+%global v_migrate      0.19.10
+%global v_end          0.20.10
 
 # Referencia:
 # http://pkgs.fedoraproject.org/cgit/python-django.git/tree/python-django.spec
@@ -77,6 +79,7 @@ Requires:       python-sqlparse
 Requires:       python-django-celery
 Requires:       python-celery
 Requires:       redis
+Requires:       python-billiard
 
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
@@ -142,7 +145,7 @@ if [ "$1" = "2" ];then
     if [[ -f %{_tmppath}/site_iptv_version ]];then
         current=$(cat %{_tmppath}/site_iptv_version)
         echo "Current=$current"
-        if [ "$current" = "0.19.8-1%{?dist}" ]; then
+        if [ "$current" = "%{v_migrate}-1%{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
@@ -185,8 +188,8 @@ import sys, os, shutil
 
 install_status = int(sys.argv[1])
 
-v_migrate = '0.19.8-1%{?dist}'
-v_end = '0.20.9-1%{?dist}'
+v_migrate = '%{v_migrate}-1%{?dist}'
+v_end = '%{v_end}-1%{?dist}'
 v_current = '%{version}-%{release}'
 
 version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
@@ -269,6 +272,9 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.10-1
+- Adiciona dependencia de python-billiard (para celery)
+- Django tastypie compativel com o South
 * Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.9-1
 - Correção do arquivo do nginx/.ssh/config
 * Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.8-1
