@@ -397,7 +397,7 @@ class SetTopBoxBehaviorFlag(models.Model):
         _('Valor'), max_length=250,
         help_text=_('Valor do comportamento. Ex. 0.5'), db_index=True
     )
-    
+
     value_type = models.CharField(_('Tipo do parametro'), max_length=50)
 
     class Meta:
@@ -406,4 +406,3 @@ class SetTopBoxBehaviorFlag(models.Model):
 
     def __unicode__(self):
         return '{%s=%s}' % (self.key, self.value)
-
