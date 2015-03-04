@@ -2,6 +2,8 @@
 
 import sys
 import os
+import djcelery
+djcelery.setup_loader()
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
@@ -233,6 +235,12 @@ LOGGING = {
             'filename': '%s/erp.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.celery': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/celery.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -295,6 +303,10 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
+        'celery': {
+            'handlers': ['file.celery'],
+            'level': 'DEBUG',
+        },
     }
 }
 
@@ -318,6 +330,8 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
+    # Log to alert users
+    'log',
     # Video on demand
     #'vod',
     # Node bridge
@@ -330,6 +344,8 @@ INSTALLED_APPS = (
     'tastypie',
     # AppSettings
     'dbsettings',
+    # Gerenciamento de tarefas em background
+    'djcelery',
     # Aplicativo de monitoramento
     'monitoramento',
 )
@@ -467,3 +483,12 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
     }
 }
+
+## Pacote utilizado para gerar tasks em backgound
+BROKER_URL = 'redis://localhost:6379/0'
+
+## Define o tempo de intervalo das tasks por segundos
+TASK_INTERVAL = 15
+
+## Define a quantidade de objetos que podem ser modificados por vez
+QUERY_LIMIT = 10
