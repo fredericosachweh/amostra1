@@ -69,13 +69,17 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
+    # South http://south.aeracode.org/docs/
+    'south',
+    # Nose tests
+    # 'django_nose',
     # Aplicação de controle de stream
     'device',
     # EPG
@@ -84,6 +88,10 @@ INSTALLED_APPS = (
     'dvbinfo',
     # TV
     'tv',
+    # Log to alert users
+    'log',
+    # Video on demand
+    #'vod',
     # Node bridge
     'nbridge',
     # Tools app
@@ -94,6 +102,8 @@ INSTALLED_APPS = (
     'tastypie',
     # AppSettings
     'dbsettings',
+    # Gerenciamento de tarefas em background
+    'djcelery',
     # Aplicativo de monitoramento
     'monitoramento',
 )

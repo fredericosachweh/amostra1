@@ -29,6 +29,8 @@ urlpatterns = patterns('',
     (r'^%sstatic/(?P<path>.*)$' % settings.ROOT_URL,
      'django.views.static.serve',
      {'document_root': settings.STATIC_ROOT, 'show_indexes': True}),
+    # Task log do celery
+    (r'^%slog/' % settings.ROOT_URL, include('log.urls')),
     # Configuração de canais
     (r'^%stv/' % settings.ROOT_URL, include('tv.urls')),
     # Interface dos setupbox

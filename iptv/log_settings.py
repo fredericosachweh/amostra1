@@ -91,6 +91,12 @@ LOGGING = {
             'filename': '%s/erp.log' % IPTV_LOG_DIR,
             'formatter': 'verbose'
         },
+        'file.celery': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '%s/celery.log' % IPTV_LOG_DIR,
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -152,6 +158,10 @@ LOGGING = {
             'handlers': ['file.erp'],
             'level': 'DEBUG',
             'propagate': True
+        },
+        'celery': {
+            'handlers': ['file.celery'],
+            'level': 'DEBUG',
         },
     }
 }

@@ -6,6 +6,47 @@
 
 {% block branding %}
 <h1 id="site-name"><img alt="Cianet" src="{{ STATIC_URL }}admin/img/logo-cianet.png"> Administração - Kingrus</h1>
+<div id="current_task"></div>
+{% block nav-global %}{% endblock %}
+<script type='text/javascript'>
+    var $ = django.jQuery;
+    function check_tasks(){
+        $.ajax({
+            url: '{% url 'current_task_log' %}',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                var current_task = $('#current_task').empty();
+                current_task.hide();
+                current_task.css({
+                    'background-color': '#66CCCC',
+                    'float': 'right',
+                    'padding': '5px',
+                    'border': '1px solid white'
+                });
+                if (data.length > 0) {
+                    h3 = $('<h3 />', {});
+                    h3.html('Tarefas sendo executas:');
+                    h3.appendTo(current_task);
+                    for (var i=0; i<data.length; i++) {
+                        var label = $('<label />', {});
+                        label.css({
+                            'color': 'white'
+                        });
+                        label.append('' + data[i].name + ' ' + data[i].progress + ' ' + data[i].create_at + '<br />');
+                        label.appendTo(current_task);
+                    }
+                    current_task.show();
+                } else {
+                    clearInterval(window.tasks);
+                }
+            }  
+        });
+    }
+    $(document).ready(function() {
+        check_tasks();
+        window.tasks = setInterval(function(){ check_tasks(); }, 5000);
+    });
+</script>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}

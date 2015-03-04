@@ -2,6 +2,8 @@
 
 import sys
 import os
+import djcelery
+djcelery.setup_loader()
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARENT_PATH = os.path.dirname(PROJECT_ROOT_PATH)
@@ -124,3 +126,11 @@ try:
     from .local_settings import *
 except ImportError as e:
     pass
+## Pacote utilizado para gerar tasks em backgound
+BROKER_URL = 'redis://localhost:6379/0'
+
+## Define o tempo de intervalo das tasks por segundos
+TASK_INTERVAL = 15
+
+## Define a quantidade de objetos que podem ser modificados por vez
+QUERY_LIMIT = 10

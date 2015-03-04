@@ -757,6 +757,7 @@ class ConnectionTest(TestCase):
         "Teste de conexão com o usuário nginx no servidor local"
         import os
         import getpass
+        import time
         srv = Server()
         srv.name = 'local'
         srv.host = '127.0.0.1'
@@ -764,7 +765,9 @@ class ConnectionTest(TestCase):
         srv.username = 'nginx'
         srv.rsakey = '~/.ssh/id_rsa'
         srv.connect()
+        time.sleep(0.1)
         ret = srv.execute('/bin/pwd')
+        log.debug('Retornou:%s', ret)
         self.assertEqual(
             ret[0],
             '/iptv/var/lib/nginx\n',
