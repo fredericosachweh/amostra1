@@ -100,7 +100,7 @@ class AbstractServer(models.Model):
     def checkstatus(self):
         """Verifica se o servidor está online
            Caso não tenha sido estabelecida a conexão master,
-           aproveita e inicia a thread para cuidar dessa funćão"""
+           aproveita e inicia a thread para cuidar dessa função"""
         log = logging.getLogger('device.remotecall')
 
         log.debug('CMD=%s', os.listdir(os.path.expanduser("~")+"/.ssh/socket"))
