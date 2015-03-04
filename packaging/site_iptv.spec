@@ -22,6 +22,7 @@ Source5:        site_iptv.service
 Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
 Source8:        ssh_config
+Source9:        site_iptv_celery.service
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -114,6 +115,7 @@ cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 %{__install} -p -d -m 0700 %{buildroot}%{iptv_root}%{_localstatedir}/lib/postgresql
 %{__install} -p -d -m 0755 %{buildroot}%{_unitdir}
 %{__install} -p -m 0644 %{SOURCE5} %{buildroot}%{_unitdir}/site_iptv.service
+%{__install} -p -m 0644 %{SOURCE9} %{buildroot}%{_unitdir}/site_iptv_celery.service
 %{__install} -p -d -m 0755 %{buildroot}%{_sysconfdir}/sysconfig
 %{__install} -p -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/sysconfig/site_iptv
 %{__install} -p -m 0644 %{SOURCE7} %{buildroot}%{_unitdir}/postgresql_iptv.service
@@ -141,7 +143,7 @@ if [ "$1" = "2" ];then
     if [[ -f %{_tmppath}/site_iptv_version ]];then
         current=$(cat %{_tmppath}/site_iptv_version)
         echo "Current=$current"
-        if [ "$current" = "0.19.6-2%{?dist}" ]; then
+        if [ "$current" = "0.19.8-1%{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
             /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
@@ -175,7 +177,8 @@ rm -f %{_tmppath}/site_iptv_version
 # -*- encoding:utf8 -*-
 
 # Caso seja uma atualização:
-# Caso a versão anterior seja anterior à 0.19.6-2 Interrompe a atualização de exibe mensagem de erro avisando que primeiro deve atualizar para 0.19.6-2
+# Caso a versão anterior seja anterior à 0.19.8-1 Interrompe a atualização de exibe mensagem de erro
+# avisando que primeiro deve atualizar para 0.19.8-1
 # Caso seja posterior à 0.20.6-1 após a instalação executar migrate noramalmente
 import rpm
 from rpmUtils import miscutils
@@ -183,8 +186,8 @@ import sys, os, shutil
 
 install_status = int(sys.argv[1])
 
-v_migrate = '0.19.6-2%{?dist}'
-v_end = '0.20.8-1%{?dist}'
+v_migrate = '0.19.8-1%{?dist}'
+v_end = '0.20.9-1%{?dist}'
 v_current = '%{version}-%{release}'
 
 version_path = '%{_sysconfdir}/sysconfig/site_iptv_version'
@@ -194,7 +197,7 @@ if install_status >= 2: # Atualização
     version_migrate = miscutils.stringToVersion(v_migrate)
     version_current = miscutils.stringToVersion(v_current)
     version_compare = miscutils.compareEVR(version_migrate, version_current)
-    if version_compare > 0: # É anterior à 0.19.6-2
+    if version_compare > 0: # É anterior à 0.19.8-1
         print('Verificação 1 %s = %s [%s]' % (version_migrate, version_current, version_compare))
         print('Para atualização, é necessário atualizar para a versão %s primeiro. E depois a versão %s' % (v_migrate, v_end))
         sys.exit(1)
@@ -214,7 +217,7 @@ if install_status >= 2: # Atualização
                 sys.exit(1)
         shutil.copyfile(version_path, version_tmp_path)
     else:
-        # É uma versão anteriror à 0.19.6-2
+        # É uma versão anteriror à 0.19.8-1
         print('Verificação 3 not found %s' % (version_path))
         print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
         sys.exit(1)
@@ -259,6 +262,7 @@ if install_status >= 2: # Atualização
 %dir %{iptv_root}%{_localstatedir}/lib/postgresql
 %defattr(-,root,root,-)
 %{_unitdir}/site_iptv.service
+%{_unitdir}/site_iptv_celery.service
 %{_unitdir}/postgresql_iptv.service
 %config(noreplace) %{_sysconfdir}/sysconfig/site_iptv
 # Arquivo com a versão do pacote
@@ -266,14 +270,11 @@ if install_status >= 2: # Atualização
 
 
 %changelog
-* Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.8-1
-- Corrige migration --fake
-* Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.7-1
-- Fix rpm check update.
-* Tue Dec 16 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.6-1
-- Fix rpm check update.
-* Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.20.1-1
-- Update Django 1.7 exclude south.
+* Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.8-1
+- Preparando migração de south para django-migration
+- Refatoração de ssh
+- Processo de celery para gerenciar tarefas
+- mutiplos nbridge por nginx-fe
 * Wed Dec 10 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-2
 - Fix Requires from python rpm.
 * Thu Dec 04 2014 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.6-1

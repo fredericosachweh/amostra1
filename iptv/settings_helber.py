@@ -2,12 +2,10 @@
 import sys
 from settings import *
 
-DEBUG = True
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptvnb',
+        'NAME': 'iptv',
         'USER': 'iptv',
         'PASSWORD': 'iptv',
         'HOST': '/tmp',
@@ -55,6 +53,8 @@ TASTYPIE_FULL_DEBUG = True
 #NO_COLOUR="\033[0m";
 
 from .dev_settings import *
+
+DEBUG = True
 
 if DEBUG is True:
     # Envia todas as mensagens de log para o console

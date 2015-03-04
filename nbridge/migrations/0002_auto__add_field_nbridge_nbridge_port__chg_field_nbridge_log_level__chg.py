@@ -8,9 +8,14 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding unique constraint on 'Nbridge', fields ['nbridge_port']
-        db.create_unique(u'nbridge_nbridge', ['nbridge_port'])
+        # Adding field 'Nbridge.nbridge_port'
+        db.add_column(u'nbridge_nbridge', 'nbridge_port',
+                      self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=13000, unique=True),
+                      keep_default=False)
 
+
+        # Changing field 'Nbridge.log_level'
+        db.alter_column(u'nbridge_nbridge', 'log_level', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True))
 
         # Changing field 'Nbridge.debug_port'
         db.alter_column(u'nbridge_nbridge', 'debug_port', self.gf('django.db.models.fields.PositiveSmallIntegerField')(unique=True, null=True))
@@ -22,9 +27,12 @@ class Migration(SchemaMigration):
         # Removing unique constraint on 'Nbridge', fields ['debug_port']
         db.delete_unique(u'nbridge_nbridge', ['debug_port'])
 
-        # Removing unique constraint on 'Nbridge', fields ['nbridge_port']
-        db.delete_unique(u'nbridge_nbridge', ['nbridge_port'])
+        # Deleting field 'Nbridge.nbridge_port'
+        db.delete_column(u'nbridge_nbridge', 'nbridge_port')
 
+
+        # Changing field 'Nbridge.log_level'
+        db.alter_column(u'nbridge_nbridge', 'log_level', self.gf('django.db.models.fields.PositiveSmallIntegerField')())
 
         # Changing field 'Nbridge.debug_port'
         db.alter_column(u'nbridge_nbridge', 'debug_port', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=13000))
@@ -59,7 +67,7 @@ class Migration(SchemaMigration):
             'debug_port': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '5858', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             u'deviceserver_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['device.DeviceServer']", 'unique': 'True', 'primary_key': 'True'}),
             'env_val': ('django.db.models.fields.CharField', [], {'default': "u'production'", 'max_length': '20'}),
-            'log_level': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '0'}),
+            'log_level': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
             'middleware_addr': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'nbridge_port': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '13000', 'unique': 'True'})
         }
