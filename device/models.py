@@ -209,7 +209,7 @@ class AbstractServer(models.Model):
             raise Exception('kill_process expect a number as argument')
         if self.checkstatus() == 'offline':            
             return ''
-        s = self.connect()
+        self.connect()
         resp = self.execute('/bin/kill %d' % pid)
         return resp
 
@@ -643,7 +643,7 @@ class DeviceServer(models.Model):
            (hasattr(self, 'sink') and self.sink is None):
             return _('Desconfigurado')
         running = self.running()
-	if self.server.checkstatus() == 'offline':
+        if self.server.checkstatus() == 'offline':
             return _('Offline')
         if running == False and self.status == True:
             url = reverse('%s_recover' % module_name,
