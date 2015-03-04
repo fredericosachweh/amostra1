@@ -1,13 +1,28 @@
 # -*- encoding:utf-8 -*-
 import sys
 from settings import *
+import djcelery
+djcelery.setup_loader()
 
 DEBUG = True
 
+# if 'test' in sys.argv:
+#    ## Banco de dados teste
+#    DATABASES = {
+#        'default': {
+#            'ENGINE': 'django.db.backends.sqlite3',
+#            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
+#            'USER': '',
+#            'PASSWORD': '',
+#            'HOST': '',
+#            'PORT': ''
+#        }
+#    }
+# else:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptvnb',
+        'NAME': 'iptv',
         'USER': 'iptv',
         'PASSWORD': 'iptv',
         'HOST': '/tmp',
@@ -54,8 +69,6 @@ TASTYPIE_FULL_DEBUG = True
 #LPURPLE="\033[1;35m";
 #NO_COLOUR="\033[0m";
 
-from .dev_settings import *
-
 if DEBUG is True:
     # Envia todas as mensagens de log para o console
     # http://docs.python.org/dev/library/logging.html#logging.LogRecord
@@ -73,7 +86,7 @@ if DEBUG is True:
     try:
         # Debug-Toolbar https://github.com/robhudson/django-debug-toolbar/
         import debug_toolbar
-        DEBUG_TOOLBAR_PATCH_SETTINGS = True
+        DEBUG_TOOLBAR_PATCH_SETTINGS = False
         DEBUG_TOOLBAR_PANELS = [
             'debug_toolbar.panels.versions.VersionsPanel',
             'debug_toolbar.panels.timer.TimerPanel',
@@ -97,10 +110,7 @@ if DEBUG is True:
         pass
 
 TASTYPIE_ABSTRACT_APIKEY = False
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-
-# TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-# INSTALLED_APPS += ('django_nose',)
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = [
 #    '--with-coverage',
 #    '--cover-package=client',

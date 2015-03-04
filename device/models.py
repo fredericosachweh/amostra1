@@ -13,9 +13,17 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.utils.encoding import python_2_unicode_compatible
 
-#from client.models import SetTopBox
+import threading
+import time
+import os
+from lib import ssh
 
-conn = {}
+"""Lista com os servidores que já tem uma thread
+   específica para controle de conexão
+   A idéia é ter apenas uma conexão para cada server
+   e todas as outras requisicões serem enviadas por
+   dentro dessa primeira conexão estabelecida"""
+conn = []
 
 
 class AbstractServer(models.Model):
@@ -37,7 +45,6 @@ class AbstractServer(models.Model):
     status = models.BooleanField(_('Status'), default=False)
     msg = models.TextField(_('Mensagem de retorno'), blank=True)
     offline_mode = models.BooleanField(default=False)
-    _is_offline = False
 
     class Meta(object):
         abstract = True
@@ -53,122 +60,120 @@ class AbstractServer(models.Model):
     def __unicode__(self):
         return '%s' % (self.name)
 
-    def connect(self):
-        """Conecta-se ao servidor"""
-        from lib import ssh
+    def sshconnthread(self):
+        """Funcão que monitora e reconecta a conexão
+           master SSH à um servidor"""
         log = logging.getLogger('device.remotecall')
-        if self.offline_mode:
-            raise Server.InvalidOperation(
-                "Shouldn't connect when offline mode is set")
-        log.debug('conn:%s', conn)
-        c = conn.get(self.host)
-        if c is not None:
-            log.debug('ssh:%s', c)
-            if c._transport_live:
-                return c
-            else:
-                c = ssh.Connection(host=self.host,
+        while True:
+            # Verifica se está desconectado propositalmente
+            if self.offline_mode == False:
+                ssh.connect(host=self.host,
                     port=self.ssh_port,
                     username=self.username,
                     password=self.password,
                     private_key=self.rsakey)
-                conn[self.host] = c
-        try:
-            log.debug('ssh new:%s', self)
-            conn[self.host] = ssh.Connection(host=self.host,
-                port=self.ssh_port,
-                username=self.username,
-                password=self.password,
-                private_key=self.rsakey)
-            self.status = True
-            self._is_offline = False
-            self.msg = 'OK'
-        except Exception as ex:
-            log = logging.getLogger('device.remotecall')
-            log.error('%s(%s:%s %s):%s', self, self.host, self.ssh_port,
-                self.username, ex)
-            self.status = False
-            self.disconect()
-            self._is_offline = True
-            self.msg = ex
-        self.save()
-        return conn.get(self.host)
+                log.debug('Lost master ssh connection to %s', self.host)
+                log.debug('Trying to reconnect to %s in 2 seconds', self.host)
+            else:
+                log.debug('Server %s is in offline_mode', self.host)
+            time.sleep(2)
 
+    def connect(self):
+        """Cria uma conexao ssh com o servidor, 
+           se já não houver conexão estabelecida"""
+        log = logging.getLogger('device.remotecall')
+
+        """Verificar na pasta de sockets ativos"""
+        if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(self.username+'@'+self.host+':'+str(self.ssh_port)) == 1:
+            return 0
+
+        """Verificar na lista de threads"""
+        if conn.count(self.host) == 0:
+            log.debug("Establishing SSH master conn to %s", self.host)
+            sshthread = threading.Thread( None, target=self.sshconnthread ) 
+            sshthread.daemon = True
+            sshthread.start()
+            conn.append(self.host)
+        else:
+            log.debug("Master connection to %s is already opened", self.host)
+        return 0 
+
+    def checkstatus(self):
+        """Verifica se o servidor está online
+           Caso não tenha sido estabelecida a conexão master,
+           aproveita e inicia a thread para cuidar dessa função"""
+        log = logging.getLogger('device.remotecall')
+
+        log.debug('CMD=%s', os.listdir(os.path.expanduser("~")+"/.ssh/socket"))
+        con = os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(''+self.username+'@'+self.host+':'+str(self.ssh_port))
+        log.debug('COUNT=%s[%s]', con, type(con))
+        if os.listdir(os.path.expanduser("~")+"/.ssh/socket").count(''+self.username+'@'+self.host+':'+str(self.ssh_port)) == 0:
+            self.status = False
+            self.save()
+            if conn.count(self.host) == 0:
+                self.connect()
+                time.sleep(1)
+            return 'offline'
+        else:
+            self.status = True
+            self.save()
+            return 'online'
+
+    """ Deprecated. Nunca se deverá acabar com a conexão master
+        TODO. Acabar com a conexão master quando o servidor for
+        retirado do banco
     def disconect(self):
         c = conn.get(self.host)
         if c is not None:
-            c.close()
+            c.close()"""
 
     def execute(self, command, persist=True, check=True):
         """Executa um comando no servidor"""
         log = logging.getLogger('device.remotecall')
-        log.debug('[%s@%s]# %s', self.username, self.name, command)
-        try:
-            s = self.connect()
-            self.msg = 'OK'
-            self._is_offline = s is None
-        except Exception as ex:
-            self.msg = 'Can not connect:' + str(ex)
-            log.error('[%s]:%s', self, ex)
-            self._is_offline = True
-            self.save()
-            return 'Can not connect'
-        log.debug('Offline=%s', self._is_offline)
-        log.debug('Conn=%s', s)
-        if self._is_offline:
-            return 'Server is offline'
-        ret = s.execute(command)
-        if not persist and self.status:
-            log.debug('Close BY  not persist and self.status')
-            s.close()
+
+        log.debug('Executing %s in %s', command, self.host)
+        if self.checkstatus() == 'offline':
+            return ['Servidor está offline']
+        ret = ssh.execute(self.host, self.username, command)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, u"".join(ret['output'])))
+                    (command, ret['exit_code'], self, "".join(ret['output'])))
         return ret['output']
 
     def execute_daemon(self, command, log_path=None):
         "Excuta o processo em background (daemon)"
         log = logging.getLogger('device.remotecall')
         log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
-        try:
-            s = self.connect()
-            self.msg = 'OK'
-            self._is_offline = False
-        except Exception as ex:
-            self.msg = ex
-            self.status = False
-            self._is_offline = True
-            log.error('[%s]:%s', self, ex)
-            raise ex
-        ret = s.execute_daemon(command, log_path)
+        if self.checkstatus() == 'offline':
+            raise Exception('Servidor está offline'.encode('utf-8'))
+        ret = ssh.execute_daemon(self.host, self.username, command, log_path)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
             raise Server.ExecutionFailure(
                     'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, u"".join(ret['output'])))
+                    (command, ret['exit_code'], self, "".join(ret['output'])))
         pid = ret.get('pid')
-        #s.close()
         self.save()
         return int(pid)
 
     def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
-        s = self.connect()
-        s.get(remotepath, localpath)
-        #s.close()
+        if self.checkstatus() == 'offline':
+            raise Exception('Servidor está offline'.encode('utf-8'))
+        ssh.get(self.host, self.username, remotepath, localpath)
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
-        s = self.connect()
-        s.put(localpath, remotepath)
-        #s.close()
+        if self.checkstatus() == 'offline':
+            raise Exception('Servidor está offline'.encode('utf-8'))
+        ssh.put(self.host, self.username, localpath, remotepath)
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
         log = logging.getLogger('debug')
-        if self._is_offline:
+        if self.checkstatus() == 'offline':
             return False
         for p in self.list_process(pid):
             if p['pid'] == pid:
@@ -188,7 +193,7 @@ class AbstractServer(models.Model):
         else:
             stdout = self.execute(ps, persist=True)
         ret = []
-        if self._is_offline:
+        if self.checkstatus() == 'offline':
             return ret
         for line in stdout[1:]:
             cmd = line.split()
@@ -200,14 +205,13 @@ class AbstractServer(models.Model):
         return ret
 
     def kill_process(self, pid):
-        u"Mata um processo em execução"
+        "Mata um processo em execução"
         if type(pid) is not int:
             raise Exception('kill_process expect a number as argument')
-        if self.offline_mode:
+        if self.checkstatus() == 'offline':            
             return ''
-        s = self.connect()
-        resp = s.execute('/bin/kill %d' % pid)
-        #s.close()
+        self.connect()
+        resp = self.execute('/bin/kill %d' % pid)
         return resp
 
     def auto_detect_digital_tuners(self):
@@ -271,7 +275,7 @@ class AbstractServer(models.Model):
 
     def create_route(self, ip, dev):
         "Create a new route on the server"
-        if self.offline_mode is True:
+        if self.checkstatus() == 'offline':
             return
         log = logging.getLogger('debug')
         log.info('Creating route on %s dev= %s to %s', self, dev, ip)
@@ -285,7 +289,7 @@ class AbstractServer(models.Model):
 
     def delete_route(self, ip, dev):
         "Delete a route on the server"
-        if self.offline_mode is True:
+        if self.checkstatus() == 'offline':        
             return
         log = logging.getLogger('debug')
         log.info('Deleting route on %s dev= %s to %s', self, dev, ip)
@@ -303,7 +307,7 @@ class AbstractServer(models.Model):
         log = logging.getLogger('debug')
         log.info('Listing routes on %s', self)
         resp = []
-        if self.offline_mode is True:
+        if self.checkstatus() == 'offline':        
             return []
         routes = self.execute('/sbin/route -n')
         for route in routes[2:]:
@@ -379,7 +383,9 @@ def Server_post_save(sender, instance, created, **kwargs):
     from tempfile import NamedTemporaryFile
     from helper.template_scripts import INIT_SCRIPT, UDEV_CONF, MODPROBE_CONF
     if created is True and instance.offline_mode is False:
-        if instance.connect() is None:
+        instance.connect()
+        time.sleep(1)
+        if instance.checkstatus() == 'offline':
             log = logging.getLogger('debug')
             log.info("The server %s was unreachable, "
                      "so we couldn't configure it", instance)
@@ -498,7 +504,7 @@ class UniqueIP(models.Model):
             ret.append('<a href="%s">&lt;%s&gt; %s</a>' % (
                 reverse('admin:device_%s_change' % obj._meta.model_name,
                     args=[obj.pk]), obj._meta.verbose_name, obj))
-        return u"<br />".join(ret)
+        return "<br />".join(ret)
     src_str.allow_tags = True
     src_str.short_description = _('Saídas (src)')
 
@@ -639,6 +645,8 @@ class DeviceServer(models.Model):
            (hasattr(self, 'sink') and self.sink is None):
             return _('Desconfigurado')
         running = self.running()
+        if self.server.checkstatus() == 'offline':
+            return _('Offline')
         if running == False and self.status == True:
             url = reverse('%s_recover' % model_name,
                 kwargs={'pk': self.id})
@@ -1447,7 +1455,7 @@ class IPOutput(OutputModel, DeviceServer):
 
 
 class MulticastOutput(IPOutput):
-    u"Multicast MPEG2TS IP output stream"
+    "Multicast MPEG2TS IP output stream"
     class Meta(object):
         verbose_name = _('Saída IP multicast')
         verbose_name_plural = _('Saídas IP multicast')
@@ -1561,7 +1569,7 @@ class Storage(DeviceServer):
 # /usr/bin/multicat -c /var/run/multicat/sockets/record_6.sock -u \
 #@239.10.0.1:10000/ifaddr=172.17.0.1 -U -r 97200000000 -u /iptv/recorder/6
 class StreamRecorder(OutputModel, DeviceServer):
-    u"""
+    """
     Serviço de gravação dos fluxos multimidia.
     """
     rotate = models.PositiveIntegerField(_('Tempo em minutos do arquivo'),
@@ -1733,7 +1741,7 @@ class StreamRecorder(OutputModel, DeviceServer):
 # /usr/bin/multicat -r 97200000000 -k -$(( 27000000 * 60  * 5)) \
 #-U /iptv/recorder/6 192.168.0.244:10000
 class StreamPlayer(OutputModel, DeviceServer):
-    u"""Player de conteúdo gravado nos servidores (catshup-TV)"""
+    """Player de conteúdo gravado nos servidores (catshup-TV)"""
     recorder = models.ForeignKey(StreamRecorder)
     """Client IP address"""
     stb_ip = models.IPAddressField(_('IP destino'), db_index=True,
@@ -1978,4 +1986,4 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
 
 
 class RealTimeEncript(models.Model):
-    u"""RealTime to manage stream flow"""
+    """RealTime to manage stream flow"""

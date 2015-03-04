@@ -5,4 +5,10 @@ METHOD=prefork
 PYTHONPATH=".:.."
 PID_FILE=/iptv/var/run/site_iptv.pid
 SOCKET_FILE=/iptv/var/run/site_iptv.socket
-
+# Limites
+MAXSPARE=24
+MINSPARE=8
+MAXCHILDREM=100
+# CELERY
+CELERY_PID_FILE=/iptv/var/run/site_iptv_celery.pid
+CELERY_LOG_LEVEL=info

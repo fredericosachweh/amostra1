@@ -6,7 +6,6 @@ stream/debug
 *.pid
 django_extensions
 debug_toolbar
-log
 .pydevproject
 .settings
 .project

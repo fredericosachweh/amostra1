@@ -2,14 +2,10 @@
 [Unit]
 Description=Site IPTV - Cianet
 DefaultDependencies=no
-#Requires=mysqld.service
 Requires=postgresql_iptv.service
 Requires=memcached.service
 After=network.target
-#After=mysqld.service
 After=postgresql_iptv.service
-#ConditionPathExists=/var/lib/mysql/mysql.sock
-#ConditionPathExists=/var/run/postgresql/.s.PGSQL.5432
 
 [Service]
 Type=forking
@@ -24,5 +20,3 @@ ExecStop=/bin/kill $MAINPID
 
 [Install]
 WantedBy=multi-user.target
-
-
