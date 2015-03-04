@@ -207,6 +207,23 @@ def remote_debug_stb(settopbox):
         log.info('Finalizado o request')
 
 
+def reload_frontend_stb(settopbox):
+    log.debug('Reload frontend STB remote %s', settopbox)
+    url = 'http://%s/ws/eval' % (settopbox.nbridge.server.host)
+    command = 'window.location.reload();'
+    log.debug('Comando=%s', command)
+    try:
+        response = requests.post(url, timeout=10, data={
+            'server_key': settings.NBRIDGE_SERVER_KEY,
+            'command': command,
+            'mac': [settopbox.mac]})
+        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+    except Exception as e:
+        log.error('ERROR:%s', e)
+    finally:
+        log.info('Finalizado o recarregamento do frontend')
+
+
 class SetTopBox(models.Model):
     'Class to authenticate and manipulate IPTV client - SetTopBox'
 
@@ -264,6 +281,11 @@ class SetTopBox(models.Model):
     def remote_debug(self):
         if self.online is True and self.nbridge is not None:
             remote_debug_stb(self)
+
+    def reload_frontend_stb(self):
+        nbridge = Nbridge.objects.filter(id=self.nbridge_id)
+        if self.online and nbridge.exists():
+            reload_frontend_stb(self)
 
     @classmethod
     def get_stb_from_user(self, user):

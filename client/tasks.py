@@ -30,6 +30,20 @@ def reload_channels(settopboxes_pks, message, task_id, channel=False):
     task.is_finished = True
     task.save()
 
+@task(name='reload-frontend-stbs')
+def reload_frontend_stbs(settopboxes_pks, task_id):
+    splitted_pks = split_pks(settopboxes_pks) 
+    task = TaskLog.objects.get(pk=task_id)
+    for n, pks in enumerate(splitted_pks):
+        settopboxes = SetTopBox.objects.filter(pk__in=settopboxes_pks)
+        for settopbox in settopboxes:
+            settopbox.reload_frontend_stb()
+        task.progress = D(n) / len(splitted_pks) * 100
+        task.save()
+        time.sleep(settings.TASK_INTERVAL)
+    task.is_finished = True
+    task.save()
+
 @task(name='reboot-stbs')
 def reboot_stbs(settopboxes_pks, task_id):
     splitted_pks = split_pks(settopboxes_pks) 

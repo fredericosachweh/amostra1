@@ -21,6 +21,7 @@ NAME_CHOICES = (
     ('reboot-stbs', 'Reiniciar SetTopBoxes'),
     ('accept-recorder', 'Liberar canais para acessar gravação'),
     ('refuse-recorder', 'Bloquear canais para acessar gravação'),
+    ('reload-frontend-stbs', 'Reiniciar frontend dos SetTopBoxes'),
 )
 
 

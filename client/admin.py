@@ -29,6 +29,20 @@ reload_channels_stb.short_description = ugettext_lazy(
     'Recarregar canais para %(verbose_name_plural)s selecionados')
 
 
+def reload_frontend_stbs(modeladmin, request, queryset):
+    pks_list = queryset.values_list('pk', flat=True)
+    task = TaskLog.objects.create_or_alert(
+        'reload-frontend-stbs', pks_list, request.user)
+    if task:
+        tasks.reload_frontend_stbs.delay(pks_list, task.id)
+        messages.success(request, 'Reiniciando frontend dos SetTopBoxes.')
+    else:
+        messages.error(request, u'Frontend dos'
+                       'SetTopBoxes já estão sendo reiniciados.')
+reload_frontend_stbs.short_description = ugettext_lazy(
+    'Reiniciando frontend para %(verbose_name_plural)s selecionados')
+
+
 def accept_recorder(modeladmin, request, queryset):
     message = u'Liberar canais para acessar conteúdo gravado concluído.'
     pks_list = queryset.values_list('pk', flat=True)
@@ -94,7 +108,7 @@ class SetTopBoxAdmin(ModelAdmin):
         'serial_number', 'mac', 'description', 'online', 'ip', 'nbridge',
     )
     actions = [reboot_stb, reload_channels_stb, start_remote_debug,
-               accept_recorder, refuse_recorder]
+               accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
 
     def get_readonly_fields(self, request, obj = None):
