@@ -77,6 +77,7 @@ Requires:       python-sqlparse
 Requires:       python-django-celery
 Requires:       python-celery
 Requires:       redis
+Requires:       python-billiard
 
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
@@ -269,6 +270,9 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.10-1
+- Adiciona dependencia de python-billiard (para celery)
+- Django tastypie compativel com o South
 * Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.9-1
 - Correção do arquivo do nginx/.ssh/config
 * Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.8-1
