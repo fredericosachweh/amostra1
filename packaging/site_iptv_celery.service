@@ -1,4 +1,3 @@
-## System - IPTV
 [Unit]
 Description=Site IPTV Celery - Cianet
 DefaultDependencies=no
@@ -6,15 +5,16 @@ Requires=redis.service
 After=network.target
 
 [Service]
-Type=forking
+Type=oneshot
+KillMode=control-group
+RemainAfterExit=yes
+Restart=no
 User=nginx
 Group=nginx
 EnvironmentFile=/etc/sysconfig/site_iptv
 
-PIDFile=${CELERY_PID_FILE}
-
-ExecStart=/usr/bin/python ${PROJECT_PATH}manage.py celeryd -l ${CELERY_LOG_LEVEL} --settings=${SETTINGS} --pidfile=${CELERY_PID_FILE}
-ExecStop=/bin/kill $MAINPID
+ExecStart=/usr/bin/python ${PROJECT_PATH}manage.py celeryd_multi start w1 -l ${CELERY_LOG_LEVEL} --settings=${SETTINGS} --pidfile=${CELERY_PID_FILE} --logfile=${CELERY_LOG_FILE} --time-limit=300
+ExecStop=/usr/bin/python ${PROJECT_PATH}manage.py celeryd_multi stopwait w1 --pidfile=${CELERY_PID_FILE}
 
 [Install]
 WantedBy=multi-user.target
