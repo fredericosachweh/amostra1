@@ -12,3 +12,4 @@ MAXCHILDREM=100
 # CELERY
 CELERY_PID_FILE=/iptv/var/run/site_iptv_celery.pid
 CELERY_LOG_LEVEL=info
+CELERY_LOG_FILE=/iptv/var/log/celeryd.log
