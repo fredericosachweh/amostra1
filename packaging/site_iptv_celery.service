@@ -13,7 +13,7 @@ User=nginx
 Group=nginx
 EnvironmentFile=/etc/sysconfig/site_iptv
 
-ExecStart=/usr/bin/python ${PROJECT_PATH}manage.py celeryd_multi start w1 -l ${CELERY_LOG_LEVEL} --settings=${SETTINGS} --pidfile=${CELERY_PID_FILE} --logfile=${CELERY_LOG_FILE} --time-limit=300
+ExecStart=/usr/bin/python ${PROJECT_PATH}manage.py celeryd_multi start w1 -l ${CELERY_LOG_LEVEL} --settings=${SETTINGS} --pidfile=${CELERY_PID_FILE} --logfile=${CELERY_LOG_FILE}
 ExecStop=/usr/bin/python ${PROJECT_PATH}manage.py celeryd_multi stopwait w1 --pidfile=${CELERY_PID_FILE}
 
 [Install]
