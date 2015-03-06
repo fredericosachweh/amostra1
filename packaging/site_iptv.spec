@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.10
+%global v_migrate      0.19.12
 %global v_end          0.20.10
 
 # Referencia:
@@ -25,6 +25,7 @@ Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
 Source8:        ssh_config
 Source9:        site_iptv_celery.service
+Source10:       0003_auto__chg_field_apikey_key.py
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -80,6 +81,7 @@ Requires:       python-django-celery
 Requires:       python-celery
 Requires:       redis
 Requires:       python-billiard
+Requires:       python-redis
 
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
@@ -97,6 +99,8 @@ Sistema middleware de IPTV
 rm -rf $RPM_BUILD_ROOT
 %{__install} -p -d -m 0755 %{buildroot}%{site_home}
 cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
+# Remover ao migrar finalmente para a versão 0.20 do middleware
+%{__install} -p -m 0755 %{SOURCE10} %{buildroot}%{site_home}/vendor/django-tastypie/tastypie/migrations/0003_auto__chg_field_apikey_key.py
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/media
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/static
@@ -272,6 +276,10 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Fri Mar 06 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.12-1
+- Fix python-celery dependency.
+- Fix celery
+- Fix ssh_config
 * Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.10-1
 - Adiciona dependencia de python-billiard (para celery)
 - Django tastypie compativel com o South
