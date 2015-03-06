@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.10
+%global v_migrate      0.19.12
 %global v_end          0.20.10
 
 # Referencia:
@@ -80,6 +80,7 @@ Requires:       python-django-celery
 Requires:       python-celery
 Requires:       redis
 Requires:       python-billiard
+Requires:       python-redis
 
 ## Por hora para a versão de demo vai instalar
 # Requires:       multicat >= 2.0.1
@@ -272,6 +273,10 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Fri Mar 06 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.12-1
+- Fix python-celery dependency.
+- Fix celery
+- Fix ssh_config
 * Wed Mar 04 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.10-1
 - Adiciona dependencia de python-billiard (para celery)
 - Django tastypie compativel com o South
