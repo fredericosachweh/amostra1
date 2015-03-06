@@ -243,7 +243,7 @@ class SetTopBox(models.Model):
     )
     nbridge = models.ForeignKey(
         'nbridge.Nbridge', blank=True, null=True, default=None,
-        db_constraint=False)
+        on_delete=models.SET_NULL)
     # Options
     options = SetTopBoxOptions('Opções do SetTopBox')
     default = SetTopBoxDefaultConfig('Valores do cliente')
@@ -277,7 +277,7 @@ class SetTopBox(models.Model):
     def reload_channels(self, channel=False, message=None):
         nbridge = Nbridge.objects.filter(id=self.nbridge_id)
         if self.online and nbridge.exists():
-            reload_channels(nbridge, self, channel=True, message=message)
+            reload_channels(nbridge[0], self, channel=True, message=message)
 
     def remote_debug(self):
         if self.online is True and self.nbridge is not None:

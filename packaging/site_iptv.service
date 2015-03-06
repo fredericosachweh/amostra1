@@ -4,6 +4,7 @@ Description=Site IPTV - Cianet
 DefaultDependencies=no
 Requires=postgresql_iptv.service
 Requires=memcached.service
+Requires=site_iptv_celery.service
 After=network.target
 After=postgresql_iptv.service
 

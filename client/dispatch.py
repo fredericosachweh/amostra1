@@ -15,6 +15,7 @@ from django.conf import settings
 from tv.models import Channel
 import models
 from tastypie.models import create_api_key
+from tastypie.models import ApiKey
 
 log = logging.getLogger('client')
 
@@ -29,7 +30,7 @@ def CompanyLogo_post_save(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=models.SetTopBox)
 def SetTopBox_post_save(sender, instance, created, **kwargs):
-    ## Verifica se cria canais
+    # Verifica se cria canais
     if created is True:
         log.debug('New SetTopBox')
         try:
@@ -50,7 +51,7 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
                 log.debug('Creating group settopbox')
             log.debug('Put new SetTopBox on group')
             user.groups.add(group)
-        ## Auto cria a relação de canais de estiver configurado para tal
+        # Auto cria a relação de canais de estiver configurado para tal
         if models.SetTopBox.options.auto_add_channel is True:
             log.debug('Auto creating channel for SetTopBox')
             rec = models.SetTopBox.options.auto_enable_recorder_access or False
@@ -59,7 +60,7 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
                     settopbox=instance, channel=channel, recorder=rec)
                 if created is True:
                     log.debug('Created:%s', nrel)
-        ## Auto create default options to STB
+        # Auto create default options to STB
         # password
         if models.SetTopBox.default.password is not None:
             passwd_config = models.SetTopBoxConfig.objects.create(
@@ -94,6 +95,9 @@ def SetTopBox_post_delete(sender, instance, **kwargs):
     users = User.objects.filter(username='%s%s' % (
         settings.STB_USER_PREFIX, instance.serial_number))
     log.debug('User to delete:%s', users)
+    api_keys = ApiKey.objects.filter(user__in=users)
+    log.debug('ApiKeys to delete:%s', api_keys)
+    api_keys.delete()
     users.delete()
 
 
