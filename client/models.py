@@ -243,7 +243,7 @@ class SetTopBox(models.Model):
     )
     nbridge = models.ForeignKey(
         'nbridge.Nbridge', blank=True, null=True, default=None,
-        db_constraint=False)
+        on_delete=models.SET_NULL)
     # Options
     options = SetTopBoxOptions('Opções do SetTopBox')
     default = SetTopBoxDefaultConfig('Valores do cliente')
