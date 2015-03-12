@@ -44,7 +44,7 @@
                 django.jQuery.get(query, function(data) {
                     if (data) {
                         field.append(data);
-                        var iface = "{{ original.pk }}";
+                        var iface = "{{ original.storage.pk }}";
                         if (iface)
                             field.val(iface);
                         field.removeAttr("disabled");

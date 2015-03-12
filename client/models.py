@@ -405,7 +405,7 @@ class SetTopBoxProgramSchedule(models.Model):
     def __unicode__(self):
         return 'canal=[%s] stb=[%s] hora=[%s]' % (
             self.channel, self.settopbox.serial_number,
-            datetime.datetime.fromtimestamp(self.schedule_date)
+            datetime.datetime.fromtimestamp(self.schedule_date / 1000)
         )
 
 class SetTopBoxBehaviorFlag(models.Model):

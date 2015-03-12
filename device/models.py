@@ -1852,9 +1852,17 @@ class StreamPlayer(OutputModel, DeviceServer):
         return True
 
     def stop(self, *args, **kwargs):
+        from django.core.cache import get_cache
         log = logging.getLogger('tvod')
         log.info('STOP:%s', self)
-        super(StreamPlayer, self).stop(*args, **kwargs)
+        # Delete pause cache key
+        key = 'StreamPlayer[%d].status' % self.id
+        cache = get_cache('default')
+        cache.delete(key)
+        try:
+            super(StreamPlayer, self).stop(*args, **kwargs)
+        except Exception as e:
+            log.exception('Exception on stop:%s', e)
         storage = self.recorder.storage
         if storage.n_players > 0:
             storage.n_players -= 1
