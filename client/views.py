@@ -62,7 +62,10 @@ class Auth(View):
         players = StreamPlayer.objects.filter(stb=stb)
         for p in players:
             log.debug('Stop player %s', p)
-            p.stop()
+            try:
+                p.stop()
+            except Exception as e:
+                log.exception('Exception on stop:%s', e)
             p.delete()
         stb.online = False
         stb.ip = ip
@@ -152,7 +155,7 @@ def change_route(request, stbs=None, key=None, cmd=None):
         data = {
             'server_key': server_key,
             'mac[]': [macs]
-            }
+        }
         log.debug('url=%s', url)
         log.debug('DATA=%s', data)
         try:
@@ -160,7 +163,9 @@ def change_route(request, stbs=None, key=None, cmd=None):
             log.debug('Resposta=[%s]%s', response.status_code, response.text)
         except Exception as e:
             log.error('ERROR:%s', e)
-            return HttpResponse('ERROR=%s' % (e), content_type='application/json')
+            return HttpResponse(
+                'ERROR=%s' % (e), content_type='application/json'
+            )
         finally:
             log.info('Finalizado o request')
     return HttpResponse('{"status": "OK"}', content_type='application/json')
@@ -188,7 +193,7 @@ def nbridge_down(request):
     nbridge = request.GET.get('nbridge') or request.GET.get('nbridge')
     log.debug('Nbridge shutdown %s ', nbridge)
     nbobject = Nbridge.objects.get(pk=nbridge)
-    res = models.SetTopBox.objects.filter(nbridge=nbobject).update(
+    models.SetTopBox.objects.filter(nbridge=nbobject).update(
         ip=None, online=False, nbridge=None
     )
     return HttpResponse('{"status": "OK"}', content_type='application/json')
