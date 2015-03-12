@@ -98,12 +98,12 @@ class Channel(models.Model):
             return '<a>Desconfigurado</a>'
         ret = []
         if self._is_streaming() is True:
-            ret.append(_('Estrimando'))
+            ret.append('Estrimando')
         if self._is_recording() is True:
-            ret.append(_('Gravando'))
+            ret.append('Gravando')
         if len(ret) > 0:
             print(ret)
-            s = _(" e ").join(v for v in ret)
+            s = _(" e ".join(v for v in ret))
             return '<a href="%s" id="tv_id_%d" style="color:green;">' \
                 '%s</a>' % (
                     reverse('channel_stop', args=[self.pk]), self.pk, s
