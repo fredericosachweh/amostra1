@@ -616,6 +616,8 @@ class DeviceServer(models.Model):
             self.pid = None
         except ValueError:
             log.debug('Execute error: %s', ValueError)
+        except Server.ExecutionFailure as e:
+            log.debug('Execution error:%s', e)
         self.save()
         return not self.status
 
