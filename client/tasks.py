@@ -31,7 +31,7 @@ def reload_channels(settopboxes_pks, message, task_id, channel=False):
             settopbox.reload_channels(message=message, channel=False)
         task.progress = D(n) / len(splitted_pks) * 100
         task.save()
-        if nstbs > 10:
+        if nstbs > settings.QUERY_LIMIT:
             time.sleep(settings.TASK_INTERVAL)
     task.is_finished = True
     task.progress = 100
@@ -51,7 +51,8 @@ def reload_frontend_stbs(settopboxes_pks, task_id):
             settopbox.reload_frontend_stb()
         task.progress = D(n) / len(splitted_pks) * 100
         task.save()
-        time.sleep(settings.TASK_INTERVAL)
+        if nstbs > settings.QUERY_LIMIT:
+            time.sleep(settings.TASK_INTERVAL)
     task.is_finished = True
     task.progress = 100
     task.save()
@@ -96,6 +97,8 @@ def reboot_stbs(settopboxes_pks, task_id):
             task.progress = D(n) / len(splitted_pks) * 100
             task.save()
             time.sleep(settings.TASK_INTERVAL)
+            if nstbs > settings.QUERY_LIMIT:
+                time.sleep(settings.TASK_INTERVAL)
     task.is_finished = True
     task.progress = 100
     task.save()
