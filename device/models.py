@@ -1804,7 +1804,7 @@ class StreamPlayer(OutputModel, DeviceServer):
                     self.control_socket,
                     )
                 new_status = 'paused'
-            cache.set(key, new_status)
+            cache.set(key, new_status, 43200)  # Timeout de 12 horas
             log.info('%s=%s', key, new_status)
             self.server.execute_daemon(cmd)
             self.status = True
