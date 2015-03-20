@@ -4,7 +4,7 @@ from settings import *
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iptv2',
+        'NAME': 'iptv',
         'USER': 'iptv',
         'PASSWORD': 'iptv',
         'HOST': '/tmp',
