@@ -48,8 +48,8 @@ class ChannelResource(NamespacedModelResource):
             source__isnull=False
         )
         authorization = ChannelResourceAuthorization()
-        #authorization = SetTopBoxAuthorization()
-        #authorization = Authorization()
+        # authorization = SetTopBoxAuthorization()
+        # authorization = Authorization()
         excludes = ['enabled']
         allowed_methods = ['get']
         urlconf_namespace = 'tv'
@@ -97,13 +97,6 @@ class ChannelResource(NamespacedModelResource):
                 obj_list = models.Channel.objects.all()
         else:
             obj_list = models.Channel.objects.none()
-        previous = None
-        for o in obj_list:
-            o.next = None
-            if previous is not None:
-                previous.next = o
-            o.previous = previous
-            previous = o
         return obj_list
 
     def dehydrate(self, bundle):
@@ -180,7 +173,7 @@ class MyChannelResource(NamespacedModelResource):
             enabled=True,
             source__isnull=False
         )
-        #excludes = ['enabled', 'description', 'enabled', 'name']
+        # excludes = ['enabled', 'description', 'enabled', 'name']
         fields = ['id', 'channelid', 'number', 'buffer_size']
         allowed_methods = ['get']
         resource_name = 'userchannel'
