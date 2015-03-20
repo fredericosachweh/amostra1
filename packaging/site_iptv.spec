@@ -6,7 +6,7 @@
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
 %global v_migrate      0.19.15
-%global v_end          0.20.10
+%global v_end          0.20.9
 
 # Referencia:
 # http://pkgs.fedoraproject.org/cgit/python-django.git/tree/python-django.spec
@@ -146,6 +146,8 @@ rm -rf $RPM_BUILD_ROOT
 %systemd_post
 /usr/bin/systemctl daemon-reload --system
 /sbin/usermod -a -G video -s /bin/bash nginx
+# Gera senha chave de ssh e libera acesso à localhost
+/bin/su nginx -c 'if [ -f ~/.ssh/id_rsa ]; then echo ""; else ssh-keygen -t rsa -C nginx@middleware.iptvdomain -f ~/.ssh/id_rsa -N ""; cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys; chmod 600 ~/.ssh/authorized_keys;fi'
 
 # É uma atualização?
 if [ "$1" = "2" ];then
