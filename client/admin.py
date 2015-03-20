@@ -7,8 +7,9 @@ from django.contrib.admin import site, ModelAdmin
 from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
+from django.forms import ModelForm
 server_key = settings.NBRIDGE_SERVER_KEY
-from . import models, tasks
+from . import models, tasks, forms
 from nbridge.models import Nbridge
 from log.models import TaskLog
 
@@ -102,6 +103,12 @@ class SetTopBoxChannelInline(admin.TabularInline):
     #template = 'admin/client/edit_inline/settopboxchannel.html'
 
 
+class SetTopBoxAdminForm(forms.SetTopBoxMixin, ModelForm):
+    class Meta:
+        model = models.SetTopBox
+
+
+
 class SetTopBoxAdmin(ModelAdmin):
     search_fields = ('mac', 'serial_number', 'description', )
     list_display = (
@@ -110,6 +117,7 @@ class SetTopBoxAdmin(ModelAdmin):
     actions = [reboot_stb, reload_channels_stb, start_remote_debug,
                accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
+    form = SetTopBoxAdminForm
 
     def get_readonly_fields(self, request, obj = None):
         if obj:

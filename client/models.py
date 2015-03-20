@@ -6,6 +6,8 @@ import requests
 import datetime
 
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -228,6 +230,9 @@ def reload_frontend_stb(settopbox):
 class SetTopBox(models.Model):
     'Class to authenticate and manipulate IPTV client - SetTopBox'
 
+    parent = models.ForeignKey('self', verbose_name='SetTopBox Principal',
+        related_name='parent_set', null=True, blank=True,
+        on_delete=models.SET_NULL)
     serial_number = models.CharField(
         _('Número serial'), max_length=255,
         help_text=_('Número serial do SetTopBox'), unique=True)
@@ -299,6 +304,19 @@ class SetTopBox(models.Model):
                 return None
         else:
             return None
+
+
+@receiver(pre_save, sender=SetTopBox)
+def SetTopBox_pre_save(sender, instance, **kwargs):
+    parent = instance.parent
+    if parent:
+        log = logging.getLogger('debug')
+        if parent.parent:
+            instance.parent = None
+            log.debug('Parent not be principal, it has a parent.')
+        if instance.parent_set.exists():
+            instance.parent = None
+            log.debug('SetTopBox can not have parent, it is a parent.')
 
 
 class SetTopBoxParameter(models.Model):
