@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.12
+%global v_migrate      0.19.15
 %global v_end          0.20.10
 
 # Referencia:
@@ -45,6 +45,7 @@ Requires:       python-imaging
 Requires:       postgresql-server
 Requires:       python-psycopg2
 Requires:       python-flup
+Requires:       python-simplejson
 # Testes unitarios
 # Requires:       python-nose
 # Requires:       python-django-nose
@@ -56,13 +57,15 @@ Requires:       python-paramiko
 Requires:       python-dateutil
 Requires:       pytz
 Requires:       python-lxml
+Requires:       python-defusedxml
+Requires:       libyaml
 Requires:       daemonize
 Requires:       python-BeautifulSoup
 Requires:       python-memcached
 Requires:       memcached
 Requires:       pydot
 Requires:       net-snmp-python
-Requires:       python-mimeparse
+Requires:       python-mimeparse >= 0.1.3
 # SOAP client to CAS (Verimatrix)
 Requires:       python-suds-jurko
 # Monitoramento
@@ -170,7 +173,13 @@ else
     echo "su - postgres"
     echo "initdb -D /iptv/var/lib/postgresql"
     echo "Após instalar e configurar o banco de dados executar a migração para gerar o banco de dados:"
+    echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py syncdb --noinput'"
     echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py migrate --noinput'"
+    echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py createsuperuser --username=admin --email=suporte-kingrus@cianet.ind.br'"
+    echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py collectstatic --noinput'"
+    echo ""
+    echo "Para modificar de senha do usuário admin:"
+    echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py changepassword admin'"
     echo -e "\033[0m"
     echo "========================================================================="
 fi
@@ -242,10 +251,14 @@ if install_status >= 2: # Atualização
 %dir %{www_site_dir}/tvfiles/media
 %dir %{www_site_dir}/tvfiles/static
 %dir %{sites_dir}
+# Fix permission to nginx
+%dir %{iptv_root}%{_localstatedir}/log
 %dir %{iptv_root}%{_localstatedir}/log/multicat
 %dir %{iptv_root}%{_localstatedir}/log/dvblast
 %dir %{iptv_root}%{_localstatedir}/log/vlc
 %dir %{iptv_root}%{_localstatedir}/log/ffmpeg
+# Fix permission to nginx
+%dir %{iptv_root}%{_localstatedir}/run
 %dir %{iptv_root}%{_localstatedir}/run/multicat
 %dir %{iptv_root}%{_localstatedir}/run/multicat/sockets
 %dir %{iptv_root}%{_localstatedir}/run/dvblast
@@ -276,6 +289,10 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Thu Mar 19 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.15-1
+- Django security update.
+- Fix dependency.
+- Fix /tv/api/tv/v1/channel/
 * Fri Mar 06 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.12-1
 - Fix python-celery dependency.
 - Fix celery
