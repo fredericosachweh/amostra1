@@ -52,7 +52,7 @@ class Nbridge(DeviceServer):
         verbose_name_plural = _('Servidores NBridge')
 
     def clean(self):
-        cleaned_data = super(Nbridge, self).clean()
+        super(Nbridge, self).clean()
         if self.debug is True and self.debug_port is None:
             raise ValidationError(
                 'Se o debug está habilitado a Porta de serviço deve ser informada'
