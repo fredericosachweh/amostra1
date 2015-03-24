@@ -210,7 +210,7 @@ class Nbridge(DeviceServer):
         else:
             verbose = 'false'
         config = '''{
-    "bind": "127.0.0.1:%s",
+    "bind": "0.0.0.0:%s",
     "middleware": "%s",
     "api": "/tv/api",
     "server_key": "%s",
