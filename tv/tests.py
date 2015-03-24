@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
-
+from __future__ import unicode_literals
+import os
 import logging
 
 from tv.models import Channel
 from django.test import TestCase
 from django.test.utils import override_settings
-from device.models import Server, NIC, UnicastInput, DemuxedService
-from device.models import UniqueIP, MulticastOutput, StreamRecorder
+from device.models import Server, NIC, UnicastInput, DemuxedService, StreamRecorder, Storage
+from device.models import UniqueIP, MulticastOutput
 from django.core.urlresolvers import reverse
 from django.test.client import Client
 from django.conf import settings
@@ -28,6 +29,11 @@ class ChannelTest(TestCase):
 
     def setUp(self):
         import getpass
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_superuser(
+            'adm', 'adm@cianet.ind.br', '123'
+        )
+        self.c = Client()
         server = Server.objects.create(
             name='local',
             host='127.0.0.1',
@@ -50,7 +56,7 @@ class ChannelTest(TestCase):
             nic_src=nic,
         )
         internal = UniqueIP.create(sink=service)
-        ipout = MulticastOutput.objects.create(
+        self.ipout = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.3',
             interface=nic,
@@ -64,8 +70,12 @@ class ChannelTest(TestCase):
             channelid='DIS',
             image='',
             enabled=True,
-            source=ipout,
+            source=self.ipout,
         )
+        storage = Storage.objects.create(
+            server=server
+        )
+
         StreamRecorder.objects.create(
             server=server,
             rotate=60,
@@ -73,10 +83,41 @@ class ChannelTest(TestCase):
             nic_sink=nic,
             keep_time=168,
             channel=self.channel,
+            storage=storage
         )
 
     def tearDown(self):
         Server.objects.all().delete()
+
+    def test_logo_thumb(self):
+        """Teste para analizar o upload de log e o teste da criação de thumbnail
+        """
+        self.c.login(username='adm', password='123')
+        with open('tv/fixtures/test_files/a.png', 'r') as imglogo:
+            resp = self.c.post('/tv/administracao/tv/channel/add/', {
+                'number': 12,
+                'name': 'Canal de teste',
+                'description': 'Lorem Ipsulum',
+                'channelid': 'TES',
+                'image': imglogo,
+                'buffer_size': 500,
+                'enable': True,
+                'source': self.ipout.id
+            })
+            # Garante que foi criado o thumb
+            self.assertEqual(302, resp.status_code)
+            # Verifica se existe o log e o thumb
+            # import ipdb
+            # ipdb.set_trace()
+            ch = Channel.objects.get(number=12)
+            self.assertNotEqual(ch.thumb.name, '')
+            self.assertNotEqual(ch.image.name, '')
+            # Esperado {MEDIA_ROOT}/tv/channel/image/thumb/{pk}.png
+            MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
+            thumbfile = '%s/tv/channel/image/thumb/%d.png' % (MEDIA_ROOT, ch.pk)
+            imagefile = '%s/tv/channel/image/original/%d.png' % (MEDIA_ROOT, ch.pk)
+            self.assertTrue(os.path.exists(thumbfile))
+            self.assertTrue(os.path.exists(imagefile))
 
 
 class APITest(TestCase):
@@ -143,21 +184,21 @@ class APITest(TestCase):
         self.channel2 = Channel.objects.create(
             number=13,
             name='Globo',
-            description=u'Rede globo de televisão',
+            description='Rede globo de televisão',
             channelid='GLB',
             image='',
             enabled=True,
             source=ipout2,
-            )
+        )
         self.channel3 = Channel.objects.create(
             number=14,
             name='Test 3',
-            description=u'Rede Test 3',
+            description='Rede Test 3',
             channelid='GLB',
             image='',
             enabled=True,
             source=ipout3,
-            )
+        )
 
     def tearDown(self):
         Server.objects.all().delete()
@@ -168,11 +209,11 @@ class APITest(TestCase):
 
     def test_call_schema(self):
         c = Client()
-        #api_dispatch_list,api_get_schema,api_get_multiple,api_dispatch_detail
-        #e = resolve('/tv/api/epg/v1/channel/')
-        #print('epg=%s' % e)
-        #t = resolve('/tv/api/tv/v1/channel/')
-        #print('tv=%s' % t)
+        # api_dispatch_list,api_get_schema,api_get_multiple,api_dispatch_detail
+        # e = resolve('/tv/api/epg/v1/channel/')
+        # print('epg=%s' % e)
+        # t = resolve('/tv/api/tv/v1/channel/')
+        # print('tv=%s' % t)
         urlschema = reverse(
             'tv_v1:api_get_schema',
             kwargs={'resource_name': 'channel', 'api_name': 'v1'}
@@ -181,10 +222,10 @@ class APITest(TestCase):
         response = c.get(urlschema)
         # Unautenticated
         self.assertEqual(response.status_code, 401)
-        #self.assertContains(response, 'channelid', 1, 200)
+        # self.assertContains(response, 'channelid', 1, 200)
 
     def test_list_channels(self):
-        ## Define auto_create and execute again
+        # Define auto_create and execute again
         clientmodels.SetTopBox.options.auto_create = True
         clientmodels.SetTopBox.options.auto_add_channel = True
         clientmodels.SetTopBox.options.use_mac_as_serial = True
@@ -246,8 +287,8 @@ class APITest(TestCase):
         self.assertEqual(response.status_code, 200)
         # Objeto JSON
         jcanal = decoder.decode(response.content)
-        self.failUnlessEqual(jcanal['description'], u'Rede globo de televisão')
-        self.failUnlessEqual(jcanal['name'], u'Globo')
+        self.failUnlessEqual(jcanal['description'], 'Rede globo de televisão')
+        self.failUnlessEqual(jcanal['name'], 'Globo')
 
     def test_auth_v2(self):
         import simplejson as json
@@ -280,7 +321,7 @@ class APITest(TestCase):
         stb = SetTopBox.objects.create(
             serial_number='01:02:03:04:05:06',
             mac='01:02:03:04:05:06')
-        #self.assertTrue(stb)
+        # self.assertTrue(stb)
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         # get api_key
@@ -289,7 +330,7 @@ class APITest(TestCase):
         # Primeira consulta (Lista vazia)
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
-        #log.debug('Conteudo:%s', response.content)
+        # log.debug('Conteudo:%s', response.content)
         canais = Channel.objects.all()
         log.debug('STB-CH=%s', SetTopBoxChannel.objects.all())
         SetTopBoxChannel.objects.create(
@@ -297,7 +338,7 @@ class APITest(TestCase):
         )
         response = self.c.get(url_auth + '?api_key=' + api_key)
         self.assertEqual(200, response.status_code)
-        #log.debug('Conteudo:%s', response.content)
+        # log.debug('Conteudo:%s', response.content)
         self.assertContains(response, canais[1].channelid)
         SetTopBoxChannel.objects.create(
             settopbox=stb, channel=canais[0], recorder=True
@@ -320,7 +361,7 @@ class APITest(TestCase):
         # Sair do sistema
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
-        ## login com novo STB
+        # login com novo STB
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertEqual(200, response.status_code)
         # get api_key
