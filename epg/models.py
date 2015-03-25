@@ -153,18 +153,19 @@ class Rating(models.Model):
 
     def save(self, *args, **kwargs):
         if self.value.isdigit():
-            if (self.value == 'Programa livre para todas as idades') or (int(self.value) < 10):
-                self.int_value = 0
-            elif self.value == 'Programa impróprio para menores de 10 anos' or (int(self.value) == 10):
-                self.int_value = 10
-            elif self.value == 'Programa impróprio para menores de 12 anos' or (int(self.value) == 11) or (int(self.value) == 12):
-                self.int_value = 12
-            elif self.value == 'Programa impróprio para menores de 14 anos' or (int(self.value) == 13) or (int(self.value) == 14):
-                self.int_value = 14
-            elif self.value == 'Programa impróprio para menores de 16 anos' or (int(self.value) == 15) or (int(self.value) == 16):
-                self.int_value = 16
-            elif self.value == 'Programa impróprio para menores de 18 anos' or (int(self.value) >= 17):
-                self.int_value = 18
+            self.value = int(self.value)
+        if (self.value == 'Programa livre para todas as idades') or (self.value < 10):
+            self.int_value = 0
+        elif self.value == 'Programa impróprio para menores de 10 anos' or (self.value == 10):
+            self.int_value = 10
+        elif self.value == 'Programa impróprio para menores de 12 anos' or (self.value == 11) or (self.value == 12):
+            self.int_value = 12
+        elif self.value == 'Programa impróprio para menores de 14 anos' or (self.value == 13) or (self.value == 14):
+            self.int_value = 14
+        elif self.value == 'Programa impróprio para menores de 16 anos' or (self.value == 15) or (self.value == 16):
+            self.int_value = 16
+        elif self.value == 'Programa impróprio para menores de 18 anos' or (str(self.value).isdigit() and self.value >= 17):
+            self.int_value = 18
         else:
             self.int_value = 18
         super(Rating, self).save(*args, **kwargs)
