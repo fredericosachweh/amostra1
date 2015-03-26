@@ -90,15 +90,15 @@ class SetTopBoxOptions(dbsettings.Group):
     auto_add_channel = dbsettings.BooleanValue(
         _('Cria automaticamente o vinculo entre settopbox e canal'),
         default=False
-        )
+    )
     auto_enable_recorder_access = dbsettings.BooleanValue(
         _('Automaticamente libera o acesso nas gravações do canal'),
         default=False
-        )
+    )
     use_mac_as_serial = dbsettings.BooleanValue(
         _('Caso não seja fornecido via post, utiliza o MAC como serial'),
         default=True
-        )
+    )
 
 CHOICES_PARENTAL = (
     ('0', 'Livre',),
@@ -150,25 +150,21 @@ class SetTopBoxDefaultConfig(dbsettings.Group):
 
 
 def reload_channels(
-        nbridge, settopbox, message=None, userchannel=True, channel=True
-    ):
+    nbridge, settopbox, message=None, userchannel=True, channel=True
+):
     log.debug('Reload [%s] nbridge [%s]=%s', settopbox, nbridge, message)
     # reloaduserdata
-    url = 'http://%s:%s/eval' % (nbridge.server.host, nbridge.nbridge_port)
+    url = 'http://%s:%s/reloaduserdata/' % (nbridge.server.host, nbridge.nbridge_port)
     command = ''
-    if userchannel:
-        command += 'require(\"api/tv/userchannel\").fetch();'
-    if channel:
-        command += 'require(\"api/tv/channel\").fetch();'
-    if message:
-        command += 'alert(\"%s.\");' % (message)
-    log.debug('Comando=%s', command)
     try:
-        response = requests.post(url, timeout=10, data={
+        data = {
             'server_key': settings.NBRIDGE_SERVER_KEY,
             'command': command,
-            'mac': [settopbox.mac]})
-        log.debug('Resposta=[%s]%s', response.status_code, response.text)
+            'mac': [settopbox.mac]
+        }
+        log.debug('call nbridge[%s]=%s(%s)', nbridge, url, data)
+        response = requests.post(url, timeout=10, data=data)
+        log.debug('Resposta=%s[%s](%s)%s', url, response.status_code, data, response.text)
     except Exception as e:
         log.error('ERROR:%s', e)
     finally:
@@ -194,7 +190,8 @@ def remote_debug_stb(settopbox):
     log.debug('Enable STB remote debuger=%s', settopbox)
     url = 'http://%s:%s/eval' % (settopbox.nbridge.server.host, settopbox.nbridge.nbridge_port)
     log.debug('URL:%s', url)
-    command = '(function(e){e.src="http://middleware.iptvdomain:8880/target/target-script-min.js#cianet";document.head.appendChild(e);})(document.createElement("script"));'
+    command = '(function(e){e.src="http://middleware.iptvdomain:8880/target/target-script-min.js\
+#cianet";document.head.appendChild(e);})(document.createElement("script"));'
     log.debug('Comando=%s', command)
     try:
         response = requests.post(url, timeout=10, data={
@@ -408,13 +405,13 @@ class SetTopBoxProgramSchedule(models.Model):
             datetime.datetime.fromtimestamp(self.schedule_date / 1000)
         )
 
+
 class SetTopBoxBehaviorFlag(models.Model):
     'Class to store Behavior flags'
     key = models.CharField(
         _('Chave'), max_length=250, db_index=True,
         help_text=_('Chave de indentificação da flag de comportamento')
     )
-
 
     value = models.CharField(
         _('Valor'), max_length=250,

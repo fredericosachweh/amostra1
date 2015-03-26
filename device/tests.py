@@ -18,8 +18,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from tv.models import Channel
 import logging
 log = logging.getLogger('unittest')
-## import getpass
-## getpass.getuser() -> 'nginx'
+# import getpass
+# getpass.getuser() -> 'nginx'
 
 
 @override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
@@ -185,7 +185,7 @@ class CommandsGenerationTest(TestCase):
         storage1 = Storage.objects.create(
             folder='/tmp/recording_1',
             server=server,
-            )
+        )
         StreamRecorder.objects.create(
             server=server,
             storage=storage1,
@@ -247,8 +247,7 @@ class CommandsGenerationTest(TestCase):
             sink=soft_to_ipout,
             nic_sink=nic,
         )
-        # TODO - FileInput -> UniqueIP -> SoftTranscoder \
-        #-> UniqueIP -> MulticastOutput
+        # TODO - FileInput -> UniqueIP -> SoftTranscoder -> UniqueIP -> MulticastOutput
 
     def tearDown(self):
         Server.objects.all().delete()
@@ -453,16 +452,16 @@ class CommandsGenerationTest(TestCase):
         dvbtuner = DvbTuner.objects.all()[0]
         dvbtuner_type = ContentType.objects.get_for_model(DvbTuner)
         self.assertItemsEqual(
-                    DemuxedService.objects.filter(content_type=dvbtuner_type),
-                    dvbtuner.src.all(),
-                    )
+            DemuxedService.objects.filter(content_type=dvbtuner_type),
+            dvbtuner.src.all(),
+        )
         # Test unicast input generic relation
         unicastin = UnicastInput.objects.all()[0]
         unicastin_type = ContentType.objects.get_for_model(UnicastInput)
         self.assertItemsEqual(
-                    DemuxedService.objects.filter(content_type=unicastin_type),
-                    unicastin.src.all(),
-                    )
+            DemuxedService.objects.filter(content_type=unicastin_type),
+            unicastin.src.all(),
+        )
         # Test DemuxedServer and UniqueIP connections
         service = DemuxedService.objects.all()[0]
         internal = UniqueIP.objects.all()[0]
@@ -530,7 +529,6 @@ class CommandsGenerationTest(TestCase):
 class AdaptersManipulationTests(TestCase):
 
     def setUp(self):
-        import getpass
         Server.objects.create(
             name='local',
             host='127.0.0.1',
@@ -605,8 +603,7 @@ class MySeleniumTests(LiveServerTestCase):
         super(MySeleniumTests, cls).tearDownClass()
 
     def _login(self, username, password):
-        login_url = '%s%s' % (self.live_server_url,
-                                reverse('django.contrib.auth.views.login'))
+        login_url = '%s%s' % (self.live_server_url, reverse('django.contrib.auth.views.login'))
         self.selenium.get(login_url)
         username_input = self.selenium.find_element_by_name("username")
         username_input.send_keys(username)
@@ -649,15 +646,12 @@ class MySeleniumTests(LiveServerTestCase):
 
     def test_invalid_login(self):
         self._login('admin', 'cianet123')
-        login_url = '%s%s' % (self.live_server_url,
-                                reverse('django.contrib.auth.views.login'))
-        self.assertEqual(login_url, self.selenium.current_url,
-                         "Login should have failed")
+        login_url = '%s%s' % (self.live_server_url, reverse('django.contrib.auth.views.login'))
+        self.assertEqual(login_url, self.selenium.current_url, "Login should have failed")
 
     def test_unicastinput(self):
         self._login('admin', 'cianet')
-        add_new_url = '%s%s' % (self.live_server_url,
-            reverse('admin:device_unicastinput_add'))
+        add_new_url = '%s%s' % (self.live_server_url, reverse('admin:device_unicastinput_add'))
         self.selenium.get(add_new_url)
         self._select_by_value('id_server', 1)
         nics = NIC.objects.all()
@@ -677,7 +671,6 @@ class MySeleniumTests(LiveServerTestCase):
         unicastin.delete()
 
     def test_multicastinput(self):
-        import getpass
         myuser = 'nginx'
         servers = Server.objects.all()
         servers.update(username=myuser)
@@ -755,8 +748,6 @@ class ConnectionTest(TestCase):
 
     def test_connection(self):
         "Teste de conexão com o usuário nginx no servidor local"
-        import os
-        import getpass
         import time
         srv = Server()
         srv.name = 'local'
@@ -776,7 +767,6 @@ class ConnectionTest(TestCase):
 
     def test_connection_failure(self):
         "Teste para conectar e falhar uma conexão (Porta errada)"
-        import getpass
         srv = Server()
         srv.name = 'local'
         srv.host = '127.0.0.1'
@@ -784,16 +774,17 @@ class ConnectionTest(TestCase):
         srv.username = 'nginx'
         srv.rsakey = '~/.ssh/id_rsa'
         srv.connect()
-        self.assertEqual(str(srv.msg),
+        self.assertEqual(
+            str(srv.msg),
             'Unable to connect to 127.0.0.1: [Errno 111] Connection refused',
-            'Deveria dar erro de conexão')
+            'Deveria dar erro de conexão'
+        )
         self.assertFalse(srv.status, 'O status da conexão deveria ser False')
 
 
 class ServerTest(TestCase):
 
     def setUp(self):
-        import getpass
         Server.objects.create(
             name='local',
             host='127.0.0.1',
@@ -806,37 +797,30 @@ class ServerTest(TestCase):
     def test_list_dir(self):
         server = Server.objects.get(pk=1)
         l = server.list_dir('/')
-        self.assertGreater(l.count('boot'), 0,
-            'Deveria existir o diretório boot')
-        self.assertGreater(l.count('bin'), 0,
-            'Deveria existir o diretório bin')
-        self.assertGreater(l.count('usr'), 0,
-            'Deveria existir o diretório usr')
+        self.assertGreater(l.count('boot'), 0, 'Deveria existir o diretório boot')
+        self.assertGreater(l.count('bin'), 0, 'Deveria existir o diretório bin')
+        self.assertGreater(l.count('usr'), 0, 'Deveria existir o diretório usr')
 
     def test_list_process(self):
         server = Server.objects.get(pk=1)
         server.connect()
         procs = server.list_process()
-        self.assertEqual(procs[0]['pid'],
-            1,
-            'O primero processo deveria ter pid=1')
+        self.assertEqual(procs[0]['pid'], 1, 'O primero processo deveria ter pid=1')
 
     def test_start_process(self):
         server = Server.objects.get(pk=1)
         cmd = '/bin/sleep 10'
         pid = server.execute_daemon(cmd)
-        self.assertTrue(server.process_alive(pid),
-            'O processo pid=%d deveria estar vivo.' % pid)
+        self.assertTrue(server.process_alive(pid), 'O processo pid=%d deveria estar vivo.' % pid)
         self.assertGreater(pid, 0, 'O processo deveria ser maior que zero')
         server.kill_process(pid)
-        self.assertFalse(server.process_alive(pid),
-            'O processo pid=%d deveria ter morrido.' % pid)
+        self.assertFalse(server.process_alive(pid), 'O processo pid=%d deveria ter morrido.' % pid)
 
     def test_list_ifaces(self):
         server = Server.objects.get(pk=1)
         server.connect()
         server.auto_create_nic()
-        ifaces = server._list_interfaces()
+        server._list_interfaces()
 
     def test_local_dev(self):
         server = Server.objects.get(pk=1)
@@ -853,13 +837,11 @@ class ServerTest(TestCase):
 
         server.create_route(*route)
         routes = server.list_routes()
-        self.assertIn(route, routes,
-                'Route %s -> %s should exists' % route)
+        self.assertIn(route, routes, 'Route %s -> %s should exists' % route)
 
         server.delete_route(*route)
         routes = server.list_routes()
-        self.assertNotIn(route, routes,
-                'Route %s -> %s should not exists' % route)
+        self.assertNotIn(route, routes, 'Route %s -> %s should not exists' % route)
 
     def test_list_interfaces_view(self):
         server = Server.objects.get(pk=1)
@@ -910,12 +892,12 @@ class ServerTest(TestCase):
             adapter_nr=2,
         )
         expected = '<option value="">---------</option>'\
-        '<option value="00:00:00:00:00:00">00:00:00:00:00:00 ( - 04b4:2104)'\
-        '</option>'\
-        '<option value="00:00:00:00:00:01">00:00:00:00:00:01 ( - 04b4:2104)'\
-        '</option>'\
-        '<option value="00:00:00:00:00:02">00:00:00:00:00:02 ( - 04b4:2104)'\
-        '</option>'
+            '<option value="00:00:00:00:00:00">00:00:00:00:00:00 ( - 04b4:2104)'\
+            '</option>'\
+            '<option value="00:00:00:00:00:01">00:00:00:00:00:01 ( - 04b4:2104)'\
+            '</option>'\
+            '<option value="00:00:00:00:00:02">00:00:00:00:00:02 ( - 04b4:2104)'\
+            '</option>'
         response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
         # Without any DvbTuner created
         self.assertEqual(expected, response.content)
@@ -935,8 +917,7 @@ class ServerTest(TestCase):
             adapter=dvbworld.uniqueid,
         )
         # Editing a created DvbTuner
-        response = self.client.get(url + '?server=%d&tuner=1&type=dvb'
-            % server.pk)
+        response = self.client.get(url + '?server=%d&tuner=1&type=dvb' % (server.pk))
         self.assertEqual(expected, response.content)
 
         expected = u'<option value="">---------</option>' \
@@ -946,8 +927,9 @@ class ServerTest(TestCase):
                    '00:00:00:00:00:02 ( - 04b4:2104)</option>'
         response = self.client.get(url + '?server=%d&type=dvb' % server.pk)
         # With one created DvbTuner, while inserting another one
-        self.assertEqual(expected, response.content,
-            'The already used adapter should have been excluded')
+        self.assertEqual(
+            expected, response.content, 'The already used adapter should have been excluded'
+        )
 
     def test_available_isdbtuners_view(self):
         url = reverse('device.views.server_available_isdbtuners')
@@ -995,7 +977,6 @@ class TestViews(TestCase):
     """
 
     def setUp(self):
-        import getpass
         server = Server.objects.create(
             name='local',
             host='127.0.0.1',
@@ -1022,8 +1003,7 @@ class TestViews(TestCase):
         c = Client()
         url = reverse('device.views.server_status', kwargs={'pk': server.pk})
         response = c.get(url, follow=True)
-        self.assertRedirects(response,
-            'http://testserver/tv/administracao/device/server/', 302)
+        self.assertRedirects(response, 'http://testserver/tv/administracao/device/server/', 302)
         urlnotfound = reverse('device.views.server_status', kwargs={'pk': 2})
         response = c.get(urlnotfound, follow=True)
         self.assertEqual(response.status_code, 404, 'Deveria ser 404')
@@ -1036,8 +1016,8 @@ class TestViews(TestCase):
             server.execute('ls %s' % settings.VLC_VIDEOFILES_DIR)
         except Server.ExecutionFailure:
             raise self.failureException(
-                "The %s folder doesn't exists or is inacessible" %
-                    settings.VLC_VIDEOFILES_DIR)
+                "The %s folder doesn't exists or is inacessible" % (settings.VLC_VIDEOFILES_DIR)
+            )
         # Create a temporary file inside the videos folder
         out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)
         # Make sure the file name is returned on the list
@@ -1045,8 +1025,7 @@ class TestViews(TestCase):
         response = self.client.get(url + '?server=%d' % server.pk)
         options = unicode(response.content, 'utf-8').split(u'\n')
         full_path = u" ".join(out).strip()
-        match = re.match(r'^%s(.*)$' %
-            re.escape(settings.VLC_VIDEOFILES_DIR), full_path)
+        match = re.match(r'^%s(.*)$' % (re.escape(settings.VLC_VIDEOFILES_DIR)), full_path)
         file_name = match.groups(0)[0]
         expected = u'<option value="%s">%s</option>' % (
             full_path, file_name)
@@ -1100,7 +1079,7 @@ class TestRecord(TestCase):
             port=20000,
             ip='239.10.11.12',
         )
-        file = FileInput.objects.create(
+        FileInput.objects.create(
             server=self.server,
             filename='/tmp/lala.mpg',
             repeat=True,
@@ -1141,11 +1120,11 @@ class TestRecord(TestCase):
         storage1 = Storage.objects.create(
             folder='/tmp/recording_1',
             server=self.server,
-            )
+        )
         storage2 = Storage.objects.create(
             folder='/tmp/recording_2',
             server=self.server1,
-            )
+        )
         StreamRecorder.objects.create(
             server=self.server,
             rotate=60,  # minutos
@@ -1179,7 +1158,7 @@ class TestRecord(TestCase):
 
     def test_record(self):
         from django.utils import timezone
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         start_time = timezone.datetime.utcnow() + timedelta(0, -(3600 * 3))
         srv = self.server
         ext_ip = UniqueIP.objects.create(
@@ -1189,7 +1168,7 @@ class TestRecord(TestCase):
         storage = Storage.objects.create(
             folder='/tmp/recording_t',
             server=srv,
-            )
+        )
         recorder = StreamRecorder.objects.create(
             server=srv,
             rotate=60,
@@ -1208,7 +1187,7 @@ class TestRecord(TestCase):
             (60 * 60 * 27000000),
             recorder.storage.folder,
             recorder.pk,
-            )
+        )
         self.assertEqual(recorder._get_cmd(), cmd_expected)
         self.assertEqual(cmd_expected, recorder._get_cmd())
 
@@ -1216,9 +1195,8 @@ class TestRecord(TestCase):
         from datetime import datetime, timedelta
         import simplejson as json
         start_time = datetime.now() + timedelta(0, -3600)
-        ## Muda o status para rodando
-        StreamRecorder.objects.filter(keep_time__gt=80).update(status=True,
-            start_time=start_time)
+        # Muda o status para rodando
+        StreamRecorder.objects.filter(keep_time__gt=80).update(status=True, start_time=start_time)
         self.c = Client()
         response = self.c.get(reverse('device.views.tvod_list'))
         self.assertEqual(response.status_code, 200, 'Deveria haver a listagem')
@@ -1228,18 +1206,17 @@ class TestRecord(TestCase):
         self.assertEqual(len(jrecorder), 2, 'Deveria haver 2 canais rodando')
 
     def test_tvod_view(self):
-        #from models import StreamPlayer
-        urlplay = reverse('device.views.tvod',
-            kwargs={'channel_number': 12, 'command': 'play', 'seek': 3600})
-        self.assertEqual('/tv/device/tvod/12/play/3600', urlplay,
-            'URL invalida')
-        urlstopOK = reverse('device.views.tvod',
-            kwargs={'channel_number': 12, 'command': 'stop', 'seek': 0})
-        self.assertEqual('/tv/device/tvod/12/stop/0', urlstopOK,
-            'URL invalida')
+        urlplay = reverse(
+            'device.views.tvod', kwargs={'channel_number': 12, 'command': 'play', 'seek': 3600}
+        )
+        self.assertEqual('/tv/device/tvod/12/play/3600', urlplay, 'URL invalida')
+        urlstopOK = reverse(
+            'device.views.tvod', kwargs={'channel_number': 12, 'command': 'stop', 'seek': 0}
+        )
+        self.assertEqual('/tv/device/tvod/12/stop/0', urlstopOK, 'URL invalida')
         self.c = Client()
         response = self.c.get(urlplay)
-        ## TODO: Fazer autenticação
+        # TODO: Fazer autenticação
         self.assertContains(response, 'Unauthorized', status_code=401)
         response = self.c.get(urlstopOK)
         self.assertContains(response, 'Unauthorized', status_code=401)
@@ -1267,9 +1244,9 @@ class TestRecord(TestCase):
 
 
 class ServerRouteTest(TestCase):
-    
+
     def setUp(self):
-        ## create server
+        # create server
         self.server = Server.objects.create(
             name='local',
             host='127.0.0.1',
@@ -1278,7 +1255,7 @@ class ServerRouteTest(TestCase):
             rsakey='~/.ssh/id_rsa',
         )
         nic = NIC.objects.get(ipv4='127.0.0.1')
-        ## create multicast input
+        # create multicast input
         MulticastInput.objects.create(
             server=self.server,
             interface=nic,
@@ -1304,13 +1281,13 @@ class ServerRouteTest(TestCase):
         self.assertTrue(multicastin.running())
         self.assertTrue(multicastin.status)
         routes = self.server.list_routes()
-        self.assertTrue( ('239.0.1.11', 'lo') in routes )
+        self.assertTrue(('239.0.1.11', 'lo') in routes)
 
         multicastin.stop()
         self.assertFalse(multicastin.running())
         self.assertFalse(multicastin.status)
         routes = self.server.list_routes()
-        self.assertFalse( ('239.0.1.11', 'lo') in routes )
+        self.assertFalse(('239.0.1.11', 'lo') in routes)
 
 
 class RecorderTimezoneTest(TestCase):
@@ -1319,12 +1296,11 @@ class RecorderTimezoneTest(TestCase):
         from datetime import timedelta, datetime
         from django.utils import timezone
         seek = 3600 * 24 * 10
-        #seek = 3600
+        # seek = 3600
         ltz = timezone.get_current_timezone()
-        utc = timezone.utc
         log.debug('Local TZ=%s', ltz)
         ltime = datetime(2014, 2, 20, 15, 0, 0, 0, tzinfo=ltz)
-        #ltime = timezone.now().astimezone(ltz)
+        # ltime = timezone.now().astimezone(ltz)
         log.debug('Local time=%s', ltime)
         dias10 = ltime - timedelta(days=10)
         dias10_f = (timezone.now() - timedelta(seconds=int(seek))).astimezone(ltz)
