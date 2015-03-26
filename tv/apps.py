@@ -11,3 +11,4 @@ class TVConfig(AppConfig):
 
     def ready(self):
         from . import dispatch
+

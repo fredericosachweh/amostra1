@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
-
+from __future__ import unicode_literals
 from django.utils import timezone
 from django.test import TestCase
 from django.test.client import Client
@@ -8,19 +8,15 @@ from django.core.urlresolvers import reverse
 import simplejson as json
 
 from models import *
-from data_importer import XML_Epg_Importer, Zip_to_XML
+from new_data_importer_sem_18 import XML_Epg_Importer, Zip_to_XML
 import logging
-log = logging.getLogger('debug')
+log = logging.getLogger('unittest')
 
-input_xml_1 = '''<?xml version="1.0" encoding="UTF-8"?>
+input_xml_1 = str('''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
 generator-info-url="http://xmltv.revistaeletronica.com.br">
-<channel id="100">
-<display-name lang="pt">Concert Channel</display-name>
-<icon src="100.png" />
-</channel>
 <programme start="20120115220500 -0200" stop="20120115224500 -0200" \
-channel="100" program_id="0000257856">
+channel="Concert Channel" program_id="0000257856">
 <title lang="pt">BBC Sessions: The Verve</title>
 <title lang="en">BBC Sessions: Verve; The</title>
 <desc>Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da\
@@ -34,20 +30,48 @@ www.revistaeletronica.com.br </desc>
 <colour>yes</colour>
 </video>
 <rating system="Advisory">
-<value>Programa livre para todas as idades</value>
+<value>18</value>
 </rating>
 </programme>
-</tv>'''
+</tv>''')
 
-input_xml_2 = '''<?xml version="1.0" encoding="UTF-8"?>
+input_xml_2 = str('''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
 generator-info-url="http://xmltv.revistaeletronica.com.br">
-<channel id="505">
-<display-name lang="pt">Band HD</display-name>
-<icon src="505.png" />
-</channel>
 <programme start="20120115234500 -0200" stop="20120116014500 -0200" \
-channel="505" program_id="0000025536">
+channel="Band HD" program_id="0000025536">
+<title lang="pt">Três Homens em Conflito</title>
+<title lang="en">The Good, The Bad and the Ugly</title>
+<desc>Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos \
+numa fortuna. - www.revistaeletronica.com.br </desc>
+<credits>
+<director>Sergio Leone</director>
+<actor>Clint Eastwood</actor>
+<actor>Lee Van Cleef</actor>
+<actor>Eli Wallach</actor>
+<actor>Rada Rassimov</actor>
+<actor>Mario Brega</actor>
+</credits>
+<date>1966</date>
+<category lang="pt">Filme</category>
+<category lang="pt">Western</category>
+<country>Itália/Espanha</country>
+<video>
+<colour>yes</colour>
+</video>
+<rating system="Advisory">
+<value>14</value>
+</rating>
+<star-rating>
+<value>5/5</value>
+</star-rating>
+</programme>
+</tv>''')
+
+input_xml_3 = str('''<?xml version='1.0' encoding='iso-8859-1'?>\
+<tv generator-info-name="CIANET" generator-info-url="www.cianet.ind.br">\
+<programme start="20120115234500 -0200" stop="20120116014500 -0200" \
+channel="Band HD" program_id="0000025536">
 <title lang="pt">Três Homens em Conflito</title>
 <title lang="en">The Good, The Bad and the Ugly</title>
 <desc>Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos \
@@ -74,21 +98,31 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 <value>5/5</value>
 </star-rating>
 </programme>
-</tv>'''
+<programme start="20120115220500 -0200" stop="20120115224500 -0200" \
+channel="Concert Channel" program_id="0000257856">
+<title lang="pt">BBC Sessions: The Verve</title>
+<title lang="en">BBC Sessions: Verve; The</title>
+<desc>Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da\
+ BBC. Desfrute desta íntima, porém poderosa gravação da banda de Richard \
+Ashcroft, que inclui músicas como Bitter Sweet Symphony e Love is Noise. - \
+www.revistaeletronica.com.br </desc>
+<date>2008</date>
+<category lang="pt">Espetáculo</category>
+<category lang="pt">Show</category>
+<video>
+<colour>yes</colour>
+</video>
+<rating system="Advisory">
+<value>18</value>
+</rating>
+</programme>
+</tv>''')
 
-xml_programme1 = '''<?xml version="1.0" encoding="ISO-8859-1"?>
+xml_programme1 = str('''<?xml version="1.0" encoding="ISO-8859-1"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
 generator-info-url="http://xmltv.revistaeletronica.com.br">
-<channel id="100">
-<display-name lang="pt">Concert Channel</display-name>
-<icon src="100.png" />
-</channel>
-<channel id="121">
-<display-name lang="pt">Premiere FC 24h</display-name>
-<icon src="121.png" />
-</channel>
 <programme start="20120713033000 -0300" stop="20120713050000 -0300" \
-channel="100" program_id="0000289501">
+channel="Concert Channel" program_id="0000289501">
 <title lang="pt">Austin City Limits 2010</title>
 <title lang="en">Austin City Limits 2010</title>
 <desc>O festival musical que enche durante três dias a cidade texana contou, \
@@ -104,17 +138,13 @@ Norah Jones, Sonic Youth, The Black Keys, Miike Snow e Devendra Banhart, entre\
 <rating system="Advisory">
 <value>Programa livre para todas as idades</value>
 </rating>
-</programme>'''
+</programme>''')
 
-input_xml_rating = '''<?xml version="1.0" encoding="UTF-8"?>
+input_xml_rating = str('''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
 generator-info-url="http://xmltv.revistaeletronica.com.br">
-<channel id="505">
-<display-name lang="pt">Band HD</display-name>
-<icon src="505.png" />
-</channel>
 <programme start="20120115234500 -0200" stop="20120116014500 -0200" \
-channel="505" program_id="0000025536">
+channel="Band HD" program_id="0000025536">
 <title lang="pt">Três Homens em Conflito</title>
 <title lang="en">The Good, The Bad and the Ugly</title>
 <desc>Durante a Guerra Civil Americana, três aventureiros tentam pôr as mãos \
@@ -141,8 +171,8 @@ numa fortuna. - www.revistaeletronica.com.br </desc>
 <value>5/5</value>
 </star-rating>
 </programme>
-<programme start="20130227180000 -0300" stop="20130227190000 -0300" channel="\
-505" program_id="0000219575" event_id="00000000000006278834" series_key="">
+<programme start="20120116014500 -0200" stop="20120116024500 -0200" channel="\
+Band HD" program_id="0000219575" event_id="00000000000006278834" series_key="">
 <title lang="pt">Pet Shop Boys no BBC</title>
 <desc>De volta com o esperado 10° disco de estúdio, Yes", e recebendo o Brit \
 Award de 2009, não há um momento melhor para uma retrospectiva da carreira \
@@ -156,8 +186,8 @@ fenomenal dos Pet Shop Boys. "</desc>
 <value>Programa impróprio para menores de 10 anos</value>
 </rating>
 </programme>
-<programme start="20130227190000 -0300" stop="20130227200000 -0300" channel="\
-505" program_id="0000292544" event_id="00000000000006278835" series_key="">
+<programme start="20120116024500 -0200" stop="20120116034500 -0200" channel="\
+Band HD" program_id="0000292544" event_id="00000000000006278835" series_key="">
 <title lang="pt">Lovebox Festival 2011</title>
 <title lang="en">Lovebox Festival 2011 - Part 2</title>
 <desc>A 2ª parte do festival criado pela dupla de DJs Groove Armada, em 2002, \
@@ -173,8 +203,8 @@ e a lenda: Blondie.</desc>
 <value>Programa livre para todas as idades</value>
 </rating>
 </programme>
-<programme start="20130306100000 -0300" stop="20130306114500 -0300" channel="\
-505" program_id="0000318062" event_id="00000000000005836669" series_key="">
+<programme start="20120116034500 -0200" stop="20120116044500 -0200" channel="\
+Band HD" program_id="0000318062" event_id="00000000000005836669" series_key="">
 <title lang="pt">O Segredo da Cabana</title>
 <title lang="en">The Cabin in the Woods</title>
 <desc>Autoproclamada por seu criadores como "uma revolução no cinema de terror\
@@ -201,8 +231,8 @@ prisioneiros de uma verdadeira armadilha mortal.</desc>
 <value>3/5</value>
 </star-rating>
 </programme>
-<programme start="20130308093000 -0300" stop="20130308114500 -0300" channel="\
-505" program_id="0000318080" event_id="00000000000005837088" series_key="">
+<programme start="20120116044500 -0200" stop="20120116054500 -0200" channel="\
+Band HD" program_id="0000318080" event_id="00000000000005837088" series_key="">
 <title lang="pt">Looper: Assassinos do Futuro</title>
 <title lang="en">Looper</title>
 <desc>Joe vive em 2044 e sua função é matar pessoas enviadas do futuro por \
@@ -227,7 +257,7 @@ futuro que terá que matar será ele próprio?</desc>
 <value>3/5</value>
 </star-rating>
 </programme>
-</tv>'''
+</tv>''')
 
 
 class Test_Timezone(TestCase):
@@ -253,34 +283,21 @@ class Test_Timezone(TestCase):
 
 class Test_XML_to_db(object):
 
-    def test_Epg_Source(self):
-        #from dateutil.parser import parse
-        self.maxDiff = None
-        self.assertEquals(self.xmltv_source.generator_info_name,
-            'Revista Eletronica - Unidade Lorenz Ltda')
-        self.assertEquals(self.xmltv_source.generator_info_url,
-            'http://xmltv.revistaeletronica.com.br')
-        self.assertEquals(self.epg_source.numberofElements, 2)
-        #self.assertEquals(self.epg_source.minor_start,
-        #    parse('20120116000500 +0000'))
-        #self.assertEquals(self.epg_source.major_stop,
-        #    parse('20120116004500 +0000'))
-
     def test_Channel_1(self):
-        channel = Channel.objects.get(channelid='100')
+        channel = Channel.objects.get(channelid='Concert Channel')
         self.assertEquals(channel.display_names.values_list('lang__value',
-            'value')[0], (u'pt', u'Concert Channel',))
-        self.assertEquals(channel.icons.values_list('src')[0], (u'100.png',))
+            'value')[0], ('pt', 'Concert Channel',))
         self.assertEquals(channel.urls.count(), 0)
 
     def test_Programme_1(self):
         self.maxDiff = None
-        programme = Programme.objects.get(programid='0000257856')
-        titles = [(u'pt', u'BBC Sessions: The Verve'),
-                  (u'en', u'BBC Sessions: Verve; The')]
+        programme = Programme.objects.get(
+            guide__channel__display_names__value='Concert Channel')
+        titles = [('pt', 'BBC Sessions: The Verve'),
+                  ('en', 'BBC Sessions: Verve; The')]
         self.assertItemsEqual(
             programme.titles.values_list('lang__value', 'value'), titles)
-        descs = (None, u'Uma impressionante atuação do The Verve no famoso \
+        descs = (None, 'Uma impressionante atuação do The Verve no famoso \
 estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da \
 banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e \
 Love is Noise.')
@@ -288,14 +305,22 @@ Love is Noise.')
             'value')[0], descs)
         self.assertEquals(programme.date, '2008')
         self.assertItemsEqual(programme.categories.values_list('lang__value',
-            'value'), [(u'pt', u'Espetáculo'), (u'pt', u'Show')])
-        self.assertEquals(programme.video_colour, u'yes')
-        self.assertEquals(programme.rating.system, u'Advisory')
-        self.assertEquals(programme.rating.value,
-            u'Programa livre para todas as idades')
+            'value'), [('pt', 'Espetáculo'), ('pt', 'Show')])
+        self.assertEquals(programme.video_colour, 'yes')
+        self.assertEquals(programme.rating.system, 'Advisory')
+        self.assertEquals(programme.rating.value, '18')
 
 
 class One_Raw_XML(Test_XML_to_db, TestCase):
+
+    def test_Epg_Source(self):
+        #from dateutil.parser import parse
+        self.maxDiff = None
+        self.assertEquals(self.xmltv_source.generator_info_name,
+            'Revista Eletronica - Unidade Lorenz Ltda')
+        self.assertEquals(self.xmltv_source.generator_info_url,
+            'http://xmltv.revistaeletronica.com.br')
+        self.assertEquals(self.epg_source.numberofElements, 1)
 
     def setUp(self):
         from tempfile import NamedTemporaryFile
@@ -323,15 +348,30 @@ class One_Raw_XML(Test_XML_to_db, TestCase):
 
 class One_Zipped_XML(Test_XML_to_db, TestCase):
 
+    def test_Epg_Source_Replace(self):
+        #from dateutil.parser import parse
+        self.maxDiff = None
+        self.assertEquals(self.xmltv_source.generator_info_name,
+                          'WWW.EPG.COM.BR')
+        self.assertEquals(self.xmltv_source.generator_info_url,
+                          'http://epg.com.br')
+        self.assertEquals(self.epg_source.numberofElements, 1)
+
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
+        import os
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
+        try:
+            os.remove('/tmp/xmltv.xml')
+            os.remove('/tmp/xmltv.xml.old')
+        except OSError:
+            pass
         self.f = NamedTemporaryFile(suffix='.xml', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
         from zipfile import ZipFile
         zipped = ZipFile(self.f.name[:-3] + 'zip', 'w')
-        zipped.writestr('xmltv.xml', input_xml_1)
+        zipped.writestr('xmltv.xml', input_xml_3)
         zipped.close()
         self.epg_source = Epg_Source(filefield=self.f.name[:-3] + 'zip')
         self.epg_source.save()
@@ -354,17 +394,26 @@ class One_Zipped_XML(Test_XML_to_db, TestCase):
 class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
 
     def setUp(self):
+        import os
         from tempfile import NamedTemporaryFile
         from django.conf import settings
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
         from zipfile import ZipFile
+        files = {
+            '100': input_xml_1,
+            '505': input_xml_2,
+        }
+        try:
+            for f in files.keys():
+                os.remove('/tmp/{}.xml.old'.format(f))
+                os.remove('/tmp/{}.xml'.format(f))
+        except OSError:
+            pass
         zipped = ZipFile(self.f, 'w')
-        zipped.writestr('100.xml', input_xml_1)
-        zipped.writestr('505.xml', input_xml_2)
-        zipped.writestr('101.xml', input_xml_1)
-        zipped.writestr('506.xml', input_xml_2)
+        for key, value in files.items():
+            zipped.writestr('{}.xml'.format(key), value)
         zipped.close()
         self.epg_source = Epg_Source(filefield=self.f.name)
         self.epg_source.save()
@@ -381,10 +430,10 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
     def test_Epg_Source(self):
         #from dateutil.parser import parse
         self.assertEquals(self.xmltv_source.generator_info_name,
-            'Revista Eletronica - Unidade Lorenz Ltda')
+                          'WWW.EPG.COM.BR')
         self.assertEquals(self.xmltv_source.generator_info_url,
-            'http://xmltv.revistaeletronica.com.br')
-        self.assertEquals(self.epg_source.numberofElements, 8)
+                          'http://epg.com.br')
+        self.assertEquals(int(self.epg_source.numberofElements), 2)
         #self.assertEquals(self.epg_source.minor_start,
         #    parse('20120116000500 +0000'))
         #self.assertEquals(self.epg_source.major_stop,
@@ -396,38 +445,37 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
         self.assertEquals(Guide.objects.all().count(), 2)
 
     def test_Channel_2(self):
-        channel = Channel.objects.get(channelid='505')
+        channel = Channel.objects.get(channelid='Band HD')
         self.assertEquals(channel.display_names.values_list('lang__value',
-            'value')[0], (u'pt', u'Band HD',))
-        self.assertEquals(channel.icons.values_list('src')[0], (u'505.png',))
+            'value')[0], ('pt', 'Band HD',))
         self.assertEquals(channel.urls.count(), 0)
 
     def test_Programme_2(self):
-        programme = Programme.objects.get(programid='0000025536')
-        titles = [(u'pt', u'Três Homens em Conflito'),
-                  (u'en', u'The Good, The Bad and the Ugly')]
+        programme = Programme.objects.get(
+            guide__channel__display_names__value='Band HD')
+        titles = [('pt', 'Três Homens em Conflito'),
+                  ('en', 'The Good, The Bad and the Ugly')]
         self.assertItemsEqual(programme.titles.values_list('lang__value',
             'value'), titles)
-        descs = (None, u'Durante a Guerra Civil Americana, três aventureiros \
-tentam pôr as mãos numa fortuna.')
+        descs = (None, 'Durante a Guerra Civil Americana, três aventureiros '\
+                       'tentam pôr as mãos numa fortuna.')
         self.assertEquals(programme.descriptions.values_list('lang__value',
             'value')[0], descs)
         self.assertEquals(programme.date, '1966')
         self.assertItemsEqual(programme.categories.values_list('lang__value',
-            'value'), [(u'pt', u'Filme'), (u'pt', u'Western')])
-        self.assertEquals(programme.video_colour, u'yes')
-        self.assertEquals(programme.rating.system, u'Advisory')
-        self.assertEquals(programme.rating.value,
-            u'Programa impróprio para menores de 14 anos')
-        self.assertEquals(programme.country.value, u'Itália/Espanha')
-        actors = (((u'Clint Eastwood'), ), ((u'Lee Van Cleef'),),
-                  ((u'Eli Wallach'),), ((u'Rada Rassimov'),),
-                  ((u'Mario Brega'), ), )
+            'value'), [('pt', 'Filme'), ('pt', 'Western')])
+        self.assertEquals(programme.video_colour, 'yes')
+        self.assertEquals(programme.rating.system, 'Advisory')
+        self.assertEquals(programme.rating.value, '14')
+        self.assertEquals(programme.country.value, 'Itália/Espanha')
+        actors = ((('Clint Eastwood'), ), (('Lee Van Cleef'),),
+                  (('Eli Wallach'),), (('Rada Rassimov'),),
+                  (('Mario Brega'), ), )
         self.assertItemsEqual(programme.actors.values_list('name'), actors)
         self.assertItemsEqual(programme.directors.values_list('name'),
-            (((u'Sergio Leone'),), ))
+            ((('Sergio Leone'),), ))
         self.assertItemsEqual(programme.star_ratings.values_list('value'),
-            (((u'5/5'),), ))
+            [('5/5',)])
 
 
 class APITest(TestCase):
@@ -440,16 +488,28 @@ class APITest(TestCase):
             dir=os.path.join(MEDIA_ROOT, 'epg/'))
         from zipfile import ZipFile
         zipped = ZipFile(self.f, 'w')
-        zipped.writestr('100.xml', input_xml_1)
-        zipped.writestr('505.xml', input_xml_2)
-        zipped.writestr('101.xml', input_xml_1)
-        zipped.writestr('506.xml', input_xml_2)
+        files = {
+            '100': input_xml_1,
+            '505': input_xml_2,
+            '101': input_xml_1,
+            '506': input_xml_2
+        }
+        try:
+            for f in files.keys():
+                os.remove('/tmp/{}.xml.old'.format(f))
+                os.remove('/tmp/{}.xml'.format(f))
+        except OSError:
+            pass
+        zipped = ZipFile(self.f, 'w')
+        for key, value in files.items():
+            zipped.writestr('{}.xml'.format(key), value)
         zipped.close()
         self.epg_source = Epg_Source(filefield=self.f.name)
         self.epg_source.save()
         xmltv_source = XMLTV_Source.objects.create(filefield=self.f.name)
         file_list = Zip_to_XML(self.epg_source.filefield.path)
         for f in file_list.get_all_files():
+            #import pdb; pdb.set_trace()
             XML_Epg_Importer(xml=f,
                 xmltv_source=xmltv_source,
                 epg_source=self.epg_source).import_to_db()
@@ -463,14 +523,13 @@ class APITest(TestCase):
             kwargs={'resource_name': 'channel', 'api_name': 'v1'})
         self.assertEqual(urlchannel, '/tv/api/epg/v1/channel/')
         response = c.get(urlchannel)
-        expected = [\
-{"channelid": "100", "display_name": "Concert Channel", "icons": [\
-{"id": 1, "resource_uri": "/tv/api/epg/v1/icon/1/", "src": "100.png"}],
-"id": 1, "resource_uri": "/tv/api/epg/v1/channel/1/", "urls": []},
-{"channelid": "505", "display_name": "Band HD", "icons": [
-{"id": 2, "resource_uri": "/tv/api/epg/v1/icon/2/", "src": "505.png"}],
-"id": 2, "resource_uri": "/tv/api/epg/v1/channel/2/", "urls": []}
-            ]
+        expected = [
+            {"channelid": "Concert Channel", "display_name": "Concert Channel",
+             "icons": [], "id": 1, "resource_uri": "/tv/api/epg/v1/channel/1/",
+             "urls": []},
+            {"channelid": "Band HD", "display_name": "Band HD", "icons": [],
+            "id": 2, "resource_uri": "/tv/api/epg/v1/channel/2/", "urls": []}
+        ]
         self.assertEquals(response.status_code, 200, msg=response.request)
         jobj = json.loads(response.content)
         objects = jobj['objects']
@@ -485,7 +544,7 @@ class APITest(TestCase):
               )
             },
             {'expected': [expected[1]],
-              'requests': (('/tv/api/epg/v1/channel/', {'channelid': '505'}),
+              'requests': (('/tv/api/epg/v1/channel/', {'channelid': 'Band HD'}),
               )
             },
         )
@@ -566,7 +625,7 @@ aventureiros tentam p\xf4r as m\xe3os numa fortuna.',
           'resource_uri': '/tv/api/epg/v1/programme/2/',
           'secondary_title': None,
           'star_ratings': ['/tv/api/epg/v1/star_rating/1/'],
-          'title': u'Tr\xeas Homens em Conflito',
+          'title': 'Tr\xeas Homens em Conflito',
           'video_aspect': None,
           'video_colour': 'yes',
           'video_present': None,
@@ -661,14 +720,23 @@ class ParseRatingTest(TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
+        import os
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip',
             dir=os.path.join(MEDIA_ROOT, 'epg/'))
         from zipfile import ZipFile
+        files = {
+            'rat': input_xml_rating
+        }
+        for f in files.keys():
+            try:
+                os.remove('/tmp/{}.xml.old'.format(f))
+                os.remove('/tmp/{}.xml'.format(f))
+            except OSError:
+                pass
         zipped = ZipFile(self.f, 'w')
-        zipped.writestr('100.xml', input_xml_1)
-        zipped.writestr('505.xml', input_xml_2)
-        zipped.writestr('rat.xml', input_xml_rating)
+        for key, value in files.items():
+            zipped.writestr('{}.xml'.format(key), value)
         zipped.close()
         self.epg_source = Epg_Source(filefield=self.f.name)
         self.epg_source.save()
@@ -687,7 +755,8 @@ class ParseRatingTest(TestCase):
         url = reverse('epg:api_dispatch_list',
             kwargs={'resource_name': 'guide', 'api_name': 'v1'},
             )
-        response = c.get(url, data={'channel': '2'})
+        channel = Channel.objects.get()
+        response = c.get(url, data={'channel': '{}'.format(channel.id)})
         jobj = json.loads(response.content)
         obj = jobj['objects']
         self.assertEqual(obj[0]['previous'], None)
@@ -704,34 +773,35 @@ class ParseRatingTest(TestCase):
     def test_create_rating(self):
         ratings = Rating.objects.all().order_by('int_value')
         self.assertEqual(5, len(ratings))
-        r2 = Rating(system=u'Advisory',
-                   value=u'Programa impróprio para menores de 12 anos')
+        r2 = Rating(system='Advisory',
+                   value='Programa impróprio para menores de 12 anos')
         r2.save()
-        r0n, c = Rating.objects.get_or_create(system=u'Advisory',
-                   value=u'Programa livre para todas as idades')
+        #import pdb; pdb.set_trace()
+        r0n, c = Rating.objects.get_or_create(system='Advisory',
+                   value='Programa livre para todas as idades')
         self.assertEqual(r0n.int_value, 0)
-        self.assertFalse(c)
+        self.assertTrue(c)
         ratings = Rating.objects.all().order_by('int_value')
-        self.assertEqual(6, len(ratings))
+        self.assertEqual(7, len(ratings))
 
     def test_get_rating(self):
         rating0 = Rating.objects.get(
-            value=u'Programa livre para todas as idades')
+            value='0')
         self.assertEqual(0, rating0.int_value)
         rating10 = Rating.objects.get(
-            value=u'Programa impróprio para menores de 10 anos')
+            value='10')
         self.assertEqual(10, rating10.int_value)
         rating14 = Rating.objects.get(
-            value=u'Programa impróprio para menores de 14 anos')
+            value='14')
         self.assertEqual(14, rating14.int_value)
         rating18, created = Rating.objects.get_or_create(
-            system=u'Advisory',
-            value=u'Programa impróprio para menores de 18 anos')
+            system='Advisory',
+            value='18')
         self.assertFalse(created)
         self.assertEqual(18, rating18.int_value)
         rating16, created = Rating.objects.get_or_create(
-            system=u'Advisory',
-            value=u'Programa impróprio para menores de 16 anos')
+            system='Advisory',
+            value='16')
         self.assertFalse(created)
         self.assertEqual(16, rating16.int_value)
 
@@ -742,20 +812,22 @@ class ParseRatingTest(TestCase):
             )
         response = c.get(url)
         jobj = json.loads(response.content)
-        self.assertEqual(len(jobj['objects']), 6)
+        self.assertEqual(len(jobj['objects']), 5)
+        guide = Guide.objects.all()[0]
         urlguide4 = reverse('epg:api_dispatch_detail',
-            kwargs={'resource_name': 'guide', 'api_name': 'v1', 'pk': '6'},
+            kwargs={'resource_name': 'guide',
+                    'api_name': 'v1', 'pk': '{}'.format(guide.id)},
             )
-        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/6/')
+        self.assertEqual(urlguide4, '/tv/api/epg/v1/guide/{}/'.format(guide.id))
         response = c.get(urlguide4)
         jobj = json.loads(response.content)
         response = c.get(url,
-            {'start_timestamp': 1362013200 - 3600 * 3,
-             'stop_timestamp': 1362016800 - 3600 * 3})
+            {'start_timestamp': 1326689100.0 - 3600 * 3,
+             'stop_timestamp': 1326696300.0 - 3600 * 3})
         jobj = json.loads(response.content)
         self.assertEqual(jobj['objects'][0]['programme']['rating']
             ['resource_uri'],
-            '/tv/api/epg/v1/rating/1/')
+            '/tv/api/epg/v1/rating/{}/'.format(guide.programme.rating.id))
 
     def test_get_rating_limit(self):
         c = Client()
@@ -767,11 +839,9 @@ class ParseRatingTest(TestCase):
         jobj = json.loads(response.content)
         self.assertEqual(jobj['meta']['total_count'], 5)
 
-input_xml_conflict = '''<?xml version="1.0" encoding="UTF-8"?>
+input_xml_conflict = str('''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Revista Eletronica - Unidade Lorenz Ltda" \
 generator-info-url="http://xmltv.revistaeletronica.com.br">
-<channel id="10"><display-name lang="pt">Band HD</display-name>
-<icon src="10.png" /></channel>
 <programme start="20130301070000 -0300" stop="20130301080000 -0300" \
 channel="10" program_id="1">
     <title lang="pt">Teste 1</title>
@@ -811,15 +881,15 @@ start="20130301130000 -0300" \
     <title lang="pt">Teste 7</title>
 </programme>
 </tv>
-'''
-input_xml_conflict1 = '''
+''')
+input_xml_conflict1 = str('''
 <programme channel="10" program_id="8" \
 start="20130301110000 -0300" \
  stop="20130301120000 -0300" \
 >
     <title lang="pt">Conflito 5</title>
 </programme>
-'''
+''')
 
 
 class GuideConflictTest(TestCase):
@@ -827,6 +897,12 @@ class GuideConflictTest(TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
+        import os
+        try:
+            os.remove('/tmp/conflict.xml')
+            os.remove('/tmp/conflict.xml.old')
+        except OSError:
+            pass
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip',
             dir=os.path.join(MEDIA_ROOT, 'epg/'))
@@ -849,10 +925,9 @@ class GuideConflictTest(TestCase):
     def test_create(self):
         nch = Channel.objects.all().count()
         self.assertEqual(1, nch)
-        guides = Guide.objects.all()
-        prog = Programme.objects.get(programid=3)
-        guide = Guide.objects.filter(programme=prog)
-        self.assertEqual(guide[0], guides[2])
+        prog = Programme.objects.get(titles__value='Teste 1')
+        guides = Guide.objects.filter(channel__display_names__value='10')
+        self.assertEqual(guides.count(), 7)
 
     def test_delete_conflict(self):
         from dateutil.parser import parse
@@ -861,23 +936,27 @@ class GuideConflictTest(TestCase):
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
         start = parse("20130301085900 -0300").astimezone(utc)
         stop = parse("20130301100000 -0300").astimezone(utc)
-        lang = Lang.objects.get(value=u'pt')
-        title = Title.objects.create(lang=lang, value=u'Novo com conflito')
+        lang = Lang.objects.get(value='pt')
+        title = Title.objects.create(lang=lang, value='Novo com conflito')
         prog = Programme.objects.create(programid=100)
         prog.titles.add(title)
         ## Before replace
         self.assertEqual(Guide.objects.all().count(), 7)
+        #import pdb; pdb.set_trace()
+        channel = Channel.objects.get(display_names__value='10')
         G, created = Guide.objects.get_or_create(
             start=start, stop=stop,
-            channel_id=1, programme=prog)
+            channel_id=channel.id, programme=prog)
         self.assertTrue(created)
         ## After must be only 6 guides
         self.assertEqual(Guide.objects.all().count(), 6)
-        self.assertEqual(G.next.programme.id, 4, 'O proximo deveria ser 4')
-        self.assertEqual(G.previous.programme.id, 1, 'O proximo deveria ser 1')
+        self.assertEqual(G.next.programme.titles.all()[0].value,
+                         'Teste 4', 'O proximo deveria ser Teste 4')
+        self.assertEqual(G.previous.programme.titles.all()[0].value,
+                         'Teste 1', 'O anterior deveria ser Teste 11')
         self.assertEqual(G.previous.next, G)
         self.assertEqual(G.next.previous, G)
-        g1 = Guide.objects.get(id=1)
+        g1 = Guide.objects.all()[0]
         self.assertEqual(g1.next, G)
 
     def test_delete_conflict_start(self):
@@ -888,13 +967,14 @@ class GuideConflictTest(TestCase):
         start = parse("20130301060000 -0300").astimezone(utc)
         stop = parse("20130301070100 -0300").astimezone(utc)
         self.assertEqual(Guide.objects.all().count(), 7)
-        lang = Lang.objects.get(value=u'pt')
-        title = Title.objects.create(lang=lang, value=u'Novo com conflito')
+        lang = Lang.objects.get(value='pt')
+        title = Title.objects.create(lang=lang, value='Novo com conflito')
         prog = Programme.objects.create(programid=100)
         prog.titles.add(title)
+        channel = Channel.objects.get(display_names__value='10')
         G, created = Guide.objects.get_or_create(
             start=start, stop=stop,
-            channel_id=1, programme=prog)
+            channel_id=channel.id, programme=prog)
         self.assertTrue(created)
         self.assertIsNone(G.previous)
         self.assertEqual(Guide.objects.all().count(), 7)
@@ -903,7 +983,7 @@ class GuideConflictTest(TestCase):
         stop = parse("20130301060000 -0300").astimezone(utc)
         G, created = Guide.objects.get_or_create(
             start=start, stop=stop,
-            channel_id=1, programme=prog)
+            channel_id=channel.id, programme=prog)
         guides = Guide.objects.all()
         self.assertEqual(guides.count(), 8)
 
@@ -915,12 +995,13 @@ class GuideConflictTest(TestCase):
         start = parse("20130301133000 -0300").astimezone(utc)
         stop = parse("20130301135000 -0300").astimezone(utc)
         self.assertEqual(Guide.objects.all().count(), 7)
-        lang = Lang.objects.get(value=u'pt')
-        title = Title.objects.create(lang=lang, value=u'Novo com conflito')
+        lang = Lang.objects.get(value='pt')
+        title = Title.objects.create(lang=lang, value='Novo com conflito')
         prog = Programme.objects.create(programid=100)
         prog.titles.add(title)
+        channel = Channel.objects.get(display_names__value='10')
         G, created = Guide.objects.get_or_create(
             start=start, stop=stop,
-            channel_id=1, programme=prog)
+            channel_id=channel.id, programme=prog)
         self.assertTrue(created)
 

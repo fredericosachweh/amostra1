@@ -30,7 +30,7 @@ DATABASES = {
         'PASSWORD': 'iptv',
         'HOST': '/tmp',
         'CONN_MAX_AGE': 120,  # Tempo em segundos (persistente)
-        #'PORT': '5432'
+        # 'PORT': '5432'
     }
 }
 
@@ -111,7 +111,7 @@ ALLOWED_HOSTS = [
 ]
 INTERNAL_IPS = ('127.0.0.1',)
 
-## Pacote necessario para o cache: python-memcached.noarch
+# Pacote necessario para o cache: python-memcached.noarch
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
@@ -126,11 +126,11 @@ try:
     from .local_settings import *
 except ImportError as e:
     pass
-## Pacote utilizado para gerar tasks em backgound
+# Pacote utilizado para gerar tasks em backgound
 BROKER_URL = 'redis://localhost:6379/0'
 
-## Define o tempo de intervalo das tasks por segundos
+# Define o tempo de intervalo das tasks por segundos
 TASK_INTERVAL = 15
 
-## Define a quantidade de objetos que podem ser modificados por vez
+# Define a quantidade de objetos que podem ser modificados por vez
 QUERY_LIMIT = 10

@@ -52,7 +52,7 @@ class Nbridge(DeviceServer):
         verbose_name_plural = _('Servidores NBridge')
 
     def clean(self):
-        cleaned_data = super(Nbridge, self).clean()
+        super(Nbridge, self).clean()
         if self.debug is True and self.debug_port is None:
             raise ValidationError(
                 'Se o debug está habilitado a Porta de serviço deve ser informada'
@@ -210,7 +210,7 @@ class Nbridge(DeviceServer):
         else:
             verbose = 'false'
         config = '''{
-    "bind": "127.0.0.1:%s",
+    "bind": "0.0.0.0:%s",
     "middleware": "%s",
     "api": "/tv/api",
     "server_key": "%s",

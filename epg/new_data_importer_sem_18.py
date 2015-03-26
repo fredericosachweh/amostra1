@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
-
+from __future__ import unicode_literals
 from django.conf import settings
 from django import db
 from django.db import transaction
@@ -90,39 +90,41 @@ class xmlVerification:
         for line in lines:
             remove = False
             if i == 1:
-                f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>")
+                f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
             elif i == 2:
                 f.write("<tv generator-info-name=\"WWW.CIANET.IND.BR\" generator-info-url=\"http://www.cianet.ind.br\">")
             else:
                 m = re.search("start=\"(\S* \S*)\"", str(line))
-                if m is not None:
+                if m:
                     try:
                         start = parse(str(m.group(1)))
                     except:
                         log.info('programa com problema: start inválido')
                         remove = True
                 m = re.search("stop=\"(\S* \S*)\"", str(line))
-                if m is not None:
+                if m:
                     try:
                         stop = parse(str(m.group(1)))
                     except:
                         log.info('programa com problema: stop inválido')
                         remove = True
                 m = re.search("<date>(\S*)<", str(line))
-                if m is not None:
+                if m:
                     try:
                         date = int(m.group(1))
                     except:
                         log.info('programa com problema: date inválido')
                         remove = True
-                m = re.search("<value>(\S*)<", str(line))
-                if m is not None:
-                    try:
-                        rating = int(m.group(1))
-                    except:
-                        f.write("<value>0</value>")
-                        log.info('programa com problema: rating inválido')
-                        remove = True
+                m = re.search("<value>(.*?)<", str(line))
+                if m:
+                    if '/' in m.group(1):
+                        f.write("<value>{}</value>".format(m.group(1)))
+                    else:
+                        v = re.search("(\d+)", m.group(1))
+                        if v:
+                            f.write("<value>{}</value>".format(v.group(1)))
+                        else:
+                            f.write("<value>0</value>") 
                 if not remove:
                     f.write(line)
             i += 1
@@ -205,12 +207,12 @@ class xmlVerification:
         self.linkxml.write("</programme>\n")
         self.linkxml.flush()
 
-    def xml_verification(self, filename):
+    def xml_verification(self, filename, number=0):
         xml = filename
         current_channel = None
 
         # create XML - TV
-        self.linkxml = file(os.path.join('/tmp/xml_verified.xml'), "w+")
+        self.linkxml = file(os.path.join('/tmp/xml_verified_{}.xml'.format(number)), "w+")
         #self.linkxml = open('/tmp/xml_verified.xml', 'w')
 
         head = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"
@@ -340,9 +342,9 @@ class Zip_to_XML(object):
 
     # Return one or multiple XML file handles inside a Zip archive
     def _get_zip(self):
-        
+
         ret = []
-        for f in self.input_file.namelist():
+        for n, f in enumerate(reversed(self.input_file.namelist())):
 
             filename = os.path.basename(f)
             # skip directories
@@ -365,21 +367,21 @@ class Zip_to_XML(object):
             else:
                 log.info('Arquivo antigo não encontrado, iniciando importação')
                 shutil.copy2('/tmp/' + filename, '/tmp/' + filename + '.old')
-            
+
             log.info('/tmp/'+filename)
             verif = xmlVerification()
             verif.xml_value_validation('/tmp/'+filename)
             verif.xml_validation('/tmp/'+filename)
-            verified = verif.xml_verification('/tmp/'+filename)
+            verified = verif.xml_verification('/tmp/'+filename, n)
             #verified = file(os.path.join('/tmp/xml_verified.xml'), "w+")
             #verified.seek(0)
-            
+
             ret.append(verified)
         return ret
 
     # Return a file handle of a XML file
     def _get_xml(self):
-      
+
         return (open(self.input_file),)
 
 
@@ -392,9 +394,9 @@ class XML_Epg_Importer(object):
 
     def __init__(self, xml, xmltv_source=None, epg_source=None,
             log=open('/dev/null', 'w')):
-        
+
         log = logging.getLogger('epg_import')
-        
+
         self.xmltv_source = xmltv_source
         self.epg_source = epg_source
         self.xml = xml
@@ -543,9 +545,9 @@ class XML_Epg_Importer(object):
                 value='pt')
             D, created = Display_Name.objects.get_or_create(
                 value=elem.get('channel') or '', lang=L)
-           
+
             C.display_names.add(D)
-            
+
             self.serialize(D)
 
             #self.serialize(C)
@@ -639,7 +641,6 @@ class XML_Epg_Importer(object):
                     log.info(stop)
                     log.info('################')
                     fucking_remove = True
-
                 if not fucking_remove:
                     P, c = Programme.objects.get_or_create(programid=programid)
                     P.date = date
@@ -650,7 +651,6 @@ class XML_Epg_Importer(object):
                     G, created = Guide.objects.get_or_create(
                         start=start, stop=stop,
                         channel_id=channel_id, programme=P)
-
                     for child in elem.iterchildren():
                         if child.tag == 'desc':
                             if child.get('lang'):

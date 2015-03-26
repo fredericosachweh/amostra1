@@ -5,6 +5,7 @@ DefaultDependencies=no
 Requires=postgresql_iptv.service
 Requires=memcached.service
 Requires=site_iptv_celery.service
+Requires=nginx-mw.service
 After=network.target
 After=postgresql_iptv.service
 
