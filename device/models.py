@@ -139,7 +139,7 @@ class AbstractServer(models.Model):
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
             return ['Servidor está offline']
-        ret = ssh.execute(self.host, self.username, command)
+        ret = ssh.execute(self.host, self.username, command, port=self.ssh_port)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
@@ -153,7 +153,7 @@ class AbstractServer(models.Model):
         log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
         if self.checkstatus() == 'offline':
             raise Exception('Servidor está offline'.encode('utf-8'))
-        ret = ssh.execute_daemon(self.host, self.username, command, log_path)
+        ret = ssh.execute_daemon(self.host, self.username, command, log_path, port=self.ssh_port)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
             raise Server.ExecutionFailure(
@@ -168,13 +168,13 @@ class AbstractServer(models.Model):
         """Copies a file between the remote host and the local host."""
         if self.checkstatus() == 'offline':
             raise Exception('Servidor está offline'.encode('utf-8'))
-        ssh.get(self.host, self.username, remotepath, localpath)
+        ssh.get(self.host, self.username, remotepath, localpath, port=self.ssh_port)
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         if self.checkstatus() == 'offline':
             raise Exception('Servidor está offline'.encode('utf-8'))
-        ssh.put(self.host, self.username, localpath, remotepath)
+        ssh.put(self.host, self.username, localpath, remotepath, port=self.ssh_port)
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
