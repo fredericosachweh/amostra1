@@ -90,7 +90,7 @@ class xmlVerification:
         for line in lines:
             remove = False
             if i == 1:
-                f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+                f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>")
             elif i == 2:
                 f.write("<tv generator-info-name=\"WWW.CIANET.IND.BR\" generator-info-url=\"http://www.cianet.ind.br\">")
             else:
