@@ -795,20 +795,20 @@ class ServerTest(TestCase):
         self.client = Client()
 
     def test_list_dir(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         l = server.list_dir('/')
         self.assertGreater(l.count('boot'), 0, 'Deveria existir o diretório boot')
         self.assertGreater(l.count('bin'), 0, 'Deveria existir o diretório bin')
         self.assertGreater(l.count('usr'), 0, 'Deveria existir o diretório usr')
 
     def test_list_process(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         procs = server.list_process()
         self.assertEqual(procs[0]['pid'], 1, 'O primero processo deveria ter pid=1')
 
     def test_start_process(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         cmd = '/bin/sleep 10'
         pid = server.execute_daemon(cmd)
         self.assertTrue(server.process_alive(pid), 'O processo pid=%d deveria estar vivo.' % pid)
@@ -817,20 +817,20 @@ class ServerTest(TestCase):
         self.assertFalse(server.process_alive(pid), 'O processo pid=%d deveria ter morrido.' % pid)
 
     def test_list_ifaces(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         server.auto_create_nic()
         server._list_interfaces()
 
     def test_local_dev(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         server.auto_create_nic()
         iface = server.get_netdev('127.0.0.1')
         self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
 
     def test_create_route(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         server.auto_create_nic()
         route = ('239.0.1.10', 'lo')
@@ -844,7 +844,11 @@ class ServerTest(TestCase):
         self.assertNotIn(route, routes, 'Route %s -> %s should not exists' % route)
 
     def test_list_interfaces_view(self):
-        server = Server.objects.get(pk=1)
+        from tastypie.models import ApiKey
+        from django.contrib.auth.models import User
+        server = Server.objects.get(name='local')
+        user = User.objects.get(username='resource_%s' % (server.id))
+        api_key = ApiKey.objects.get(user=user)
         NIC.objects.create(
             server=server,
             ipv4='192.168.0.10',
@@ -855,7 +859,9 @@ class ServerTest(TestCase):
             ipv4='172.17.0.2',
             name='bar0'
         )
-        url = reverse('device.views.server_list_interfaces') + '?server=1'
+        url = reverse('device.views.server_list_interfaces') + '?server=%s&api_key=%s' % (
+            server.id, api_key.key
+        )
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         expected = '<option selected="selected" value="">---------</option>'
@@ -869,7 +875,7 @@ class ServerTest(TestCase):
 
     def test_dvbtuners_list_view(self):
         url = reverse('device.views.server_list_dvbadapters')
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         dvbworld = DigitalTunerHardware.objects.create(
             server=server,
             uniqueid='00:00:00:00:00:00',
@@ -933,7 +939,7 @@ class ServerTest(TestCase):
 
     def test_available_isdbtuners_view(self):
         url = reverse('device.views.server_available_isdbtuners')
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         # No installed adapters
         response = self.client.get(url + '?server=%d' % server.pk)
         self.assertEqual('0', response.content)
@@ -971,13 +977,18 @@ class ServerTest(TestCase):
         self.assertEqual('1', response.content)
 
 
-class TestViews(TestCase):
+class ViewsTest(TestCase):
     """
     Unit test for device views
     """
 
     def setUp(self):
-        server = Server.objects.create(
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(
+            'erp', 'erp@cianet.ind.br', '123'
+        )
+        self.user.save()
+        self.server = Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
@@ -987,22 +998,27 @@ class TestViews(TestCase):
         )
         # Input interface
         NIC.objects.create(
-            server=server,
+            server=self.server,
             name='foobar0',
             ipv4='192.168.0.10',
         )
         # Output interface
         NIC.objects.create(
-            server=server,
+            server=self.server,
             name='foobar1',
             ipv4='10.0.1.10',
         )
 
     def test_server_status(self):
-        server = Server.objects.get(pk=1)
+        from tastypie.models import ApiKey
+        api_key = ApiKey.objects.get(user=self.user)
+        server = self.server
         c = Client()
         url = reverse('device.views.server_status', kwargs={'pk': server.pk})
-        response = c.get(url, follow=True)
+        response = c.get(
+            url, follow=True,
+            HTTP_AUTHORIZATION='ApiKey %s:%s' % (api_key.user.username, api_key.key)
+        )
         self.assertRedirects(response, 'http://testserver/tv/administracao/device/server/', 302)
         urlnotfound = reverse('device.views.server_status', kwargs={'pk': 2})
         response = c.get(urlnotfound, follow=True)
@@ -1010,7 +1026,8 @@ class TestViews(TestCase):
 
     def test_fileinput_scanfolder(self):
         import re
-        server = Server.objects.get(pk=1)
+        from tastypie.models import ApiKey
+        server = self.server
         # Check if the videos folder is acessible
         try:
             server.execute('ls %s' % settings.VLC_VIDEOFILES_DIR)
@@ -1022,7 +1039,8 @@ class TestViews(TestCase):
         out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)
         # Make sure the file name is returned on the list
         url = reverse('device.views.server_fileinput_scanfolder')
-        response = self.client.get(url + '?server=%d' % server.pk)
+        api_key = ApiKey.objects.get(user=self.user)
+        response = self.client.get(url + '?server=%d&api_key=%s' % (server.pk, api_key.key))
         options = unicode(response.content, 'utf-8').split(u'\n')
         full_path = u" ".join(out).strip()
         match = re.match(r'^%s(.*)$' % (re.escape(settings.VLC_VIDEOFILES_DIR)), full_path)
@@ -1032,8 +1050,81 @@ class TestViews(TestCase):
         server.execute('/bin/rm -f %s' % full_path)
         self.assertIn(expected, options)
 
+    def test_call_auth_view(self):
+        # call view with auth
+        from tastypie.models import ApiKey
+        instance = self.server
+        status_url = reverse(
+            'device.views.server_status',
+            kwargs={'pk': instance.pk}
+        )
+        coldstart_url = reverse(
+            'device.views.server_coldstart',
+            kwargs={'pk': instance.pk}
+        )
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        response = self.client.get(status_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        # -H "Authorization: ApiKey helber:72644da2f714abda48dc2063119aaf361cfa0e42"
+        api_key = ApiKey.objects.get(user=self.user)
+        response = self.client.get(
+            coldstart_url,
+            {},
+            HTTP_AUTHORIZATION='ApiKey %s:%s' % (api_key.user.username, api_key.key)
+        )
+        self.assertEqual(200, response.status_code)
+        self.client.logout()
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        # Call with api_key and username on query string
+        response = self.client.get(
+            coldstart_url, {'username': api_key.user.username, 'api_key': api_key.key}
+        )
+        self.assertEqual(200, response.status_code)
 
-class TestRecord(TestCase):
+    def test_create_user_for_server(self):
+        from django.contrib.auth.models import User
+        server_id = self.server.id
+        user = User.objects.get(username='resource_%s' % (server_id))
+        from tastypie.models import ApiKey
+        instance = self.server
+        status_url = reverse(
+            'device.views.server_status',
+            kwargs={'pk': instance.pk}
+        )
+        coldstart_url = reverse(
+            'device.views.server_coldstart',
+            kwargs={'pk': instance.pk}
+        )
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        response = self.client.get(status_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        api_key = ApiKey.objects.get(user=user)
+        response = self.client.get(
+            coldstart_url,
+            {},
+            HTTP_AUTHORIZATION='ApiKey %s:%s' % (api_key.user.username, api_key.key)
+        )
+        self.assertEqual(200, response.status_code)
+        self.client.logout()
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        # Call with api_key and username on query string
+        response = self.client.get(
+            coldstart_url, {'username': api_key.user.username, 'api_key': api_key.key}
+        )
+        self.assertEqual(200, response.status_code)
+
+
+class RecordTest(TestCase):
     u"""
     Test record stream on remote server
     """
