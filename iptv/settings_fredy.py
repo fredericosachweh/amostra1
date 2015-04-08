@@ -116,3 +116,8 @@ NOSE_ARGS = [
 #    '--cover-package=client',
 #    '--cover-html',
 ]
+DVBLAST_DUMMY = './device/helper/dvblast_dummy.py'
+DVBLASTCTL_DUMMY = './device/helper/dvblastctl_dummy.py'
+MULTICAT_DUMMY = './device/helper/multicat_dummy.py'
+MULTICATCTL_DUMMY = './device/helper/multicatctl_dummy.py'
+VLC_DUMMY = './device/helper/vlc_dummy.py'
