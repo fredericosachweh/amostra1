@@ -98,6 +98,14 @@ reboot_stb.short_description = ugettext_lazy(
 class SetTopBoxChannelInline(admin.TabularInline):
     model = apps.get_model('client', 'SetTopBoxChannel')
     #template = 'admin/client/edit_inline/settopboxchannel.html'
+    readonly_fields = ['channel_name']
+    fields = ['channel_name', 'recorder']
+    extra = 0
+    max_num = 0
+
+
+    def channel_name(self, instance):
+        return instance.channel.name
 
 
 class SetTopBoxAdmin(ModelAdmin):
