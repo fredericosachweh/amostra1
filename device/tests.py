@@ -795,20 +795,20 @@ class ServerTest(TestCase):
         self.client = Client()
 
     def test_list_dir(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         l = server.list_dir('/')
         self.assertGreater(l.count('boot'), 0, 'Deveria existir o diretório boot')
         self.assertGreater(l.count('bin'), 0, 'Deveria existir o diretório bin')
         self.assertGreater(l.count('usr'), 0, 'Deveria existir o diretório usr')
 
     def test_list_process(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         procs = server.list_process()
         self.assertEqual(procs[0]['pid'], 1, 'O primero processo deveria ter pid=1')
 
     def test_start_process(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         cmd = '/bin/sleep 10'
         pid = server.execute_daemon(cmd)
         self.assertTrue(server.process_alive(pid), 'O processo pid=%d deveria estar vivo.' % pid)
@@ -817,20 +817,20 @@ class ServerTest(TestCase):
         self.assertFalse(server.process_alive(pid), 'O processo pid=%d deveria ter morrido.' % pid)
 
     def test_list_ifaces(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         server.auto_create_nic()
         server._list_interfaces()
 
     def test_local_dev(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         server.auto_create_nic()
         iface = server.get_netdev('127.0.0.1')
         self.assertEqual(iface, 'lo', 'Deveria ser a interface de loopback')
 
     def test_create_route(self):
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         server.connect()
         server.auto_create_nic()
         route = ('239.0.1.10', 'lo')
@@ -844,7 +844,11 @@ class ServerTest(TestCase):
         self.assertNotIn(route, routes, 'Route %s -> %s should not exists' % route)
 
     def test_list_interfaces_view(self):
-        server = Server.objects.get(pk=1)
+        from tastypie.models import ApiKey
+        from django.contrib.auth.models import User
+        server = Server.objects.get(name='local')
+        user = User.objects.get(username='resource_%s' % (server.id))
+        api_key = ApiKey.objects.get(user=user)
         NIC.objects.create(
             server=server,
             ipv4='192.168.0.10',
@@ -855,7 +859,9 @@ class ServerTest(TestCase):
             ipv4='172.17.0.2',
             name='bar0'
         )
-        url = reverse('device.views.server_list_interfaces') + '?server=1'
+        url = reverse('device.views.server_list_interfaces') + '?server=%s&api_key=%s' % (
+            server.id, api_key.key
+        )
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         expected = '<option selected="selected" value="">---------</option>'
@@ -869,7 +875,7 @@ class ServerTest(TestCase):
 
     def test_dvbtuners_list_view(self):
         url = reverse('device.views.server_list_dvbadapters')
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         dvbworld = DigitalTunerHardware.objects.create(
             server=server,
             uniqueid='00:00:00:00:00:00',
@@ -933,7 +939,7 @@ class ServerTest(TestCase):
 
     def test_available_isdbtuners_view(self):
         url = reverse('device.views.server_available_isdbtuners')
-        server = Server.objects.get(pk=1)
+        server = Server.objects.get(name='local')
         # No installed adapters
         response = self.client.get(url + '?server=%d' % server.pk)
         self.assertEqual('0', response.content)
