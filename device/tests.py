@@ -1004,10 +1004,15 @@ class ViewsTest(TestCase):
         )
 
     def test_server_status(self):
+        from tastypie.models import ApiKey
+        api_key = ApiKey.objects.get(user=self.user)
         server = self.server
         c = Client()
         url = reverse('device.views.server_status', kwargs={'pk': server.pk})
-        response = c.get(url, follow=True)
+        response = c.get(
+            url, follow=True,
+            HTTP_AUTHORIZATION='ApiKey %s:%s' % (api_key.user.username, api_key.key)
+        )
         self.assertRedirects(response, 'http://testserver/tv/administracao/device/server/', 302)
         urlnotfound = reverse('device.views.server_status', kwargs={'pk': 2})
         response = c.get(urlnotfound, follow=True)
@@ -1015,6 +1020,7 @@ class ViewsTest(TestCase):
 
     def test_fileinput_scanfolder(self):
         import re
+        from tastypie.models import ApiKey
         server = self.server
         # Check if the videos folder is acessible
         try:
@@ -1027,7 +1033,8 @@ class ViewsTest(TestCase):
         out = server.execute('/bin/mktemp -p %s' % settings.VLC_VIDEOFILES_DIR)
         # Make sure the file name is returned on the list
         url = reverse('device.views.server_fileinput_scanfolder')
-        response = self.client.get(url + '?server=%d' % server.pk)
+        api_key = ApiKey.objects.get(user=self.user)
+        response = self.client.get(url + '?server=%d&api_key=%s' % (server.pk, api_key.key))
         options = unicode(response.content, 'utf-8').split(u'\n')
         full_path = u" ".join(out).strip()
         match = re.match(r'^%s(.*)$' % (re.escape(settings.VLC_VIDEOFILES_DIR)), full_path)
