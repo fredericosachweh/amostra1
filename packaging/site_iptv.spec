@@ -235,10 +235,13 @@ if install_status >= 2: # Atualização
                 sys.exit(1)
         shutil.copyfile(version_path, version_tmp_path)
     else:
-        # É uma versão anteriror à 0.19.8-1
-        print('Verificação 3 not found %s' % (version_path))
-        print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
-        sys.exit(1)
+        if v_current == v_migrate:
+            pass
+        else:
+            # É uma versão anteriror à 0.19.8-1
+            print('Verificação 3 not found %s' % (version_path))
+            print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
+            sys.exit(1)
 
 
 %preun
