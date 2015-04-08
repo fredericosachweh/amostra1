@@ -971,13 +971,18 @@ class ServerTest(TestCase):
         self.assertEqual('1', response.content)
 
 
-class TestViews(TestCase):
+class ViewsTest(TestCase):
     """
     Unit test for device views
     """
 
     def setUp(self):
-        server = Server.objects.create(
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(
+            'erp', 'erp@cianet.ind.br', '123'
+        )
+        self.user.save()
+        self.server = Server.objects.create(
             name='local',
             host='127.0.0.1',
             ssh_port=22,
@@ -987,19 +992,19 @@ class TestViews(TestCase):
         )
         # Input interface
         NIC.objects.create(
-            server=server,
+            server=self.server,
             name='foobar0',
             ipv4='192.168.0.10',
         )
         # Output interface
         NIC.objects.create(
-            server=server,
+            server=self.server,
             name='foobar1',
             ipv4='10.0.1.10',
         )
 
     def test_server_status(self):
-        server = Server.objects.get(pk=1)
+        server = self.server
         c = Client()
         url = reverse('device.views.server_status', kwargs={'pk': server.pk})
         response = c.get(url, follow=True)
@@ -1010,7 +1015,7 @@ class TestViews(TestCase):
 
     def test_fileinput_scanfolder(self):
         import re
-        server = Server.objects.get(pk=1)
+        server = self.server
         # Check if the videos folder is acessible
         try:
             server.execute('ls %s' % settings.VLC_VIDEOFILES_DIR)
@@ -1032,8 +1037,81 @@ class TestViews(TestCase):
         server.execute('/bin/rm -f %s' % full_path)
         self.assertIn(expected, options)
 
+    def test_call_auth_view(self):
+        # call view with auth
+        from tastypie.models import ApiKey
+        instance = self.server
+        status_url = reverse(
+            'device.views.server_status',
+            kwargs={'pk': instance.pk}
+        )
+        coldstart_url = reverse(
+            'device.views.server_coldstart',
+            kwargs={'pk': instance.pk}
+        )
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        response = self.client.get(status_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        # -H "Authorization: ApiKey helber:72644da2f714abda48dc2063119aaf361cfa0e42"
+        api_key = ApiKey.objects.get(user=self.user)
+        response = self.client.get(
+            coldstart_url,
+            {},
+            HTTP_AUTHORIZATION='ApiKey %s:%s' % (api_key.user.username, api_key.key)
+        )
+        self.assertEqual(200, response.status_code)
+        self.client.logout()
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        # Call with api_key and username on query string
+        response = self.client.get(
+            coldstart_url, {'username': api_key.user.username, 'api_key': api_key.key}
+        )
+        self.assertEqual(200, response.status_code)
 
-class TestRecord(TestCase):
+    def test_create_user_for_server(self):
+        from django.contrib.auth.models import User
+        server_id = self.server.id
+        user = User.objects.get(username='resource_%s' % (server_id))
+        from tastypie.models import ApiKey
+        instance = self.server
+        status_url = reverse(
+            'device.views.server_status',
+            kwargs={'pk': instance.pk}
+        )
+        coldstart_url = reverse(
+            'device.views.server_coldstart',
+            kwargs={'pk': instance.pk}
+        )
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        response = self.client.get(status_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        api_key = ApiKey.objects.get(user=user)
+        response = self.client.get(
+            coldstart_url,
+            {},
+            HTTP_AUTHORIZATION='ApiKey %s:%s' % (api_key.user.username, api_key.key)
+        )
+        self.assertEqual(200, response.status_code)
+        self.client.logout()
+        response = self.client.get(coldstart_url)
+        # Redirect to login
+        self.assertEqual(302, response.status_code)
+        # Call with api_key and username on query string
+        response = self.client.get(
+            coldstart_url, {'username': api_key.user.username, 'api_key': api_key.key}
+        )
+        self.assertEqual(200, response.status_code)
+
+
+class RecordTest(TestCase):
     u"""
     Test record stream on remote server
     """
