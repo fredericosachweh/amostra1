@@ -1,15 +1,13 @@
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 import logging
-import thread
-import requests
+from django.apps import apps
 from django.contrib.admin import site, ModelAdmin
 from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
-from . import models, tasks
-from nbridge.models import Nbridge
+from . import tasks
 from log.models import TaskLog
 
 log = logging.getLogger('client')
@@ -98,7 +96,7 @@ reboot_stb.short_description = ugettext_lazy(
 
 
 class SetTopBoxChannelInline(admin.TabularInline):
-    model = models.SetTopBoxChannel
+    model = apps.get_model('client', 'SetTopBoxChannel')
     #template = 'admin/client/edit_inline/settopboxchannel.html'
 
 
@@ -154,10 +152,10 @@ class SetTopBoxMessageAdmin(ModelAdmin):
 #                                           self.fields['my_field'] = forms.ChoiceField(
 #                                           choices=CHOICES_INCLUDING_DB_VALUE)
 
-site.register(models.SetTopBox, SetTopBoxAdmin)
+site.register(apps.get_model('client', 'SetTopBox'), SetTopBoxAdmin)
 # site.register(models.SetTopBoxParameter)
-site.register(models.SetTopBoxProgramSchedule)
-site.register(models.SetTopBoxChannel, SetTopBoxChannelAdmin)
-site.register(models.SetTopBoxConfig, SetTopBoxConfigAdmin)
-site.register(models.SetTopBoxMessage, SetTopBoxMessageAdmin)
-site.register(models.SetTopBoxBehaviorFlag)
+site.register(apps.get_model('client', 'SetTopBoxProgramSchedule'))
+site.register(apps.get_model('client', 'SetTopBoxChannel'), SetTopBoxChannelAdmin)
+site.register(apps.get_model('client', 'SetTopBoxConfig'), SetTopBoxConfigAdmin)
+site.register(apps.get_model('client', 'SetTopBoxMessage'), SetTopBoxMessageAdmin)
+site.register(apps.get_model('client', 'SetTopBoxBehaviorFlag'))

@@ -4,9 +4,7 @@ import time
 
 from celery import task
 from decimal import Decimal as D
-from .models import SetTopBox, SetTopBoxChannel
-from log.models import TaskLog
-from nbridge.models import Nbridge
+from django.apps import apps
 from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
 
@@ -20,6 +18,8 @@ def split_pks(pks):
 
 @task(name='reload-channels')
 def reload_channels(settopboxes_pks, message, task_id, channel=False):
+    TaskLog = apps.get_model('log', 'TaskLog')
+    SetTopBox = apps.get_model('client', 'SetTopBox')
     splitted_pks = split_pks(settopboxes_pks)
     nstbs = len(settopboxes_pks)
     log.debug('Reload queue to %s STBs', nstbs)
@@ -41,6 +41,8 @@ def reload_channels(settopboxes_pks, message, task_id, channel=False):
 
 @task(name='reload-frontend-stbs')
 def reload_frontend_stbs(settopboxes_pks, task_id):
+    TaskLog = apps.get_model('log', 'TaskLog')
+    SetTopBox = apps.get_model('client', 'SetTopBox')
     splitted_pks = split_pks(settopboxes_pks)
     nstbs = len(settopboxes_pks)
     log.debug('Reload frontend to %s STBs', nstbs)
@@ -61,6 +63,9 @@ def reload_frontend_stbs(settopboxes_pks, task_id):
 
 @task(name='reboot-stbs')
 def reboot_stbs(settopboxes_pks, task_id):
+    TaskLog = apps.get_model('log', 'TaskLog')
+    SetTopBox = apps.get_model('client', 'SetTopBox')
+    Nbridge = apps.get_model('nbridge', 'Nbridge')
     splitted_pks = split_pks(settopboxes_pks)
     nstbs = len(settopboxes_pks)
     log.debug('Reboot %s STBs', nstbs)
@@ -107,6 +112,8 @@ def reboot_stbs(settopboxes_pks, task_id):
 
 @task(name='accept-recorder')
 def accept_recorder(settopboxes_pks, message, task_id, channel=False):
+    TaskLog = apps.get_model('log', 'TaskLog')
+    SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
     task = TaskLog.objects.get(pk=task_id)
     nstbs = len(settopboxes_pks)
     log.debug('Accept recorder to %s STBs', nstbs)
@@ -121,6 +128,8 @@ def accept_recorder(settopboxes_pks, message, task_id, channel=False):
 
 @task(name='refuse-recorder')
 def refuse_recorder(settopboxes_pks, message, task_id, channel=False):
+    TaskLog = apps.get_model('log', 'TaskLog')
+    SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
     task = TaskLog.objects.get(pk=task_id)
     nstbs = len(settopboxes_pks)
     log.debug('Refuse recorder to %s STBs', nstbs)
