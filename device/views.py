@@ -129,9 +129,9 @@ def server_list_dvbadapters(request):
     # Insert the currently selected
     tuner_pk = request.GET.get('tuner')
     if tuner_pk:
-        #tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
-        #response += '<option value="%s">%s</option>' % (tuner.adapter,
-        #    tuner.adapter)
+        # tuner = get_object_or_404(models.DvbTuner, pk=tuner_pk)
+        # response += '<option value="%s">%s</option>' % (tuner.adapter,
+        #     tuner.adapter)
         tuners = models.DvbTuner.objects.filter(server=server).exclude(
             pk=tuner_pk)
     else:
@@ -182,6 +182,7 @@ def server_fileinput_scanfolder(request):
 
 
 @csrf_exempt
+@login_required
 def server_coldstart(request, pk):
     log = logging.getLogger('debug')
     log.debug('Iniciando rotina de coldstart no server com pk=%s', pk)
@@ -319,12 +320,12 @@ def tvod(request, channel_number=None, command=None, seek=0):
             status=500
         )
     resp = ''
-    ## Get IP addr form STB
+    # Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
     # Get path to create stop hash
     md5_path = hashlib.md5(request.path).hexdigest()
     stop_key = 'tvod_stop_key_%s' % (md5_path)
-    ## Find request on cache
+    # Find request on cache
     key = 'tvod_ip_%s' % ip
     key_value = cache.get(key)
     if key_value is None:
@@ -351,7 +352,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         'tvod[%s] client:"%s" channel:"%s" seek:"%s"',
         command, ip, channel_number, seek
     )
-    ## User
+    # User
     if request.user.is_anonymous():
         log.debug('User="%s" can\'t play', request.user)
         cache.delete(key)
@@ -400,7 +401,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
             content_type='application/javascript',
             status=200
         )
-    ## Load channel
+    # Load channel
     try:
         channel = Channel.objects.get(number=channel_number)
     except:
@@ -442,7 +443,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         record_time
     )
 
-    ## Find a recorder with request
+    # Find a recorder with request
     log.debug(
         'rec.filter: start_time__lte=%s, channel=%s, keep_time__gte=%d',
         record_time, channel, (seek / 3600)
@@ -454,7 +455,7 @@ def tvod(request, channel_number=None, command=None, seek=0):
         start_time__lte=record_time,
         channel=channel,
         keep_time__gte=(int(seek / 3600))
-        )
+    )
     log.info('avaliable recorders: %s', recorders)
     if recorders.count() == 0:
         log.info('Record Unavaliable')
@@ -467,14 +468,14 @@ def tvod(request, channel_number=None, command=None, seek=0):
     # Priorize server (random)
     recorder = get_random_on_storage(recorders)
     log.debug('Current recorder:%s', recorder)
-    ## Verifica se existe um player para o cliente
+    # Verifica se existe um player para o cliente
     if StreamPlayer.objects.filter(stb_ip=ip).count() == 0:
         StreamPlayer.objects.create(
             stb_ip=ip,
             server=recorder.server,
             recorder=recorder,
             stb=stb
-            )
+        )
         log.debug('new player created to ip: %s', ip)
     player = StreamPlayer.objects.get(stb_ip=ip)
     log.debug(
@@ -568,7 +569,7 @@ def tvod_list(request):
             'start_as_string': str(start),
             'record_time': int(r.keep_time) * 3600,
             'channel': r.channel.number
-            })
+        })
     json = simplejson.dumps({'meta': meta, 'objects': obj})
     if request.GET.get('format') == 'jsonp'\
             and request.GET.get('callback') is None:

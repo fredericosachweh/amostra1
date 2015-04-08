@@ -44,15 +44,15 @@ DATABASES = {
 TIME_ZONE = 'America/Sao_Paulo'
 
 # Auxiliar apps configuration
-MULTICAT_COMMAND = '/iptv/bin/multicat -N'
+MULTICAT_COMMAND = '/iptv/bin/multicat'
 MULTICAT_LOGS_DIR = '/iptv/var/log/multicat/'
 MULTICAT_SOCKETS_DIR = '/iptv/var/run/multicat/sockets/'
 MULTICATCTL_COMMAND = '/iptv/bin/multicatctl'
 
 CHANNEL_RECORD_USE_PCRPID = False
 CHANNEL_RECORD_DIR = '/var/lib/iptv/recorder'
-CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat -N'
-CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat -N'
+CHANNEL_RECORD_COMMAND = '/iptv/bin/multicat'
+CHANNEL_RECORD_PLAY_COMMAND = '/iptv/bin/multicat'
 CHANNEL_RECORD_CLEAN_COMMAND = '/iptv/bin/multicat_expire.sh'
 CHANNEL_PLAY_PORT = 12000
 CHANNEL_RECORD_DISKCONTROL = '/iptv/bin/diskctrl'
