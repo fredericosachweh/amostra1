@@ -131,10 +131,11 @@ class APITest(TestCase):
         # Try to add new stb with existing serial_number
         response = c.post(
             url, data=json.dumps({
-                'serial_number': 'lalala', 'mac': '00:00:00:00:00:00'
+                'serial_number': 'lalala', 'mac': '00:00:00:00:00:11'
             }),
             content_type='application/json'
         )
+        #import pdb; pdb.set_trace()
         self.assertEqual(response.status_code, 400)
         # Error message on duplicated serial_number
         self.assertContains(response, 'serial_number', status_code=400)
