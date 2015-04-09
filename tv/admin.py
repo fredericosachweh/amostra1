@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals
+from django.apps import apps
 from django.contrib import admin
-from .models import Channel
 from django.db import models
 
 from django.contrib.admin.widgets import AdminFileWidget
@@ -87,4 +87,4 @@ class ChannelAdmin(admin.ModelAdmin):
             db_field, **kwargs
         )
 
-admin.site.register(Channel, ChannelAdmin)
+admin.site.register(apps.get_model('tv', 'Channel'), ChannelAdmin)

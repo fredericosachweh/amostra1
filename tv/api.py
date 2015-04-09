@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf8 -*-
 from __future__ import unicode_literals
+from django.apps import apps
 from django.conf import settings
 from tastypie import fields
 from tastypie.authorization import Authorization
@@ -16,9 +17,7 @@ from tastypie.resources import NamespacedModelResource
 
 from tastypie.exceptions import Unauthorized
 
-from client.models import SetTopBox
 
-from . import models
 import logging
 log = logging.getLogger('api')
 
@@ -43,7 +42,8 @@ class ChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(
+        Channel = apps.get_model('tv', 'Channel')
+        queryset = Channel.objects.filter(
             enabled=True,
             source__isnull=False
         )
@@ -63,11 +63,13 @@ class ChannelResource(NamespacedModelResource):
         return '%s:%d' % (bundle.obj.source.ip, bundle.obj.source.port)
 
     def apply_authorization_limits(self, request, object_list):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        Channel = apps.get_model('client', 'Channel')
         user = request.user
         log.debug('ChannelResource User=%s', user)
         if user.is_anonymous():
             log.debug('Return empt list')
-            return models.Channel.objects.none()
+            return Channel.objects.none()
         object_list = super(ChannelResource, self).apply_authorization_limits(
             request, object_list)
         if user.is_staff:
@@ -81,6 +83,8 @@ class ChannelResource(NamespacedModelResource):
         return object_list
 
     def obj_get_list(self, bundle, **kwargs):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        Channel = apps.get_model('tv', 'Channel')
         user = bundle.request.user
         log.debug('ChannelResource User=%s', user)
         obj_list = super(ChannelResource, self).obj_get_list(bundle, **kwargs)
@@ -94,9 +98,9 @@ class ChannelResource(NamespacedModelResource):
                     enabled=True,
                     source__isnull=False)
             else:
-                obj_list = models.Channel.objects.all()
+                obj_list = Channel.objects.all()
         else:
-            obj_list = models.Channel.objects.none()
+            obj_list = Channel.objects.none()
         return obj_list
 
     def dehydrate(self, bundle):
@@ -118,7 +122,8 @@ class AllChannelResource(NamespacedModelResource):
     previous = fields.CharField()
 
     class Meta:
-        queryset = models.Channel.objects.filter(
+        Channel = apps.get_model('tv', 'Channel')
+        queryset = Channel.objects.filter(
             enabled=True,
             source__isnull=False
         )
@@ -149,6 +154,7 @@ class MyChannelResourceAuthorization(Authorization):
     # http://django-tastypie.readthedocs.org/en/latest/authorization.html
 
     def read_list(self, object_list, bundle):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
         user = bundle.request.user
         request = bundle.request
         log.debug('Readlist request to:%s', user)
@@ -169,7 +175,8 @@ class MyChannelResource(NamespacedModelResource):
     source = fields.CharField(blank=True)
 
     class Meta:
-        queryset = models.Channel.objects.filter(
+        Channel = apps.get_model('tv', 'Channel')
+        queryset = Channel.objects.filter(
             enabled=True,
             source__isnull=False
         )
