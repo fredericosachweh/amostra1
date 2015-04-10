@@ -2,10 +2,9 @@
 
 from __future__ import unicode_literals
 
+from django.apps import apps
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
-
-import models
 
 
 class AdminNbridge(admin.ModelAdmin):
@@ -41,4 +40,4 @@ class AdminNbridge(admin.ModelAdmin):
     server_desc.short_description = _('Descrição')
 
 
-admin.site.register(models.Nbridge, AdminNbridge)
+admin.site.register(apps.get_model('nbridge', 'Nbridge'), AdminNbridge)

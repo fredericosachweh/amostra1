@@ -1,12 +1,14 @@
 # Create your views here.
 
+from django.apps import apps
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
-import models
+
 
 def monserver_status(request, pk=None):
-    server = get_object_or_404(models.MonServer, id=pk)
+    MonServer = apps.get_model('monitoramento', 'MonServer')
+    server = get_object_or_404(MonServer, id=pk)
     server.connect()
     #log = logging.getLogger('.view')
     #log.debug('server_status(pk=%s)', pk)

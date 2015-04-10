@@ -1,18 +1,16 @@
 import datetime
 import json
 
+from django.apps import apps
 from django.contrib.auth.decorators import login_required
-from django.core import serializers
-from django.core.serializers.python import Serializer
 from django.http import HttpResponse
 from django.utils import timezone
-
-from . import models
 
 
 @login_required
 def current_task_log(request):
-    logs = models.TaskLog.objects.filter(is_finished=False)
+    TaskLog = apps.get_model('log', 'TaskLog')
+    logs = TaskLog.objects.filter(is_finished=False)
     current_list = list()
     if logs:
         for log in logs:
