@@ -298,10 +298,10 @@ class Test_XML_to_db(object):
                   ('en', 'BBC Sessions: Verve; The')]
         self.assertItemsEqual(
             programme.titles.values_list('lang__value', 'value'), titles)
-        descs = (None, 'Uma impressionante atuação do The Verve no famoso \
-estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da \
-banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e \
-Love is Noise.')
+        desc = 'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, ' \
+               'porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony '\
+               'e Love is Noise.'
+        descs = (None, desc)
         self.assertEquals(programme.descriptions.values_list('lang__value',
             'value')[0], descs)
         self.assertEquals(programme.date, '2008')
