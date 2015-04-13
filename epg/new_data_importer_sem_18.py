@@ -80,6 +80,14 @@ class xmlVerification:
 
     linkxml = None
 
+    def xml_value_encode_validation(self, line):
+        if isinstance(line, unicode):
+            return line
+        try:
+            return line.decode('utf-8')
+        except UnicodeDecodeError:
+            return line.decode('latin1').encode('utf-8')
+
     def xml_value_validation(self, filename):
         f = open(filename,"r")
         lines = f.readlines()
@@ -88,6 +96,7 @@ class xmlVerification:
         i = 1
         aux = ''
         for line in lines:
+            line = self.xml_value_encode_validation(line)
             remove = False
             if i == 1:
                 f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
