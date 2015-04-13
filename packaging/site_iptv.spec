@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.16
+%global v_migrate      0.19.17
 %global v_end          0.20.9
 
 # Referencia:
@@ -295,6 +295,8 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Mon Apr 13 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.17-1
+- Fix import epg charset encoding
 * Wed Apr 08 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.16-1
 - Fix server views with auth.
 - Fix ssh port on commands.
