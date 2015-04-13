@@ -76,15 +76,13 @@ class xmlVerification:
 
     linkxml = None
 
-
     def xml_value_encode_validation(self, line):
         if isinstance(line, unicode):
             return line
         try:
             return line.decode('utf-8')
-        except UnicodeEncodeError:
-            return line.encode('utf-8')
-
+        except UnicodeDecodeError:
+            return line.decode('latin1').encode('utf-8')
 
     def xml_value_validation(self, filename):
         f = open(filename,"r")
