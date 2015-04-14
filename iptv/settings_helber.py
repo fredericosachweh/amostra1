@@ -97,6 +97,7 @@ if DEBUG is True:
 
 TASTYPIE_ABSTRACT_APIKEY = False
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
 # TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 # INSTALLED_APPS += ('django_nose',)
 NOSE_ARGS = [

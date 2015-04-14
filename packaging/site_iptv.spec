@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.15
+%global v_migrate      0.19.16
 %global v_end          0.20.9
 
 # Referencia:
@@ -157,11 +157,12 @@ if [ "$1" = "2" ];then
         if [ "$current" = "%{v_migrate}-1%{?dist}" ]; then
             # Migração fake
             echo "Migração fake para atualizar versão Django 1.7"
-            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
-            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --fake --noinput"
+            # Por hora não vai fazer automático
+            echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py migrate --fake --noinput'"
         else
             echo "Migração de banco de dados"
-            /bin/su nginx -c "%{__python} %{site_home}/manage.py migrate --noinput"
+            # Por hora não vai fazer automático
+            echo "/bin/su nginx -c '%{__python} %{site_home}/manage.py migrate --noinput'"
         fi
     fi
 else
@@ -234,10 +235,13 @@ if install_status >= 2: # Atualização
                 sys.exit(1)
         shutil.copyfile(version_path, version_tmp_path)
     else:
-        # É uma versão anteriror à 0.19.8-1
-        print('Verificação 3 not found %s' % (version_path))
-        print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
-        sys.exit(1)
+        if v_current == v_migrate:
+            pass
+        else:
+            # É uma versão anteriror à 0.19.8-1
+            print('Verificação 3 not found %s' % (version_path))
+            print('Para atualização, é necessário atualizar para a versão %s primeiro.' % (v_migrate))
+            sys.exit(1)
 
 
 %preun
@@ -291,6 +295,10 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Wed Apr 08 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.16-1
+- Fix server views with auth.
+- Fix ssh port on commands.
+- Fix rpm update.
 * Thu Mar 19 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.15-1
 - Django security update.
 - Fix dependency.

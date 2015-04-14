@@ -139,7 +139,7 @@ class AbstractServer(models.Model):
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
             return ['Servidor está offline']
-        ret = ssh.execute(self.host, self.username, command)
+        ret = ssh.execute(self.host, self.username, command, port=self.ssh_port)
         self.save()
         if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
                 raise Server.ExecutionFailure(
@@ -153,7 +153,7 @@ class AbstractServer(models.Model):
         log.debug('[%s@%s]#(DAEMON) %s', self.username, self.name, command)
         if self.checkstatus() == 'offline':
             raise Exception('Servidor está offline'.encode('utf-8'))
-        ret = ssh.execute_daemon(self.host, self.username, command, log_path)
+        ret = ssh.execute_daemon(self.host, self.username, command, log_path, port=self.ssh_port)
         exit_code = ret.get('exit_code')
         if exit_code is not 0:
             raise Server.ExecutionFailure(
@@ -168,13 +168,13 @@ class AbstractServer(models.Model):
         """Copies a file between the remote host and the local host."""
         if self.checkstatus() == 'offline':
             raise Exception('Servidor está offline'.encode('utf-8'))
-        ssh.get(self.host, self.username, remotepath, localpath)
+        ssh.get(self.host, self.username, remotepath, localpath, port=self.ssh_port)
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         if self.checkstatus() == 'offline':
             raise Exception('Servidor está offline'.encode('utf-8'))
-        ssh.put(self.host, self.username, localpath, remotepath)
+        ssh.put(self.host, self.username, localpath, remotepath, port=self.ssh_port)
 
     def process_alive(self, pid):
         "Verifica se o processo está em execução no servidor"
@@ -395,54 +395,94 @@ class Server(AbstractServer):
 def Server_post_save(sender, instance, created, **kwargs):
     "Signal to prepare the server for use"
     from tempfile import NamedTemporaryFile
-    from helper.template_scripts import INIT_SCRIPT, UDEV_CONF, MODPROBE_CONF
+    from helper.template_scripts import UDEV_CONF, MODPROBE_CONF
+    from helper.template_scripts import SYSTEMD_COLDSTART, SYSTEMD_SLAVE_CONFIG
     if created is True and instance.offline_mode is False:
+        from django.contrib.auth.models import User
+        log = logging.getLogger('debug')
         instance.connect()
         time.sleep(1)
         if instance.checkstatus() == 'offline':
-            log = logging.getLogger('debug')
             log.info("The server %s was unreachable, "
                      "so we couldn't configure it", instance)
             return  # There is nothing we can do
+        # Create User on middleware to handle this server
+        user, created = User.objects.get_or_create(username='resource_%s' % (instance.id))
+        if created is True:
+            import uuid
+            user.password = uuid.uuid4().get_hex()
+        from tastypie.models import ApiKey
+        api_key = ApiKey.objects.get(user=user).key
         instance.auto_create_nic()
         instance.auto_detect_digital_tuners()
         # Create the tmpfiles
         remote_tmpfile = instance.create_tempfile()
         # Create the udev rules file
         cmd = "/usr/bin/env |" \
-              "/bin/grep SSH_CLIENT |" \
-              "/bin/grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
+            "/bin/grep SSH_CLIENT |" \
+            "/bin/grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
         my_ip = "".join(instance.execute(cmd)).strip()
-        udev_conf = UDEV_CONF % \
-            {'my_ip': my_ip, 'my_port': settings.MIDDLEWARE_WEBSERVICE_PORT,
-             'add_url': reverse('server_adapter_add', args=[instance.pk]),
-             'rm_url': reverse('server_adapter_remove', args=[instance.pk])}
+        udev_conf = UDEV_CONF % ({
+            'my_ip': my_ip, 'my_port': settings.MIDDLEWARE_WEBSERVICE_PORT,
+            'add_url': reverse('server_adapter_add', args=[instance.pk]),
+            'rm_url': reverse('server_adapter_remove', args=[instance.pk]),
+            'username': user.username,
+            'api_key': api_key
+        })
+        log.info('udev_conf=%s', udev_conf)
         tmpfile = NamedTemporaryFile()
         tmpfile.file.write(udev_conf)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/cp -f %s '
-                         '/etc/udev/rules.d/87-iptv.rules' % remote_tmpfile)
+        instance.execute(
+            '/usr/bin/sudo /bin/cp -f %s '
+            '/etc/udev/rules.d/87-iptv.rules' % remote_tmpfile
+        )
+
         # Create the init script to report a server boot event
-        init_script = INIT_SCRIPT % \
-            {'my_ip': my_ip, 'my_port': settings.MIDDLEWARE_WEBSERVICE_PORT,
-                'status_url': reverse(
-                    'device.views.server_status',
-                    kwargs={'pk': instance.pk}
-                ),
-                'coldstart_url': reverse(
-                    'device.views.server_coldstart',
-                    kwargs={'pk': instance.pk}
-                )}
+        # SYSTEMD_SLAVE_CONFIG
+        remote_tmpfile = instance.create_tempfile()
+        systemd_slave_config = SYSTEMD_SLAVE_CONFIG % ({
+            'my_ip': my_ip, 'my_port': settings.MIDDLEWARE_WEBSERVICE_PORT,
+            'add_url': reverse('server_adapter_add', args=[instance.pk]),
+            'rm_url': reverse('server_adapter_remove', args=[instance.pk]),
+            'username': user.username,
+            'api_key': api_key,
+            'coldstart_url': reverse(
+                'device.views.server_coldstart',
+                kwargs={'pk': instance.pk}
+            )
+        })
+        log.info('systemd_slave_config=%s', systemd_slave_config)
         tmpfile = NamedTemporaryFile()
-        tmpfile.file.write(init_script)
+        tmpfile.file.write(systemd_slave_config)
         tmpfile.file.flush()
         instance.put(tmpfile.name, remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/cp -f %s '
-                         '/etc/init.d/iptv_coldstart' % remote_tmpfile)
-        instance.execute('/usr/bin/sudo /bin/chmod +x '
-                         '/etc/init.d/iptv_coldstart')
-        instance.execute('/usr/bin/sudo /sbin/chkconfig iptv_coldstart on')
+        instance.execute(
+            '/usr/bin/sudo /bin/cp -f %s '
+            '/etc/sysconfig/iptv_slave' % remote_tmpfile
+        )
+
+        # SYSTEMD_COLDSTART
+        log.info('SYSTEMD_COLDSTART=%s', SYSTEMD_COLDSTART)
+        remote_tmpfile = instance.create_tempfile()
+        tmpfile = NamedTemporaryFile()
+        tmpfile.file.write(SYSTEMD_COLDSTART)
+        tmpfile.file.flush()
+        instance.put(tmpfile.name, remote_tmpfile)
+        instance.execute(
+            '/usr/bin/sudo /bin/cp -f %s '
+            '/lib/systemd/system/iptv_coldstart.service' % remote_tmpfile
+        )
+        # Recarregando as configs do systemd
+        instance.execute(
+            '/usr/bin/sudo /bin/systemctl daemon-reload --system'
+        )
+        # Habilitando na inicialização do systema
+        instance.execute(
+            '/usr/bin/sudo /bin/systemctl enable iptv_coldstart.service'
+        )
+
         # Create the modprobe config file
         tmpfile = NamedTemporaryFile()
         tmpfile.file.write(MODPROBE_CONF)
