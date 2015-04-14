@@ -85,17 +85,17 @@ class xmlVerification:
             return line.decode('latin1').encode('utf-8')
 
     def xml_value_validation(self, filename):
-        f = open(filename,"r")
+        f = open(filename, "r")
         lines = f.readlines()
         f.close()
-        f = open(filename,"w")
+        f = open(filename, "w")
         i = 1
         aux = ''
         for line in lines:
             line = self.xml_value_encode_validation(line)
             remove = False
             if i == 1:
-                f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>")
+                f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
             elif i == 2:
                 f.write("<tv generator-info-name=\"WWW.CIANET.IND.BR\" generator-info-url=\"http://www.cianet.ind.br\">")
             else:
