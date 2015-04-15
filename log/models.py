@@ -1,7 +1,9 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-from django.db import models
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.db import models
+from django.dispatch import receiver
 
 
 class TaskLogManager(models.Manager):
@@ -37,3 +39,9 @@ class TaskLog(models.Model):
 
     def __unicode__(self):
         return self.get_name_display()
+
+
+@receiver(models.signals.post_save, sender=TaskLog)
+def TaskLog_post_save(sender, instance, **kwargs):
+    if instance.is_finished:
+        cache.delete('task_log-{}'.format(instance.id))
