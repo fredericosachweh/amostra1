@@ -4,10 +4,11 @@ import logging
 from django.apps import apps
 from django.contrib.admin import site, ModelAdmin
 from django.contrib import admin, messages
+from django.forms import ModelForm
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
-from . import tasks
+from . import tasks, forms
 from log.models import TaskLog
 
 log = logging.getLogger('client')
@@ -108,6 +109,11 @@ class SetTopBoxChannelInline(admin.TabularInline):
         return instance.channel.name
 
 
+class SetTopBoxAdminForm(forms.SetTopBoxFormMixin, ModelForm):
+    class Meta:
+        model = apps.get_model('client', 'SetTopBox')
+
+
 class SetTopBoxAdmin(ModelAdmin):
     search_fields = ('mac', 'serial_number', 'description', )
     list_display = (
@@ -116,6 +122,7 @@ class SetTopBoxAdmin(ModelAdmin):
     actions = [reboot_stb, reload_channels_stb, start_remote_debug,
                accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
+    form = SetTopBoxAdminForm
 
     def get_readonly_fields(self, request, obj = None):
         if obj:

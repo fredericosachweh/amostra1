@@ -19,6 +19,21 @@ class MACAddressFormField(fields.RegexField):
         super(MACAddressFormField, self).__init__(mac_re, *args, **kwargs)
 
 
-class SetTopBoxForm(Form):
+class SetTopBoxFormMixin(object):
+    def clean_parent(self):
+        parent = self.cleaned_data['parent']
+        if parent:
+            if parent.parent:
+                self._errors['parent'] = self.error_class([
+                        u'SetTopBox não pode ser o principal, ele já é secundário.'
+                ])
+            if self.instance.parent_set.exists():
+                self._errors['parent'] = self.error_class([
+                        'SetTopBox não pode ser secundário, ele já é principal.'
+                ])
+        return parent
+
+
+class SetTopBoxForm(SetTopBoxFormMixin, Form):
 
     mac = MACAddressFormField()

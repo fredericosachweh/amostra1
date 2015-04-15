@@ -1433,3 +1433,58 @@ class RemoteControlTest(TestCase):
             '%3A61%3BFF%3A21%3A30%3A70%3A64%3A33%3B00%3A1A%3AD0%3A1A%3AD3%3'
             'ACA%3BFF%3AA0%3A00%3A00%3A01%3A61/Mensagem%20de%20teste%3B%3B/dsa'
         )
+
+
+class ParentSetTopBoxTest(TestCase):
+    def setUp(self):
+        log.debug('ParentSetTopBoxTest::setUp')
+        from django.contrib.auth.models import User
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.objects.create(
+            serial_number='lululu', mac='FF:A0:00:00:01:61'
+        )
+        SetTopBox.objects.create(
+            serial_number='lalala', mac='FF:21:30:70:64:33'
+        )
+        SetTopBox.objects.create(
+            serial_number='lelele', mac='00:1A:D0:1A:D3:CA'
+        )
+
+    def test_selected_principal(self):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        stb1 = SetTopBox.objects.get(serial_number='lalala')
+        stb2 = SetTopBox.objects.get(serial_number='lelele')
+
+        stb2.parent = stb1
+        stb2.save()
+        self.assertEqual(stb2.parent, stb1)
+
+    def test_selected_principal_with_principal(self):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        stb1 = SetTopBox.objects.get(serial_number='lalala')
+        stb2 = SetTopBox.objects.get(serial_number='lelele')
+        stb3 = SetTopBox.objects.get(serial_number='lelele')
+
+        stb2.parent = stb1
+        stb2.save()
+        stb3.parent = stb2
+        stb3.save()
+
+        self.assertEqual(stb3.parent, None)
+
+    def test_selected_principal_to_principal(self):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        stb1 = SetTopBox.objects.get(serial_number='lalala')
+        stb2 = SetTopBox.objects.get(serial_number='lelele')
+        stb3 = SetTopBox.objects.get(serial_number='lelele')
+
+        stb2.parent = stb1
+        stb2.save()
+        stb1.parent = stb3
+        stb1.save()
+
+        self.assertEqual(stb3.parent, None)
