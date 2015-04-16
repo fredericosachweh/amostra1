@@ -14,6 +14,12 @@ from log.models import TaskLog
 log = logging.getLogger('client')
 
 
+class PlanAdmin(admin.ModelAdmin):
+    list_display = ['name', 'value', 'is_active', 'stbs']
+    prepopulated_fields = {'slug': ('name',), }
+    filter_horizontal = ['channels']
+
+
 def reload_channels_stb(modeladmin, request, queryset):
     message = 'Lista de canais atualizada'
     pks_list = queryset.values_list('pk', flat=True)
@@ -123,6 +129,7 @@ class SetTopBoxAdmin(ModelAdmin):
                accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
     form = SetTopBoxAdminForm
+    readonly_fields = ('plan_date',)
 
     def get_readonly_fields(self, request, obj = None):
         if obj:
@@ -167,6 +174,7 @@ class SetTopBoxMessageAdmin(ModelAdmin):
 #                                           self.fields['my_field'] = forms.ChoiceField(
 #                                           choices=CHOICES_INCLUDING_DB_VALUE)
 
+site.register(apps.get_model('client', 'Plan'), PlanAdmin)
 site.register(apps.get_model('client', 'SetTopBox'), SetTopBoxAdmin)
 # site.register(models.SetTopBoxParameter)
 site.register(apps.get_model('client', 'SetTopBoxProgramSchedule'))

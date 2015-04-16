@@ -7,6 +7,7 @@ import datetime
 
 from django.db import models
 from django.dispatch import receiver
+from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -17,6 +18,30 @@ from .fields import MACAddressField
 import dbsettings
 from nbridge.models import Nbridge
 log = logging.getLogger('client')
+
+
+class Plan(models.Model):
+    name = models.CharField(_('Nome'), max_length=255)
+    slug = models.SlugField()
+    channels = models.ManyToManyField(Channel, verbose_name=_('Canais'))
+    value = models.DecimalField(_('Valor'), decimal_places=2, max_digits=10, default=0.00)
+    is_active = models.BooleanField(_('Ativo'), default=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super(Plan, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = _('Plano')
+        verbose_name_plural = _('Planos')
+
+    def __unicode__(self):
+        return '{}'.format(self.name)
+
+    @property
+    def stbs(self):
+        return self.settopbox_set.count()
 
 
 class LogoToReplace(dbsettings.ImageValue):
@@ -225,7 +250,8 @@ def reload_frontend_stb(settopbox):
 
 class SetTopBox(models.Model):
     'Class to authenticate and manipulate IPTV client - SetTopBox'
-
+    plan = models.ForeignKey(Plan, blank=True, null=True, verbose_name=_('Plano'))
+    plan_date = models.DateField(_('Data de adesão do plano'), blank=True, null=True)
     parent = models.ForeignKey(
         'self', verbose_name='SetTopBox Principal',
         related_name='parent_set', null=True, blank=True,
@@ -314,6 +340,12 @@ def SetTopBox_pre_save(sender, instance, **kwargs):
         if instance.parent_set.exists():
             instance.parent = None
             log.debug('SetTopBox can not have parent, it is a parent.')
+    plan = None
+    if instance.pk:
+        stb = SetTopBox.objects.get(pk=instance.pk)
+        plan = stb.plan
+    if plan != instance.plan:
+        instance.plan_date = datetime.datetime.now()
 
 
 class SetTopBoxParameter(models.Model):
