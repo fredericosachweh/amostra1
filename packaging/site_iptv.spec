@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.17
+%global v_migrate      0.19.18
 %global v_end          0.20.9
 
 # Referencia:
@@ -295,6 +295,9 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Wed Apr 15 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.18-1
+- Remove celery restriction to send same task.
+- Fix jquery autoload epg chennels on tv.chanel edit.
 * Mon Apr 13 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.17-1
 - Fix import epg charset encoding
 * Wed Apr 08 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.16-1

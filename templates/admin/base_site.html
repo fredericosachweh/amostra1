@@ -33,7 +33,14 @@
                         label.css({
                             'color': 'white'
                         });
-                        label.append('' + data[i].name + ' ' + data[i].progress + ' ' + data[i].create_at + '<br />');
+                        label.append('' + data[i].name + ' ' + data[i].create_at + ' ' + data[i].progress + ' ');
+                        img = $('<img />', {
+                            'src': '{{ STATIC_URL }}/admin/img/3-dots.gif',
+                            'width': '21',
+                            'height': '5'
+                        });
+                        label.append(img);
+                        label.append('<br />');
                         label.appendTo(current_task);
                     }
                     current_task.show();
@@ -45,7 +52,7 @@
     }
     $(document).ready(function() {
         check_tasks();
-        window.tasks = setInterval(function(){ check_tasks(); }, 5000);
+        window.tasks = setInterval(function(){ check_tasks(); }, 2000);
     });
 </script>
 {% endblock %}
