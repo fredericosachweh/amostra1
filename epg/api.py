@@ -2,6 +2,7 @@
 # -*- encoding:utf8 -*-
 
 import time
+from django.apps import apps
 from django.utils import timezone
 #from django.conf.urls.defaults import *
 
@@ -11,7 +12,6 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.api import NamespacedApi
 from tastypie.resources import NamespacedModelResource
 
-import models
 import logging
 
 
@@ -22,24 +22,28 @@ class MetaDefault:
 
 class LangResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = models.Lang.objects.all()
+        Lang = apps.get_model('epg', 'Lang')
+        queryset = Lang.objects.all()
 
 
 class UrlResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = models.Url.objects.all()
+        Url = apps.get_model('epg', 'Url')
+        queryset = Url.objects.all()
 
 
 class IconResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = models.Icon.objects.all()
+        Icon = apps.get_model('epg', 'Icon')
+        queryset = Icon.objects.all()
 
 
 class Display_NameResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Display_Name.objects.all()
+        Display_Name = apps.get_model('epg', 'Display_Name')
+        queryset = Display_Name.objects.all()
 
 
 class ChannelResource(NamespacedModelResource):
@@ -49,7 +53,8 @@ class ChannelResource(NamespacedModelResource):
 
     class Meta(MetaDefault):
         #XXX: Filtrar apenas canais que sejam relacionados com canais
-        queryset = models.Channel.objects.all()
+        Channel = apps.get_model('epg', 'Channel')
+        queryset = Channel.objects.all()
         filtering = {
             "channelid": ALL
         }
@@ -64,7 +69,8 @@ class TitleResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Title.objects.all()
+        Title = apps.get_model('epg', 'Title')
+        queryset = Title.objects.all()
 
 
 class DescriptionResource(NamespacedModelResource):
@@ -73,17 +79,20 @@ class DescriptionResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Description.objects.all()
+        Description = apps.get_model('epg', 'Description')
+        queryset = Description.objects.all()
 
 
 class StaffResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = models.Staff.objects.all()
+        Staff = apps.get_model('epg', 'Staff')
+        queryset = Staff.objects.all()
 
 
 class ActorResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = models.Actor.objects.all()
+        Actor = apps.get_model('epg', 'Actor')
+        queryset = Actor.objects.all()
         filtering = {
             'name': ALL
         }
@@ -91,35 +100,40 @@ class ActorResource(NamespacedModelResource):
 
 class RatingResource(NamespacedModelResource):
     class Meta(MetaDefault):
-        queryset = models.Rating.objects.all()
+        Rating = apps.get_model('epg', 'Rating')
+        queryset = Rating.objects.all()
 
 
 class LanguageResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Language.objects.all()
+        Language = apps.get_model('epg', 'Language')
+        queryset = Language.objects.all()
 
 
 class SubtitleResource(NamespacedModelResource):
     language = fields.ForeignKey(LanguageResource, 'language', null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Subtitle.objects.all()
+        Subtitle = apps.get_model('epg', 'Subtitle')
+        queryset = Subtitle.objects.all()
 
 
 class Star_RatingResource(NamespacedModelResource):
     icons = fields.ToManyField(IconResource, 'icons', full=True, null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Star_Rating.objects.all()
+        Star_Rating = apps.get_model('epg', 'Star_Rating')
+        queryset = Star_Rating.objects.all()
 
 
 class CategoryResource(NamespacedModelResource):
     lang = fields.ForeignKey(LangResource, 'lang', null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Category.objects.all()
+        Category = apps.get_model('epg', 'Category')
+        queryset = Category.objects.all()
 
 
 class ProgrammeResource(NamespacedModelResource):
@@ -136,7 +150,8 @@ class ProgrammeResource(NamespacedModelResource):
         null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Programme.objects.all()
+        Programme = apps.get_model('epg', 'Programme')
+        queryset = Programme.objects.all()
         filtering = {
             'video_aspect': ALL,
             'actors': ALL,
@@ -168,7 +183,8 @@ class GuideResource(NamespacedModelResource):
     previous = fields.ForeignKey('self', 'previous', full=False, null=True)
 
     class Meta(MetaDefault):
-        queryset = models.Guide.objects.all().order_by('start')
+        Guide = apps.get_model('epg', 'Guide')
+        queryset = Guide.objects.all().order_by('start')
         filtering = {
             "channel": ALL_WITH_RELATIONS,
             "start": ['exact', 'range', 'gt', 'gte', 'lt', 'lte'],

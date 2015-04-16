@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-
+from django.apps import apps
 from django.core.management import BaseCommand
-from dvbinfo.models import Satellite
-from dvbinfo.models import Transponder
-from dvbinfo.models import DvbsChannel
-#from optparse import make_option
 from datetime import date
 from BeautifulSoup import BeautifulSoup
 import urllib2
@@ -24,6 +20,7 @@ class Command(BaseCommand):
         return BeautifulSoup(html)
 
     def _create_satellite(self, sat_soup, sat_name, sat_location):
+        Satellite = apps.get_model('dvbinfo', 'Satellite')
         detailed = sat_soup.find('div', attrs={'class': 'contentDetalhes'})
         if detailed is not None:
             sat_logo = self.base_url + detailed.find('img')['src']
@@ -48,6 +45,7 @@ class Command(BaseCommand):
         return satellite
 
     def _create_transponder(self, tr, band, satellite):
+        Transponder = apps.get_model('dvbinfo', 'Transponder')
         td = tr.findAll('td', {'class': None})
         # Get tunning info
         res = re.findall('^([0-9]*) (.)([0-9]*) \| (\?|[0-9]/[0-9])(.*)$',
@@ -83,6 +81,8 @@ class Command(BaseCommand):
         return transponder
 
     def _create_channel(self, tr, transponder):
+        DvbsChannel = apps.get_model('dvbinfo', 'DvbsChannel')
+
         td = tr.findAll('td', {'class': None})
         # Name
         name = td[3].find('a')['title']
@@ -145,6 +145,7 @@ class Command(BaseCommand):
         channel.save()
 
     def handle(self, *args, **kwargs):
+        Transponder = apps.get_model('dvbinfo', 'Transponder')
         # Get list of satellites in index page
         self.stdout.write('Getting index page...\n')
         soup = self._get_soup(self.base_url + 'index.php')

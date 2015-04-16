@@ -1,6 +1,27 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals
+
+import filecmp
+import hashlib
+import hotshot
+import logging
+import os.path
+import re
+import shutil
+import tempfile
+import time
+import zipfile
+
+from datetime import timedelta, datetime
+from dateutil.parser import parse
+from lxml import etree
+from lxml.etree import XMLSyntaxError
+from pytz import timezone
+from types import NoneType
+from xml.etree import ElementTree as ET
+
+from django.apps import apps
 from django.conf import settings
 from django import db
 from django.db import transaction
@@ -8,32 +29,7 @@ from django.core import serializers
 from django.utils.timezone import utc
 from django.core.mail import send_mail
 
-import re
-import zipfile
-import tempfile
-import shutil
-from lxml import etree
-#from datetime import tzinfo, datetime
-from datetime import timedelta, datetime
-from dateutil.parser import parse
-from pytz import timezone
-from types import NoneType
-
-from models import *
-
-import hotshot
-import time
-import logging
-import hashlib
-
-import xml.etree.ElementTree as ET
-from lxml import etree
-from datetime import timedelta
-from dateutil.parser import parse
-from lxml.etree import XMLSyntaxError
-
-import filecmp
-import os.path
+log = logging.getLogger('epg_import')
 
 PROFILE_LOG_BASE = "/tmp"
 
@@ -63,7 +59,7 @@ def profile(log_file):
             base = base + "-" + time.strftime("%Y%m%dT%H%M%S", time.gmtime())
             final_log_file = base + ext
 
-            aroa = hotshot.Poofile(final_log_file)
+            prof = hotshot.Poofile(final_log_file)
 
             try:
                 ret = prof.runcall(f, *args, **kwargs)
@@ -89,17 +85,17 @@ class xmlVerification:
             return line.decode('latin1').encode('utf-8')
 
     def xml_value_validation(self, filename):
-        f = open(filename,"r")
+        f = open(filename, "r")
         lines = f.readlines()
         f.close()
-        f = open(filename,"w")
+        f = open(filename, "w")
         i = 1
         aux = ''
         for line in lines:
             line = self.xml_value_encode_validation(line)
             remove = False
             if i == 1:
-                f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>")
+                f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
             elif i == 2:
                 f.write("<tv generator-info-name=\"WWW.CIANET.IND.BR\" generator-info-url=\"http://www.cianet.ind.br\">")
             else:
@@ -351,7 +347,6 @@ class Zip_to_XML(object):
 
     # Return one or multiple XML file handles inside a Zip archive
     def _get_zip(self):
-
         ret = []
         for n, f in enumerate(reversed(self.input_file.namelist())):
 
@@ -404,8 +399,6 @@ class XML_Epg_Importer(object):
     def __init__(self, xml, xmltv_source=None, epg_source=None,
             log=open('/dev/null', 'w')):
 
-        log = logging.getLogger('epg_import')
-
         self.xmltv_source = xmltv_source
         self.epg_source = epg_source
         self.xml = xml
@@ -415,6 +408,7 @@ class XML_Epg_Importer(object):
         #self.total_channel = self.tree.xpath("count(//channel)")
         self.total_programme = self.tree.xpath("count(//programme)")
         #log.info('channel=%d , programme=%d', self.total_channel,
+        log = logging.getLogger('epg_import')
         #    self.total_programme)
         log.info('programme=%d', self.total_programme)
         #self.epg_source.numberofElements += \
@@ -501,21 +495,21 @@ class XML_Epg_Importer(object):
 
     #@transaction.commit_on_success
     def _increment_importedElements(self):
-        
+        Epg_Source = apps.get_model('epg','Epg_Source')
         if isinstance(self.epg_source, Epg_Source):
             self.epg_source.importedElements += 1
             self.epg_source.save()
 
     #@transaction.commit_on_success
     def _decrement_importedElements(self):
-        
+        Epg_Source = apps.get_model('epg','Epg_Source')
         if isinstance(self.epg_source, Epg_Source) \
             and self.epg_source.importedElements > 0:
             self.epg_source.importedElements -= 1
             self.epg_source.save()
 
     def _get_dict_for_langs(self):
-        
+        Lang = apps.get_model('epg','Lang')
         # Search for lang attributes in the xml
         lang_set = set()
         for l in self.tree.findall(".//*[@lang]"):
@@ -527,8 +521,6 @@ class XML_Epg_Importer(object):
         return langs
 
     def grab_info(self):
-        
-        log = logging.getLogger('epg_import')
         log.info('Grabbing meta information')
 
         self.xml.seek(0)
@@ -542,7 +534,10 @@ class XML_Epg_Importer(object):
 
     #@transaction.commit_on_success
     def import_channel_elements(self):
-        log = logging.getLogger('epg_import')
+        Channel = apps.get_model('epg','Channel')
+        Channel = apps.get_model('epg','Channel')
+        Lang = apps.get_model('epg','Lang')
+        Display_Name = apps.get_model('epg','Display_Name')
         log.info('Importing Channel elements')
         self.xml.seek(0)
         #for ev, elem in etree.iterparse(self.xml.name, tag='channel'):
@@ -570,7 +565,22 @@ class XML_Epg_Importer(object):
     # @profile("programme.prof")
     @transaction.commit_manually
     def import_programme_elements(self, limit=0):
-        log = logging.getLogger('epg_import')
+        Lang = apps.get_model('epg', 'Lang')
+        Title = apps.get_model('epg', 'Title')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
+        Channel = apps.get_model('epg', 'Channel')
+        Description = apps.get_model('epg', 'Description')
+        Category = apps.get_model('epg', 'Category')
+        Rating = apps.get_model('epg', 'Rating')
+        Star_Rating = apps.get_model('epg', 'Star_Rating')
+        Country = apps.get_model('epg', 'Country')
+        Icon = apps.get_model('epg', 'Icon')
+        Language = apps.get_model('epg', 'Language')
+        Subtitle = apps.get_model('epg', 'Subtitle')
+        Actor = apps.get_model('epg', 'Actor')
+        Staff = apps.get_model('epg', 'Staff')
+
         log.debug('Importing Programme elements:%s', self.xml)
         # Get channels from db
         channels = dict()
@@ -847,8 +857,6 @@ class XML_Epg_Importer(object):
 
     #@transaction.commit_on_success
     def import_to_db(self):
-        
-        log = logging.getLogger('epg_import')
         zip = zipfile.ZipFile(
             '%s/%dfull.zip' % (os.path.join(settings.MEDIA_ROOT, 'epg'),
                 self.xmltv_source.pk), "w", zipfile.ZIP_DEFLATED)

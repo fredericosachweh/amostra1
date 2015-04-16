@@ -5,13 +5,13 @@ import logging
 import re
 
 from device.models import StreamPlayer
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import login, authenticate, logout
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
-from nbridge.models import Nbridge
 
 from . import models
 
@@ -139,6 +139,7 @@ def offline(request):
 
 def change_route(request, stbs=None, key=None, cmd=None):
     import requests
+    Nbridge = apps.get_model('nbridge', 'Nbridge')
     server_key = settings.NBRIDGE_SERVER_KEY
     log = logging.getLogger('client')
     log.debug('stbs=%s', stbs)
@@ -189,6 +190,7 @@ def reload_channels(request, stbs=None, message=None):
 
 
 def nbridge_down(request):
+    Nbridge = apps.get_models('nbridge', 'Nbridge')
     log = logging.getLogger('api')
     nbridge = request.GET.get('nbridge') or request.GET.get('nbridge')
     log.debug('Nbridge shutdown %s ', nbridge)

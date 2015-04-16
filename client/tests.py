@@ -4,6 +4,7 @@ import simplejson as json
 import logging
 import simplejson
 
+from django.apps import apps
 from django.core.urlresolvers import reverse, resolve
 from django.conf import settings
 from django.test.utils import override_settings
@@ -11,10 +12,6 @@ from django.test import TestCase
 from django.test import client
 from django.utils import timezone
 
-from device import models as devicemodels
-from tv import models as tvmodels
-
-from . import models
 
 log = logging.getLogger('unittest')
 
@@ -69,10 +66,12 @@ class APITest(TestCase):
 
     def test_SetTopBox(self):
         from django.contrib.auth.models import Permission
-        models.SetTopBox.options.auto_create = False
-        models.SetTopBox.options.auto_add_channel = False
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = False
+        SetTopBox.options.auto_add_channel = False
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
         c = client.Client()
         # Buscando o schema
         urlschema = reverse(
@@ -91,7 +90,7 @@ class APITest(TestCase):
         response = c.get(url)
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
-        # Try to create new models.SetTopBox using post on api,
+        # Try to create new SetTopBox using post on api,
         # but need to logged in
         response = c.post(
             url, data=json.dumps({
@@ -118,7 +117,7 @@ class APITest(TestCase):
         perm_add_stb = Permission.objects.get(codename='add_settopbox')
         user.user_permissions.add(perm_add_stb)
         user.save()
-        # Create new models.SetTopBox using post
+        # Create new SetTopBox using post
         response = c.post(
             url, data=json.dumps({
                 'serial_number': 'lalala', 'mac': '00:00:00:00:00:00'
@@ -126,16 +125,17 @@ class APITest(TestCase):
             content_type='application/json'
         )
         self.assertEqual(201, response.status_code)
-        stbs = models.SetTopBox.objects.all()
+        stbs = SetTopBox.objects.all()
         self.assertEqual(1, stbs.count())
         self.assertEqual('lalala', stbs[0].serial_number)
         # Try to add new stb with existing serial_number
         response = c.post(
             url, data=json.dumps({
-                'serial_number': 'lalala', 'mac': '00:00:00:00:00:00'
+                'serial_number': 'lalala', 'mac': '00:00:00:00:00:11'
             }),
             content_type='application/json'
         )
+        #import pdb; pdb.set_trace()
         self.assertEqual(response.status_code, 400)
         # Error message on duplicated serial_number
         self.assertContains(response, 'serial_number', status_code=400)
@@ -151,12 +151,14 @@ class APITest(TestCase):
         self.user.user_permissions.add(perm_delete_stb)
         response = c.delete(urldelete)
         self.assertEqual(204, response.status_code)
-        stbs = models.SetTopBox.objects.all()
+        stbs = SetTopBox.objects.all()
         self.assertEqual(0, len(stbs))
         # Try to edit one settop box
 
     def test_PATCH(self):
         from django.contrib.auth.models import Permission
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
         c = client.Client()
         c.login(username='erp', password='123')
         # urllogin = reverse('sys_login')
@@ -182,7 +184,7 @@ class APITest(TestCase):
         # self.user.save()
         response = c.patch(url, data=serialized, content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        stbs = models.SetTopBox.objects.all()
+        stbs = SetTopBox.objects.all()
         self.assertEqual(4, stbs.count())
 
     def test_missing_mac(self):
@@ -250,6 +252,16 @@ class SetTopBoxChannelTest(TestCase):
     def setUp(self):
         # import getpass
         from django.contrib.auth.models import User, Permission
+        Server = apps.get_model('device', 'Server')
+        NIC = apps.get_model('device', 'Nic')
+        UnicastInput = apps.get_model('device', 'UnicastInput')
+        DemuxedService = apps.get_model('device', 'DemuxedService')
+        UniqueIP = apps.get_model('device', 'UniqueIP')
+        MulticastOutput = apps.get_model('device', 'MulticastOutput')
+        Channel = apps.get_model('tv', 'Channel')
+        Storage = apps.get_model('device', 'Storage')
+        StreamRecorder = apps.get_model('device', 'StreamRecorder')
+
         super(SetTopBoxChannelTest, self).setUp()
         self.c = client.Client()
         self.user = User.objects.create_user('erp', 'erp@cianet.ind.br', '123')
@@ -264,7 +276,7 @@ class SetTopBoxChannelTest(TestCase):
         perm_delete_relation = Permission.objects.get(
             codename='delete_settopboxchannel')
         self.user.user_permissions.add(perm_delete_relation)
-        server, created = devicemodels.Server.objects.get_or_create(
+        server, created = Server.objects.get_or_create(
             host='127.0.0.1', offline_mode=True
         )
         server.name = 'local'
@@ -274,51 +286,51 @@ class SetTopBoxChannelTest(TestCase):
         server.offline_mode = True
         server.status = False
         server.save()
-        nic, created = devicemodels.NIC.objects.get_or_create(
+        nic, created = NIC.objects.get_or_create(
             server=server, ipv4='127.0.0.1'
         )
-        unicastin = devicemodels.UnicastInput.objects.create(
+        unicastin = UnicastInput.objects.create(
             server=server,
             interface=nic,
             port=30000,
             protocol='udp',
         )
-        service = devicemodels.DemuxedService.objects.create(
+        service = DemuxedService.objects.create(
             server=server,
             sid=1,
             sink=unicastin,
             nic_src=nic,
         )
-        internal = devicemodels.UniqueIP.create(sink=service)
-        ipout1 = devicemodels.MulticastOutput.objects.create(
+        internal = UniqueIP.create(sink=service)
+        ipout1 = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.2',
             interface=nic,
             sink=internal,
             nic_sink=nic,
         )
-        ipout2 = devicemodels.MulticastOutput.objects.create(
+        ipout2 = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.3',
             interface=nic,
             sink=internal,
             nic_sink=nic,
         )
-        ipout3 = devicemodels.MulticastOutput.objects.create(
+        ipout3 = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.4',
             interface=nic,
             sink=internal,
             nic_sink=nic,
         )
-        self.ipout4 = devicemodels.MulticastOutput.objects.create(
+        self.ipout4 = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.5',
             interface=nic,
             sink=internal,
             nic_sink=nic,
         )
-        self.channel1 = tvmodels.Channel.objects.create(
+        self.channel1 = Channel.objects.create(
             number=51,
             name='Discovery Channel',
             description='Cool tv channel',
@@ -327,7 +339,7 @@ class SetTopBoxChannelTest(TestCase):
             enabled=True,
             source=ipout1,
         )
-        self.channel2 = tvmodels.Channel.objects.create(
+        self.channel2 = Channel.objects.create(
             number=13,
             name='Globo',
             description='Rede globo de televisão',
@@ -336,7 +348,7 @@ class SetTopBoxChannelTest(TestCase):
             enabled=True,
             source=ipout2,
         )
-        self.channel3 = tvmodels.Channel.objects.create(
+        self.channel3 = Channel.objects.create(
             number=14,
             name='Test 3',
             description='Rede Test 3',
@@ -345,11 +357,11 @@ class SetTopBoxChannelTest(TestCase):
             enabled=True,
             source=ipout3,
         )
-        storage = devicemodels.Storage.objects.create(
+        storage = Storage.objects.create(
             folder='/tmp/test_record',
             server=server
         )
-        self.rec1 = devicemodels.StreamRecorder.objects.create(
+        self.rec1 = StreamRecorder.objects.create(
             channel=self.channel1,
             rotate=5,
             storage=storage,
@@ -357,7 +369,7 @@ class SetTopBoxChannelTest(TestCase):
             nic_sink=nic,
             server=server
         )
-        self.rec2 = devicemodels.StreamRecorder.objects.create(
+        self.rec2 = StreamRecorder.objects.create(
             channel=self.channel2,
             rotate=5,
             storage=storage,
@@ -365,7 +377,7 @@ class SetTopBoxChannelTest(TestCase):
             nic_sink=nic,
             server=server
         )
-        self.rec3 = devicemodels.StreamRecorder.objects.create(
+        self.rec3 = StreamRecorder.objects.create(
             channel=self.channel3,
             rotate=5,
             storage=storage,
@@ -385,26 +397,29 @@ class SetTopBoxChannelTest(TestCase):
         self.rec3.save()
 
     def test_channel_stb(self):
-        self.assertEqual(tvmodels.Channel.objects.all().count(), 3)
-        models.SetTopBox.options.auto_add_channel = False
-        models.SetTopBox.options.use_mac_as_serial = True
-        self.assertEqual(models.SetTopBox.options.auto_add_channel, False)
-        stb1 = models.SetTopBox.objects.create(
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        Channel = apps.get_model('tv', 'Channel')
+
+        self.assertEqual(Channel.objects.all().count(), 3)
+        SetTopBox.options.auto_add_channel = False
+        SetTopBox.options.use_mac_as_serial = True
+        self.assertEqual(SetTopBox.options.auto_add_channel, False)
+        stb1 = SetTopBox.objects.create(
             serial_number='lalala', mac='00:00:00:00:00:00'
         )
-        stb2 = models.SetTopBox.objects.create(
+        stb2 = SetTopBox.objects.create(
             serial_number='lelele', mac='00:00:00:00:00:01'
         )
-        models.SetTopBox.objects.create(
+        SetTopBox.objects.create(
             serial_number='lilili', mac='00:00:00:00:00:02'
         )
-        models.SetTopBox.objects.create(
+        SetTopBox.objects.create(
             serial_number='lololo', mac='00:00:00:00:00:03'
         )
-        models.SetTopBox.objects.create(
+        SetTopBox.objects.create(
             serial_number='lululu', mac='00:00:00:00:00:04'
         )
-        self.assertEqual(models.SetTopBox.objects.all().count(), 5)
+        self.assertEqual(SetTopBox.objects.all().count(), 5)
         # Get channel list
         urlchannels = reverse(
             'tv_v1:api_dispatch_list',
@@ -431,7 +446,7 @@ class SetTopBoxChannelTest(TestCase):
         )
         response = self.c.get(urlstb)
         jobj = json.loads(response.content)
-        # Ensure there is 5 models.SetTopBox in list
+        # Ensure there is 5 SetTopBox in list
         self.assertEqual(5, jobj['meta']['total_count'])
         # Add relation bethen stb and 2 channels
         urlrelation = reverse('client:api_dispatch_list', kwargs={
@@ -468,14 +483,16 @@ class SetTopBoxChannelTest(TestCase):
         )
 
     def test_settopbox_options(self):
-        models.SetTopBox.options.auto_add_channel = False
-        models.SetTopBox.options.use_mac_as_serial = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_add_channel = False
+        SetTopBox.options.use_mac_as_serial = True
         self.assertEqual(
-            models.SetTopBox.options.auto_add_channel, False,
+            SetTopBox.options.auto_add_channel, False,
             'Default value not working'
         )
         self.assertEqual(
-            models.SetTopBox.options.use_mac_as_serial, True,
+            SetTopBox.options.use_mac_as_serial, True,
             'Default value not working'
         )
 
@@ -488,10 +505,14 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(401, response.status_code)
 
     def test_settopbox_autologin(self):
-        from django.contrib.auth.models import User
         # Define auto_create and execute again
-        models.SetTopBox.options.auto_create = False
-        models.SetTopBox.options.auto_add_channel = False
+        from django.contrib.auth.models import User
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
+        Channel = apps.get_model('tv', 'Channel')
+
+        SetTopBox.options.auto_create = False
+        SetTopBox.options.auto_add_channel = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
@@ -499,9 +520,9 @@ class SetTopBoxChannelTest(TestCase):
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(403, response.status_code)
         # Define auto_create and execute again
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         # Busca o ususário criado para o stb
@@ -509,17 +530,17 @@ class SetTopBoxChannelTest(TestCase):
             username=settings.STB_USER_PREFIX + '01:02:03:04:05:06')
         # Verifica se existe a relação criado nos 3 canais
         # Busca o stb
-        stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
+        stb = SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
         self.assertEqual(user, stb.get_user())
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         # Número de stb-channel
         self.assertEqual(3, stb_ch.count())
         # Remove o canal Globo
         self.channel2.delete()
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(2, stb_ch.count())
         # Create new channel
-        ch = tvmodels.Channel.objects.create(
+        ch = Channel.objects.create(
             number=18,
             name='Globo 2',
             description='Rede globo 2 de televisão',
@@ -528,7 +549,7 @@ class SetTopBoxChannelTest(TestCase):
             enabled=True,
             source=self.ipout4
         )
-        stb_ch = models.SetTopBoxChannel.objects.filter(
+        stb_ch = SetTopBoxChannel.objects.filter(
             settopbox=stb, channel=ch
         )
         self.assertEqual(1, stb_ch.count())
@@ -536,7 +557,7 @@ class SetTopBoxChannelTest(TestCase):
             auth_login, data={'mac': '01:02:03:04:05:00', 'sn': 123456}
         )
         self.assertEqual(200, response.status_code)
-        stb = models.SetTopBox.objects.get(serial_number=123456)
+        stb = SetTopBox.objects.get(serial_number=123456)
         # Busca o ususário criado para o stb
         user = User.objects.get(
             username=settings.STB_USER_PREFIX + '123456'
@@ -545,21 +566,23 @@ class SetTopBoxChannelTest(TestCase):
 
     def test_case_insensitive_mac_sn(self):
         # Define auto_create and execute again
-        models.SetTopBox.options.auto_create = False
-        models.SetTopBox.options.auto_add_channel = False
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = False
+        SetTopBox.options.auto_add_channel = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
         self.assertEqual(200, response.status_code)
         # Define auto_create and execute again
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
         self.assertEqual(200, response.status_code)
         # Now disable auto_create
-        models.SetTopBox.options.auto_create = False
-        models.SetTopBox.options.auto_add_channel = False
+        SetTopBox.options.auto_create = False
+        SetTopBox.options.auto_add_channel = False
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:00'})
         self.assertEqual(403, response.status_code)
         response = self.c.post(auth_login, data={'mac': '01:02:03:04:05:06'})
@@ -579,9 +602,13 @@ class SetTopBoxChannelTest(TestCase):
 
     def test_get_channels_from_stb(self):
         # Define auto_create and execute again
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
+        Channel = apps.get_model('tv', 'Channel')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
@@ -590,17 +617,17 @@ class SetTopBoxChannelTest(TestCase):
             'sn': '01:02:03:04:05:06', 'MAC': '01:02:03:04:05:06'
         })
         self.assertEqual(200, response.status_code)
-        stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
-        tvchannels = tvmodels.Channel.objects.all()
+        stb = SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
+        tvchannels = Channel.objects.all()
         try:
             channels = stb.get_channels()
         except Exception:
             self.assertFalse(
                 True,
-                'O metodo models.SetTopBox.get_channels() deveria existir')
+                'O metodo SetTopBox.get_channels() deveria existir')
         self.assertItemsEqual(channels, tvchannels)
         # Remove uma relação
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         stb_ch[1].delete()
         channels = stb.get_channels()
         self.assertEqual(2, channels.count())
@@ -613,9 +640,12 @@ class SetTopBoxChannelTest(TestCase):
 
     def test_stb_api_tv(self):
         # Define auto_create and execute again
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.get(auth_logoff)
@@ -624,9 +654,9 @@ class SetTopBoxChannelTest(TestCase):
             'SN': '01:02:03:04:05:06', 'MAC': '01:02:03:04:05:06'
         })
         self.assertEqual(200, response.status_code)
-        stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
+        stb = SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
         self.assertEqual(stb.serial_number, '01:02:03:04:05:06')
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(3, stb_ch.count())
         url_channel = reverse('tv_v1:api_dispatch_list', kwargs={
             'resource_name': 'channel', 'api_name': 'v1'})
@@ -638,7 +668,7 @@ class SetTopBoxChannelTest(TestCase):
         # Remove one relation
         stb_ch[2].delete()
         # Check removed element
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         self.assertEqual(2, stb_ch.count())
         # Get list of channels again
         response = self.c.get(url_channel)
@@ -652,10 +682,14 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(401, response.status_code)
 
     def test_list_records(self):
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = False
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
+        StreamRecorder = apps.get_model('device', 'StreamRecorder')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         # Do logoff
@@ -673,26 +707,26 @@ class SetTopBoxChannelTest(TestCase):
         })
         self.assertEqual(200, response.status_code)
         # Get list of records
-        recs = devicemodels.StreamRecorder.objects.all()
+        recs = StreamRecorder.objects.all()
         self.assertEqual(3, recs.count())
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
         self.assertEqual(0, jobj['meta']['total_count'])
         # Get STB
-        stb = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
+        stb = SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
         # Get STB-ch relation
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         # Enable record access to 1 channel
         rec = stb_ch[1]
         rec.recorder = True
         rec.save()
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         # Call tvod_list
         response = self.c.get(url_tvod)
         jobj = json.loads(response.content)
         self.assertEqual(1, jobj['meta']['total_count'])
         # Enable record access to second channel
-        stb_ch = models.SetTopBoxChannel.objects.filter(settopbox=stb)
+        stb_ch = SetTopBoxChannel.objects.filter(settopbox=stb)
         stb_ch.update(recorder=True)
         # Call tvod_list
         response = self.c.get(url_tvod)
@@ -700,10 +734,12 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(3, jobj['meta']['total_count'])
 
     def test_play_record(self):
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         # Do logoff
@@ -752,10 +788,12 @@ class SetTopBoxChannelTest(TestCase):
         self.assertEqual(409, response.status_code)
 
     def test_list_disable_channel(self):
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         # Do logoff
@@ -778,10 +816,12 @@ class SetTopBoxChannelTest(TestCase):
 
     def test_patch_stb_channel(self):
         from django.contrib.auth.models import Permission
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = False
-        models.SetTopBox.options.use_mac_as_serial = False
-        models.SetTopBox.options.auto_enable_recorder_access = False
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = False
+        SetTopBox.options.use_mac_as_serial = False
+        SetTopBox.options.auto_enable_recorder_access = False
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         # Do logoff
@@ -824,10 +864,12 @@ class SetTopBoxChannelTest(TestCase):
     def test_api_key_channel(self):
         from tastypie.models import ApiKey
         from django.contrib.auth.models import User
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         # Do logoff
@@ -870,10 +912,13 @@ class TestRequests(TestCase):
         self.c = client.Client()
 
     def test_call_login(self):
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxConfig = apps.get_model('client', 'SetTopBoxConfig')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.post(auth_login, data={
@@ -939,7 +984,7 @@ class TestRequests(TestCase):
             url_vol, data=data, content_type='application/json'
         )
         self.assertEqual(response.status_code, 201)
-        conf = models.SetTopBoxConfig.objects.get(id=5)
+        conf = SetTopBoxConfig.objects.get(id=5)
         self.assertEqual('0.2', conf.value)
         response = self.c.get(auth_logoff)
         self.assertEqual(response.status_code, 200)
@@ -955,13 +1000,15 @@ class TestDefaultConfig(TestCase):
         self.c = client.Client()
 
     def test_call_login(self):
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
-        models.SetTopBox.default.password = '1234'
-        models.SetTopBox.default.recorder = True
-        models.SetTopBox.default.parental = '18'
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox.default.password = '1234'
+        SetTopBox.default.recorder = True
+        SetTopBox.default.parental = '18'
         auth_login = reverse('client_auth')
         auth_logoff = reverse('client_logoff')
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:06'})
@@ -978,9 +1025,9 @@ class TestDefaultConfig(TestCase):
         self.assertContains(response, 'app/tv.PARENTAL_CONTROL')
         self.assertContains(response, '"value": "18"')
         self.assertContains(response, '"value": "enable"')
-        models.SetTopBox.default.password = '2222'
-        models.SetTopBox.default.recorder = False
-        models.SetTopBox.default.parental = '-1'
+        SetTopBox.default.password = '2222'
+        SetTopBox.default.recorder = False
+        SetTopBox.default.parental = '-1'
         response = self.c.post(auth_login, data={'MAC': '01:02:03:04:05:07'})
         self.assertContains(response, 'api_key')
         key = json.loads(response.content).get('api_key', None)
@@ -998,18 +1045,27 @@ class TestDefaultConfig(TestCase):
 class SetTopBoxProgramScheduleTest(TestCase):
 
     def setUp(self):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        Server = apps.get_model('device', 'Server')
+        NIC = apps.get_model('device', 'NIC')
+        UnicastInput = apps.get_model('device', 'UnicastInput')
+        DemuxedService = apps.get_model('device', 'DemuxedService')
+        UniqueIP = apps.get_model('device', 'UniqueIP')
+        MulticastOutput = apps.get_model('device', 'MulticastOutput')
+        Channel = apps.get_model('tv', 'Channel')
+
         self.c1 = client.Client()
         self.c2 = client.Client()
         self.c3 = client.Client()
         self.auth_login = reverse('client_auth')
         self.auth_logoff = reverse('client_logoff')
 
-        models.SetTopBox.options.auto_create = True
-        models.SetTopBox.options.auto_add_channel = True
-        models.SetTopBox.options.use_mac_as_serial = True
-        models.SetTopBox.options.auto_enable_recorder_access = True
+        SetTopBox.options.auto_create = True
+        SetTopBox.options.auto_add_channel = True
+        SetTopBox.options.use_mac_as_serial = True
+        SetTopBox.options.auto_enable_recorder_access = True
 
-        server, created = devicemodels.Server.objects.get_or_create(
+        server, created = Server.objects.get_or_create(
             host='127.0.0.1', offline_mode=True
         )
         server.name = 'local'
@@ -1020,25 +1076,25 @@ class SetTopBoxProgramScheduleTest(TestCase):
         server.status = False
         server.save()
 
-        nic, created = devicemodels.NIC.objects.get_or_create(server=server, ipv4='127.0.0.1')
+        nic, created = NIC.objects.get_or_create(server=server, ipv4='127.0.0.1')
 
-        unicastin = devicemodels.UnicastInput.objects.create(
+        unicastin = UnicastInput.objects.create(
             server=server,
             interface=nic,
             port=30000,
             protocol='udp',
         )
 
-        service = devicemodels.DemuxedService.objects.create(
+        service = DemuxedService.objects.create(
             server=server,
             sid=1,
             sink=unicastin,
             nic_src=nic,
         )
 
-        internal = devicemodels.UniqueIP.create(sink=service)
+        internal = UniqueIP.create(sink=service)
 
-        ipout1 = devicemodels.MulticastOutput.objects.create(
+        ipout1 = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.2',
             interface=nic,
@@ -1046,7 +1102,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
             nic_sink=nic,
         )
 
-        ipout2 = devicemodels.MulticastOutput.objects.create(
+        ipout2 = MulticastOutput.objects.create(
             server=server,
             ip='239.0.1.3',
             interface=nic,
@@ -1054,7 +1110,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
             nic_sink=nic,
         )
 
-        self.channel1 = tvmodels.Channel.objects.create(
+        self.channel1 = Channel.objects.create(
             number=51,
             name='Discovery Channel',
             description='Cool tv channel',
@@ -1064,7 +1120,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
             source=ipout1,
         )
 
-        self.channel2 = tvmodels.Channel.objects.create(
+        self.channel2 = Channel.objects.create(
             number=13,
             name='Globo',
             description='Rede globo de televisão',
@@ -1076,8 +1132,11 @@ class SetTopBoxProgramScheduleTest(TestCase):
 
     def test_program_schedule(self):
         """
-        Realiza login com models.SetTopBox 1 e models.SetTopBox 2
+        Realiza login com SetTopBox 1 e SetTopBox 2
         """
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxProgramSchedule = apps.get_model('client', 'SetTopBoxProgramSchedule')
+
         response = self.c1.post(
             self.auth_login, data={'MAC': '01:02:03:04:05:06'}
         )
@@ -1088,15 +1147,15 @@ class SetTopBoxProgramScheduleTest(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        stb1 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
-        stb2 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:07')
+        stb1 = SetTopBox.objects.get(serial_number='01:02:03:04:05:06')
+        stb2 = SetTopBox.objects.get(serial_number='01:02:03:04:05:07')
 
         # tz = timezone.utc
         # post_date = datetime(2014, 4, 9, 18,53,13,0,tz)
 
         """
-        Realiza um agendamento no models.SetTopBox 1 e
-        dois agendamentos no models.SetTopBox 2
+        Realiza um agendamento no SetTopBox 1 e
+        dois agendamentos no SetTopBox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1132,10 +1191,10 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(201, response.status_code)
 
         """
-        Valida dados de agendamento no models.SetTopBox 1 e models.SetTopBox 2
+        Valida dados de agendamento no SetTopBox 1 e SetTopBox 2
         """
-        ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)[0]
-        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)[0]
+        ps1 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)[0]
+        ps2 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)[0]
 
         self.assertEqual(ps1.message, 'O programa Y foi agendado com sucesso!')
         self.assertEqual(ps1.url, '/tv/api/1')
@@ -1147,11 +1206,11 @@ class SetTopBoxProgramScheduleTest(TestCase):
         # dt = datetime(2014, 4, 9, 18,53,13,0,tz)
         self.assertEqual(ps2.schedule_date, 1388657410)
 
-        ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
+        ps1 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
         self.assertEqual(ps1.count(), 1)
 
         """
-        Remove agendamento no models.SetTopBox 1
+        Remove agendamento no SetTopBox 1
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1164,34 +1223,34 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(204, response.status_code)
 
         """
-        Valida remoção do agendamento no models.SetTopBox 1
+        Valida remoção do agendamento no SetTopBox 1
         """
-        ps1 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
+        ps1 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb1)
         self.assertEqual(ps1.count(), 0)
 
         """
-        Realiza login com models.SetTopBox 3
+        Realiza login com SetTopBox 3
         """
         response = self.c3.post(
             self.auth_login, data={'MAC': '01:02:03:04:05:08'}
         )
         self.assertEqual(200, response.status_code)
 
-        stb3 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:08')
+        stb3 = SetTopBox.objects.get(serial_number='01:02:03:04:05:08')
 
         """
-        Valida se o models.SetTopBox 3 não possui agendamentos
+        Valida se o SetTopBox 3 não possui agendamentos
         """
-        ps3 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb3)
+        ps3 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb3)
         self.assertEqual(ps3.count(), 0)
 
         """
-        Valida se a remoção do agendamento no models.SetTopBox 1
-        não influenciou no agendamento do models.SetTopBox 2
+        Valida se a remoção do agendamento no SetTopBox 1
+        não influenciou no agendamento do SetTopBox 2
         """
-        stb2 = models.SetTopBox.objects.get(serial_number='01:02:03:04:05:07')
+        stb2 = SetTopBox.objects.get(serial_number='01:02:03:04:05:07')
 
-        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        ps2 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
         self.assertEqual(ps2.count(), 2)
 
         ps2 = ps2[0]
@@ -1201,7 +1260,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         self.assertEqual(ps2.schedule_date, 1388657410)
 
         """
-        Valida Update no registro do models.SetTopBox 2
+        Valida Update no registro do SetTopBox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1221,7 +1280,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         response = self.c2.get(urlrelation)
         self.assertEqual(200, response.status_code)
 
-        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        ps2 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
         self.assertEqual(ps2.count(), 2)
         ps2 = ps2[0]
         self.assertEqual(
@@ -1249,8 +1308,8 @@ class SetTopBoxProgramScheduleTest(TestCase):
         )
 
         """
-        Validar se models.SetTopBox 1 pode remover
-        agendamento em models.SetTopBox 2
+        Validar se SetTopBox 1 pode remover
+        agendamento em SetTopBox 2
         """
         urlrelation = reverse('client:api_dispatch_list', kwargs={
             'resource_name': 'settopboxprogramschedule', 'api_name': 'v1'})
@@ -1261,12 +1320,12 @@ class SetTopBoxProgramScheduleTest(TestCase):
         response = self.c1.delete(jsdata['objects'][0]['resource_uri'])
         self.assertEqual(401, response.status_code)
 
-        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        ps2 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
         self.assertEqual(ps2.count(), 2)
 
         """
-        Validar se models.SetTopBox 1 pode atualizar
-        agendamento em models.SetTopBox 2
+        Validar se SetTopBox 1 pode atualizar
+        agendamento em SetTopBox 2
         """
 
         urlrelation = reverse('client:api_dispatch_list', kwargs={
@@ -1287,7 +1346,7 @@ class SetTopBoxProgramScheduleTest(TestCase):
         response = self.c2.get(urlrelation)
         self.assertEqual(200, response.status_code)
 
-        ps2 = models.SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
+        ps2 = SetTopBoxProgramSchedule.objects.filter(settopbox=stb2)
         self.assertEqual(ps2.count(), 2)
         ps2 = ps2[0]
         self.assertEqual(
@@ -1300,17 +1359,19 @@ class RemoteControlTest(TestCase):
     def setUp(self):
         log.debug('RemoteControlTest::setUp')
         from django.contrib.auth.models import User
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
         self.user = User.objects.create_user(
             'adm', 'adm@cianet.ind.br', '123'
         )
         self.c = client.Client()
-        models.SetTopBox.objects.create(
+        SetTopBox.objects.create(
             serial_number='lululu', mac='FF:A0:00:00:01:61'
         )
-        models.SetTopBox.objects.create(
+        SetTopBox.objects.create(
             serial_number='lalala', mac='FF:21:30:70:64:33'
         )
-        models.SetTopBox.objects.create(
+        SetTopBox.objects.create(
             serial_number='lelele', mac='00:1A:D0:1A:D3:CA'
         )
 
@@ -1326,9 +1387,10 @@ class RemoteControlTest(TestCase):
         log.debug('Conteudo=%s', jobj)
 
     def test_call_channel(self):
+        Server = apps.get_model('device', 'Server')
         # mac[]=FF:21:30:70:64:33&mac[]=FF:01:67:77:21:80&mac[]=FF:32:32:26:11:21
         # ['FF:21:30:70:64:33', 'FF:01:67:77:21:80', 'FF:32:32:26:11:21']
-        server, created = devicemodels.Server.objects.get_or_create(
+        server, created = Server.objects.get_or_create(
             host='127.0.0.1', offline_mode=True
         )
         server.name = 'local'
@@ -1355,7 +1417,9 @@ class RemoteControlTest(TestCase):
         )
 
     def test_reload_channels(self):
-        models.SetTopBox.objects.create(
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+
+        SetTopBox.objects.create(
             serial_number='do_helber', mac='FF:00:00:00:01:61'
         )
         url = reverse('client_reload_channels', kwargs={'stbs': ';'.join([

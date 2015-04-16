@@ -76,10 +76,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    # South http://south.aeracode.org/docs/
-    'south',
-    # Nose tests
-    # 'django_nose',
     # Aplicação de controle de stream
     'device',
     # EPG
@@ -90,8 +86,6 @@ INSTALLED_APPS = (
     'tv',
     # Log to alert users
     'log',
-    # Video on demand
-    #'vod',
     # Node bridge
     'nbridge',
     # Tools app

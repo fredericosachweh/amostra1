@@ -1,18 +1,17 @@
 # -*- encoding:utf-8 -*-
 
+from django.apps import apps
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from device.models import FileInput, MulticastInput, UnicastInput, IsdbTuner
-from device.models import DvbTuner
 from django.core.urlresolvers import reverse
 from device.models import UniqueIP, DemuxedService
 
-from . import models
 import logging
 
 
 def channel_switchlink(request, action, pk):
-    channel = get_object_or_404(models.Channel, id=pk)
+    Channel = apps.get_model('tv', 'Channel')
+    channel = get_object_or_404(Channel, id=pk)
     if action == 'start':
         channel.start()
     elif action == 'stop':
@@ -24,6 +23,12 @@ def channel_switchlink(request, action, pk):
 
 
 def input_list_interfaces(request):
+    FileInput = apps.get_model('device', 'FileInput')
+    MulticastInput = apps.get_model('device', 'MulticastInput')
+    UnicastInput = apps.get_model('device', 'UnicastInput')
+    IsdbTuner = apps.get_model('device', 'IsdbTuner')
+    DvbTuner = apps.get_model('device', 'DvbTuner')
+
     log = logging.getLogger('tv.view')
     pk = request.GET.get('type')
     log.debug('Type com pk=%s', pk)
