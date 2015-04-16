@@ -5,7 +5,7 @@
 %global nginx_confdir  %{iptv_root}%{_sysconfdir}/nginx
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
-%global v_migrate      0.19.19
+%global v_migrate      0.19.20
 %global v_end          0.20.9
 
 # Referencia:
@@ -295,6 +295,8 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Thu Apr 16 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.20-1
+- Fix django-dbsettings package using six from django.utils.six
 * Thu Apr 16 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.19-1
 - Fix django-dbsettings dependency
 * Wed Apr 15 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.18-1
