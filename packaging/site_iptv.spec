@@ -6,7 +6,7 @@
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
 %global v_migrate      0.19.20
-%global v_end          0.21.0
+%global v_end          0.21.1
 
 # Referencia:
 # http://pkgs.fedoraproject.org/cgit/python-django.git/tree/python-django.spec
@@ -25,7 +25,6 @@ Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
 Source8:        ssh_config
 Source9:        site_iptv_celery.service
-Source10:       0003_auto__chg_field_apikey_key.py
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -103,7 +102,6 @@ rm -rf $RPM_BUILD_ROOT
 %{__install} -p -d -m 0755 %{buildroot}%{site_home}
 cp -r  %{_builddir}/%{name}-%{version}/* %{buildroot}%{site_home}/
 # Remover ao migrar finalmente para a versão 0.20 do middleware
-%{__install} -p -m 0755 %{SOURCE10} %{buildroot}%{site_home}/vendor/django-tastypie/tastypie/migrations/0003_auto__chg_field_apikey_key.py
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/media
 %{__install} -p -d -m 0775 %{buildroot}%{www_site_dir}/tvfiles/static
