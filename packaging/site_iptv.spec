@@ -6,7 +6,7 @@
 %global nginx_user     nginx
 %global nginx_group    %{nginx_user}
 %global v_migrate      0.19.20
-%global v_end          0.20.9
+%global v_end          0.21.0
 
 # Referencia:
 # http://pkgs.fedoraproject.org/cgit/python-django.git/tree/python-django.spec
@@ -295,6 +295,8 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Fri Apr 17 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.21.0-1
+- Django release to migration (django 1.7)
 * Thu Apr 16 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.20-1
 - Fix django-dbsettings package using six from django.utils.six
 * Thu Apr 16 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.19.19-1
