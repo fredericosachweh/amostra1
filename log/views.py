@@ -5,12 +5,12 @@ import json
 import logging
 
 from celery.result import AsyncResult
+
+from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.utils import timezone
-
-from . import models
 
 def create_cache_log(task_id, log_id):
     cache.set('task_log-{}'.format(log_id), task_id)
@@ -38,7 +38,8 @@ def monitoring_task_ok(task_log):
 
 @login_required
 def current_task_log(request):
-    logs = models.TaskLog.objects.filter(is_finished=False).order_by('id')
+    TaskLog = apps.get_model('log', 'TaskLog')
+    logs = TaskLog.objects.filter(is_finished=False).order_by('id')
     current_list = list()
     if logs:
         for log in logs:

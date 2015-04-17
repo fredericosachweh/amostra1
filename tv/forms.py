@@ -2,10 +2,8 @@
 # -*- encoding:utf8 -*-
 from __future__ import unicode_literals
 from django import forms
+from django.apps import apps
 from django.utils.translation import ugettext_lazy as _
-from device.models import StreamRecorder
-from device.models import SoftTranscoder
-from epg.models import Channel
 
 from . import fields
 import tv
@@ -24,6 +22,7 @@ class ChannelForm(forms.ModelForm):
         fields = (
             'number', 'name', 'channelid', 'description', 'enabled', 'source'
         )
+    Channel = apps.get_model('epg', 'Channel')
     epg_model = Channel.objects.all()
     epg_values = []
     for m in epg_model:
@@ -53,7 +52,7 @@ class InputChooseForm(forms.Form):
 
 class StreamRecorderForm(GenericRelationFormWizard):
     class Meta:
-        model = StreamRecorder
+        model = apps.get_model('device', 'StreamRecorder')
         exclude = (
             'nic_sink', 'content_type', 'object_id', 'start_time', 'channel'
         )
@@ -61,7 +60,7 @@ class StreamRecorderForm(GenericRelationFormWizard):
 
 class AudioConfigsForm(BetterModelForm):
     class Meta:
-        model = SoftTranscoder
+        model = apps.get_model('device', 'SoftTranscoder')
         list_display = ('audio_codec', 'switch_link')
         fieldsets = (
             (_('Conexão com outros devices'), {

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from django.apps import apps
 from django.core.management import BaseCommand
-from dvbinfo.models import PhysicalChannel
-from dvbinfo.models import VirtualChannel
-from dvbinfo.models import State
-from dvbinfo.models import City
 from BeautifulSoup import BeautifulSoup
 import urllib2
 import logging
@@ -25,6 +22,10 @@ Lista_de_canais_da_televis%C3%A3o_digital_brasileira'
         return BeautifulSoup(html)
 
     def handle(self, *args, **kwargs):
+        State = apps.get_model('dvbinfo', 'State')
+        City = apps.get_model('dvbinfo', 'City')
+        PhysicalChannel = apps.get_model('dvbinfo', 'PhysicalChannel')
+        VirtualChannel = apps.get_model('dvbinfo', 'VirtualChannel')
         # Get list of satellites in index page
         self.stdout.write('Getting index page...\n')
         soup = self._get_soup(self.base_url)

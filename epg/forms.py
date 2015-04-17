@@ -2,13 +2,14 @@
 # -*- encoding:utf8 -*-
 
 from django import forms
+from django.apps import apps
 import epg
 
 
 class Epg_Source_Form(forms.ModelForm):
 
     class Meta:
-        model = epg.models.Epg_Source
+        model = apps.get_model('epg', 'Epg_Source')
         #fields = ('filefield', \
         #    'source_info_url', \
         #    'source_info_name', \

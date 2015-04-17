@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals
-from django.utils import timezone
+from django.apps import apps
 from django.test import TestCase
 from django.test.client import Client
 from django.core.urlresolvers import reverse
 import simplejson as json
 
-from models import *
 from new_data_importer_sem_18 import XML_Epg_Importer, Zip_to_XML
 import logging
 log = logging.getLogger('unittest')
@@ -284,12 +283,14 @@ class Test_Timezone(TestCase):
 class Test_XML_to_db(object):
 
     def test_Channel_1(self):
+        Channel = apps.get_model('epg', 'Channel')
         channel = Channel.objects.get(channelid='Concert Channel')
         self.assertEquals(channel.display_names.values_list('lang__value',
             'value')[0], ('pt', 'Concert Channel',))
         self.assertEquals(channel.urls.count(), 0)
 
     def test_Programme_1(self):
+        Programme = apps.get_model('epg', 'Programme')
         self.maxDiff = None
         programme = Programme.objects.get(
             guide__channel__display_names__value='Concert Channel')
@@ -297,10 +298,10 @@ class Test_XML_to_db(object):
                   ('en', 'BBC Sessions: Verve; The')]
         self.assertItemsEqual(
             programme.titles.values_list('lang__value', 'value'), titles)
-        descs = (None, 'Uma impressionante atuação do The Verve no famoso \
-estúdio Maida Vale, da BBC. Desfrute desta íntima, porém poderosa gravação da \
-banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony e \
-Love is Noise.')
+        desc = 'Uma impressionante atuação do The Verve no famoso estúdio Maida Vale, da BBC. Desfrute desta íntima, ' \
+               'porém poderosa gravação da banda de Richard Ashcroft, que inclui músicas como Bitter Sweet Symphony '\
+               'e Love is Noise.'
+        descs = (None, desc)
         self.assertEquals(programme.descriptions.values_list('lang__value',
             'value')[0], descs)
         self.assertEquals(programme.date, '2008')
@@ -325,6 +326,9 @@ class One_Raw_XML(Test_XML_to_db, TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
+        import os
+        Epg_Source = apps.get_model('epg', 'Epg_Source')
+        XMLTV_Source = apps.get_model('epg', 'XMLTV_Source')
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.xml', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
@@ -341,6 +345,9 @@ class One_Raw_XML(Test_XML_to_db, TestCase):
         self.f.close()
 
     def test_Models_count(self):
+        Channel = apps.get_model('epg', 'Channel')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
         self.assertEquals(Channel.objects.all().count(), 1)
         self.assertEquals(Programme.objects.all().count(), 1)
         self.assertEquals(Guide.objects.all().count(), 1)
@@ -367,6 +374,8 @@ class One_Zipped_XML(Test_XML_to_db, TestCase):
             os.remove('/tmp/xmltv.xml.old')
         except OSError:
             pass
+        Epg_Source = apps.get_model('epg', 'Epg_Source')
+        XMLTV_Source = apps.get_model('epg', 'XMLTV_Source')
         self.f = NamedTemporaryFile(suffix='.xml', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
         from zipfile import ZipFile
@@ -386,6 +395,9 @@ class One_Zipped_XML(Test_XML_to_db, TestCase):
         self.f.close()
 
     def test_Models_count(self):
+        Channel = apps.get_model('epg', 'Channel')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
         self.assertEquals(Channel.objects.all().count(), 1)
         self.assertEquals(Programme.objects.all().count(), 1)
         self.assertEquals(Guide.objects.all().count(), 1)
@@ -397,6 +409,8 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
         import os
         from tempfile import NamedTemporaryFile
         from django.conf import settings
+        Epg_Source = apps.get_model('epg', 'Epg_Source')
+        XMLTV_Source = apps.get_model('epg', 'XMLTV_Source')
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip', dir=os.path.join(MEDIA_ROOT,
             'epg/'))
@@ -440,17 +454,22 @@ class Two_Zipped_XMLs(Test_XML_to_db, TestCase):
         #    parse('20120116034500 +0000'))
 
     def test_Models_count(self):
+        Channel = apps.get_model('epg', 'Channel')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
         self.assertEquals(Channel.objects.all().count(), 2)
         self.assertEquals(Programme.objects.all().count(), 2)
         self.assertEquals(Guide.objects.all().count(), 2)
 
     def test_Channel_2(self):
+        Channel = apps.get_model('epg', 'Channel')
         channel = Channel.objects.get(channelid='Band HD')
         self.assertEquals(channel.display_names.values_list('lang__value',
             'value')[0], ('pt', 'Band HD',))
         self.assertEquals(channel.urls.count(), 0)
 
     def test_Programme_2(self):
+        Programme = apps.get_model('epg', 'Programme')
         programme = Programme.objects.get(
             guide__channel__display_names__value='Band HD')
         titles = [('pt', 'Três Homens em Conflito'),
@@ -483,6 +502,9 @@ class APITest(TestCase):
     def setUp(self):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
+        import os
+        Epg_Source = apps.get_model('epg', 'Epg_Source')
+        XMLTV_Source = apps.get_model('epg', 'XMLTV_Source')
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip',
             dir=os.path.join(MEDIA_ROOT, 'epg/'))
@@ -721,6 +743,8 @@ class ParseRatingTest(TestCase):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
         import os
+        Epg_Source = apps.get_model('epg', 'Epg_Source')
+        XMLTV_Source = apps.get_model('epg', 'XMLTV_Source')
         MEDIA_ROOT = getattr(settings, 'MEDIA_ROOT')
         self.f = NamedTemporaryFile(suffix='.zip',
             dir=os.path.join(MEDIA_ROOT, 'epg/'))
@@ -751,6 +775,7 @@ class ParseRatingTest(TestCase):
         self.f.close()
 
     def test_linked_list_guide(self):
+        Channel = apps.get_model('epg', 'Channel')
         c = Client()
         url = reverse('epg:api_dispatch_list',
             kwargs={'resource_name': 'guide', 'api_name': 'v1'},
@@ -771,6 +796,7 @@ class ParseRatingTest(TestCase):
         self.assertEqual(obj[4]['next'], None)
 
     def test_create_rating(self):
+        Rating = apps.get_model('epg', 'Rating')
         ratings = Rating.objects.all().order_by('int_value')
         self.assertEqual(5, len(ratings))
         r2 = Rating(system='Advisory',
@@ -785,6 +811,7 @@ class ParseRatingTest(TestCase):
         self.assertEqual(7, len(ratings))
 
     def test_get_rating(self):
+        Rating = apps.get_model('epg', 'Rating')
         rating0 = Rating.objects.get(
             value='0')
         self.assertEqual(0, rating0.int_value)
@@ -806,6 +833,7 @@ class ParseRatingTest(TestCase):
         self.assertEqual(16, rating16.int_value)
 
     def test_rating_api(self):
+        Guide = apps.get_model('epg', 'Guide')
         c = Client()
         url = reverse('epg:api_dispatch_list',
             kwargs={'resource_name': 'guide', 'api_name': 'v1'},
@@ -898,6 +926,8 @@ class GuideConflictTest(TestCase):
         from tempfile import NamedTemporaryFile
         from django.conf import settings
         import os
+        Epg_Source = apps.get_model('epg', 'Epg_Source')
+        XMLTV_Source = apps.get_model('epg', 'XMLTV_Source')
         try:
             os.remove('/tmp/conflict.xml')
             os.remove('/tmp/conflict.xml.old')
@@ -923,6 +953,9 @@ class GuideConflictTest(TestCase):
         self.f.close()
 
     def test_create(self):
+        Channel = apps.get_model('epg', 'Channel')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
         nch = Channel.objects.all().count()
         self.assertEqual(1, nch)
         prog = Programme.objects.get(titles__value='Teste 1')
@@ -932,7 +965,11 @@ class GuideConflictTest(TestCase):
     def test_delete_conflict(self):
         from dateutil.parser import parse
         from django.utils.timezone import utc
-        from pytz import timezone
+        Lang = apps.get_model('epg', 'Lang')
+        Title = apps.get_model('epg', 'Title')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
+        Channel = apps.get_model('epg', 'Channel')
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
         start = parse("20130301085900 -0300").astimezone(utc)
         stop = parse("20130301100000 -0300").astimezone(utc)
@@ -942,7 +979,6 @@ class GuideConflictTest(TestCase):
         prog.titles.add(title)
         ## Before replace
         self.assertEqual(Guide.objects.all().count(), 7)
-        #import pdb; pdb.set_trace()
         channel = Channel.objects.get(display_names__value='10')
         G, created = Guide.objects.get_or_create(
             start=start, stop=stop,
@@ -962,7 +998,11 @@ class GuideConflictTest(TestCase):
     def test_delete_conflict_start(self):
         from dateutil.parser import parse
         from django.utils.timezone import utc
-        from pytz import timezone
+        Lang = apps.get_model('epg', 'Lang')
+        Title = apps.get_model('epg', 'Title')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
+        Channel = apps.get_model('epg', 'Channel')
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
         start = parse("20130301060000 -0300").astimezone(utc)
         stop = parse("20130301070100 -0300").astimezone(utc)
@@ -990,7 +1030,11 @@ class GuideConflictTest(TestCase):
     def test_delete_conflict_end(self):
         from dateutil.parser import parse
         from django.utils.timezone import utc
-        from pytz import timezone
+        Lang = apps.get_model('epg', 'Lang')
+        Title = apps.get_model('epg', 'Title')
+        Programme = apps.get_model('epg', 'Programme')
+        Guide = apps.get_model('epg', 'Guide')
+        Channel = apps.get_model('epg', 'Channel')
         #start="20130301090000 -0300" stop="20130301100000 -0300" \
         start = parse("20130301133000 -0300").astimezone(utc)
         stop = parse("20130301135000 -0300").astimezone(utc)

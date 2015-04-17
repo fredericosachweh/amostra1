@@ -1,7 +1,5 @@
+from django.apps import apps
 from django.contrib import admin
-from models import Channel
-from models import Guide
-#from models import Programme
 
 
 class ChannelAdmin(admin.ModelAdmin):
@@ -20,6 +18,6 @@ class GuideAdmin(admin.ModelAdmin):
     ordering = ('start', )
     readonly_fields = ('programme', 'channel', )
 
-admin.site.register(Channel, ChannelAdmin)
-admin.site.register(Guide, GuideAdmin)
-#admin.site.register(Programme)
+
+admin.site.register(apps.get_model('epg', 'Channel'), ChannelAdmin)
+admin.site.register(apps.get_model('epg', 'Guide'), GuideAdmin)

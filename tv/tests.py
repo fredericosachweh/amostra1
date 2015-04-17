@@ -4,11 +4,9 @@ from __future__ import unicode_literals
 import os
 import logging
 
-from tv.models import Channel
+from django.apps import apps
 from django.test import TestCase
 from django.test.utils import override_settings
-from device.models import Server, NIC, UnicastInput, DemuxedService, StreamRecorder, Storage
-from device.models import UniqueIP, MulticastOutput
 from django.core.urlresolvers import reverse
 from django.test.client import Client
 from django.conf import settings
@@ -30,6 +28,16 @@ class ChannelTest(TestCase):
     def setUp(self):
         import getpass
         from django.contrib.auth.models import User
+        Server = apps.get_model('device', 'Server')
+        NIC = apps.get_model('device', 'NIC')
+        UnicastInput = apps.get_model('device', 'UnicastInput')
+        UniqueIP = apps.get_model('device', 'UniqueIP')
+        MulticastOutput = apps.get_model('device', 'MulticastOutput')
+        DemuxedService = apps.get_model('device', 'DemuxedService')
+        Storage = apps.get_model('device', 'Storage')
+        StreamRecorder = apps.get_model('device', 'StreamRecorder')
+        Channel = apps.get_model('tv', 'Channel')
+
         self.user = User.objects.create_superuser(
             'adm', 'adm@cianet.ind.br', '123'
         )
@@ -87,11 +95,13 @@ class ChannelTest(TestCase):
         )
 
     def tearDown(self):
+        Server = apps.get_model('device', 'Server')
         Server.objects.all().delete()
 
     def test_logo_thumb(self):
         """Teste para analizar o upload de log e o teste da criação de thumbnail
         """
+        Channel = apps.get_model('tv', 'Channel')
         self.c.login(username='adm', password='123')
         with open('tv/fixtures/test_files/a.png', 'r') as imglogo:
             resp = self.c.post('/tv/administracao/tv/channel/add/', {
@@ -127,6 +137,13 @@ class APITest(TestCase):
 
     def setUp(self):
         import getpass
+        Server = apps.get_model('device', 'Server')
+        NIC = apps.get_model('device', 'NIC')
+        UnicastInput = apps.get_model('device', 'UnicastInput')
+        DemuxedService = apps.get_model('device', 'DemuxedService')
+        UniqueIP = apps.get_model('device', 'UniqueIP')
+        MulticastOutput = apps.get_model('device', 'MulticastOutput')
+        Channel = apps.get_model('tv', 'Channel')
         super(APITest, self).setUp()
         self.c = Client()
         server = Server.objects.create(
@@ -201,9 +218,11 @@ class APITest(TestCase):
         )
 
     def tearDown(self):
+        Server = apps.get_model('device', 'Server')
         Server.objects.all().delete()
 
     def test_created(self):
+        Channel = apps.get_model('tv', 'Channel')
         channels = Channel.objects.all()
         self.assertEqual(3, channels.count())
 
@@ -292,7 +311,9 @@ class APITest(TestCase):
 
     def test_auth_v2(self):
         import simplejson as json
-        from client.models import SetTopBox, SetTopBoxChannel
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxChannel = apps.get_model('client', 'SetTopBoxChannel')
+        Channel = apps.get_model('tv', 'Channel')
         clientmodels.SetTopBox.options.auto_create = False
         clientmodels.SetTopBox.options.auto_add_channel = False
         clientmodels.SetTopBox.options.use_mac_as_serial = True

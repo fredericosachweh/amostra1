@@ -6,27 +6,13 @@ djcelery.setup_loader()
 
 DEBUG = True
 
-# if 'test' in sys.argv:
-#    ## Banco de dados teste
-#    DATABASES = {
-#        'default': {
-#            'ENGINE': 'django.db.backends.sqlite3',
-#            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-#            'USER': '',
-#            'PASSWORD': '',
-#            'HOST': '',
-#            'PORT': ''
-#        }
-#    }
-# else:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'iptv',
         'USER': 'iptv',
         'PASSWORD': 'iptv',
-        'HOST': '/tmp',
-        'CONN_MAX_AGE': 120, # Tempo em segundos (persistente)
+        'HOST': '127.0.0.1',
         #'PORT': ,
     }
 }
@@ -52,22 +38,16 @@ CACHES = {
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
 
 TASTYPIE_FULL_DEBUG = True
-##Black       0;30     Dark Gray     1;30
-##Blue        0;34     Light Blue    1;34
-##Green       0;32     Light Green   1;32
-##Cyan        0;36     Light Cyan    1;36
-##Red         0;31     Light Red     1;31
-##Purple      0;35     Light Purple  1;35
-##Brown       0;33     Yellow        1;33
-##Light Gray  0;37     White         1;37
 
-#GREEN="\033[0;32m";
-#BLUE="\033[0;34m";
-#RED="\033[0;31m";
-#GRAY="\033[0;30m";
-#PURPLE="\033[0;35m";
-#LPURPLE="\033[1;35m";
-#NO_COLOUR="\033[0m";
+TASTYPIE_ABSTRACT_APIKEY = False
+
+EPG_IMPORT_CREDENTIALS = {
+    'site': 'guide.kingrus.net',
+    'username': 'epg',
+    'password': 'bhhD.ahg3f',
+}
+
+IPTV_LOG_DIR = '%s/log' % PROJECT_ROOT_PATH
 
 if DEBUG is True:
     # Envia todas as mensagens de log para o console
@@ -109,10 +89,15 @@ if DEBUG is True:
     except ImportError:
         pass
 
-TASTYPIE_ABSTRACT_APIKEY = False
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-NOSE_ARGS = [
-#    '--with-coverage',
-#    '--cover-package=client',
-#    '--cover-html',
-]
+
+DVBLAST_DUMMY = './device/helper/dvblast_dummy.py'
+DVBLASTCTL_DUMMY = './device/helper/dvblastctl_dummy.py'
+MULTICAT_DUMMY = './device/helper/multicat_dummy.py'
+MULTICATCTL_DUMMY = './device/helper/multicatctl_dummy.py'
+VLC_DUMMY = './device/helper/vlc_dummy.py'
+
+EMAIL_HOST = '127.0.0.1'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False

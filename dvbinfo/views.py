@@ -1,8 +1,10 @@
+from django.apps import apps
 from django.core import serializers
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
-from models import *
+
 
 def get_transponders(request):
+    Transponder = apps.get_model('dvbinfo', 'Transponder')
     if request.method == 'GET':
         base = Transponder.objects
         if request.GET.has_key('fta') and request.GET['fta']:
@@ -38,7 +40,9 @@ def get_transponders(request):
             return HttpResponseNotFound()
     return HttpResponseBadRequest()
 
+
 def get_dvbs_channels(request):
+    DvbsChannel = apps.get_model('dvbinfo', 'DvbsChannel')
     if request.method == 'GET':
         base = DvbsChannel.objects
         if request.GET.has_key('fta') and request.GET['fta']:
@@ -65,30 +69,38 @@ def get_dvbs_channels(request):
                 return HttpResponseNotFound()
     return HttpResponseBadRequest()
 
+
 def get_cities(request):
+    City = apps.get_model('dvbinfo', 'City')
     if request.method == 'GET' and request.GET.has_key('state'):
-        json = serializers.serialize('json',
-                    City.objects.filter(state__id=request.GET['state']),
-                    indent=2,
-                    use_natural_keys=True
-                    )
+        json = serializers.serialize(
+            'json',
+            City.objects.filter(state__id=request.GET['state']),
+            indent=2,
+            use_natural_keys=True
+        )
         return HttpResponse(json, content_type='application/json')
     else:
         return HttpResponseBadRequest()
+
 
 def get_isdb_channels(request):
+    VirtualChannel = apps.get_model('dvbinfo', 'VirtualChannel')
     if request.method == 'GET' and request.GET.has_key('city'):
         channels = VirtualChannel.objects.filter(physical_channel__city=request.GET['city'])
-        json = serializers.serialize('json',
-                    channels,
-                    indent=2,
-                    use_natural_keys=True
-                    )
+        json = serializers.serialize(
+            'json',
+            channels,
+            indent=2,
+            use_natural_keys=True
+        )
         return HttpResponse(json, content_type='application/json')
     else:
         return HttpResponseBadRequest()
 
+
 def get_isdb_channel(request):
+    VirtualChannel = apps.get_model('dvbinfo', 'VirtualChannel')
     if request.method == 'GET' and request.GET.has_key('chan'):
         from django.utils import simplejson
         virt = VirtualChannel.objects.get(pk=request.GET['chan'])

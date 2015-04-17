@@ -8,16 +8,13 @@ __version__ = '1.0'
 __date__ = '03/10/2012 06:08:10 PM'
 
 
+from django.apps import apps
 from django.conf.urls import patterns
 from django.conf.urls import url
 from django.contrib import admin
-from django.core.urlresolvers import reverse
-from django.utils.translation import ugettext_lazy, ugettext as _
-
-import models
+from django.utils.translation import ugettext_lazy
 
 from monitoramento.admin_views import dashboard, channel_tree, mon_export
-from device.admin import AdminServer
 
 def get_admin_urls(urls):
     def get_urls():
@@ -79,8 +76,7 @@ class AdminMonServer(admin.ModelAdmin):
 
 
 
-admin.site.register(models.MonServer, AdminMonServer)
-#admin.site.register(models.MonServer, AdminServer)
+admin.site.register(apps.get_model('monitoramento', 'MonServer'), AdminMonServer)
 
 admin_urls = get_admin_urls(admin.site.get_urls())
 admin.site.get_urls = admin_urls
