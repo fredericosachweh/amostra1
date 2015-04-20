@@ -2164,6 +2164,29 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
         instance.start()
         instance.restart = False
 
+class EncryptDeviceService(DeviceServer):
+    nic_sink = models.ForeignKey(NIC, related_name='encrypt_device_service__nic_sink')
+    nic_src = models.ForeignKey(NIC, related_name='encrypt_device_service_nic_src')
+    content_type = models.ForeignKey(ContentType,
+        limit_choices_to={"model__in": ("uniqueip",)},
+        null=True,
+        verbose_name=_('Conexão com device'))
+    object_id = models.PositiveIntegerField(null=True)
+    sink = generic.GenericForeignKey()
+    src = generic.GenericRelation(UniqueIP)
 
-class RealTimeEncript(models.Model):
-    """RealTime to manage stream flow"""
+    class Meta(object):
+        verbose_name = _('Entrada CAS IPv4')
+        verbose_name_plural = _('Entradas CAS IPv4')
+
+    def _get_cmd(self):
+        pass
+
+    def start(self, *args, **kwargs):
+        pass
+
+    def stop(self, *args, **kwargs):
+        pass
+
+    def clean(self):
+        pass

@@ -44,6 +44,11 @@ CACHES = {
     }
 }
 
+EMAIL_HOST = '127.0.0.1'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
@@ -54,7 +59,7 @@ TASTYPIE_ABSTRACT_APIKEY = False
 
 EPG_IMPORT_CREDENTIALS = {
     'site': 'guide.aron.tv.br',
-    'username': 'epg',
+    'username': 'epg_parental',
     'password': 'bhhD.ahg3f',
 }
 
