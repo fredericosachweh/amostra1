@@ -139,13 +139,17 @@ class AbstractServer(models.Model):
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
             return ['Servidor está offline']
-        ret = ssh.execute(self.host, self.username, command, port=self.ssh_port)
-        self.save()
-        if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
-                raise Server.ExecutionFailure(
-                    'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, "".join(ret['output'])))
-        return ret['output']
+         
+        if (self.get_server_type_display() == 'Servidor CAS') and (('/bin/cp' in command) or ('/bin/systemctl' in command)):
+            pass
+        else:
+            ret = ssh.execute(self.host, self.username, command, port=self.ssh_port)
+            self.save()
+            if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
+                    raise Server.ExecutionFailure(
+                        'Command "%s" returned status "%d" on server "%s": "%s"' %
+                        (command, ret['exit_code'], self, "".join(ret['output'])))
+            return ret['output']
 
     def execute_daemon(self, command, log_path=None):
         "Excuta o processo em background (daemon)"
@@ -377,6 +381,7 @@ class Server(AbstractServer):
         ('dvb', _('Sintonizador DVB')),
         ('recording', _('Servidor TVoD')),
         ('nbridge', _('Servidor NBridge')),
+        ('cas', _('Servidor CAS')),
     ]
 
     server_type = models.CharField(
