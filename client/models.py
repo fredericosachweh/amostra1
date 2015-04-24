@@ -284,19 +284,26 @@ def remote_debug_stb(settopbox):
 
 def reload_frontend_stb(settopbox):
     log.debug('Reload frontend STB remote %s', settopbox)
-    url = 'http://%s:%s/eval' % (settopbox.nbridge.server.host, settopbox.nbridge.nbridge_port)
-    command = 'window.location.reload();'
-    log.debug('Comando=%s', command)
     try:
-        response = requests.post(url, timeout=10, data={
-            'server_key': settings.NBRIDGE_SERVER_KEY,
-            'command': command,
-            'mac': [settopbox.mac]})
-        log.debug('Resposta=[%s]%s', response.status_code, response.text)
-    except Exception as e:
-        log.error('ERROR:%s', e)
-    finally:
-        log.info('Finalizado o recarregamento do frontend')
+        nbridge = Nbridge.objects.get(pk=settopbox.nbridge_id)
+    except Nbridge.DoesNotExist:
+        nbridge = None
+        log.error('Nbridge com pk {} do SetTopBox com pk {} não existe.'.format(
+                  settopbox.nbridge_id, settopbox.pk))
+    if nbridge:
+        url = 'http://%s:%s/eval' % (settopbox.nbridge.server.host, settopbox.nbridge.nbridge_port)
+        command = 'window.location.reload();'
+        log.debug('Comando=%s', command)
+        try:
+            response = requests.post(url, timeout=10, data={
+                'server_key': settings.NBRIDGE_SERVER_KEY,
+                'command': command,
+                'mac': [settopbox.mac]})
+            log.debug('Resposta=[%s]%s', response.status_code, response.text)
+        except Exception as e:
+            log.error('ERROR:%s', e)
+        finally:
+            log.info('Finalizado o recarregamento do frontend')
 
 
 class SetTopBox(models.Model):

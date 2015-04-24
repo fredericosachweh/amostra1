@@ -1,6 +1,7 @@
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 import logging
+
 from django.apps import apps
 from django.contrib.admin import site, ModelAdmin
 from django.contrib import admin, messages
@@ -10,6 +11,7 @@ from django.conf import settings
 server_key = settings.NBRIDGE_SERVER_KEY
 from . import tasks, forms
 from log.models import TaskLog
+from log.views import create_cache_log
 
 log = logging.getLogger('client')
 
@@ -29,23 +31,26 @@ class PlanAdmin(admin.ModelAdmin):
 def reload_channels_stb(modeladmin, request, queryset):
     message = 'Lista de canais atualizada'
     pks_list = queryset.values_list('pk', flat=True)
-    task = TaskLog.objects.create_or_alert(
+    task_log = TaskLog.objects.create_or_alert(
         'reload-channels', pks_list, request.user)
-    if task:
-        tasks.reload_channels.delay(pks_list, message, task.id, channel=False)
+    if task_log:
+        task = tasks.reload_channels.delay(pks_list, message, task_log.id, channel=False)
+        create_cache_log(task.task_id, task_log.id)
         messages.success(request, 'Atualizando lista de canais.')
     else:
         messages.error(request, 'Lista de canais já está sendo atualizada.')
+
 reload_channels_stb.short_description = ugettext_lazy(
     'Recarregar canais para %(verbose_name_plural)s selecionados')
 
 
 def reload_frontend_stbs(modeladmin, request, queryset):
     pks_list = queryset.values_list('pk', flat=True)
-    task = TaskLog.objects.create_or_alert(
+    task_log = TaskLog.objects.create_or_alert(
         'reload-frontend-stbs', pks_list, request.user)
-    if task:
-        tasks.reload_frontend_stbs.delay(pks_list, task.id)
+    if task_log:
+        task = tasks.reload_frontend_stbs.delay(pks_list, task_log.id)
+        create_cache_log(task.task_id, task_log.id)
         messages.success(request, 'Reiniciando frontend dos SetTopBoxes.')
     else:
         messages.error(request, u'Frontend dos'
@@ -57,11 +62,12 @@ reload_frontend_stbs.short_description = ugettext_lazy(
 def accept_recorder(modeladmin, request, queryset):
     message = u'Liberar canais para acessar conteúdo gravado concluído.'
     pks_list = queryset.values_list('pk', flat=True)
-    task = TaskLog.objects.create_or_alert(
+    task_log = TaskLog.objects.create_or_alert(
         'accept-recorder', pks_list, request.user)
-    if task:
-        tasks.accept_recorder.delay(pks_list, message, task.id, channel=False)
-        messages.success(request, u'Atualizando canais para acessar'
+    if task_log:
+        task = tasks.accept_recorder.delay(pks_list, message, task_log.id, channel=False)
+        create_cache_log(task.task_id, task_log.id)
+        messages.success(request, u'Atualizando canais para acessar '
                          'conteúdo gravado.')
     else:
         messages.error(request, u'Liberar canais para acessar conteúdo'
@@ -73,11 +79,12 @@ accept_recorder.short_description = ugettext_lazy(
 def refuse_recorder(modeladmin, request, queryset):
     message = u'Bloquear canais para acessar conteúdo gravado concluído.'
     pks_list = queryset.values_list('pk', flat=True)
-    task = TaskLog.objects.create_or_alert(
+    task_log = TaskLog.objects.create_or_alert(
         'refuse-recorder', pks_list, request.user)
-    if task:
-        tasks.refuse_recorder.delay(pks_list, message, task.id, channel=False)
-        messages.success(request, u'Atualizando canais para bloquear'
+    if task_log:
+        task = tasks.refuse_recorder.delay(pks_list, message, task_log.id, channel=False)
+        create_cache_log(task.task_id, task_log.id)
+        messages.success(request, u'Atualizando canais para bloquear '
                          'conteúdo gravado.')
     else:
         messages.error(request, u'Bloquear canais para acessar conteúdo'
@@ -96,10 +103,11 @@ start_remote_debug.short_description = ugettext_lazy(
 
 def reboot_stb(modeladmin, request, queryset):
     pks_list = queryset.values_list('pk', flat=True)
-    task = TaskLog.objects.create_or_alert(
+    task_log = TaskLog.objects.create_or_alert(
         'reboot-stbs', pks_list, request.user)
-    if task:
-        tasks.reboot_stbs.delay(pks_list, task.id)
+    if task_log:
+        task = tasks.reboot_stbs.delay(pks_list, task_log.id)
+        create_cache_log(task.task_id, task_log.id)
         messages.success(request, 'Reiniciando SetTopBoxes.')
     else:
         messages.error(request, 'SetTopBoxes já estão sendo reiniciados.')

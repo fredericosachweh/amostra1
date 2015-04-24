@@ -3,47 +3,6 @@
 
 {% block extrahead %}{{ block.super }}
 <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery-1.11.1.min.js"></script>
-<link rel="stylesheet" href="{{ STATIC_URL }}admin/js/jquery-ui-1.11.2/jquery-ui.css">
-<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery-ui-1.11.2/jquery-ui.min.js"></script>
-<script type="text/javascript" >
-    $(function(){
-        var cache = [];
-        $.getJSON( "/tv/api/epg/v1/channel/?limit=1000", function( data, status, xhr ) {
-            $.each(data.objects, function(index, value){
-                cache.push({value: value.channelid, label: value.display_name})
-            });
-
-            $("#id_channelid").autocomplete({
-                source: cache,
-                change: function ( event, ui ) {
-                    if ( ui.item ) {
-                        return;
-                    }
-                    var value = $(this).val(),
-                    valueLowerCase = value.toLowerCase(),
-                    valid = false;
-                    $.each(cache, function(index, value) {
-                        if ( $( this ).text().toLowerCase() === valueLowerCase ) {
-                            this.selected = valid = true;
-                            return false;
-                        }
-                    });
-                    if ( valid ) {
-                        return;
-                    }
-                    $(this).val('');
-                }
-            }).on("keyup keypress", function(e) {
-                var code = e.keyCode || e.which;
-                if (code  == 13) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        });
-    });
-</script>
 {{ media }}
 {% endblock %}
 
@@ -123,4 +82,50 @@
 
 </div>
 </form></div>
+<script type="text/javascript" >
+    var $ = django.jQuery;
+    var jQuery = django.jQuery;
+</script>
+<!-- link rel="stylesheet" href="{{ STATIC_URL }}admin/js/jquery-ui-1.10.4.custom/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script-->
+<link rel="stylesheet" href="{{ STATIC_URL }}admin/js/jquery-ui-1.11.2/jquery-ui.min.css">
+<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery-ui-1.11.2/jquery-ui.min.js"></script>
+<script type="text/javascript" >
+    $(function(){
+        var cache = [];
+        $.getJSON( "/tv/api/epg/v1/channel/?limit=1000", function( data, status, xhr ) {
+            $.each(data.objects, function(index, value){
+                cache.push({value: value.channelid, label: value.display_name})
+            });
+
+            $("#id_channelid").autocomplete({
+                source: cache,
+                change: function ( event, ui ) {
+                    if ( ui.item ) {
+                        return;
+                    }
+                    var value = $(this).val(),
+                    valueLowerCase = value.toLowerCase(),
+                    valid = false;
+                    $.each(cache, function(index, value) {
+                        if ( $( this ).text().toLowerCase() === valueLowerCase ) {
+                            this.selected = valid = true;
+                            return false;
+                        }
+                    });
+                    if ( valid ) {
+                        return;
+                    }
+                    $(this).val('');
+                }
+            }).on("keyup keypress", function(e) {
+                var code = e.keyCode || e.which;
+                if (code  == 13) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}
