@@ -19,7 +19,6 @@ from tastypie.validation import Validation, FormValidation
 from tastypie.serializers import Serializer
 from tastypie.exceptions import BadRequest, Unauthorized
 from tastypie.models import ApiKey
-from device import models as devicemodels
 from tv.api import ChannelResource
 from . import forms
 log = logging.getLogger('api')
@@ -548,7 +547,8 @@ class SetTopBoxConfigResource(NamespacedModelResource):
 
 class StreamRecorderResource(NamespacedModelResource):
     class Meta:
-        queryset = devicemodels.StreamRecorder.objects.filter(status=True)
+        StreamRecorder = apps.get_model('device', 'StreamRecorder')
+        queryset = StreamRecorder.objects.filter(status=True)
 
 
 class APIKeyAuthorization(Authorization):
