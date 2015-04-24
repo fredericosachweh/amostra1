@@ -80,6 +80,9 @@ class PlanChannel(models.Model):
         verbose_name = _('Canal do plano')
         verbose_name_plural = _('Canais do plano')
 
+    def __unicode__(self):
+        return self.channel.name
+
 
 def update_plans():
     log = logging.getLogger('debug')

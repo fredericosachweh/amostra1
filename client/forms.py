@@ -2,7 +2,8 @@
 # -*- encoding:utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
-from django.forms import Form
+from django.apps import apps
+from django.forms import Form, ModelForm
 from .fields import MACAddressFormField
 
 
