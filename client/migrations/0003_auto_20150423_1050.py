@@ -18,15 +18,32 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255, verbose_name='Nome')),
                 ('slug', models.SlugField()),
-                ('value', models.DecimalField(default=0.0, verbose_name='Valor', max_digits=10, decimal_places=2)),
                 ('is_active', models.BooleanField(default=True, verbose_name='Ativo')),
-                ('channels', models.ManyToManyField(to='tv.Channel', verbose_name='Canais')),
+                ('order', models.IntegerField(null=True, blank=True)),
             ],
             options={
+                'ordering': ('order',),
                 'verbose_name': 'Plano',
                 'verbose_name_plural': 'Planos',
             },
             bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='PlanChannel',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('channel', models.ForeignKey(to='tv.Channel', unique=True)),
+                ('plan', models.ForeignKey(to='client.Plan')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='plan',
+            name='channels',
+            field=models.ManyToManyField(to='tv.Channel', verbose_name='Canais', through='client.PlanChannel'),
+            preserve_default=True,
         ),
         migrations.AddField(
             model_name='settopbox',

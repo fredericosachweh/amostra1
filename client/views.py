@@ -4,12 +4,16 @@ from __future__ import unicode_literals
 import logging
 import re
 
-from device.models import StreamPlayer
+from decimal import Decimal as D
+
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import login, authenticate, logout
+from django.db.models import Q
+from django.views import generic
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
+from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
@@ -24,6 +28,7 @@ class Auth(View):
 
     @method_decorator(csrf_exempt)
     def post(self, request):
+        StreamPlayer = apps.get_model('device', 'StreamPlayer')
         from tastypie.models import ApiKey
         log = logging.getLogger('client')
         mac = request.POST.get('mac') or request.POST.get('MAC')
@@ -199,3 +204,45 @@ def nbridge_down(request):
         ip=None, online=False, nbridge=None
     )
     return HttpResponse('{"status": "OK"}', content_type='application/json')
+
+
+class SetTopBoxReportView(generic.ListView):
+    SetTopBox = apps.get_model('client', 'SetTopBox')
+    template_name = 'stbs_report.html'
+    model = SetTopBox
+
+    def get_context_data(self, **kwargs):
+        context = super(SetTopBoxReportView, self).get_context_data(**kwargs)
+        Plan = apps.get_model('client', 'Plan')
+        plans = Plan.objects.all()
+        stbs = self.get_queryset()
+        stbs_total = stbs.count()
+        stbs_principal = stbs.filter(
+            Q(parent_set__isnull=False)|
+            Q(parent__isnull=True)
+        ).distinct()
+        stbs_principal_total = stbs_principal.count()
+        context['stbs_principal'] = {
+            'total': stbs_principal_total,
+            'percent': D(stbs_principal_total) / stbs_total * 100
+        }
+        stbs_secondary = stbs.filter(parent__isnull=False)
+        stbs_secondary_total = stbs_secondary.count()
+        context['stbs_secondary'] = {
+            'total': stbs_secondary_total,
+            'percent': D(stbs_secondary_total) / stbs_total * 100
+        }
+        context['plans'] = {}
+        for plan in plans:
+            context['plans'][plan] = {
+                'stbs': plan.subscriber_count(),
+                'tvod': plan.tvod_count()
+            }
+        basic = stbs.filter(plan__isnull=True)
+        context['plans'][_('Aberto')] = {
+            'stbs': basic.count(),
+            'tvod': basic.filter(
+                settopboxchannel__recorder=True).distinct().count()
+        }
+        context['stbs_total'] = stbs_total
+        return context

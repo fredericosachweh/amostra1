@@ -16,6 +16,27 @@ def split_pks(pks):
     return [pks[i:i + limit] for i in range(0, len(pks), limit)]
 
 
+@task(name='stbs-update-plans')
+def stbs_update_plans(stbs_pks=[]):
+
+    SetTopBox = apps.get_model('client', 'SetTopBox')
+    Plan = apps.get_model('client', 'Plan')
+    plans = Plan.objects.all()
+    if stbs_pks:
+        settopboxes = SetTopBox.objects.filter(id__in=stbs_pks)
+    else:
+        settopboxes = SetTopBox.objects.all()
+    for plan in plans:
+        plan_channels_pk = plan.channels_pks()
+        for stb in settopboxes:
+            for p_channel in plan_channels_pk:
+                if p_channel in stb.channels_pks():
+                    stb.update_plan(plan)
+                    settopboxes = settopboxes.exclude(pk=stb.pk)
+    if settopboxes:
+        settopboxes.update(plan=None)
+
+
 @task(name='reload-channels')
 def reload_channels(settopboxes_pks, message, task_id, channel=False):
     TaskLog = apps.get_model('log', 'TaskLog')

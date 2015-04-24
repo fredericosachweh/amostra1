@@ -3,7 +3,8 @@
 from __future__ import unicode_literals, absolute_import
 import re
 
-from django.forms import fields, Form
+from django.apps import apps
+from django.forms import fields, Form, ModelForm
 from django.utils.translation import ugettext_lazy as _
 
 MAC_RE = r'^([0-9a-fA-F]{2}([:-]?|$)){6}$'
@@ -25,7 +26,7 @@ class SetTopBoxFormMixin(object):
         if parent:
             if parent.parent:
                 self._errors['parent'] = self.error_class([
-                        u'SetTopBox não pode ser o principal, ele já é secundário.'
+                        'SetTopBox não pode ser o principal, ele já é secundário.'
                 ])
             if self.instance.parent_set.exists():
                 self._errors['parent'] = self.error_class([
@@ -34,6 +35,12 @@ class SetTopBoxFormMixin(object):
         return parent
 
 
-class SetTopBoxForm(SetTopBoxFormMixin, Form):
+class SetTopBoxForm(Form):
 
     mac = MACAddressFormField()
+
+
+class SetTopBoxAdminForm(SetTopBoxFormMixin, ModelForm):
+    class Meta:
+        model = apps.get_model('client', 'SetTopBox')
+        fields = ('__all__')

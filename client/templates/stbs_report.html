@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n %}
+{% load url from future %}
+{% load admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; {% trans 'Relatório de SetTopBoxes' %}
+</div>
+{% endblock %}
+
+{% block content %}
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans 'Quantidade de SetTopBoxes' %}</th>
+                <th>{% trans 'Quantidade de SeTopBoxes Principais' %}</th>
+                <th>%</th>
+                <th>{% trans 'Quantidade de SeTopBoxes Secundários' %}</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ stbs_total }}</td>
+                <td>{{ stbs_principal.total }}</td>
+                <td>{{ stbs_principal.percent|floatformat:"2" }}</td>
+                <td>{{ stbs_secondary.total }}</td>
+                <td>{{ stbs_secondary.percent|floatformat:"2" }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans 'Planos' %}</th>
+                <th>{% trans 'Quantidade de SeTopBoxes' %}</th>
+                <th>{% trans 'Quantidade de SeTopBoxes com TVoD' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for plan, values in plans.items %}
+                <tr>
+                    <td>{{ plan }}</td>
+                    <td>{{ values.stbs }}</td>
+                    <td>{{ values.tvod }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

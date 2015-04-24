@@ -14,10 +14,16 @@ from log.models import TaskLog
 log = logging.getLogger('client')
 
 
+class PlanChannelInline(admin.TabularInline):
+    model = apps.get_model('client', 'PlanChannel')
+    extra = 1
+
+
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ['name', 'value', 'is_active', 'stbs']
+    list_display = ['name', 'is_active', 'stbs', 'order']
     prepopulated_fields = {'slug': ('name',), }
-    filter_horizontal = ['channels']
+    readonly_fields = ('order',)
+    inlines = (PlanChannelInline,)
 
 
 def reload_channels_stb(modeladmin, request, queryset):
@@ -107,17 +113,12 @@ class SetTopBoxChannelInline(admin.TabularInline):
     #template = 'admin/client/edit_inline/settopboxchannel.html'
     readonly_fields = ['channel_name']
     fields = ['channel_name', 'recorder']
-    extra = 0
-    max_num = 0
+    #extra = 0
+    #max_num = 0
 
 
     def channel_name(self, instance):
         return instance.channel.name
-
-
-class SetTopBoxAdminForm(forms.SetTopBoxFormMixin, ModelForm):
-    class Meta:
-        model = apps.get_model('client', 'SetTopBox')
 
 
 class SetTopBoxAdmin(ModelAdmin):
@@ -128,7 +129,7 @@ class SetTopBoxAdmin(ModelAdmin):
     actions = [reboot_stb, reload_channels_stb, start_remote_debug,
                accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
-    form = SetTopBoxAdminForm
+    form = forms.SetTopBoxAdminForm
     readonly_fields = ('plan_date',)
 
     def get_readonly_fields(self, request, obj = None):

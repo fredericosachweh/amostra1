@@ -14,6 +14,7 @@ from django.conf import settings
 from django import forms
 from tv.models import Channel
 from .fields import MACAddressField
+from . import tasks
 
 import dbsettings
 from nbridge.models import Nbridge
@@ -23,16 +24,23 @@ log = logging.getLogger('client')
 class Plan(models.Model):
     name = models.CharField(_('Nome'), max_length=255)
     slug = models.SlugField()
-    channels = models.ManyToManyField(Channel, verbose_name=_('Canais'))
-    value = models.DecimalField(_('Valor'), decimal_places=2, max_digits=10, default=0.00)
+    channels = models.ManyToManyField(Channel, through='PlanChannel', verbose_name=_('Canais'))
     is_active = models.BooleanField(_('Ativo'), default=True)
+    order = models.IntegerField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        if not self.order:
+            plans = Plan.objects.all()
+            if plans.exists():
+                self.order = plans[0].order + 1
+            else:
+                self.order = 0
         super(Plan, self).save(*args, **kwargs)
 
     class Meta:
+        ordering = ('order',)
         verbose_name = _('Plano')
         verbose_name_plural = _('Planos')
 
@@ -42,6 +50,49 @@ class Plan(models.Model):
     @property
     def stbs(self):
         return self.settopbox_set.count()
+
+    def channels_pks(self):
+        return self.channels.all().values_list('pk', flat=True)
+
+    def subscriber_count(self):
+        principal = self.settopbox_set.filter(
+            parent_set__isnull=False
+        ).distinct()
+        secondary = SetTopBox.objects.filter(
+            plan=self, parent__isnull=False
+        ).distinct()
+        sample = self.settopbox_set.filter(
+            parent__isnull=True,
+            parent_set__isnull=True
+        ).distinct()
+        return principal.count() + secondary.count() + sample.count()
+
+    def tvod_count(self):
+        return self.settopbox_set.filter(
+            settopboxchannel__recorder=True).distinct().count()
+
+
+class PlanChannel(models.Model):
+    plan = models.ForeignKey(Plan)
+    channel = models.ForeignKey(Channel, unique=True, verbose_name=_('Canal'))
+
+    class Meta:
+        verbose_name = _('Canal do plano')
+        verbose_name_plural = _('Canais do plano')
+
+
+def update_plans():
+    log = logging.getLogger('debug')
+    log.debug('Update SetTopBoxes plans.')
+    tasks.stbs_update_plans.delay()
+
+@receiver(models.signals.post_save, sender=PlanChannel)
+def PlanChannel_post_save(sender, instance, **kwargs):
+    update_plans()
+
+@receiver(models.signals.post_delete, sender=PlanChannel)
+def PlanChannel_post_delete(sender, instance, **kwargs):
+    update_plans()
 
 
 class LogoToReplace(dbsettings.ImageValue):
@@ -329,6 +380,15 @@ class SetTopBox(models.Model):
         else:
             return None
 
+    def channels_pks(self):
+        return self.settopboxchannel_set.all().values_list('channel__pk', flat=True)
+
+    def update_plan(self, plan):
+        self.plan = plan
+        self.save()
+        return self.plan
+
+
 @receiver(models.signals.pre_save, sender=SetTopBox)
 def SetTopBox_pre_save(sender, instance, **kwargs):
     parent = instance.parent
@@ -391,6 +451,14 @@ class SetTopBoxChannel(models.Model):
             self.settopbox.serial_number, self.recorder
         )
 
+
+@receiver(models.signals.post_save, sender=SetTopBoxChannel)
+def SetTopBoxChannel_post_save(sender, instance, **kwargs):
+    tasks.stbs_update_plans.delay([instance.settopbox.id])
+
+@receiver(models.signals.pre_delete, sender=SetTopBoxChannel)
+def SetTopBoxChannel_pre_delete(sender, instance, **kwargs):
+    tasks.stbs_update_plans.delay([instance.settopbox.id])
 
 class SetTopBoxConfig(models.Model):
     'Class to store key -> value, value_type of SetTopBox'
