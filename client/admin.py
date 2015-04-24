@@ -24,7 +24,7 @@ class PlanChannelInline(admin.TabularInline):
 class PlanAdmin(admin.ModelAdmin):
     list_display = ['name', 'is_active', 'stbs', 'order']
     prepopulated_fields = {'slug': ('name',), }
-    #readonly_fields = ('order',)
+    readonly_fields = ('order',)
     inlines = (PlanChannelInline,)
 
 

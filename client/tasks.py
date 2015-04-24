@@ -27,14 +27,17 @@ def stbs_update_plans(stbs_pks=[]):
     else:
         settopboxes = SetTopBox.objects.all()
     for plan in plans:
+        stbs_plan = list()
         plan_channels_pk = plan.channels_pks()
         for stb in settopboxes:
             for p_channel in plan_channels_pk:
                 if p_channel in stb.channels_pks():
-                    stb.update_plan(plan)
+                    stbs_plan.append(stb.pk)
                     settopboxes = settopboxes.exclude(pk=stb.pk)
+        if stbs_plan:
+            SetTopBox.objects.filter(pk__in=stbs_plan).update(plan=plan)
     if settopboxes:
-        settopboxes.update(plan=None)
+        settopboxes.exclude(plan=None).update(plan=None)
 
 
 @task(name='reload-channels')

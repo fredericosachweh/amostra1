@@ -32,7 +32,7 @@ class Plan(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         if not self.order:
-            plans = Plan.objects.all()
+            plans = Plan.objects.all().order_by('-order')
             if plans.exists():
                 self.order = plans[0].order + 1
             else:
@@ -84,18 +84,18 @@ class PlanChannel(models.Model):
         return self.channel.name
 
 
-def update_plans():
+def stbs_update_plans():
     log = logging.getLogger('debug')
     log.debug('Update SetTopBoxes plans.')
     tasks.stbs_update_plans.delay()
 
 @receiver(models.signals.post_save, sender=PlanChannel)
 def PlanChannel_post_save(sender, instance, **kwargs):
-    update_plans()
+    stbs_update_plans()
 
 @receiver(models.signals.post_delete, sender=PlanChannel)
 def PlanChannel_post_delete(sender, instance, **kwargs):
-    update_plans()
+    stbs_update_plans()
 
 
 class LogoToReplace(dbsettings.ImageValue):
@@ -392,11 +392,6 @@ class SetTopBox(models.Model):
 
     def channels_pks(self):
         return self.settopboxchannel_set.all().values_list('channel__pk', flat=True)
-
-    def update_plan(self, plan):
-        self.plan = plan
-        self.save()
-        return self.plan
 
 
 @receiver(models.signals.pre_save, sender=SetTopBox)
