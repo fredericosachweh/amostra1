@@ -4,8 +4,6 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from device.models import EncryptDeviceService
-from device.models import DeviceServer
-from device.models import UniqueIP
 from device.models import MulticastOutput
 from cas.models import RTESServer
 from cas.models import Device
@@ -19,11 +17,11 @@ from cas.omi import configurationMgmtService
 from cas.omi import realTimeEncryptionService
 from client.models import SetTopBox
 from client.models import SetTopBoxChannel
-from tv.models import Channel
 
 import logging
 
 log = logging.getLogger('debug')
+
 
 def create_device(instance):
     devices_list = []
@@ -118,6 +116,7 @@ def save_db_deviceentitlement(stb_mac, channel_id):
 def delete_db_deviceentitlement(stb_mac, channel_id):
     DeviceEntitlement.objects.filter(device_id=stb_mac, entitlement_id=channel_id).delete()
 
+
 def create_entitlement(token, channel_id, network_id):
     content = contentMgmtService()
     entitlement = entitlementMgmtService()
@@ -164,7 +163,7 @@ def remove_entitlement(token, channel_id, network_id):
     entitle.remove_packages(token, package_list)
 
     # remove event from package
-    #entitle.remove_events_from_package(token, package, event_list)
+    # entitle.remove_events_from_package(token, package, event_list)
 
     content_to_network_list = []
     content_to_network = (network_id, channel_id, channel_id, 'DTV')
@@ -172,9 +171,8 @@ def remove_entitlement(token, channel_id, network_id):
     content.remove_content_from_network(token, content_to_network_list)
 
 
-
 def link_entitlement_device(token, channel_id, stb_mac):
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     entitle = entitlementMgmtService()
     entitlement_list = []
     package = (channel_id, 'Pacote%s' % channel_id)
@@ -185,21 +183,20 @@ def link_entitlement_device(token, channel_id, stb_mac):
     entitlement_list.append(entitlement)
     entitle.add_entitlements(token, entitlement_list)
 
-#link entitlement, package, device
-#entitlements = Entitlement.factory.create('ns1:EntitlementList')
-#entitlement = Entitlement.factory.create('ns1:Entitlement')
-#entitlement.smsEntitlementId = 1
-#entitlement.package.smsPackageId = 1
-#entitlement.package.description = 1
-#entitlement.entitledEntity.entityType.set('DEVICE')
-#entitlement.entitledEntity.entityId = '001AD01BEF5F'
-#entitlements.entitlements.append(entitlement)
-#resp = Entitlement.service.addEntitlements(entitlements, token.sessionHandle)
-
+# link entitlement, package, device
+# entitlements = Entitlement.factory.create('ns1:EntitlementList')
+# entitlement = Entitlement.factory.create('ns1:Entitlement')
+# entitlement.smsEntitlementId = 1
+# entitlement.package.smsPackageId = 1
+# entitlement.package.description = 1
+# entitlement.entitledEntity.entityType.set('DEVICE')
+# entitlement.entitledEntity.entityId = '001AD01BEF5F'
+# entitlements.entitlements.append(entitlement)
+# resp = Entitlement.service.addEntitlements(entitlements, token.sessionHandle)
 
 
 def unlink_entitlement_device(token, channel_id, stb_mac):
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     entitle = entitlementMgmtService()
     entitlement_list = []
     package = (channel_id, 'Pacote%s' % channel_id)
@@ -210,122 +207,134 @@ def unlink_entitlement_device(token, channel_id, stb_mac):
     entitlement_list.append(entitlement)
     entitle.remove_entitlements(token, entitlement_list)
 
+
 @receiver(post_save, sender=MulticastOutput)
 def multicast_output_post_save(sender, instance, created, **kwargs):
-    if instance.sink.content_type.name == 'Entrada CAS IPv4':
-        ip = instance.ip
-        dev = instance.server.get_netdev(instance.nic_sink.ipv4)
-        instance.server.create_route(ip, dev)
-        channel_id = instance.sink.sink.pk
-        if created:
+    if RTESServer.objects.all().exists():
+        if instance.sink.content_type.name == 'Entrada CAS IPv4':
+            ip = instance.ip
+            dev = instance.server.get_netdev(instance.nic_sink.ipv4)
+            instance.server.create_route(ip, dev)
+            channel_id = instance.sink.sink.pk
+            if created:
+                rtes_config = RTESServer.objects.all()[0]
+                rtes = realTimeEncryptionService()
+                admin = adminMgmtService()
+                token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
+                if get_network(token) < 0:
+                    add_network(token, get_free_network(token))
+                rtes.create_stream(token, rtes_config.name, channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port, get_network(token))
+                create_entitlement(token, channel_id, get_network(token))
+                admin.logout(token)
+                save_db_entitlement(channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port)
+            else:
+                pass
+                # rtes_config = RTESServer.objects.all()[0]
+                # rtes = realTimeEncryptionService()
+                # token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
+                # if get_network(token) < 0:
+                #     add_network(token, get_free_network(token))
+                # rtes.create_stream(token, rtes_config.name, channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port, get_network(token))
+                # create_entitlement(token, channel_id, get_network(token))
+                # admin.logout(token)
+                # save_db_entitlement(channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port)
+
+
+@receiver(post_delete, sender=MulticastOutput)
+def multicast_output_post_delete(sender, instance, **kwargs):
+    if RTESServer.objects.all().exists():
+        if instance.sink.content_type.name == 'Entrada CAS IPv4':
+            channel_id = instance.sink.sink.pk
             rtes_config = RTESServer.objects.all()[0]
             rtes = realTimeEncryptionService()
             admin = adminMgmtService()
             token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
             if get_network(token) < 0:
                 add_network(token, get_free_network(token))
-            rtes.create_stream(token, rtes_config.name, channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port, get_network(token))
-            create_entitlement(token, channel_id, get_network(token))
+            rtes.delete_stream(token, rtes_config.name, channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port, get_network(token))
+            remove_entitlement(token, channel_id, get_network(token))
             admin.logout(token)
-            save_db_entitlement(channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port)
-        else:
-            pass
-            #rtes_config = RTESServer.objects.all()[0]
-            #rtes = realTimeEncryptionService()
-            #token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-            #if get_network(token) < 0:
-            #    add_network(token, get_free_network(token))
-            #rtes.create_stream(token, rtes_config.name, channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port, get_network(token))
-            #create_entitlement(token, channel_id, get_network(token))
-            #admin.logout(token)
-            #save_db_entitlement(channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port)
+            delete_db_entitlement(channel_id)
 
-@receiver(post_delete, sender=MulticastOutput)
-def multicast_output_post_delete(sender, instance, **kwargs):
-    if instance.sink.content_type.name == 'Entrada CAS IPv4':
-        channel_id = instance.sink.sink.pk
-        rtes_config = RTESServer.objects.all()[0]
-        rtes = realTimeEncryptionService()
-        admin = adminMgmtService()
-        token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-        if get_network(token) < 0:
-            add_network(token, get_free_network(token))
-        rtes.delete_stream(token, rtes_config.name, channel_id, instance.sink.sink.sink.ip, instance.sink.sink.sink.port, instance.ip, instance.port, get_network(token))
-        remove_entitlement(token, channel_id, get_network(token))
-        admin.logout(token)
-        delete_db_entitlement(channel_id)
 
 @receiver(post_save, sender=EncryptDeviceService)
 def encrypt_device_service_post_save(sender, instance, created, **kwargs):
     # Create a new rote
-    #import pdb; pdb.set_trace()
-    ip = instance.sink.ip
-    dev = instance.server.get_netdev(instance.nic_sink.ipv4)
-    instance.server.create_route(ip, dev)
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
+    if RTESServer.objects.all().exists():
+        ip = instance.sink.ip
+        dev = instance.server.get_netdev(instance.nic_sink.ipv4)
+        instance.server.create_route(ip, dev)
+        # import pdb; pdb.set_trace()
+
 
 @receiver(post_delete, sender=EncryptDeviceService)
 def encrypt_device_service_post_delete(sender, instance, **kwargs):
-    pass
+    if RTESServer.objects.all().exists():
+        pass
 
 
 @receiver(post_save, sender=SetTopBox)
 def SetTopBox_post_save(sender, instance, created, **kwargs):
-    if created:
-        create_device(instance)
-        #devices_list = []
-        #admin = adminMgmtService()
-        #token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-        #if get_network(token) < 0:
-        #    add_network(token, get_free_network(token))
-        #log.debug('Creating: %s', instance)
-        #device = deviceMgmtService()
-        #device_tupla = (instance.mac.replace(':', '').upper(), 'STB_IPTV', get_network(token), instance.mac.replace(':', '').upper())
-        #devices_list.append(device_tupla)
-        #device.add_devices(token, devices_list)
-        #save_db_device(get_network(token), instance.mac.replace(':', '').upper())
-        #admin.logout(token)
+    if RTESServer.objects.all().exists():
+        if created:
+            create_device(instance)
+            # devices_list = []
+            # admin = adminMgmtService()
+            # token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
+            # if get_network(token) < 0:
+            #     add_network(token, get_free_network(token))
+            # log.debug('Creating: %s', instance)
+            # device = deviceMgmtService()
+            # device_tupla = (instance.mac.replace(':', '').upper(), 'STB_IPTV', get_network(token), instance.mac.replace(':', '').upper())
+            # devices_list.append(device_tupla)
+            # device.add_devices(token, devices_list)
+            # save_db_device(get_network(token), instance.mac.replace(':', '').upper())
+            # admin.logout(token)
 
 
 @receiver(post_delete, sender=SetTopBox)
 def SetTopBox_post_delete(sender, instance, **kwargs):
-    devices_list = []
-    admin = adminMgmtService()
-    token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-    log.debug('Deleting: %s', instance)
-    device = deviceMgmtService()
-    device_tupla = (instance.mac.replace(':', '').upper(), 'STB_IPTV', '1', instance.mac.replace(':', '').upper())
-    devices_list.append(device_tupla)
-    device.remove_devices(token, devices_list)
-    admin.logout(token)
-    delete_db_device(instance.mac.replace(':', '').upper())
+    if RTESServer.objects.all().exists():
+        devices_list = []
+        admin = adminMgmtService()
+        token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
+        log.debug('Deleting: %s', instance)
+        device = deviceMgmtService()
+        device_tupla = (instance.mac.replace(':', '').upper(), 'STB_IPTV', '1', instance.mac.replace(':', '').upper())
+        devices_list.append(device_tupla)
+        device.remove_devices(token, devices_list)
+        admin.logout(token)
+        delete_db_device(instance.mac.replace(':', '').upper())
 
 
 @receiver(post_save, sender=SetTopBoxChannel)
 def SetTopBoxChannel_post_save(sender, instance, created, **kwargs):
-    #import pdb; pdb.set_trace()
-    if instance.channel.sink.sink.content_type.name == 'Entrada CAS IPv4':
-        if created:
-            log.debug('Now we need to attache settopbox + domain with this cannel [%s]', instance)
+    if RTESServer.objects.all().exists():
+        # import pdb; pdb.set_trace()
+        if instance.channel.sink.sink.content_type.name == 'Entrada CAS IPv4':
+            if created:
+                log.debug('Now we need to attache settopbox + domain with this cannel [%s]', instance)
+                stb = SetTopBox.objects.filter(id=instance.settopbox_id).all()[0]
+                ch = instance.channel.sink.sink.sink.pk
+                admin = adminMgmtService()
+                token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
+                # import pdb; pdb.set_trace()
+                create_device(instance.settopbox)
+                link_entitlement_device(token, ch, stb.mac)
+                save_db_deviceentitlement(stb.mac, ch)
+
+
+@receiver(post_delete, sender=SetTopBoxChannel)
+def SetTopBoxChannel_post_delete(sender, instance, **kwargs):
+    if RTESServer.objects.all().exists():
+        # import pdb; pdb.set_trace()
+        if instance.channel.sink.content_type.name == 'Entrada CAS IPv4':
+            log.debug('Now we need to detache settopbox + domain with this channel [%s]', instance)
             stb = SetTopBox.objects.filter(id=instance.settopbox_id).all()[0]
             ch = instance.channel.sink.sink.sink.pk
             admin = adminMgmtService()
             token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-            #import pdb; pdb.set_trace()
-            create_device(instance.settopbox)
-            link_entitlement_device(token, ch, stb.mac)
-            save_db_deviceentitlement(stb.mac, ch)
-
-@receiver(post_delete, sender=SetTopBoxChannel)
-def SetTopBoxChannel_post_delete(sender, instance, **kwargs):
-    #import pdb; pdb.set_trace()
-    if instance.channel.sink.content_type.name == 'Entrada CAS IPv4':
-        log.debug('Now we need to detache settopbox + domain with this channel [%s]', instance)
-        stb = SetTopBox.objects.filter(id=instance.settopbox_id).all()[0]
-        ch = instance.channel.sink.sink.sink.pk
-        admin = adminMgmtService()
-        token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-        unlink_entitlement_device(token, ch, stb.mac)
-        delete_db_deviceentitlement(stb.mac, ch)
-
+            unlink_entitlement_device(token, ch, stb.mac)
+            delete_db_deviceentitlement(stb.mac, ch)
 

@@ -535,7 +535,8 @@ class UniqueIP(models.Model):
     content_type = models.ForeignKey(
         ContentType,
         limit_choices_to={"model__in": (
-            "demuxedservice", "fileinput", "softtranscoder")},
+            "demuxedservice", "fileinput", "softtranscoder",
+            "encryptdeviceservice")},
         blank=True, null=True
     )
     object_id = models.PositiveIntegerField(blank=True, null=True)
