@@ -8,6 +8,7 @@ import datetime
 from django.db import models
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
+from django.db.models.signals import pre_save
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -413,6 +414,19 @@ def SetTopBox_pre_save(sender, instance, **kwargs):
         plan = stb.plan
     if plan != instance.plan:
         instance.plan_date = datetime.datetime.now()
+
+
+@receiver(pre_save, sender=SetTopBox)
+def SetTopBox_pre_save(sender, instance, **kwargs):
+    parent = instance.parent
+    if parent:
+        log = logging.getLogger('debug')
+        if parent.parent:
+            instance.parent = None
+            log.debug('Parent not be principal, it has a parent.')
+        if instance.parent_set.exists():
+            instance.parent = None
+            log.debug('SetTopBox can not have parent, it is a parent.')
 
 
 class SetTopBoxParameter(models.Model):

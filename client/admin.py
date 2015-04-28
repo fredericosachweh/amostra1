@@ -8,6 +8,7 @@ from django.contrib import admin, messages
 from django.forms import ModelForm
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
+from django.forms import ModelForm
 server_key = settings.NBRIDGE_SERVER_KEY
 from . import tasks, forms
 from log.models import TaskLog
