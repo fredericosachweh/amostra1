@@ -10,14 +10,37 @@
 </div>
 {% endblock %}
 
+{% block extrahead %}
+    <style>
+        p.titles {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        table tbody {
+            background-color: #f5f5f5;
+        }
+        table tbody tr td{
+            border: 1px solid #ccc;
+        }
+    .clear {
+        clear: both;
+        margin-bottom: 10px;
+    }
+    .blocks div {
+        float: left;
+        margin-right: 30px;
+    }
+    </style>
+{% endblock %}
+
 {% block content %}
     <table>
         <thead>
             <tr>
-                <th>{% trans 'Quantidade de SetTopBoxes' %}</th>
-                <th>{% trans 'Quantidade de SeTopBoxes Principais' %}</th>
+                <th>{% trans 'Quantidade de Assinantes' %}</th>
+                <th>{% trans 'Quantidade de Assinantes Principais' %}</th>
                 <th>%</th>
-                <th>{% trans 'Quantidade de SeTopBoxes Secundários' %}</th>
+                <th>{% trans 'Quantidade de Assinantes Secundários' %}</th>
                 <th>%</th>
             </tr>
         </thead>
@@ -31,22 +54,71 @@
             </tr>
         </tbody>
     </table>
+    <div class="blocks">
+        <div>
+            <p class="titles">Dados de cobrança TV linear</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>{% trans 'Planos' %}</th>
+                        <th>{% trans 'Quantidade de Assinantes' %}</th>
+                        <th>{% trans 'Total' %}</th>
+                        <th>%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan, values in plans.items %}
+                        <tr>
+                            <td>{{ plan }}</td>
+                            <td>{{ values.stbs }}</td>
+                            <td>R$ {{ values.stbs_value }}</td>
+                            <td>{{ values.stbs_percent|floatformat:"2" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <p class="titles">Dados de cobrança TVoD</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>{% trans 'Planos' %}</th>
+                        <th>{% trans 'Quantidade de STBs com TVoD' %}</th>
+                        <th>{% trans 'Total' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan, values in plans.items %}
+                        <tr>
+                            <td>{{ plan }}</td>
+                            <td>{{ values.tvod }}</td>
+                            <td>{% if values.tvod_value %}R$ {{ values.tvod_value }}{% endif %}</td>
+
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <p class="titles">Total</p>
     <table>
         <thead>
             <tr>
-                <th>{% trans 'Planos' %}</th>
-                <th>{% trans 'Quantidade de SeTopBoxes' %}</th>
-                <th>{% trans 'Quantidade de SeTopBoxes com TVoD' %}</th>
+                <th>{% trans 'Valor total TV linear' %}</th>
+                <th>{% trans 'Valor total TVoD' %}</th>
+                <th>{% trans 'Valor total' %}</th>
             </tr>
         </thead>
         <tbody>
-            {% for plan, values in plans.items %}
-                <tr>
-                    <td>{{ plan }}</td>
-                    <td>{{ values.stbs }}</td>
-                    <td>{{ values.tvod }}</td>
-                </tr>
-            {% endfor %}
+            <tr>
+                <td>R$ {{ stbs_value }}</td>
+                <td>R$ {{ tvods_value }}</td>
+                <td>R$ {{ total_value }}</td>
+            </tr>
         </tbody>
     </table>
+    <br />
+    <button onclick="window.location.href='{% url 'stbs_report_xls' %}'">exportar</button>
 {% endblock %}

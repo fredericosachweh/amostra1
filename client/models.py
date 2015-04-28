@@ -27,6 +27,8 @@ class Plan(models.Model):
     channels = models.ManyToManyField(Channel, through='PlanChannel', verbose_name=_('Canais'))
     is_active = models.BooleanField(_('Ativo'), default=True)
     order = models.IntegerField(blank=True, null=True)
+    value = models.DecimalField(_('Valor'), default=0.00, max_digits=10, decimal_places=2)
+    tvod_value = models.DecimalField(_('TVoD Valor'), default=0.00, max_digits=10, decimal_places=2)
 
     def save(self, *args, **kwargs):
         if not self.slug:
