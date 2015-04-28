@@ -4,29 +4,16 @@ from settings import *
 
 DEBUG = True
 
-if 'test' in sys.argv:
-    ## Banco de dados teste
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': ''
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '127.0.0.1',
+        #'PORT': ,
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'iptv',
-            'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            #'PORT': ,
-        }
-    }
+}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
