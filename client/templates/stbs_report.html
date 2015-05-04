@@ -71,7 +71,7 @@
                         <tr>
                             <td>{{ plan }}</td>
                             <td>{{ values.stbs }}</td>
-                            <td>R$ {{ values.stbs_value }}</td>
+                            <td>R$ {{ values.stbs_value|default:'00,00' }}</td>
                             <td>{{ values.stbs_percent|floatformat:"2" }}</td>
                         </tr>
                     {% endfor %}
@@ -93,7 +93,7 @@
                         <tr>
                             <td>{{ plan }}</td>
                             <td>{{ values.tvod }}</td>
-                            <td>{% if values.tvod_value %}R$ {{ values.tvod_value }}{% endif %}</td>
+                            <td>R$ {{ values.tvod_value|default:'00,00' }}</td>
 
                         </tr>
                     {% endfor %}

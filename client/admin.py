@@ -20,6 +20,7 @@ log = logging.getLogger('client')
 class PlanChannelInline(admin.TabularInline):
     model = apps.get_model('client', 'PlanChannel')
     extra = 1
+    raw_id_fields = ('channel',)
 
 
 class PlanAdmin(admin.ModelAdmin):
