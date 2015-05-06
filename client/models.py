@@ -230,6 +230,7 @@ def reload_frontend_stb(settopbox):
 
 
 class SetTopBox(models.Model):
+
     'Class to authenticate and manipulate IPTV client - SetTopBox'
 
     serial_number = models.CharField(
@@ -306,6 +307,7 @@ class SetTopBox(models.Model):
 
 
 class SetTopBoxParameter(models.Model):
+
     'Class to store key -> values of SetTopBox'
 
     key = models.CharField(
@@ -328,6 +330,7 @@ class SetTopBoxParameter(models.Model):
 
 
 class SetTopBoxChannel(models.Model):
+
     'Class to link access permission to stb on tv.channel'
 
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
@@ -350,6 +353,7 @@ class SetTopBoxChannel(models.Model):
 
 
 class SetTopBoxConfig(models.Model):
+
     'Class to store key -> value, value_type of SetTopBox'
 
     key = models.CharField(
@@ -373,6 +377,7 @@ class SetTopBoxConfig(models.Model):
 
 
 class SetTopBoxMessage(models.Model):
+
     'Class to store UI messages'
     key = models.CharField(
         _('Chave'), max_length=250, db_index=True,
@@ -393,6 +398,7 @@ class SetTopBoxMessage(models.Model):
 
 
 class SetTopBoxProgramSchedule(models.Model):
+
     'Class to store the data and time of Program on Schedule'
 
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
@@ -414,6 +420,7 @@ class SetTopBoxProgramSchedule(models.Model):
 
 
 class SetTopBoxBehaviorFlag(models.Model):
+
     'Class to store Behavior flags'
     key = models.CharField(
         _('Chave'), max_length=250, db_index=True,
@@ -433,3 +440,27 @@ class SetTopBoxBehaviorFlag(models.Model):
 
     def __unicode__(self):
         return '{%s=%s}' % (self.key, self.value)
+
+
+class SetTopBoxMail(models.Model):
+
+    'Class to store the message from operator to clients'
+
+    settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
+    title = models.TextField(_('Promoção'))
+    message = models.TextField(_('Hoje está liberado o pacote Telecine!'))
+    created = models.BigIntegerField(null=False)
+    read = models.BooleanField(
+        _('Mensagem lida'), default=False
+    )
+
+    class Meta:
+        verbose_name = _('Correspondência')
+        verbose_name_plural = _('Correspondências')
+        ordering = ('settopbox', 'created')
+
+    def __unicode__(self):
+        return 'stb=[%s] título=[%s] hora=[%s]' % (
+            self.settopbox.serial_number, self.title,
+            datetime.datetime.fromtimestamp(self.created / 1000)
+        )
