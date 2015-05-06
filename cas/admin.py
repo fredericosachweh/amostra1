@@ -17,9 +17,9 @@ class RTESServerAdmin(admin.ModelAdmin):
         return False
 
 # Device e Entitlement somente para validacao, apos testes deletar
-admin.site.register(Device)
-admin.site.register(Entitlement)
-admin.site.register(DeviceEntitlement)
+#admin.site.register(Device)
+#admin.site.register(Entitlement)
+#admin.site.register(DeviceEntitlement)
 
 
 admin.site.register(RTESServer, RTESServerAdmin)
