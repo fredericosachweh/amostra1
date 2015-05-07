@@ -280,6 +280,19 @@ class AdminDigitalTunerHardware(AdminUnsafeLookup):
     list_per_page = 20
 
 
+class AdminEncryptDeviceService(admin.ModelAdmin):
+    list_display = ('description', 'server')
+    fieldsets = (
+        (_(u'Conexão com outros devices'), {
+            'fields': ('description', 'server', 'nic_sink', 'nic_src', 'content_type',
+                'object_id')
+        }),
+    )
+    form = forms.EncryptDeviceServiceForm
+    list_per_page = 20
+    list_filter = ['status', 'server', ]
+
+admin.site.register(models.EncryptDeviceService, AdminEncryptDeviceService)
 admin.site.register(models.UniqueIP, AdminUniqueIP)
 admin.site.register(models.Server, AdminServer)
 admin.site.register(models.Antenna)
