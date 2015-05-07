@@ -208,6 +208,31 @@ def unlink_entitlement_device(token, channel_id, stb_mac):
     entitle.remove_entitlements(token, entitlement_list)
 
 
+def provision_legacy_configuration():
+    #admin = adminMgmtService()
+    #token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
+
+    #if get_network(token) < 0:
+    #    add_network(token, get_free_network(token))
+    
+    # Criando STBs no servidor de CAS
+    stbs = SetTopBox.objects.all()
+    #for stb in stbs:
+    #    log.debug('Creating: %s', stb.mac)
+        #devices_list = []
+        #device = deviceMgmtService()
+        #device_tupla = (stb.mac.replace(':', '').upper(), 'STB_IPTV', get_network(token), stb.mac.replace(':', '').upper())
+        #devices_list.append(device_tupla)
+        #device.add_devices(token, devices_list)
+        #save_db_device(get_network(token), stb.mac.replace(':', '').upper())
+        
+        # Criando Canais no servidor de CAS
+     #   stb_chs = stb.settopboxchannel_set.all()
+     #   for stb_ch in stb_chs:
+     #       log.debug('Creating channel: %s, stb: %s' %  (stb_ch.channel,stb_ch.settopbox))
+    
+    #admin.logout(token)
+
 @receiver(post_save, sender=MulticastOutput)
 def multicast_output_post_save(sender, instance, created, **kwargs):
     if RTESServer.objects.all().exists():
@@ -257,6 +282,14 @@ def multicast_output_post_delete(sender, instance, **kwargs):
             delete_db_entitlement(channel_id)
 
 
+@receiver(post_save, sender=RTESServer)
+def rtes_server_post_save(sender, instance, created, **kwargs):
+    # Create a new rote
+    # import pdb; pdb.set_trace()
+    if RTESServer.objects.all().exists():
+        provision_legacy_configuration()
+
+
 @receiver(post_save, sender=EncryptDeviceService)
 def encrypt_device_service_post_save(sender, instance, created, **kwargs):
     # Create a new rote
@@ -279,18 +312,6 @@ def SetTopBox_post_save(sender, instance, created, **kwargs):
     if RTESServer.objects.all().exists():
         if created:
             create_device(instance)
-            # devices_list = []
-            # admin = adminMgmtService()
-            # token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
-            # if get_network(token) < 0:
-            #     add_network(token, get_free_network(token))
-            # log.debug('Creating: %s', instance)
-            # device = deviceMgmtService()
-            # device_tupla = (instance.mac.replace(':', '').upper(), 'STB_IPTV', get_network(token), instance.mac.replace(':', '').upper())
-            # devices_list.append(device_tupla)
-            # device.add_devices(token, devices_list)
-            # save_db_device(get_network(token), instance.mac.replace(':', '').upper())
-            # admin.logout(token)
 
 
 @receiver(post_delete, sender=SetTopBox)
@@ -337,4 +358,3 @@ def SetTopBoxChannel_post_delete(sender, instance, **kwargs):
             token = admin.login(RTESServer.objects.all()[0].username, RTESServer.objects.all()[0].password)
             unlink_entitlement_device(token, ch, stb.mac)
             delete_db_deviceentitlement(stb.mac, ch)
-
