@@ -153,3 +153,10 @@ class DigitalTunerHardwareForm(forms.ModelForm):
     class Meta:
         model = models.DigitalTunerHardware
         exclude = ('',)
+
+
+class EncryptDeviceServiceForm(GenericRelationForm):
+    class Meta:
+        model = models.EncryptDeviceService
+        exclude = ('',)
+
