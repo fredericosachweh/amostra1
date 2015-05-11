@@ -723,7 +723,7 @@ class SetTopBoxMailResource(NamespacedModelResource):
 
     class Meta:
         SetTopBoxMail = apps.get_model('client', 'SetTopBoxMail')
-        queryset = SetTopBoxMail.objects.all()
+        queryset = SetTopBoxMail.objects.all().reverse()
         resource_name = 'settopboxmail'
         allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
         urlconf_namespace = 'client'
