@@ -23,5 +23,5 @@ urlpatterns = patterns('',
         'client.views.reload_channels', name='client_reload_channels'),
     url(r'^nbridgedown/$', 'client.views.nbridge_down', name='client_nbridge'),
     url(r'^stbs-reports/$', login_required(SetTopBoxReportView.as_view()), name='stbs_report'),
-    url(r'^stbs-reports-xls/$', 'client.views.report_plans_xls', name='stbs_report_xls'),
+    url(r'^stbs-reports-xls/$', login_required('client.views.report_plans_xls'), name='stbs_report_xls'),
     )
