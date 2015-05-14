@@ -5,9 +5,10 @@ module: client.urls
 '''
 
 from django.conf.urls import patterns, url
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from . import dispatch
-from .views import Auth
+from .views import Auth, SetTopBoxReportView
 
 urlpatterns = patterns('',
     #url(r'^auth/(?P<mac>[0-9A-Fa-f:]{17})/.*$', 'client.views.auth',
@@ -21,4 +22,6 @@ urlpatterns = patterns('',
     url(r'^commands/reload_channels/(?P<stbs>[^/]+)/(?P<message>.+)',
         'client.views.reload_channels', name='client_reload_channels'),
     url(r'^nbridgedown/$', 'client.views.nbridge_down', name='client_nbridge'),
+    url(r'^stbs-reports/$', login_required(SetTopBoxReportView.as_view()), name='stbs_report'),
+    url(r'^stbs-reports-xls/$', login_required('client.views.report_plans_xls'), name='stbs_report_xls'),
     )

@@ -1,20 +1,23 @@
 # -*- encoding:utf8 -*
 from __future__ import unicode_literals
 
+import io
 import logging
 import re
 
-from device.models import StreamPlayer
+from decimal import Decimal as D
+from xlsxwriter import Workbook
+
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.views import generic
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
-
-from . import models
-
 
 class Auth(View):
     mac_re = re.compile(r'^([0-9a-fA-F]{2}(:?|$)){6}$')
@@ -24,6 +27,8 @@ class Auth(View):
 
     @method_decorator(csrf_exempt)
     def post(self, request):
+        StreamPlayer = apps.get_model('device', 'StreamPlayer')
+        SetTopBox = apps.get_model('client', 'SetTopBox')
         from tastypie.models import ApiKey
         log = logging.getLogger('client')
         mac = request.POST.get('mac') or request.POST.get('MAC')
@@ -35,17 +40,17 @@ class Auth(View):
         valid = self.mac_re.match(mac)
         if valid is None:
             return HttpResponse('Invalid MAC', status=401)
-        if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
+        if SetTopBox.options.use_mac_as_serial is True and sn is None:
             sn = mac
-        if models.SetTopBox.options.auto_create is True:
-            stb, created = models.SetTopBox.objects.get_or_create(
+        if SetTopBox.options.auto_create is True:
+            stb, created = SetTopBox.objects.get_or_create(
                 serial_number=sn,
                 mac=mac)
             if created is True:
                 log.debug('new stb autocreated:%s', stb)
         else:
-            if models.SetTopBox.objects.filter(serial_number=sn).exists():
-                stb = models.SetTopBox.objects.get(serial_number=sn)
+            if SetTopBox.objects.filter(serial_number=sn).exists():
+                stb = SetTopBox.objects.get(serial_number=sn)
             else:
                 log.debug('SetTopBox don\'t existis:%s', sn)
                 return HttpResponse('{"login": "ERROR"}', status=403)
@@ -88,6 +93,7 @@ def logoff(request):
 
 @csrf_exempt
 def online(request):
+    SetTopBox = apps.get_model('client', 'SetTopBox')
     log = logging.getLogger('client')
     mac = request.GET.get('mac') or request.GET.get('MAC')
     sn = request.GET.get('sn') or request.GET.get('SN')
@@ -102,9 +108,9 @@ def online(request):
         api_key,
         nbridge
     )
-    if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
+    if SetTopBox.options.use_mac_as_serial is True and sn is None:
         sn = mac
-    stb = models.SetTopBox.get_stb_from_user(request.user)
+    stb = SetTopBox.get_stb_from_user(request.user)
     if stb is not None:
         stb.online = True
         stb.nbridge_id = nbridge
@@ -115,6 +121,7 @@ def online(request):
 
 @csrf_exempt
 def offline(request):
+    SetTopBox = apps.get_model('client', 'SetTopBox')
     log = logging.getLogger('client')
     mac = request.GET.get('mac') or request.GET.get('MAC')
     sn = request.GET.get('sn') or request.GET.get('SN')
@@ -126,9 +133,9 @@ def offline(request):
         mac,
         api_key
     )
-    if models.SetTopBox.options.use_mac_as_serial is True and sn is None:
+    if SetTopBox.options.use_mac_as_serial is True and sn is None:
         sn = mac
-    stb = models.SetTopBox.get_stb_from_user(request.user)
+    stb = SetTopBox.get_stb_from_user(request.user)
     if stb is not None:
         stb.online = False
         stb.ip = None
@@ -173,6 +180,7 @@ def change_route(request, stbs=None, key=None, cmd=None):
 
 
 def reload_channels(request, stbs=None, message=None):
+    SetTopBox = apps.get_model('client', 'SetTopBox')
     log = logging.getLogger('api')
     if request.user.is_anonymous():
         return HttpResponse('Error: Unauthorized', status=401)
@@ -182,7 +190,7 @@ def reload_channels(request, stbs=None, message=None):
         if len(m) == 17:
             macs.append(m)
     log.debug('Recebido=%s lista=%s', stbs, macs)
-    stbs = models.SetTopBox.objects.filter(mac__in=macs)
+    stbs = SetTopBox.objects.filter(mac__in=macs)
     for s in stbs:
         log.debug('Enviando para o STB=%s, msg=%s', s, message)
         s.reload_channels(message=message)
@@ -190,12 +198,133 @@ def reload_channels(request, stbs=None, message=None):
 
 
 def nbridge_down(request):
+    SetTopBox = apps.get_model('client', 'SetTopBox')
     Nbridge = apps.get_models('nbridge', 'Nbridge')
     log = logging.getLogger('api')
     nbridge = request.GET.get('nbridge') or request.GET.get('nbridge')
     log.debug('Nbridge shutdown %s ', nbridge)
     nbobject = Nbridge.objects.get(pk=nbridge)
-    models.SetTopBox.objects.filter(nbridge=nbobject).update(
+    SetTopBox.objects.filter(nbridge=nbobject).update(
         ip=None, online=False, nbridge=None
     )
     return HttpResponse('{"status": "OK"}', content_type='application/json')
+
+
+def report_plans():
+    SetTopBox = apps.get_model('client', 'SetTopBox')
+    data = {}
+    Plan = apps.get_model('client', 'Plan')
+    plans = Plan.objects.all()
+    stbs = SetTopBox.objects.all()
+    stbs_total = stbs.count()
+    stbs_principal = stbs.filter(
+        Q(parent_set__isnull=False)|
+        Q(parent__isnull=True)
+    ).distinct()
+    stbs_principal_total = stbs_principal.count()
+    data['stbs_principal'] = {
+        'total': stbs_principal_total,
+        'percent': D(stbs_principal_total) / stbs_total * 100
+    }
+    stbs_secondary = stbs.filter(parent__isnull=False)
+    stbs_secondary_total = stbs_secondary.count()
+    data['stbs_secondary'] = {
+        'total': stbs_secondary_total,
+        'percent': D(stbs_secondary_total) / stbs_total * 100
+    }
+    data['plans'] = {}
+    stbs_value = 0
+    tvods_value = 0
+    for plan in plans:
+        subscriber_count = plan.subscriber_count()
+        tvod_count = plan.tvod_count()
+        data['plans'][plan] = {
+            'stbs': subscriber_count,
+            'stbs_value': subscriber_count * plan.value,
+            'stbs_percent': D(subscriber_count) / stbs_principal_total * 100,
+            'tvod': tvod_count,
+            'tvod_value': tvod_count * plan.tvod_value,
+        }
+        stbs_value += subscriber_count * plan.value
+        tvods_value += tvod_count * plan.tvod_value
+    open_plan = stbs.filter(plan__isnull=True)
+    stbs = open_plan.count()
+    tvod = open_plan.filter(settopboxchannel__recorder=True).distinct().count()
+    data['plans']['Outros'] = {
+        'stbs': stbs,
+        'tvod': tvod,
+        'stbs_percent': D(stbs) / stbs_principal_total * 100,
+    }
+    data['stbs_total'] = stbs_total
+    data['stbs_value'] = stbs_value
+    data['tvods_value'] = tvods_value
+    data['total_value'] = tvods_value + stbs_value
+    return data
+
+
+@login_required
+def report_plans_xls(request):
+    output = io.BytesIO()
+    data = report_plans()
+    wb = Workbook(output, {'in_memory': True})
+    ws = wb.add_worksheet()
+    ws.write(0, 0, 'Quantidade de Assinantes')
+    ws.write(0, 1, 'Quantidade de Assinantes Principais')
+    ws.write(0, 2, '%')
+    ws.write(0, 3, 'Quantidade de Assinantes Secundários')
+    ws.write(0, 4, '%')
+    ws.write(1, 0, data['stbs_total'])
+    ws.write(1, 1, data['stbs_principal']['total'])
+    ws.write(1, 2, data['stbs_principal']['percent'])
+    ws.write(1, 3, data['stbs_secondary']['total'])
+    ws.write(1, 4, data['stbs_secondary']['percent'])
+    ws.write(2, 0, 'Dados de cobrança TV linear')
+    ws.write(2, 3, 'Dados de cobrança TVoD')
+    ws.write(3, 0, 'Planos')
+    ws.write(3, 1, 'Quantidade de Assinantes')
+    ws.write(3, 2, 'Total')
+    ws.write(3, 3, '%')
+    ws.write(3, 4, 'Planos')
+    ws.write(3, 5, 'Quantidade de STBs com TVoD')
+    ws.write(3, 6, 'Total')
+
+    i = 4
+    for plan, values in data['plans'].items():
+
+        ws.write(i, 0, str(plan))
+        ws.write(i, 1, values['stbs'])
+        if 'stbs_value' in values:
+            ws.write(i, 2, values['stbs_value'])
+        ws.write(i, 3, values['stbs_percent'])
+        ws.write(i, 4, str(plan))
+        ws.write(i, 5, values['tvod'])
+        if 'tvod_value' in values:
+            ws.write(i, 6, values['tvod_value'])
+        i += 1
+    ws.write(i, 0, 'Total')
+    i += 1
+    ws.write(i, 0, 'Valor total TV linear')
+    ws.write(i, 1, 'Valor total TVoD')
+    ws.write(i, 2, 'Valor total')
+    i += 1
+    ws.write(i, 0, data['stbs_value'])
+    ws.write(i, 1, data['tvods_value'])
+    ws.write(i, 2, data['total_value'])
+    wb.close()
+    output.seek(0)
+    response = HttpResponse(output.read())
+    response['Content-Disposition'] = \
+        'attachment; filename=relatorio_stbs.xlsx'
+    return response
+
+
+class SetTopBoxReportView(generic.ListView):
+    SetTopBox = apps.get_model('client', 'SetTopBox')
+    template_name = 'stbs_report.html'
+    model = SetTopBox
+
+    def get_context_data(self, **kwargs):
+        context = super(SetTopBoxReportView, self).get_context_data(**kwargs)
+        for key, value in report_plans().items():
+            context[key] = value
+        return context

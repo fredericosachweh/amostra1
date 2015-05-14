@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import sys
 import os
 from .settings import DEBUG
@@ -72,3 +73,6 @@ TASTYPIE_FULL_DEBUG = DEBUG
 TASTYPIE_ABSTRACT_APIKEY = False
 FORCE_SCRIPT_NAME = ""
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+# Define celery em memória para testes
+TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'

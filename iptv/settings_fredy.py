@@ -1,6 +1,7 @@
 # -*- encoding:utf-8 -*-
 import sys
 from settings import *
+from dev_settings import *
 import djcelery
 djcelery.setup_loader()
 

@@ -5,14 +5,29 @@ import logging
 from django.apps import apps
 from django.contrib.admin import site, ModelAdmin
 from django.contrib import admin, messages
+from django.forms import ModelForm
 from django.utils.translation import ugettext_lazy
 from django.conf import settings
+from django.forms import ModelForm
 server_key = settings.NBRIDGE_SERVER_KEY
-from . import tasks
+from . import tasks, forms
 from log.models import TaskLog
 from log.views import create_cache_log
 
 log = logging.getLogger('client')
+
+
+class PlanChannelInline(admin.TabularInline):
+    model = apps.get_model('client', 'PlanChannel')
+    extra = 1
+    raw_id_fields = ('channel',)
+
+
+class PlanAdmin(admin.ModelAdmin):
+    list_display = ['name', 'is_active', 'stbs', 'order']
+    prepopulated_fields = {'slug': ('name',), }
+    readonly_fields = ('order',)
+    inlines = (PlanChannelInline,)
 
 
 def reload_channels_stb(modeladmin, request, queryset):
@@ -108,13 +123,12 @@ class SetTopBoxChannelInline(admin.TabularInline):
     #template = 'admin/client/edit_inline/settopboxchannel.html'
     readonly_fields = ['channel_name']
     fields = ['channel_name', 'recorder']
-    extra = 0
-    max_num = 0
+    #extra = 0
+    #max_num = 0
 
 
     def channel_name(self, instance):
         return instance.channel.name
-
 
 class SetTopBoxAdmin(ModelAdmin):
     search_fields = ('mac', 'serial_number', 'description', )
@@ -124,6 +138,8 @@ class SetTopBoxAdmin(ModelAdmin):
     actions = [reboot_stb, reload_channels_stb, start_remote_debug,
                accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
+    form = forms.SetTopBoxAdminForm
+    readonly_fields = ('plan', 'plan_date',)
 
     def get_readonly_fields(self, request, obj = None):
         if obj:
@@ -168,6 +184,7 @@ class SetTopBoxMessageAdmin(ModelAdmin):
 #                                           self.fields['my_field'] = forms.ChoiceField(
 #                                           choices=CHOICES_INCLUDING_DB_VALUE)
 
+site.register(apps.get_model('client', 'Plan'), PlanAdmin)
 site.register(apps.get_model('client', 'SetTopBox'), SetTopBoxAdmin)
 # site.register(models.SetTopBoxParameter)
 site.register(apps.get_model('client', 'SetTopBoxProgramSchedule'))

@@ -19,3 +19,6 @@
 [submodule "vendor/model_mommy"]
 	path = vendor/model_mommy
 	url = https://github.com/helber/model_mommy.git
+[submodule "vendor/XlsxWriter"]
+	path = vendor/XlsxWriter
+	url = https://github.com/jmcnamara/XlsxWriter.git
