@@ -719,29 +719,6 @@ class SetTopBoxBehaviorFlagResource(NamespacedModelResource):
         queryset = SetTopBoxBehaviorFlag.objects.all()
 
 
-class SetTopBoxMailResource(NamespacedModelResource):
-
-    class Meta:
-        SetTopBoxMail = apps.get_model('client', 'SetTopBoxMail')
-        queryset = SetTopBoxMail.objects.all().reverse()
-        resource_name = 'settopboxmail'
-        allowed_methods = ['get', 'post', 'delete', 'put', 'patch']
-        urlconf_namespace = 'client'
-        fields = ['title', 'message', 'created', 'read']
-        always_return_data = True
-        filtering = {
-            "title": ALL,
-            "created": ALL,
-            "read": ALL,
-        }
-        authorization = MailAuthorization()
-        validation = MailValidation()
-        serializer = SetTopBoxSerializer(formats=['json'])
-        authentication = MultiAuthentication(
-            ApiKeyAuthentication(),
-            BasicAuthentication(realm='cianet-middleware'),
-            Authentication(),)
-
 api = NamespacedApi(api_name='v1', urlconf_namespace='client_v1')
 api.register(SetTopBoxResource())
 api.register(SetTopBoxParameterResource())
@@ -751,6 +728,5 @@ api.register(APIKeyResource())
 api.register(SetTopBoxMessage())
 api.register(SetTopBoxProgramScheduleResource())
 api.register(SetTopBoxBehaviorFlagResource())
-api.register(SetTopBoxMailResource())
 
 apis = [api]

@@ -442,25 +442,3 @@ class SetTopBoxBehaviorFlag(models.Model):
         return '{%s=%s}' % (self.key, self.value)
 
 
-class SetTopBoxMail(models.Model):
-
-    'Class to store the message from operator to clients'
-
-    settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
-    title = models.TextField(_('Promoção'))
-    message = models.TextField(_('Hoje está liberado o pacote Telecine!'))
-    created = models.BigIntegerField(null=False)
-    read = models.BooleanField(
-        _('Mensagem lida'), default=False
-    )
-
-    class Meta:
-        verbose_name = _('Correspondência')
-        verbose_name_plural = _('Correspondências')
-        ordering = ('settopbox', 'created')
-
-    def __unicode__(self):
-        return 'stb=[%s] título=[%s] hora=[%s]' % (
-            self.settopbox.serial_number, self.title,
-            datetime.datetime.fromtimestamp(self.created / 1000)
-        )

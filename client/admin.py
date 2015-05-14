@@ -171,7 +171,6 @@ class SetTopBoxMessageAdmin(ModelAdmin):
 site.register(apps.get_model('client', 'SetTopBox'), SetTopBoxAdmin)
 # site.register(models.SetTopBoxParameter)
 site.register(apps.get_model('client', 'SetTopBoxProgramSchedule'))
-site.register(apps.get_model('client', 'SetTopBoxMail'))
 site.register(apps.get_model('client', 'SetTopBoxChannel'), SetTopBoxChannelAdmin)
 site.register(apps.get_model('client', 'SetTopBoxConfig'), SetTopBoxConfigAdmin)
 site.register(apps.get_model('client', 'SetTopBoxMessage'), SetTopBoxMessageAdmin)
