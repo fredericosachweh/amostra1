@@ -5,10 +5,8 @@ from __future__ import unicode_literals
 import os
 import logging
 import paramiko
-import time
 import subprocess
 import shlex
-import re
 
 
 def connect(host,
@@ -44,19 +42,22 @@ def connect(host,
         except Exception as e:
             log.debug('Disconneting ssh from %s, cause=', cmd, e)
 
+
 def get(host, username, remotepath, localpath=None, port=22):
         """Copies a file between the remote host and the local host."""
         log = logging.getLogger('device.remotecall')
         log.info('geting file from remote:%s -> %s', remotepath, localpath)
         if not localpath:
             localpath = os.path.split(remotepath)[1]
-        cmd = 'scp -P '+str(port)+' '+username+'@'+host+':'+remotepath+' '+localpath
+        cmd = 'scp -P ' + str(port) + ' ' + username + '@' + host + ':'
+        + remotepath + ' ' + localpath
         try:
-            null = open('/dev/null', 'w')        
+            null = open('/dev/null', 'w')
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
             null.close()
         except Exception as e:
             log.debug('Could not retrieve %s file from %s: Error %s', remotepath, host, e)
+
 
 def put(host, username, localpath, remotepath=None, port=22):
         """Copies a file between the local host and the remote host."""
@@ -64,7 +65,8 @@ def put(host, username, localpath, remotepath=None, port=22):
         log.info('sending file from local:%s -> %s', localpath, remotepath)
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
-        cmd = 'scp -P '+str(port)+' '+localpath+' '+username+'@'+host+':'+remotepath
+        cmd = 'scp -P ' + str(port) + ' ' + localpath + ' ' + username + '@' + host
+        + ':' + remotepath
         try:
             null = open('/dev/null', 'w')
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
@@ -72,15 +74,16 @@ def put(host, username, localpath, remotepath=None, port=22):
         except Exception as e:
             log.debug('Could not send %s file to %s: Error %s', localpath, host, e)
 
+
 def execute(host, username, command, port=22):
         """Execute the given commands on a remote machine."""
         log = logging.getLogger('device.remotecall')
         ret = {}
         """Executar comando com a opcao de echo $? no final para
            descobrir o valor do retorno da execucao do comando"""
-        cmd = 'ssh -p '+str(port)+' '+username+'@'+host
+        cmd = 'ssh -p ' + str(port) + ' ' + username + '@' + host
         cmd = shlex.split(cmd)
-        command = command+' ; echo $?'
+        command = command + ' ; echo $?'
         cmd.append(command)
         log.info('COMMAND=%s', cmd)
         try:
@@ -96,10 +99,11 @@ def execute(host, username, command, port=22):
             ret['output'] = e.output
             ret['exit_code'] = int(e.returncode)
         """Forcar codificacao da string"""
-        ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])           
+        ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])
         log.info('Return status [%s] command:%s', ret['exit_code'], command)
 
         return ret
+
 
 def execute_daemon(host, username, command, log_path=None, port=22):
         """
@@ -114,51 +118,39 @@ def execute_daemon(host, username, command, log_path=None, port=22):
             --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         """
         log = logging.getLogger('device.remotecall')
-        ret = execute(host, username, '/bin/mktemp')
+        ret = execute(host, username, '/bin/mktemp', port=22)
         pidfile_path = ret['output'][0].strip()
         fullcommand = '/usr/sbin/daemonize -p %s ' % pidfile_path
         if log_path:
             fullcommand += '-o %s.out -e %s.err ' % (log_path, log_path)
         fullcommand += '%s' % command.strip()
-        ret = execute(host, username, fullcommand)
+        ret = execute(host, username, fullcommand, port=port)
         pidcommand = "/bin/cat %s" % pidfile_path
-        ## Buscando o pid
-        output = execute(host, username, pidcommand)
-        ## unlink pidfile
+        # Buscando o pid
+        output = execute(host, username, pidcommand, port=port)
+        # unlink pidfile
         unlink_cmd = '/usr/bin/unlink %s' % pidfile_path
         log.debug('Clean pid file:%s', unlink_cmd)
         execute(host, username, unlink_cmd, port=port)
         if len(output['output']):
             pid = int(output['output'][0].strip())
-            log.info('Daemon started with pid [%d] command:%s', pid,
-                fullcommand)
+            log.info('Daemon started with pid [%d] command:%s', pid, fullcommand)
             ret['pid'] = pid
         return ret
+
 
 def close(self):
         """Closes the connection and cleans up."""
         if logging is not None:
             log = logging.getLogger('device.remotecall')
-        # Close SFTP Connection.
-        #if self._sftp_live:
-        #    self._sftp.close()
-        #    self._sftp_live = False
-        #    if logging is not None:
-        #        log.debug('close sftp')
-        # Close the SSH Transport.
-        #if self._transport_live:
-        #    self._transport.close()
-        #    self._transport_live = False
-        #    if logging is not None:
-        #        log.debug('close ssh')
+
 
 def __del__(self):
         """Attempt to clean up if not explicitly closed."""
         if logging is not None:
             pass
-            #log = logging.getLogger('device.remotecall')
-            #log.debug('__DEL__:%s', self)
         self.close()
+
 
 def genKey(self):
         log = logging.getLogger('device.remotecall')
