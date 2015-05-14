@@ -4,29 +4,16 @@ from settings import *
 
 DEBUG = True
 
-if 'test' in sys.argv:
-    ## Banco de dados teste
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(PROJECT_ROOT_PATH, 'sqlite.db'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': ''
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'iptv',
+        'USER': 'iptv',
+        'PASSWORD': 'iptv',
+        'HOST': '127.0.0.1',
+        #'PORT': ,
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'iptv',
-            'USER': 'iptv',
-            'PASSWORD': 'iptv',
-            'HOST': '127.0.0.1',
-            #'PORT': ,
-        }
-    }
+}
 
 ROOT_URL = 'tv/'
 MEDIA_URL = '/tv/media/'
@@ -44,6 +31,11 @@ CACHES = {
     }
 }
 
+EMAIL_HOST = '127.0.0.1'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=rz16epry+8okcm#e=n_m4f4by*-q6-rf^hci!)2yjvadk4lx2'
@@ -54,7 +46,7 @@ TASTYPIE_ABSTRACT_APIKEY = False
 
 EPG_IMPORT_CREDENTIALS = {
     'site': 'guide.aron.tv.br',
-    'username': 'epg',
+    'username': 'epg_parental',
     'password': 'bhhD.ahg3f',
 }
 
@@ -100,3 +92,8 @@ if DEBUG is True:
     except ImportError:
         pass
 
+DVBLAST_DUMMY = './device/helper/dvblast_dummy.py'
+DVBLASTCTL_DUMMY = './device/helper/dvblastctl_dummy.py'
+MULTICAT_DUMMY = './device/helper/multicat_dummy.py'
+MULTICATCTL_DUMMY = './device/helper/multicatctl_dummy.py'
+VLC_DUMMY = './device/helper/vlc_dummy.py'

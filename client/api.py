@@ -54,9 +54,7 @@ class SetTopBoxValidation(FormValidation):
         if not bundle.data:
             return {'__all__': 'Missing data'}
         return super(SetTopBoxValidation, self).is_valid(
-                bundle, request=request,  *args, **kwargs
-            )
-
+            bundle, request=request,  *args, **kwargs)
 
 
 class SetTopBoxResource(NamespacedModelResource):
@@ -185,9 +183,11 @@ class SetTopBoxChannelResource(NamespacedModelResource):
 
 
 class SetTopBoxSerializer(Serializer):
+
     """
     Gives message when loading JSON fails.
     """
+
     def from_json(self, content):
         """
         Override method of `Serializer.from_json`.
@@ -246,6 +246,51 @@ class ProgramScheduleValidation(Validation):
             if url is None:
                 errors['errorCode'] = '400'
                 errors['errorDescription'] = 'There is no url data.'
+            if message is None:
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no message data.'
+
+        return errors
+
+
+class MailValidation(Validation):
+
+    def is_valid(self, bundle, request=None):
+        SetTopBoxMail = apps.get_model('client', 'SetTopBoxMail')
+        if not bundle.data:
+            return {
+                '__all__':
+                    'Missing data, please include title, message and created.'}
+
+        errors = {}
+        created = bundle.data.get('created', None)
+        title = bundle.data.get('title', None)
+        message = bundle.data.get('message', None)
+
+        request_method = bundle.request.META['REQUEST_METHOD']
+
+        if request_method in ('PATCH', 'PUT'):
+            bundle_uri = bundle.request.path_info
+            try:
+                uri_id = bundle_uri.split('/')
+                ps = SetTopBoxMail.objects.filter(
+                    id=uri_id[-2]
+                )
+                if not ps:
+                    errors['errorCode'] = '404'
+                    errors['errorDescription'] =\
+                        'There is no register on server.'
+            except:
+                errors['errorCode'] = '404'
+                errors['errorDescription'] = 'There is no register on server.'
+
+        if request_method == 'POST':
+            if created is None:
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no created data.'
+            if title is None:
+                errors['errorCode'] = '400'
+                errors['errorDescription'] = 'There is no title data.'
             if message is None:
                 errors['errorCode'] = '400'
                 errors['errorDescription'] = 'There is no message data.'
@@ -405,6 +450,55 @@ class ProgramScheduleAuthorization(SetTopBoxAuth):
         return True
 
 
+class MailAuthorization(SetTopBoxAuth):
+
+    def is_create_authorized(self, object_list, bundle):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        if bundle.request.user.is_anonymous() is True:
+            return False
+        user = str(bundle.request.user)
+        serial = user.replace(settings.STB_USER_PREFIX, '')
+
+        try:
+            stb = SetTopBox.objects.get(serial_number=serial)
+        except:
+            log.error('There`s no stb for this serial number: %s', serial)
+            return False
+
+        setattr(bundle.obj, 'settopbox', stb)
+
+        return True
+
+    def is_authorized(self, object_list, bundle):
+        SetTopBox = apps.get_model('client', 'SetTopBox')
+        SetTopBoxMail = apps.get_model('client', 'SetTopBoxMail')
+        if bundle.request.user.is_anonymous() is True:
+            return False
+        user = str(bundle.request.user)
+        serial = user.replace(settings.STB_USER_PREFIX, '')
+
+        try:
+            stb = SetTopBox.objects.get(serial_number=serial)
+        except:
+            log.error('There`s no stb for this serial number: %s', serial)
+            return False
+
+        bundle_uri = bundle.request.path_info
+
+        try:
+            uri_id = bundle_uri.split('/')
+            ps = SetTopBoxMail.objects.filter(
+                id=uri_id[-2], settopbox_id=stb.id
+            )
+            if ps:
+                return True
+            if uri_id[-2] == 'schema':
+                return True
+        except:
+            log.error('There`s no mail for this uri_id: %s', uri_id)
+            return False
+
+
 class SetTopBoxConfigResource(NamespacedModelResource):
 
     class Meta:
@@ -427,8 +521,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
         authentication = MultiAuthentication(
             ApiKeyAuthentication(),
             BasicAuthentication(realm='cianet-middleware'),
-            Authentication(),
-            )
+            Authentication(),)
 
     def apply_authorization_limits(self, request, object_list):
         """
@@ -546,6 +639,7 @@ class SetTopBoxConfigResource(NamespacedModelResource):
 
 
 class StreamRecorderResource(NamespacedModelResource):
+
     class Meta:
         StreamRecorder = apps.get_model('device', 'StreamRecorder')
         queryset = StreamRecorder.objects.filter(status=True)
@@ -574,20 +668,21 @@ class APIKeyAuthorization(Authorization):
 
 
 class APIKeyResource(NamespacedModelResource):
+
     class Meta:
         queryset = ApiKey.objects.all()
         authorization = APIKeyAuthorization()
         authentication = MultiAuthentication(
             ApiKeyAuthentication(),
             BasicAuthentication(realm='cianet-middleware'),
-            Authentication(),
-            )
+            Authentication(),)
         filtering = {
             "key": ALL
         }
 
 
 class SetTopBoxMessage(NamespacedModelResource):
+
     class Meta:
         SetTopBoxMessage = apps.get_model('client', 'SetTopBoxMessage')
         queryset = SetTopBoxMessage.objects.all()
@@ -614,8 +709,7 @@ class SetTopBoxProgramScheduleResource(NamespacedModelResource):
         authentication = MultiAuthentication(
             ApiKeyAuthentication(),
             BasicAuthentication(realm='cianet-middleware'),
-            Authentication(),
-            )
+            Authentication(),)
 
 
 class SetTopBoxBehaviorFlagResource(NamespacedModelResource):

@@ -78,6 +78,8 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Aplicação de controle de stream
     'device',
+    # cas
+    'cas',
     # EPG
     'epg',
     # App with info about possible frequencies to tune

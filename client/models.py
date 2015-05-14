@@ -313,6 +313,7 @@ def reload_frontend_stb(settopbox):
 
 
 class SetTopBox(models.Model):
+
     'Class to authenticate and manipulate IPTV client - SetTopBox'
     plan = models.ForeignKey(Plan, blank=True, null=True, verbose_name=_('Plano'))
     plan_date = models.DateField(_('Data de adesão do plano'), blank=True, null=True)
@@ -430,6 +431,7 @@ def SetTopBox_pre_save(sender, instance, **kwargs):
 
 
 class SetTopBoxParameter(models.Model):
+
     'Class to store key -> values of SetTopBox'
 
     key = models.CharField(
@@ -452,6 +454,7 @@ class SetTopBoxParameter(models.Model):
 
 
 class SetTopBoxChannel(models.Model):
+
     'Class to link access permission to stb on tv.channel'
 
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
@@ -482,6 +485,7 @@ def SetTopBoxChannel_pre_delete(sender, instance, **kwargs):
     tasks.stbs_update_plans.delay([instance.settopbox.id])
 
 class SetTopBoxConfig(models.Model):
+
     'Class to store key -> value, value_type of SetTopBox'
 
     key = models.CharField(
@@ -505,6 +509,7 @@ class SetTopBoxConfig(models.Model):
 
 
 class SetTopBoxMessage(models.Model):
+
     'Class to store UI messages'
     key = models.CharField(
         _('Chave'), max_length=250, db_index=True,
@@ -525,6 +530,7 @@ class SetTopBoxMessage(models.Model):
 
 
 class SetTopBoxProgramSchedule(models.Model):
+
     'Class to store the data and time of Program on Schedule'
 
     settopbox = models.ForeignKey('client.SetTopBox', db_index=True)
@@ -546,6 +552,7 @@ class SetTopBoxProgramSchedule(models.Model):
 
 
 class SetTopBoxBehaviorFlag(models.Model):
+
     'Class to store Behavior flags'
     key = models.CharField(
         _('Chave'), max_length=250, db_index=True,
@@ -565,3 +572,4 @@ class SetTopBoxBehaviorFlag(models.Model):
 
     def __unicode__(self):
         return '{%s=%s}' % (self.key, self.value)
+

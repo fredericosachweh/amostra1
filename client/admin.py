@@ -130,7 +130,6 @@ class SetTopBoxChannelInline(admin.TabularInline):
     def channel_name(self, instance):
         return instance.channel.name
 
-
 class SetTopBoxAdmin(ModelAdmin):
     search_fields = ('mac', 'serial_number', 'description', )
     list_display = (
@@ -140,7 +139,7 @@ class SetTopBoxAdmin(ModelAdmin):
                accept_recorder, refuse_recorder, reload_frontend_stbs]
     list_filter = ['online',]
     form = forms.SetTopBoxAdminForm
-    readonly_fields = ('plan_date',)
+    readonly_fields = ('plan', 'plan_date',)
 
     def get_readonly_fields(self, request, obj = None):
         if obj:

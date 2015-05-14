@@ -139,13 +139,17 @@ class AbstractServer(models.Model):
         log.debug('Executing %s in %s', command, self.host)
         if self.checkstatus() == 'offline':
             return ['Servidor está offline']
-        ret = ssh.execute(self.host, self.username, command, port=self.ssh_port)
-        self.save()
-        if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
-                raise Server.ExecutionFailure(
-                    'Command "%s" returned status "%d" on server "%s": "%s"' %
-                    (command, ret['exit_code'], self, "".join(ret['output'])))
-        return ret['output']
+         
+        if (self.get_server_type_display() == 'Servidor CAS') and (('/bin/cp' in command) or ('/bin/systemctl' in command)):
+            pass
+        else:
+            ret = ssh.execute(self.host, self.username, command, port=self.ssh_port)
+            self.save()
+            if ret.get('exit_code') and ret['exit_code'] is not 0 and check:
+                    raise Server.ExecutionFailure(
+                        'Command "%s" returned status "%d" on server "%s": "%s"' %
+                        (command, ret['exit_code'], self, "".join(ret['output'])))
+            return ret['output']
 
     def execute_daemon(self, command, log_path=None):
         "Excuta o processo em background (daemon)"
@@ -377,6 +381,7 @@ class Server(AbstractServer):
         ('dvb', _('Sintonizador DVB')),
         ('recording', _('Servidor TVoD')),
         ('nbridge', _('Servidor NBridge')),
+        ('cas', _('Servidor CAS')),
     ]
 
     server_type = models.CharField(
@@ -530,7 +535,8 @@ class UniqueIP(models.Model):
     content_type = models.ForeignKey(
         ContentType,
         limit_choices_to={"model__in": (
-            "demuxedservice", "fileinput", "softtranscoder")},
+            "demuxedservice", "fileinput", "softtranscoder",
+            "encryptdeviceservice")},
         blank=True, null=True
     )
     object_id = models.PositiveIntegerField(blank=True, null=True)
@@ -2164,6 +2170,29 @@ def SoftTranscoder_post_save(sender, instance, **kwargs):
         instance.start()
         instance.restart = False
 
+class EncryptDeviceService(DeviceServer):
+    nic_sink = models.ForeignKey(NIC, related_name='encrypt_device_service__nic_sink')
+    nic_src = models.ForeignKey(NIC, related_name='encrypt_device_service_nic_src')
+    content_type = models.ForeignKey(ContentType,
+        limit_choices_to={"model__in": ("uniqueip",)},
+        null=True,
+        verbose_name=_('Conexão com device'))
+    object_id = models.PositiveIntegerField(null=True)
+    sink = generic.GenericForeignKey()
+    src = generic.GenericRelation(UniqueIP)
 
-class RealTimeEncript(models.Model):
-    """RealTime to manage stream flow"""
+    class Meta(object):
+        verbose_name = _('Entrada CAS IPv4')
+        verbose_name_plural = _('Entradas CAS IPv4')
+
+    def _get_cmd(self):
+        pass
+
+    def start(self, *args, **kwargs):
+        pass
+
+    def stop(self, *args, **kwargs):
+        pass
+
+    def clean(self):
+        pass
