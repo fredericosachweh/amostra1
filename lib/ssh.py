@@ -49,8 +49,7 @@ def get(host, username, remotepath, localpath=None, port=22):
         log.info('geting file from remote:%s -> %s', remotepath, localpath)
         if not localpath:
             localpath = os.path.split(remotepath)[1]
-        cmd = 'scp -P ' + str(port) + ' ' + username + '@' + host + ':'
-        + remotepath + ' ' + localpath
+        cmd = 'scp -P %s %s@%s:%s %s' % (port, username, host, remotepath, localpath)
         try:
             null = open('/dev/null', 'w')
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
@@ -65,8 +64,7 @@ def put(host, username, localpath, remotepath=None, port=22):
         log.info('sending file from local:%s -> %s', localpath, remotepath)
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
-        cmd = 'scp -P ' + str(port) + ' ' + localpath + ' ' + username + '@' + host
-        + ':' + remotepath
+        cmd = 'scp -P %s %s %s@%s:%s' % (port, localpath, username, host, remotepath)
         try:
             null = open('/dev/null', 'w')
             subprocess.call(shlex.split(cmd), stdin=subprocess.PIPE, stdout=null, stderr=null)
@@ -81,7 +79,7 @@ def execute(host, username, command, port=22):
         ret = {}
         """Executar comando com a opcao de echo $? no final para
            descobrir o valor do retorno da execucao do comando"""
-        cmd = 'ssh -p ' + str(port) + ' ' + username + '@' + host
+        cmd = 'ssh -p %s %s@%s' % (port, username, host)
         cmd = shlex.split(cmd)
         command = command + ' ; echo $?'
         cmd.append(command)
@@ -101,7 +99,6 @@ def execute(host, username, command, port=22):
         """Forcar codificacao da string"""
         ret['output'] = map(lambda x: unicode(x, 'utf-8'), ret['output'])
         log.info('Return status [%s] command:%s', ret['exit_code'], command)
-
         return ret
 
 
@@ -118,7 +115,7 @@ def execute_daemon(host, username, command, log_path=None, port=22):
             --sout "#std{access=udp,mux=ts,dst=192.168.0.244:5000}"
         """
         log = logging.getLogger('device.remotecall')
-        ret = execute(host, username, '/bin/mktemp', port=22)
+        ret = execute(host, username, '/bin/mktemp', port=port)
         pidfile_path = ret['output'][0].strip()
         fullcommand = '/usr/sbin/daemonize -p %s ' % pidfile_path
         if log_path:
@@ -141,8 +138,7 @@ def execute_daemon(host, username, command, log_path=None, port=22):
 
 def close(self):
         """Closes the connection and cleans up."""
-        if logging is not None:
-            log = logging.getLogger('device.remotecall')
+        pass
 
 
 def __del__(self):
