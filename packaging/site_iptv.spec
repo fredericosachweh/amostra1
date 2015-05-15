@@ -293,6 +293,8 @@ if install_status >= 2: # Atualização
 
 
 %changelog
+* Fri May 15 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.22.0-1
+- Features billing and cas.
 * Thu May 14 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.21.2-1
 - Fix ssh port on mktemp, ...
 * Fri Apr 17 2015 Helber Maciel Guerra <helber@cianet.ind.br> - 0.21.0-1
