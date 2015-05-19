@@ -226,7 +226,7 @@ if install_status >= 2: # Atualização
             version_end = miscutils.stringToVersion(v_end)
             version_compare = miscutils.compareEVR(old_version, version_end)
             # Se a versão anterior for maior ou igual à v_end -> deixa passar
-            if version_compare > 0:
+            if version_compare < 0:
                 # Pode atualizar
                 print('Verificação 2 %s = %s [%s]' % (old_version, version_end, version_compare))
                 print('Para atualização, é necessário atualizar para a versão %s primeiro. E depois a versão %s' % (v_migrate, v_end))
