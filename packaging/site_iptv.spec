@@ -7,19 +7,20 @@
 %global nginx_group    %{nginx_user}
 %global v_migrate      0.19.20
 %global v_end          0.21.1
+%global release_v      GIT_CURRENT_RELEASE
 
 # Referencia:
 # http://pkgs.fedoraproject.org/cgit/python-django.git/tree/python-django.spec
 
 Name:           site_iptv
 Version:        GIT_CURRENT_VERSION
-Release:        1%{?dist}
+Release:        %{release_v}%{?dist}
 Summary:        Sistema IPTV - Cianet
 
 Group:          Development/Languages
 License:        Proprietary
 URL:            http://www.cianet.ind.br/
-Source:         %{name}-%{version}.tar.gz
+Source:         %{name}-%{version}-%{release_v}.tar.gz
 Source5:        site_iptv.service
 Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service
