@@ -1043,7 +1043,7 @@ class DigitalTunerHardware(models.Model):
             self.adapter_nr, self.driver, self.uniqueid)
 
     def _read_mac_from_dvbworld(self):
-        if self.id_vendor in ['04b4', '1131']:
+        if self.id_vendor in ['04b4', '1131', '544d']:
             self.server.execute(
                 '/usr/bin/sudo /usr/bin/dvbnet -a %s -p 100' % (
                     self.adapter_nr
@@ -1143,14 +1143,14 @@ class DigitalTunerHardware(models.Model):
                 )
                 # match = re.search(r'Kernel modules: (.*)', " ".join(ret))
                 match = re.search(
-                    r'Kernel driver in use: (.*) TBS', " ".join(ret)
+                    r'Kernel driver in use: (.*TBS.*)', " ".join(ret)
                 )
                 self.driver = match.groups()[0]
             except Server.ExecutionFailure as e:
                 "Se foi, foi. Se não foi, tudo bem."
                 log.error('CMD err:%s', e)
 
-        if self.id_vendor in ['04b4', '1131']:
+        if self.id_vendor in ['04b4', '1131', '544d']:
             self.uniqueid = self._read_mac_from_dvbworld()
 
 
