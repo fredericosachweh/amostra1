@@ -1124,6 +1124,11 @@ class ViewsTest(TestCase):
         self.assertEqual(200, response.status_code)
 
 
+@override_settings(DVBLAST_COMMAND=settings.DVBLAST_DUMMY)
+@override_settings(DVBLASTCTL_COMMAND=settings.DVBLASTCTL_DUMMY)
+@override_settings(MULTICAT_COMMAND=settings.MULTICAT_DUMMY)
+@override_settings(MULTICATCTL_COMMAND=settings.MULTICATCTL_DUMMY)
+@override_settings(VLC_COMMAND=settings.VLC_DUMMY)
 class RecordTest(TestCase):
     u"""
     Test record stream on remote server
@@ -1332,6 +1337,29 @@ class RecordTest(TestCase):
         rec.save()
         rec1 = StreamRecorder.objects.all()[0]
         self.assertEqual(new_nic, rec1.nic_sink)
+
+    def test_tvod_play_ticket(self):
+        # /tv/device/tvod/1/play/2048?ticket=1432145840197
+        # /tv/device/tvod/1/stop/0?ticket=1432145830836
+        # /tv/device/tvod/1/pause/0?ticket=1432145840197
+        # /tv/device/tvod/1/pause/0?ticket=1432145840197
+        # /tv/device/tvod/1/play/2018?ticket=1432145863874
+        # /tv/device/tvod/1/stop/0?ticket=1432145840197
+        urlplay = reverse(
+            'device.views.tvod', kwargs={'channel_number': 1, 'command': 'play', 'seek': 2048}
+        ) + '?ticket=1432145840197'
+        self.assertEqual(
+            '/tv/device/tvod/1/play/2048?ticket=1432145840197', urlplay, 'URL invalida'
+        )
+        urlstopIG = reverse(
+            'device.views.tvod', kwargs={'channel_number': 1, 'command': 'stop', 'seek': 0}
+        ) + '?ticket=1432145830836'
+        self.assertEqual(
+            '/tv/device/tvod/1/stop/0?ticket=1432145830836', urlstopIG, 'URL invalida'
+        )
+        self.c = Client()
+        response = self.c.get(urlplay)
+        self.assertEqual(401, response.status_code)
 
 
 class ServerRouteTest(TestCase):

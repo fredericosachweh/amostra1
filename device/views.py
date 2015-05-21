@@ -322,6 +322,9 @@ def tvod(request, channel_number=None, command=None, seek=0):
     resp = ''
     # Get IP addr form STB
     ip = request.META.get('REMOTE_ADDR')
+    # Get ticket from querystring
+    ticket = request.GET.get('ticket', None)
+    stop_ticket_key = 'tvod_stop_ticket_%s' % (ip)
     # Get path to create stop hash
     md5_path = hashlib.md5(request.path).hexdigest()
     stop_key = 'tvod_stop_key_%s' % (md5_path)
@@ -375,6 +378,13 @@ def tvod(request, channel_number=None, command=None, seek=0):
         )
     # Colocando o stop antes de outros comandos
     if command == 'stop':
+        stop_ticket = cache.get(stop_ticket_key)
+        if stop_ticket != ticket and ticket is not None:
+            return HttpResponse(
+                '{"status": "error" ,"error": "Stop ignored - invalid ticket"}',
+                content_type='application/javascript',
+                status=412
+            )
         can_stop = cache.get('tvod_stop_key_%s' % (seek))
         if can_stop is None and key_value is not None:
             return HttpResponse(
@@ -493,6 +503,8 @@ def tvod(request, channel_number=None, command=None, seek=0):
         player.stb_port = settings.CHANNEL_PLAY_PORT
         player.save()
     cache.set(stop_key, 1, 4)
+    # Define a chave de ticket
+    cache.set(stop_ticket_key, ticket, 43200)  # Timeout de 12 horas
     if command == 'play':
         try:
             if player.status and player.pid:
