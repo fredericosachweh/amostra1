@@ -20,7 +20,7 @@ Summary:        Sistema IPTV - Cianet
 Group:          Development/Languages
 License:        Proprietary
 URL:            http://www.cianet.ind.br/
-Source:         %{name}-%{version}-%{release_v}.tar.gz
+Source:         %{name}-%{version}.tar.gz
 Source5:        site_iptv.service
 Source6:        site_iptv.sysconfig
 Source7:        postgresql_iptv.service

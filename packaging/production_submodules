@@ -1,0 +1,4 @@
+vendor/django-dbsettings
+vendor/django-tastypie
+vendor/django
+vendor/XlsxWriter
